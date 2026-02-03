@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { formatDistanceToNow } from 'date-fns';
+import type { SnapshotSerializer } from 'vitest';
 import type {
   ExtractInitialsProps,
   CopyToClipboardProps,
@@ -9,6 +10,7 @@ import type {
 } from './utils.types';
 import type { PostInputVariant } from '@/organisms';
 import * as Config from '@/config';
+import { RADIX_ID_REGEX, RADIX_ID_TEST_REGEX, TAG_BANNED_CHARS } from './utils.constants';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -397,27 +399,6 @@ export function decodeHtmlEntities(text: string): string {
 }
 
 /**
- * Regex pattern for parsing H:M:S timestamp format
- * Matches formats: "1h2m3s", "5m30s", "45s", "30" (plain seconds)
- *
- * Pattern breakdown:
- * - `(?:(\d+)h)?` - Optional hours with 'h' suffix
- * - `(?:(\d+)m)?` - Optional minutes with 'm' suffix
- * - `(?:(\d+)s?)?` - Optional seconds with optional 's' suffix
- *
- * The 's?' makes seconds suffix optional (allows "30" or "30s")
- * The outer '?' makes each entire group optional (allows "1h" or "5m" alone)
- *
- * @example
- * "1h2m3s".match(HMS_TIMESTAMP_REGEX) // ["1h2m3s", "1", "2", "3"]
- * "30s".match(HMS_TIMESTAMP_REGEX)    // ["30s", undefined, undefined, "30"]
- * "30".match(HMS_TIMESTAMP_REGEX)     // ["30", undefined, undefined, "30"]
- * "5m".match(HMS_TIMESTAMP_REGEX)     // ["5m", undefined, "5", undefined]
- * "30ss".match(HMS_TIMESTAMP_REGEX)   // null (rejected by $ anchor)
- */
-export const HMS_TIMESTAMP_REGEX = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/;
-
-/**
  * Convert hours, minutes, and seconds to total seconds
  * Used by video providers to parse timestamps
  *
@@ -580,12 +561,6 @@ export function shouldBypassLinkConfirmation(url: string): boolean {
 export function getCharacterCount(text: string): number {
   return Array.from(text).length;
 }
-
-/**
- * Banned characters for tags per pubky-app-specs
- * Colons, commas, and spaces are not allowed in tags
- */
-export const TAG_BANNED_CHARS = /[:, ]/g;
 
 /**
  * Remove banned characters from tag input
@@ -773,3 +748,23 @@ export function generateRandomUsername(): string {
 
   return `${randomAdjective}-${randomNoun1}-${randomNoun2}`;
 }
+
+/**
+ * Snapshot serializer to normalize Radix UI generated IDs.
+ * This ensures snapshot tests are consistent across test runs by replacing
+ * dynamic Radix IDs (e.g., "radix-_r_12345") with a normalized placeholder.
+ *
+ * @see https://github.com/pubky/pubky-app/issues/1101
+ *
+ * @example
+ * // In test setup (e.g., vitest.setup.ts):
+ * import { radixIdSerializer } from '@/libs/utils';
+ * expect.addSnapshotSerializer(radixIdSerializer);
+ */
+export const radixIdSerializer: SnapshotSerializer = {
+  test: (val): val is string => typeof val === 'string' && RADIX_ID_TEST_REGEX.test(val),
+  serialize: (val, config, indentation, depth, refs, printer) => {
+    const normalized = (val as string).replace(RADIX_ID_REGEX, 'radix-normalized');
+    return printer(normalized, config, indentation, depth, refs);
+  },
+};

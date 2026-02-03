@@ -6,22 +6,15 @@ import React from 'react';
 import { vi, expect } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { beforeAll, afterAll, afterEach, beforeEach } from 'vitest';
+import { radixIdSerializer } from '@/libs/utils';
+
+// Import English messages for i18n mock
+import enMessages from '../../messages/en.json';
 
 // Global snapshot serializer to normalize Radix UI generated IDs
 // This ensures snapshot tests are consistent across test runs
 // See: https://github.com/pubky/pubky-app/issues/1101
-const RADIX_ID_REGEX = /\b(radix-)?_r_[\da-z]+_?\b/gi;
-
-expect.addSnapshotSerializer({
-  test: (val) => typeof val === 'string' && RADIX_ID_REGEX.test(val),
-  serialize: (val, config, indentation, depth, refs, printer) => {
-    const normalized = (val as string).replace(RADIX_ID_REGEX, 'radix-normalized');
-    return printer(normalized, config, indentation, depth, refs);
-  },
-});
-
-// Import English messages for i18n mock
-import enMessages from '../../messages/en.json';
+expect.addSnapshotSerializer(radixIdSerializer);
 
 /**
  * Get a nested value from an object using a dot-separated key path.
