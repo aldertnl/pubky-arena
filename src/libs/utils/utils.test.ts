@@ -24,8 +24,8 @@ import {
   formatUSDate,
   generateRandomUsername,
   stripPubkyPrefix,
-  radixIdSerializer,
 } from './utils';
+import { radixIdSerializer } from './radixIdSerializer';
 import { RADIX_ID_TEST_REGEX, RADIX_ID_REGEX, TAG_BANNED_CHARS } from './utils.constants';
 
 describe('Utils', () => {

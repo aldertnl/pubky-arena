@@ -1,7 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { formatDistanceToNow } from 'date-fns';
-import type { SnapshotSerializer } from 'vitest';
 import type {
   ExtractInitialsProps,
   CopyToClipboardProps,
@@ -10,7 +9,7 @@ import type {
 } from './utils.types';
 import type { PostInputVariant } from '@/organisms';
 import * as Config from '@/config';
-import { RADIX_ID_REGEX, RADIX_ID_TEST_REGEX, TAG_BANNED_CHARS } from './utils.constants';
+import { TAG_BANNED_CHARS } from './utils.constants';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -748,23 +747,3 @@ export function generateRandomUsername(): string {
 
   return `${randomAdjective}-${randomNoun1}-${randomNoun2}`;
 }
-
-/**
- * Snapshot serializer to normalize Radix UI generated IDs.
- * This ensures snapshot tests are consistent across test runs by replacing
- * dynamic Radix IDs (e.g., "radix-_r_12345") with a normalized placeholder.
- *
- * @see https://github.com/pubky/pubky-app/issues/1101
- *
- * @example
- * // In test setup (e.g., vitest.setup.ts):
- * import { radixIdSerializer } from '@/libs/utils';
- * expect.addSnapshotSerializer(radixIdSerializer);
- */
-export const radixIdSerializer: SnapshotSerializer = {
-  test: (val): val is string => typeof val === 'string' && RADIX_ID_TEST_REGEX.test(val),
-  serialize: (val, config, indentation, depth, refs, printer) => {
-    const normalized = (val as string).replace(RADIX_ID_REGEX, 'radix-normalized');
-    return printer(normalized, config, indentation, depth, refs);
-  },
-};

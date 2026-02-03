@@ -6,7 +6,7 @@ import React from 'react';
 import { vi, expect } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { beforeAll, afterAll, afterEach, beforeEach } from 'vitest';
-import { radixIdSerializer } from '@/libs/utils';
+import { radixIdSerializer } from '@/libs/utils/radixIdSerializer';
 
 // Import English messages for i18n mock
 import enMessages from '../../messages/en.json';
