@@ -19,7 +19,7 @@ exports[`InstallCard - Snapshots > matches snapshot 1`] = `
         class=""
         data-testid="content-image"
         height="192"
-        src="/images/keyring.png"
+        src="/images/keyring.webp"
         style="object-fit: contain;"
         width="192"
       />
@@ -64,7 +64,7 @@ exports[`InstallCard - Snapshots > matches snapshot 1`] = `
           <img
             alt="App Store"
             height="40"
-            src="/images/badge-apple.png"
+            src="/images/badge-apple.webp"
             width="192"
           />
         </a>
@@ -79,7 +79,7 @@ exports[`InstallCard - Snapshots > matches snapshot 1`] = `
           data-state="closed"
           data-testid="dialog-trigger"
           height="40"
-          src="/images/badge-apple.png"
+          src="/images/badge-apple.webp"
           type="button"
           width="120"
         />
@@ -92,7 +92,7 @@ exports[`InstallCard - Snapshots > matches snapshot 1`] = `
           <img
             alt="Google Play"
             height="40"
-            src="/images/badge-android.png"
+            src="/images/badge-android.webp"
             width="210"
           />
         </a>
@@ -107,7 +107,7 @@ exports[`InstallCard - Snapshots > matches snapshot 1`] = `
           data-state="closed"
           data-testid="dialog-trigger"
           height="40"
-          src="/images/badge-android.png"
+          src="/images/badge-android.webp"
           type="button"
           width="135"
         />
