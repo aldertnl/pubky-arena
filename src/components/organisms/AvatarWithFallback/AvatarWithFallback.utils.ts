@@ -6,6 +6,19 @@ import * as Config from '@/config';
  */
 const USER_ID_PATTERN = /^[a-z0-9]{52}$/;
 
+interface ResolveAvatarFallbackSeedProps {
+  fallbackSeed?: string | null;
+  avatarUrl?: string | null;
+  name?: string | null;
+  defaultSeed?: string;
+}
+
+interface ResolveAvatarFallbackInitialProps {
+  name?: string | null;
+  seed?: string | null;
+  defaultInitial?: string;
+}
+
 /**
  * Extracts the userId from an avatar URL.
  *
@@ -23,7 +36,6 @@ const USER_ID_PATTERN = /^[a-z0-9]{52}$/;
  */
 export function extractUserIdFromAvatarUrl(avatarUrl: string | undefined | null): string | null {
   if (!avatarUrl) return null;
-  if (!avatarUrl) return null;
 
   const expectedPrefix = `${Config.CDN_URL}/avatar/`;
 
@@ -36,4 +48,44 @@ export function extractUserIdFromAvatarUrl(avatarUrl: string | undefined | null)
   if (!USER_ID_PATTERN.test(userId)) return null;
 
   return userId;
+}
+
+export function resolveAvatarFallbackSeed({
+  fallbackSeed,
+  avatarUrl,
+  name,
+  defaultSeed = 'user',
+}: ResolveAvatarFallbackSeedProps): string {
+  const normalizedFallbackSeed = fallbackSeed?.trim();
+  if (normalizedFallbackSeed) return normalizedFallbackSeed;
+
+  const userIdFromAvatarUrl = extractUserIdFromAvatarUrl(avatarUrl);
+  if (userIdFromAvatarUrl) return userIdFromAvatarUrl;
+
+  const normalizedName = name?.trim();
+  if (normalizedName) return normalizedName;
+
+  return defaultSeed;
+}
+
+export function resolveAvatarFallbackInitial({
+  name,
+  seed,
+  defaultInitial = 'U',
+}: ResolveAvatarFallbackInitialProps): string {
+  const normalizedName = typeof name === 'string' ? name.trim() : '';
+  const nameInitial = normalizedName
+    .split(/\s+/)
+    .filter((word) => word.length > 0)
+    .map((word) => word.charAt(0))
+    .join('')
+    .toUpperCase()
+    .slice(0, 1);
+
+  if (nameInitial) return nameInitial;
+
+  const seedInitial = seed?.trim().charAt(0).toUpperCase();
+  if (seedInitial) return seedInitial;
+
+  return defaultInitial;
 }

@@ -101,6 +101,7 @@ export function MobileFooter({ className }: MobileFooterProps) {
           <Organisms.AvatarWithFallback
             avatarUrl={avatarUrl}
             name={avatarName}
+            fallbackSeed={currentUserPubky || avatarName}
             size="lg"
             className={Libs.cn(isActive(App.APP_ROUTES.PROFILE) && 'ring-2 ring-primary')}
             alt="Profile"

@@ -1,5 +1,6 @@
 'use client';
 
+import { Facehash } from 'facehash';
 import * as Molecules from '@/molecules';
 import * as Organisms from '@/organisms';
 import * as Libs from '@/libs';
@@ -21,6 +22,9 @@ export const CreateProfileForm = () => {
     pubky,
     setShowWelcomeDialog,
   });
+  const avatarFallbackSeed = pubky || state.name || 'user';
+  const avatarFallbackInitial =
+    Libs.extractInitials({ name: state.name, maxLength: 1 }) || avatarFallbackSeed.charAt(0).toUpperCase() || 'U';
 
   return (
     <>
@@ -139,7 +143,15 @@ export const CreateProfileForm = () => {
                     }
                   />
                 ) : (
-                  <Atoms.AvatarFallback className="text-4xl">SN</Atoms.AvatarFallback>
+                  <Atoms.AvatarFallback className="overflow-hidden text-4xl">
+                    <Facehash
+                      name={avatarFallbackSeed}
+                      size="100%"
+                      showInitial={false}
+                      className="h-full w-full rounded-full"
+                      onRenderMouth={() => <span style={{ fontSize: '26cqw', lineHeight: 1 }}>{avatarFallbackInitial}</span>}
+                    />
+                  </Atoms.AvatarFallback>
                 )}
               </Atoms.Avatar>
             </Atoms.Container>

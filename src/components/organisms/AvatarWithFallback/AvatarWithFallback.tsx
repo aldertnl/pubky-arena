@@ -1,15 +1,21 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { Facehash } from 'facehash';
 import { useLiveQuery } from 'dexie-react-hooks';
 import * as Atoms from '@/atoms';
 import * as Libs from '@/libs';
 import * as Core from '@/core';
-import { extractUserIdFromAvatarUrl } from './AvatarWithFallback.utils';
+import {
+  extractUserIdFromAvatarUrl,
+  resolveAvatarFallbackSeed,
+  resolveAvatarFallbackInitial,
+} from './AvatarWithFallback.utils';
 
 export interface AvatarWithFallbackProps {
   avatarUrl?: string;
   name: string;
+  fallbackSeed?: string;
   size?: Atoms.AvatarSize;
   className?: string;
   fallbackClassName?: string;
@@ -20,6 +26,7 @@ export interface AvatarWithFallbackProps {
 export function AvatarWithFallback({
   avatarUrl,
   name,
+  fallbackSeed,
   size = 'default',
   className,
   fallbackClassName,
@@ -30,6 +37,14 @@ export function AvatarWithFallback({
 
   // Extract userId from CDN URL for moderation and local avatar resolution
   const userId = useMemo(() => extractUserIdFromAvatarUrl(avatarUrl), [avatarUrl]);
+  const resolvedFallbackSeed = useMemo(
+    () => resolveAvatarFallbackSeed({ fallbackSeed, avatarUrl, name }),
+    [fallbackSeed, avatarUrl, name],
+  );
+  const fallbackInitial = useMemo(
+    () => resolveAvatarFallbackInitial({ name, seed: resolvedFallbackSeed }),
+    [name, resolvedFallbackSeed],
+  );
 
   // Check if this avatar belongs to the current user
   const currentUserPubky = Core.useAuthStore((s) => s.currentUserPubky);
@@ -101,7 +116,19 @@ export function AvatarWithFallback({
         </>
       )}
       {/* Always render fallback - Radix shows it while image loads or if image fails */}
-      <Atoms.AvatarFallback className={fallbackClassName}>{Libs.extractInitials({ name })}</Atoms.AvatarFallback>
+      <Atoms.AvatarFallback className={fallbackClassName}>
+        <Facehash
+          name={resolvedFallbackSeed}
+          size="100%"
+          showInitial={false}
+          className="h-full w-full rounded-full"
+          onRenderMouth={() => (
+            <span data-testid="avatar-fallback-initial" style={{ fontSize: '26cqw', lineHeight: 1 }}>
+              {fallbackInitial}
+            </span>
+          )}
+        />
+      </Atoms.AvatarFallback>
     </Atoms.Avatar>
   );
 }

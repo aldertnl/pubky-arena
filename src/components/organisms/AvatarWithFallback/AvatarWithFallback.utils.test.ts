@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { extractUserIdFromAvatarUrl } from './AvatarWithFallback.utils';
+import {
+  extractUserIdFromAvatarUrl,
+  resolveAvatarFallbackSeed,
+  resolveAvatarFallbackInitial,
+} from './AvatarWithFallback.utils';
 
 // Mock the config module
 vi.mock('@/config', () => ({
@@ -173,5 +177,61 @@ describe('extractUserIdFromAvatarUrl', () => {
       const url = `nexus.staging.pubky.app/static/avatar/${VALID_USER_ID}`;
       expect(extractUserIdFromAvatarUrl(url)).toBeNull();
     });
+  });
+});
+
+describe('resolveAvatarFallbackSeed', () => {
+  const validUserId = '6mfxozzqmb36rc9rgy3rykoyfghfao74n8igt5tf1boehproahoy';
+  const validAvatarUrl = `https://nexus.staging.pubky.app/static/avatar/${validUserId}`;
+
+  it('uses explicit fallbackSeed first', () => {
+    expect(
+      resolveAvatarFallbackSeed({
+        fallbackSeed: 'explicit-seed',
+        avatarUrl: validAvatarUrl,
+        name: 'John Doe',
+      }),
+    ).toBe('explicit-seed');
+  });
+
+  it('uses userId extracted from avatarUrl when fallbackSeed is missing', () => {
+    expect(
+      resolveAvatarFallbackSeed({
+        avatarUrl: validAvatarUrl,
+        name: 'John Doe',
+      }),
+    ).toBe(validUserId);
+  });
+
+  it('uses name when fallbackSeed and avatarUrl userId are missing', () => {
+    expect(
+      resolveAvatarFallbackSeed({
+        avatarUrl: 'https://example.com/avatar.jpg',
+        name: 'Jane Doe',
+      }),
+    ).toBe('Jane Doe');
+  });
+
+  it('falls back to default seed when no fallbackSeed, no valid avatarUrl userId, and no name', () => {
+    expect(
+      resolveAvatarFallbackSeed({
+        avatarUrl: 'https://example.com/avatar.jpg',
+        name: '',
+      }),
+    ).toBe('user');
+  });
+});
+
+describe('resolveAvatarFallbackInitial', () => {
+  it('uses name initial when name exists', () => {
+    expect(resolveAvatarFallbackInitial({ name: 'John Doe', seed: 'abc' })).toBe('J');
+  });
+
+  it('uses seed initial when name is missing', () => {
+    expect(resolveAvatarFallbackInitial({ name: '', seed: 'seed-value' })).toBe('S');
+  });
+
+  it('falls back to default initial when name and seed are missing', () => {
+    expect(resolveAvatarFallbackInitial({ name: '', seed: '' })).toBe('U');
   });
 });

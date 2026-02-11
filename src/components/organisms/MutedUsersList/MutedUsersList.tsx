@@ -1,5 +1,6 @@
 'use client';
 
+import { Facehash } from 'facehash';
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import * as Atoms from '@/atoms';
@@ -94,7 +95,21 @@ export function MutedUsersList() {
                   {mutedUser?.avatar && (
                     <Atoms.AvatarImage src={mutedUser.avatar} alt={mutedUser?.name ?? tCommon('user')} />
                   )}
-                  <Atoms.AvatarFallback>{mutedUser?.name?.[0] || 'U'}</Atoms.AvatarFallback>
+                  <Atoms.AvatarFallback className="overflow-hidden">
+                    <Facehash
+                      name={mutedUser?.id || mutedUser?.name || 'user'}
+                      size="100%"
+                      showInitial={false}
+                      className="h-full w-full rounded-full"
+                      onRenderMouth={() => (
+                        <span style={{ fontSize: '26cqw', lineHeight: 1 }}>
+                          {Libs.extractInitials({ name: mutedUser?.name || '', maxLength: 1 }) ||
+                            mutedUser?.id?.charAt(0).toUpperCase() ||
+                            'U'}
+                        </span>
+                      )}
+                    />
+                  </Atoms.AvatarFallback>
                 </Atoms.Avatar>
                 <Atoms.Container overrideDefaults className="inline-flex flex-col items-start">
                   <Atoms.Typography as="span" overrideDefaults className="text-base font-bold">
