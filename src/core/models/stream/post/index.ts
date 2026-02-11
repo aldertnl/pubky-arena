@@ -3,3 +3,5 @@ export * from './tables/postStream.unread';
 export * from './postStream.schema';
 export * from './postStream.helper';
 export * from './postStream.types';
+export * from './timelineItem.constants';
+export * from './timelineItem.types';

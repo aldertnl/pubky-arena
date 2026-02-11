@@ -1,0 +1,572 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GroupedRepostHeader - Snapshots > matches snapshot with current user included 1`] = `
+<div
+  class="flex h-12 items-center justify-between gap-2 overflow-hidden rounded-t-md bg-muted px-6 py-3 md:h-14 md:gap-3"
+  data-override-defaults="true"
+  data-testid="grouped-repost-header"
+>
+  <svg
+    aria-hidden="true"
+    class="lucide lucide-repeat size-4 shrink-0 text-foreground"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="m17 2 4 4-4 4"
+    />
+    <path
+      d="M3 11v-1a4 4 0 0 1 4-4h14"
+    />
+    <path
+      d="m7 22-4-4 4-4"
+    />
+    <path
+      d="M21 13v1a4 4 0 0 1-4 4H3"
+    />
+  </svg>
+  <button
+    aria-label="Reposters"
+    class="flex min-w-0 flex-1 cursor-pointer items-center gap-3 overflow-hidden bg-transparent p-0 text-left"
+    data-override-defaults="true"
+    data-testid="grouped-repost-text"
+  >
+    <div
+      class="flex min-w-0 flex-1 items-center gap-3 overflow-hidden"
+      data-override-defaults="true"
+      data-testid="container"
+    >
+      <div
+        class="flex shrink-0 items-center md:hidden"
+        data-override-defaults="true"
+        data-testid="container"
+      >
+        <div
+          class="shrink-0 sm:hidden"
+          data-override-defaults="true"
+          data-testid="container"
+        >
+          <span
+            class="shrink-0 text-base leading-6 font-bold text-foreground"
+            data-testid="repost-text-name"
+          >
+            You
+          </span>
+          <span
+            class="shrink-0 text-base leading-6 font-bold text-foreground"
+            data-testid="typography"
+          >
+            , others reposted
+          </span>
+        </div>
+        <div
+          class="hidden shrink-0 sm:flex"
+          data-override-defaults="true"
+          data-testid="container"
+        >
+          <span
+            class="shrink-0 text-base leading-6 font-bold text-foreground"
+            data-testid="repost-text-name"
+          >
+            You
+          </span>
+          <span
+            class="shrink-0 text-base leading-6 font-bold text-foreground"
+            data-testid="typography"
+          >
+            , others reposted
+          </span>
+        </div>
+      </div>
+      <div
+        class="hidden shrink-0 items-center md:flex"
+        data-override-defaults="true"
+        data-testid="container"
+      >
+        <span
+          class="shrink-0 text-base leading-6 font-bold text-foreground"
+          data-testid="repost-text-name"
+        >
+          You
+        </span>
+         
+        <span
+          class="shrink-0 text-base leading-6 font-bold text-foreground"
+          data-testid="typography"
+        >
+          and 1 others reposted this
+        </span>
+      </div>
+      <div
+        class="hidden shrink-0 transition-opacity hover:opacity-80 xl:flex"
+        data-override-defaults="true"
+        data-testid="grouped-repost-avatars"
+      >
+        <div
+          data-items="3"
+          data-max="4"
+          data-testid="avatar-group"
+          data-total="2"
+        >
+          Avatar Group (
+          3
+           avatars)
+        </div>
+      </div>
+    </div>
+  </button>
+  <div
+    class="flex flex-shrink-0 items-center gap-1"
+    data-override-defaults="true"
+    data-testid="container"
+  >
+    <svg
+      aria-hidden="true"
+      class="lucide lucide-clock size-4 text-muted-foreground"
+      fill="none"
+      height="24"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M12 6v6l4 2"
+      />
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+      />
+    </svg>
+    <span
+      class="text-xs leading-4 font-medium tracking-[0.075rem] whitespace-nowrap text-muted-foreground"
+      data-testid="typography"
+    >
+      2h
+    </span>
+  </div>
+</div>
+`;
+
+exports[`GroupedRepostHeader - Snapshots > matches snapshot with multiple reposters collapsed 1`] = `
+<div
+  class="flex h-12 items-center justify-between gap-2 overflow-hidden rounded-t-md bg-muted px-6 py-3 md:h-14 md:gap-3"
+  data-override-defaults="true"
+  data-testid="grouped-repost-header"
+>
+  <svg
+    aria-hidden="true"
+    class="lucide lucide-repeat size-4 shrink-0 text-foreground"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="m17 2 4 4-4 4"
+    />
+    <path
+      d="M3 11v-1a4 4 0 0 1 4-4h14"
+    />
+    <path
+      d="m7 22-4-4 4-4"
+    />
+    <path
+      d="M21 13v1a4 4 0 0 1-4 4H3"
+    />
+  </svg>
+  <button
+    aria-label="Reposters"
+    class="flex min-w-0 flex-1 cursor-pointer items-center gap-3 overflow-hidden bg-transparent p-0 text-left"
+    data-override-defaults="true"
+    data-testid="grouped-repost-text"
+  >
+    <div
+      class="flex min-w-0 flex-1 items-center gap-3 overflow-hidden"
+      data-override-defaults="true"
+      data-testid="container"
+    >
+      <div
+        class="flex shrink-0 items-center md:hidden"
+        data-override-defaults="true"
+        data-testid="container"
+      >
+        <div
+          class="shrink-0 sm:hidden"
+          data-override-defaults="true"
+          data-testid="container"
+        >
+          <span
+            class="shrink-0 text-base leading-6 font-bold text-foreground"
+            data-testid="repost-text-name"
+          >
+            Alice
+          </span>
+          <span
+            class="shrink-0 text-base leading-6 font-bold text-foreground"
+            data-testid="typography"
+          >
+            , others reposted
+          </span>
+        </div>
+        <div
+          class="hidden shrink-0 sm:flex"
+          data-override-defaults="true"
+          data-testid="container"
+        >
+          <span
+            class="shrink-0 text-base leading-6 font-bold text-foreground"
+            data-testid="repost-text-name"
+          >
+            Alice
+          </span>
+          <span
+            class="shrink-0 text-base leading-6 font-bold text-foreground"
+            data-testid="typography"
+          >
+            , others reposted
+          </span>
+        </div>
+      </div>
+      <div
+        class="hidden shrink-0 items-center md:flex"
+        data-override-defaults="true"
+        data-testid="container"
+      >
+        <span
+          class="shrink-0 text-base leading-6 font-bold text-foreground"
+          data-testid="repost-text-name"
+        >
+          Alice
+        </span>
+         
+        <span
+          class="shrink-0 text-base leading-6 font-bold text-foreground"
+          data-testid="typography"
+        >
+          and 2 others reposted this
+        </span>
+      </div>
+      <div
+        class="hidden shrink-0 transition-opacity hover:opacity-80 xl:flex"
+        data-override-defaults="true"
+        data-testid="grouped-repost-avatars"
+      >
+        <div
+          data-items="3"
+          data-max="4"
+          data-testid="avatar-group"
+          data-total="3"
+        >
+          Avatar Group (
+          3
+           avatars)
+        </div>
+      </div>
+    </div>
+  </button>
+  <div
+    class="flex flex-shrink-0 items-center gap-1"
+    data-override-defaults="true"
+    data-testid="container"
+  >
+    <svg
+      aria-hidden="true"
+      class="lucide lucide-clock size-4 text-muted-foreground"
+      fill="none"
+      height="24"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M12 6v6l4 2"
+      />
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+      />
+    </svg>
+    <span
+      class="text-xs leading-4 font-medium tracking-[0.075rem] whitespace-nowrap text-muted-foreground"
+      data-testid="typography"
+    >
+      2h
+    </span>
+  </div>
+</div>
+`;
+
+exports[`GroupedRepostHeader - Snapshots > matches snapshot with multiple reposters expanded 1`] = `
+<div
+  class="flex h-12 items-center justify-between gap-2 overflow-hidden rounded-t-md bg-muted px-6 py-3 md:h-14 md:gap-3"
+  data-override-defaults="true"
+  data-testid="grouped-repost-header"
+>
+  <svg
+    aria-hidden="true"
+    class="lucide lucide-repeat size-4 shrink-0 text-foreground"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="m17 2 4 4-4 4"
+    />
+    <path
+      d="M3 11v-1a4 4 0 0 1 4-4h14"
+    />
+    <path
+      d="m7 22-4-4 4-4"
+    />
+    <path
+      d="M21 13v1a4 4 0 0 1-4 4H3"
+    />
+  </svg>
+  <button
+    aria-label="Reposters"
+    class="flex min-w-0 flex-1 cursor-pointer items-center gap-3 overflow-hidden bg-transparent p-0 text-left"
+    data-override-defaults="true"
+    data-testid="grouped-repost-text"
+  >
+    <div
+      class="flex min-w-0 flex-1 items-center gap-3 overflow-hidden"
+      data-override-defaults="true"
+      data-testid="container"
+    >
+      <div
+        class="flex shrink-0 items-center md:hidden"
+        data-override-defaults="true"
+        data-testid="container"
+      >
+        <div
+          class="shrink-0 sm:hidden"
+          data-override-defaults="true"
+          data-testid="container"
+        >
+          <span
+            class="shrink-0 text-base leading-6 font-bold text-foreground"
+            data-testid="repost-text-name"
+          >
+            Alice
+          </span>
+          <span
+            class="shrink-0 text-base leading-6 font-bold text-foreground"
+            data-testid="typography"
+          >
+            , others reposted
+          </span>
+        </div>
+        <div
+          class="hidden shrink-0 sm:flex"
+          data-override-defaults="true"
+          data-testid="container"
+        >
+          <span
+            class="shrink-0 text-base leading-6 font-bold text-foreground"
+            data-testid="repost-text-name"
+          >
+            Alice
+          </span>
+          <span
+            class="shrink-0 text-base leading-6 font-bold text-foreground"
+            data-testid="typography"
+          >
+            , others reposted
+          </span>
+        </div>
+      </div>
+      <div
+        class="hidden shrink-0 items-center md:flex"
+        data-override-defaults="true"
+        data-testid="container"
+      >
+        <span
+          class="shrink-0 text-base leading-6 font-bold text-foreground"
+          data-testid="repost-text-name"
+        >
+          Alice
+        </span>
+         
+        <span
+          class="shrink-0 text-base leading-6 font-bold text-foreground"
+          data-testid="typography"
+        >
+          and 2 others reposted this
+        </span>
+      </div>
+      <div
+        class="hidden shrink-0 transition-opacity hover:opacity-80 xl:flex"
+        data-override-defaults="true"
+        data-testid="grouped-repost-avatars"
+      >
+        <div
+          data-items="3"
+          data-max="4"
+          data-testid="avatar-group"
+          data-total="3"
+        >
+          Avatar Group (
+          3
+           avatars)
+        </div>
+      </div>
+    </div>
+  </button>
+  <div
+    class="flex flex-shrink-0 items-center gap-1"
+    data-override-defaults="true"
+    data-testid="container"
+  >
+    <svg
+      aria-hidden="true"
+      class="lucide lucide-clock size-4 text-muted-foreground"
+      fill="none"
+      height="24"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M12 6v6l4 2"
+      />
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+      />
+    </svg>
+    <span
+      class="text-xs leading-4 font-medium tracking-[0.075rem] whitespace-nowrap text-muted-foreground"
+      data-testid="typography"
+    >
+      2h
+    </span>
+  </div>
+</div>
+`;
+
+exports[`GroupedRepostHeader - Snapshots > matches snapshot with single reposter 1`] = `
+<div
+  class="flex h-12 items-center justify-between gap-2 overflow-hidden rounded-t-md bg-muted px-6 py-3 md:h-14 md:gap-3"
+  data-override-defaults="true"
+  data-testid="grouped-repost-header"
+>
+  <svg
+    aria-hidden="true"
+    class="lucide lucide-repeat size-4 shrink-0 text-foreground"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="m17 2 4 4-4 4"
+    />
+    <path
+      d="M3 11v-1a4 4 0 0 1 4-4h14"
+    />
+    <path
+      d="m7 22-4-4 4-4"
+    />
+    <path
+      d="M21 13v1a4 4 0 0 1-4 4H3"
+    />
+  </svg>
+  <div
+    class="flex min-w-0 flex-1 items-center gap-3"
+    data-override-defaults="true"
+    data-testid="grouped-repost-text"
+  >
+    <div
+      class="flex min-w-0 flex-1 items-center gap-3 overflow-hidden"
+      data-override-defaults="true"
+      data-testid="container"
+    >
+      <span
+        class="shrink-0 text-base leading-6 font-bold text-foreground"
+        data-testid="repost-text-name"
+      >
+        Alice
+      </span>
+       
+      <span
+        class="shrink-0 text-base leading-6 font-bold text-foreground"
+        data-testid="typography"
+      >
+        reposted
+      </span>
+    </div>
+  </div>
+  <div
+    class="flex flex-shrink-0 items-center gap-1"
+    data-override-defaults="true"
+    data-testid="container"
+  >
+    <svg
+      aria-hidden="true"
+      class="lucide lucide-clock size-4 text-muted-foreground"
+      fill="none"
+      height="24"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M12 6v6l4 2"
+      />
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+      />
+    </svg>
+    <span
+      class="text-xs leading-4 font-medium tracking-[0.075rem] whitespace-nowrap text-muted-foreground"
+      data-testid="typography"
+    >
+      2h
+    </span>
+  </div>
+</div>
+`;

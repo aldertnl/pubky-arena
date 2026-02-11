@@ -1,0 +1,90 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`RepostText - Snapshots > matches snapshot for desktop format with count 1`] = `
+<div>
+  <span
+    class="shrink-0 text-base leading-6 font-bold text-foreground"
+    data-testid="repost-text-name"
+  >
+    Charlie
+  </span>
+   
+  <span
+    class="shrink-0 text-base leading-6 font-bold text-foreground"
+    data-testid="typography"
+  >
+    and 3 others reposted this
+  </span>
+</div>
+`;
+
+exports[`RepostText - Snapshots > matches snapshot for mobile format with comma 1`] = `
+<div>
+  <span
+    class="shrink-0 text-base leading-6 font-bold text-foreground"
+    data-testid="repost-text-name"
+  >
+    Bob
+  </span>
+  <span
+    class="shrink-0 text-base leading-6 font-bold text-foreground"
+    data-testid="typography"
+  >
+    , others reposted
+  </span>
+</div>
+`;
+
+exports[`RepostText - Snapshots > matches snapshot for simple repost 1`] = `
+<div>
+  <span
+    class="shrink-0 text-base leading-6 font-bold text-foreground"
+    data-testid="repost-text-name"
+  >
+    Alice
+  </span>
+   
+  <span
+    class="shrink-0 text-base leading-6 font-bold text-foreground"
+    data-testid="typography"
+  >
+    reposted
+  </span>
+</div>
+`;
+
+exports[`RepostText - Snapshots > matches snapshot with "You" as name 1`] = `
+<div>
+  <span
+    class="shrink-0 text-base leading-6 font-bold text-foreground"
+    data-testid="repost-text-name"
+  >
+    You
+  </span>
+   
+  <span
+    class="shrink-0 text-base leading-6 font-bold text-foreground"
+    data-testid="typography"
+  >
+    and 2 others reposted this
+  </span>
+</div>
+`;
+
+exports[`RepostText - Snapshots > matches snapshot with long name 1`] = `
+<div>
+  <span
+    class="shrink-0 text-base leading-6 font-bold text-foreground"
+    data-testid="repost-text-name"
+  >
+    VeryLongUsernameT...
+  </span>
+   
+  <span
+    class="shrink-0 text-base leading-6 font-bold text-foreground"
+    data-testid="typography"
+  >
+    reposted
+  </span>
+</div>
+`;

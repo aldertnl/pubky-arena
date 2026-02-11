@@ -8,6 +8,8 @@ export interface WhoTaggedExpandedListProps {
   fallbackTaggers?: TaggerWithAvatar[];
   /** Whether taggers are currently loading */
   isLoadingTaggers?: boolean;
+  /** Optional custom className to override default container styles */
+  className?: string;
   /** Test ID */
   'data-testid'?: string;
 }

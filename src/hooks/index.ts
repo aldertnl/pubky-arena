@@ -80,6 +80,7 @@ export * from './useUserDetailsFromIds';
 export * from './usePostAncestors';
 export * from './useTagSuggestions';
 export * from './useRelativeTime';
+export * from './useRepostGrouping';
 export * from './useInviteCodeSignUp';
 export * from './useEnrichedTags';
 export * from './usePullToRefresh';

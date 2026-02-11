@@ -14,6 +14,10 @@ vi.mock('@/hooks', async (importOriginal) => {
     ...actual,
     useInfiniteScroll: vi.fn(),
     usePostNavigation: vi.fn(),
+    useRepostGrouping: vi.fn(({ postIds }: { postIds: string[] }) => ({
+      items: postIds.map((id) => ({ type: 'single' as const, postId: id })),
+      isGrouping: false,
+    })),
   };
 });
 vi.mock('@/libs', async () => {
@@ -63,8 +67,23 @@ vi.mock('@/molecules', () => ({
 }));
 
 vi.mock('@/organisms', () => ({
-  PostMain: ({ postId, onClick, ...props }: { postId: string; onClick: () => void; [key: string]: unknown }) => (
-    <div data-testid={`post-${postId}`} onClick={onClick} {...props} />
+  PostMain: ({
+    postId,
+    onClick,
+    repostGroup,
+    ...props
+  }: {
+    postId: string;
+    onClick: () => void;
+    repostGroup?: unknown;
+    [key: string]: unknown;
+  }) => (
+    <div
+      data-testid={`post-${postId}`}
+      data-repost-group={repostGroup ? 'true' : undefined}
+      onClick={onClick}
+      {...props}
+    />
   ),
   TimelinePostReplies: ({ postId }: { postId: string }) => <div data-testid={`replies-${postId}`} />,
 }));
@@ -74,6 +93,7 @@ const mockUseLiveQuery = vi.mocked(useLiveQuery);
 const mockUseRouter = vi.mocked(useRouter);
 const mockUseInfiniteScroll = vi.mocked(Hooks.useInfiniteScroll);
 const mockUsePostNavigation = vi.mocked(Hooks.usePostNavigation);
+const mockUseRepostGrouping = vi.mocked(Hooks.useRepostGrouping);
 
 const mockPostIds = ['author1:post1', 'author2:post2', 'author3:post3'];
 describe('TimelinePosts', () => {
@@ -296,6 +316,39 @@ describe('TimelinePosts', () => {
       await waitFor(() => {
         const postContainers = screen.getAllByTestId(/^post-/);
         expect(postContainers).toHaveLength(mockPostIds.length);
+      });
+    });
+
+    it('should pass repostGroup to PostMain when useRepostGrouping returns a repost group', async () => {
+      mockUseRepostGrouping.mockReturnValueOnce({
+        items: [
+          {
+            type: 'repost-group',
+            originalPostId: 'original:post1',
+            repostPostIds: ['user1:repost1', 'user2:repost2'],
+            reposterIds: ['user1', 'user2'],
+            earliestTimestamp: 1000,
+            includesCurrentUser: false,
+          },
+        ],
+        isGrouping: false,
+      });
+
+      render(
+        <TimelinePosts
+          postIds={['user1:repost1', 'user2:repost2']}
+          loading={false}
+          loadingMore={false}
+          error={null}
+          hasMore={true}
+          loadMore={vi.fn()}
+        />,
+      );
+
+      await waitFor(() => {
+        const postCard = screen.getByTestId('post-original:post1');
+        expect(postCard).toBeInTheDocument();
+        expect(postCard).toHaveAttribute('data-repost-group', 'true');
       });
     });
 
