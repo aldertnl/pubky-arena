@@ -8,14 +8,17 @@ describe('groupPlainReposts', () => {
     content: string,
     indexed_at: number,
     attachments: string[] | null = null,
-  ): PostDetailsModelSchema => ({
-    id,
-    content,
-    indexed_at,
-    kind: 'short',
-    uri: `pubky://${id.split(':')[0]}/pub/pubky.app/posts/${id.split(':')[1]}`,
-    attachments,
-  });
+  ): PostDetailsModelSchema => {
+    const [author = id, postId = '0000000000000'] = id.split(':');
+    return {
+      id,
+      content,
+      indexed_at,
+      kind: 'short',
+      uri: `pubky://${author}/pub/pubky.app/posts/${postId}`,
+      attachments,
+    };
+  };
 
   const createRelationships = (id: string, reposted: string | null): PostRelationshipsModelSchema => ({
     id,
@@ -190,6 +193,25 @@ describe('groupPlainReposts', () => {
     const result = groupPlainReposts(postIds, detailsMap, relationshipsMap, null);
 
     expect(result).toEqual([{ type: 'single', postId: 'user1:post1' }]);
+  });
+
+  it('does not group reposts when details are missing', () => {
+    // Reposts with missing details should not be classified as plain reposts
+    // to avoid UI flipping when data loads
+    const postIds = ['user1:repost1', 'user2:repost2'];
+    const detailsMap = new Map<string, PostDetailsModelSchema | undefined>();
+    const relationshipsMap = new Map([
+      ['user1:repost1', createRelationships('user1:repost1', 'pubky://original/pub/pubky.app/posts/post1')],
+      ['user2:repost2', createRelationships('user2:repost2', 'pubky://original/pub/pubky.app/posts/post1')],
+    ]);
+
+    const result = groupPlainReposts(postIds, detailsMap, relationshipsMap, null);
+
+    // Should be single items, not grouped, because details are missing
+    expect(result).toEqual([
+      { type: 'single', postId: 'user1:repost1' },
+      { type: 'single', postId: 'user2:repost2' },
+    ]);
   });
 
   it('handles missing relationships gracefully', () => {

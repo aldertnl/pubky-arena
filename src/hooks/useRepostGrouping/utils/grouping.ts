@@ -13,13 +13,15 @@ import {
 import type { PostData, PlainRepostsResult } from './grouping.types';
 
 /**
- * Plain repost = has repost relation, but no content and no attachments
+ * Plain repost = has repost relation, but no content and no attachments.
+ * Requires details to be present to avoid misclassifying posts with pending data.
  */
 function isPlainRepost(
   details: PostDetailsModelSchema | undefined,
   relationships: PostRelationshipsModelSchema | undefined,
 ): boolean {
-  return !!relationships?.reposted && !details?.content?.trim() && !details?.attachments?.length;
+  if (!details || !relationships?.reposted) return false;
+  return !details.content?.trim() && !details.attachments?.length;
 }
 
 function extractOriginalPostId(relationships: PostRelationshipsModelSchema | undefined): string | null {
