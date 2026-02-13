@@ -87,6 +87,7 @@ function TimelineFeedContent({
   const t = useTranslations('toast.post');
   const {
     postIds: rawPostIds,
+    plainRepostOriginals,
     loading,
     loadingMore,
     error,
@@ -195,6 +196,7 @@ function TimelineFeedContent({
       />
       <Organisms.TimelinePosts
         postIds={postIds}
+        plainRepostOriginals={plainRepostOriginals}
         loading={loading}
         loadingMore={loadingMore}
         error={error}

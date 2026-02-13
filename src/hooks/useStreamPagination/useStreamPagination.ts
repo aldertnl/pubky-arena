@@ -18,6 +18,7 @@ export function useStreamPagination({
   resetOnStreamChange = true,
 }: Types.UseStreamPaginationOptions): Types.UseStreamPaginationResult {
   const [postIds, setPostIds] = useState<string[]>([]);
+  const [plainRepostOriginals, setPlainRepostOriginals] = useState<Map<string, Core.PlainRepostInfo>>(new Map());
   const [lastPostId, setLastPostId] = useState<string | undefined>(undefined);
   const [streamTail, setStreamTail] = useState<number>(Core.NOT_FOUND_CACHED_STREAM);
 
@@ -27,6 +28,7 @@ export function useStreamPagination({
   const [hasMore, setHasMore] = useState(true);
 
   const postIdsRef = useRef<string[]>([]);
+  const plainRepostOriginalsRef = useRef<Map<string, Core.PlainRepostInfo>>(new Map());
 
   /**
    * Sets the appropriate loading state based on load type
@@ -125,6 +127,13 @@ export function useStreamPagination({
         const updatedPostIds = isInitialLoad ? newUniquePostIds : [...postIdsRef.current, ...newUniquePostIds];
         postIdsRef.current = updatedPostIds;
         setPostIds(updatedPostIds);
+
+        // Accumulate plainRepostOriginals: replace on initial load, merge on load-more
+        const updatedRepostOriginals = isInitialLoad
+          ? result.plainRepostOriginals
+          : new Map([...plainRepostOriginalsRef.current, ...result.plainRepostOriginals]);
+        plainRepostOriginalsRef.current = updatedRepostOriginals;
+        setPlainRepostOriginals(updatedRepostOriginals);
       } catch (err) {
         const errorMessage = Libs.isAppError(err) ? err.message : 'An unknown error occurred.';
         setError(errorMessage);
@@ -142,7 +151,9 @@ export function useStreamPagination({
    */
   const clearState = useCallback(() => {
     postIdsRef.current = [];
+    plainRepostOriginalsRef.current = new Map();
     setPostIds([]);
+    setPlainRepostOriginals(new Map());
     setLastPostId(undefined);
     setStreamTail(0);
     setHasMore(true);
@@ -222,6 +233,7 @@ export function useStreamPagination({
 
   return {
     postIds,
+    plainRepostOriginals,
     loading,
     loadingMore,
     error,

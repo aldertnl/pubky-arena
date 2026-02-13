@@ -21,4 +21,9 @@ export type TReadPostStreamChunkResponse = {
   /** True only if we've reached the actual end of the stream.
    * False if we hit MAX_FETCH_ITERATIONS or filled the limit. */
   reachedEnd?: boolean;
+  /**
+   * Mapping of plain repost IDs to their original post info.
+   * UI uses this to display the original post with a grouped repost header.
+   */
+  plainRepostOriginals: Map<string, Core.PlainRepostInfo>;
 };

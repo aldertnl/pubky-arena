@@ -21,11 +21,13 @@ describe('StreamPostsController', () => {
     it('should return posts when no cache misses', async () => {
       const nextPageIds = ['user-1:post-1', 'user-1:post-2'];
       const timestamp = 1000000;
+      const plainRepostOriginals = new Map();
 
       const getOrFetchStreamSliceSpy = vi.spyOn(Core.PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds: [],
         timestamp,
+        plainRepostOriginals,
       });
 
       const fetchMissingPostsSpy = vi.spyOn(Core.PostStreamApplication, 'fetchMissingPostsFromNexus');
@@ -47,6 +49,7 @@ describe('StreamPostsController', () => {
       expect(result).toEqual({
         nextPageIds,
         timestamp,
+        plainRepostOriginals,
       });
     });
 
@@ -54,11 +57,13 @@ describe('StreamPostsController', () => {
       const nextPageIds = ['user-1:post-1', 'user-1:post-2'];
       const cacheMissPostIds = ['user-1:post-3', 'user-1:post-4'];
       const timestamp = 1000000;
+      const plainRepostOriginals = new Map();
 
       const getOrFetchStreamSliceSpy = vi.spyOn(Core.PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds,
         timestamp,
+        plainRepostOriginals,
       });
 
       const fetchMissingPostsSpy = vi
@@ -85,6 +90,7 @@ describe('StreamPostsController', () => {
       expect(result).toEqual({
         nextPageIds,
         timestamp,
+        plainRepostOriginals,
       });
     });
 
@@ -97,6 +103,7 @@ describe('StreamPostsController', () => {
         nextPageIds,
         cacheMissPostIds: [],
         timestamp: 1000005,
+        plainRepostOriginals: new Map(),
       });
 
       const result = await StreamPostsController.getOrFetchStreamSlice({
@@ -123,6 +130,7 @@ describe('StreamPostsController', () => {
         nextPageIds,
         cacheMissPostIds: [],
         timestamp: undefined,
+        plainRepostOriginals: new Map(),
       });
 
       await StreamPostsController.getOrFetchStreamSlice({
@@ -148,6 +156,7 @@ describe('StreamPostsController', () => {
         nextPageIds,
         cacheMissPostIds: [],
         timestamp,
+        plainRepostOriginals: new Map(),
       });
 
       const fetchMissingPostsSpy = vi.spyOn(Core.PostStreamApplication, 'fetchMissingPostsFromNexus');
@@ -167,6 +176,7 @@ describe('StreamPostsController', () => {
         nextPageIds,
         cacheMissPostIds: [],
         timestamp: undefined,
+        plainRepostOriginals: new Map(),
       });
 
       const result = await StreamPostsController.getOrFetchStreamSlice({
@@ -187,11 +197,13 @@ describe('StreamPostsController', () => {
 
       const nextPageIds = ['user-1:post-1', 'user-1:post-2'];
       const timestamp = 1000000;
+      const plainRepostOriginals = new Map();
 
       const getOrFetchStreamSliceSpy = vi.spyOn(Core.PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds: [],
         timestamp,
+        plainRepostOriginals,
       });
 
       const result = await StreamPostsController.getOrFetchStreamSlice({
@@ -211,6 +223,7 @@ describe('StreamPostsController', () => {
       expect(result).toEqual({
         nextPageIds,
         timestamp,
+        plainRepostOriginals,
       });
     });
 
@@ -256,6 +269,7 @@ describe('StreamPostsController', () => {
         nextPageIds,
         cacheMissPostIds,
         timestamp,
+        plainRepostOriginals: new Map(),
       });
 
       // Mock fetchMissingPostsFromNexus to throw error
@@ -288,6 +302,7 @@ describe('StreamPostsController', () => {
         nextPageIds,
         cacheMissPostIds: [],
         timestamp: 1000005,
+        plainRepostOriginals: new Map(),
       });
 
       const result = await StreamPostsController.getOrFetchStreamSlice({
@@ -315,6 +330,7 @@ describe('StreamPostsController', () => {
         nextPageIds,
         cacheMissPostIds: [],
         timestamp: undefined,
+        plainRepostOriginals: new Map(),
       });
 
       await StreamPostsController.getOrFetchStreamSlice({
@@ -339,11 +355,13 @@ describe('StreamPostsController', () => {
       const engagementStreamId = 'engagement:all:images' as Core.PostStreamTypes;
       const nextPageIds = ['user-1:post-1', 'user-1:post-2'];
       const timestamp = 1000000;
+      const plainRepostOriginals = new Map();
 
       const getOrFetchStreamSliceSpy = vi.spyOn(Core.PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds: [],
         timestamp,
+        plainRepostOriginals,
       });
 
       const result = await StreamPostsController.getOrFetchStreamSlice({
@@ -362,6 +380,7 @@ describe('StreamPostsController', () => {
       expect(result).toEqual({
         nextPageIds,
         timestamp,
+        plainRepostOriginals,
       });
     });
   });
@@ -521,6 +540,7 @@ describe('StreamPostsController', () => {
         nextPageIds,
         cacheMissPostIds: [],
         timestamp: undefined,
+        plainRepostOriginals: new Map(),
       });
 
       await StreamPostsController.getOrFetchStreamSlice({
@@ -546,6 +566,7 @@ describe('StreamPostsController', () => {
         nextPageIds,
         cacheMissPostIds: [],
         timestamp: undefined,
+        plainRepostOriginals: new Map(),
       });
 
       await StreamPostsController.getOrFetchStreamSlice({

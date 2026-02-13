@@ -228,16 +228,24 @@ export class PostStreamApplication {
       },
     });
 
-    // Fetch original posts for any reposts served from cache
-    // (handles case where repost is cached but original was evicted)
+    // Read details and relationships for repost identification and original post fetching
+    let plainRepostOriginals = new Map<string, Core.PlainRepostInfo>();
     try {
-      const relationships = await Core.LocalPostService.readRelationshipsByIds(posts);
-      const repostedUris = relationships
+      const [detailsArray, relationshipsArray] = await Promise.all([
+        Core.LocalPostService.readDetailsByIds(posts),
+        Core.LocalPostService.readRelationshipsByIds(posts),
+      ]);
+
+      // Identify plain reposts using already-loaded data
+      plainRepostOriginals = this.identifyPlainReposts(posts, detailsArray, relationshipsArray);
+
+      // Fetch original posts for any reposts (handles case where original was evicted from cache)
+      const repostedUris = relationshipsArray
         .filter((rel): rel is Core.PostRelationshipsModelSchema => rel !== undefined && rel.reposted !== null)
         .map((rel) => rel.reposted as string);
       await this.fetchOriginalPostsByUris({ repostedUris, viewerId });
     } catch (error) {
-      Libs.Logger.warn('Failed to fetch missing repost content', { postIds: posts, error });
+      Libs.Logger.warn('Failed to process reposts', { postIds: posts, error });
     }
 
     return {
@@ -245,12 +253,55 @@ export class PostStreamApplication {
       cacheMissPostIds: cacheMissIds,
       timestamp,
       reachedEnd,
+      plainRepostOriginals,
     };
   }
 
   // ============================================================================
   // Internal Helpers
   // ============================================================================
+
+  /**
+   * Identifies plain reposts from already-loaded details and relationships.
+   * A plain repost has: a reposted relationship, no content, and no attachments.
+   *
+   * @returns Map where key is repost composite ID, value is { originalPostId, indexedAt }
+   */
+  private static identifyPlainReposts(
+    postIds: string[],
+    detailsArray: (Core.PostDetailsModelSchema | undefined)[],
+    relationshipsArray: (Core.PostRelationshipsModelSchema | undefined)[],
+  ): Map<string, Core.PlainRepostInfo> {
+    const result = new Map<string, Core.PlainRepostInfo>();
+
+    for (let i = 0; i < postIds.length; i++) {
+      const postId = postIds[i];
+      const details = detailsArray[i];
+      const relationships = relationshipsArray[i];
+
+      // Must have details and a reposted relationship
+      if (!details || !relationships?.reposted) continue;
+
+      // Plain repost: no content and no attachments
+      const hasContent = !!details.content?.trim();
+      const hasAttachments = !!details.attachments?.length;
+      if (hasContent || hasAttachments) continue;
+
+      const originalPostId = Core.buildCompositeIdFromPubkyUri({
+        uri: relationships.reposted,
+        domain: Core.CompositeIdDomain.POSTS,
+      });
+
+      if (originalPostId) {
+        result.set(postId, {
+          originalPostId,
+          indexedAt: details.indexed_at,
+        });
+      }
+    }
+
+    return result;
+  }
 
   /**
    * Gets the indexed_at timestamp from a post for pagination cursor advancement.
@@ -290,7 +341,13 @@ export class PostStreamApplication {
         if (cachedStreamChunk.length === limit) {
           const lastCachedPostId = cachedStreamChunk[cachedStreamChunk.length - 1];
           const timestamp = await this.getPostTimestamp(lastCachedPostId);
-          return { nextPageIds: cachedStreamChunk, cacheMissPostIds: [], timestamp, reachedEnd: false };
+          return {
+            nextPageIds: cachedStreamChunk,
+            cacheMissPostIds: [],
+            timestamp,
+            reachedEnd: false,
+            plainRepostOriginals: new Map(),
+          };
         }
 
         // Partial cache hit, fetch missing posts from Nexus and combine
@@ -436,6 +493,7 @@ export class PostStreamApplication {
       timestamp,
       // Propagate reachedEnd from Nexus - don't recalculate from deduped length
       reachedEnd: reachedEnd ?? false,
+      plainRepostOriginals: new Map(),
     };
   }
 
@@ -487,7 +545,14 @@ export class PostStreamApplication {
     const cacheMissPostIds = await this.getNotPersistedPostsInCache(compositePostIds);
 
     // reachedEnd is true when Nexus returned fewer posts than requested (actual end of stream)
-    return { nextPageIds: compositePostIds, cacheMissPostIds, timestamp, reachedEnd: compositePostIds.length < limit };
+    // Note: plainRepostOriginals is populated by getOrFetchStreamSlice after all posts are collected
+    return {
+      nextPageIds: compositePostIds,
+      cacheMissPostIds,
+      timestamp,
+      reachedEnd: compositePostIds.length < limit,
+      plainRepostOriginals: new Map(),
+    };
   }
 
   // Delegate to service for cache miss detection

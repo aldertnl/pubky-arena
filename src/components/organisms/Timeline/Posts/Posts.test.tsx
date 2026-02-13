@@ -1,23 +1,18 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { TimelinePosts } from './Posts';
 import * as Hooks from '@/hooks';
+import type { PlainRepostInfo } from '@/core';
 
 // Mock dependencies
 vi.mock('next/navigation');
-vi.mock('dexie-react-hooks');
 vi.mock('@/hooks', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/hooks')>();
   return {
     ...actual,
     useInfiniteScroll: vi.fn(),
     usePostNavigation: vi.fn(),
-    useRepostGrouping: vi.fn(({ postIds }: { postIds: string[] }) => ({
-      items: postIds.map((id) => ({ type: 'single' as const, postId: id })),
-      isGrouping: false,
-    })),
   };
 });
 vi.mock('@/libs', async () => {
@@ -26,7 +21,19 @@ vi.mock('@/libs', async () => {
     ...actual,
     Logger: {
       error: vi.fn(),
+      warn: vi.fn(),
     },
+  };
+});
+
+// Mock Core - useAuthStore with selector pattern
+vi.mock('@/core', async () => {
+  const actual = await vi.importActual('@/core');
+  return {
+    ...actual,
+    useAuthStore: vi.fn((selector: (state: { currentUserPubky: string | null }) => unknown) =>
+      selector({ currentUserPubky: null }),
+    ),
   };
 });
 
@@ -89,13 +96,13 @@ vi.mock('@/organisms', () => ({
 }));
 
 const mockPush = vi.fn();
-const mockUseLiveQuery = vi.mocked(useLiveQuery);
 const mockUseRouter = vi.mocked(useRouter);
 const mockUseInfiniteScroll = vi.mocked(Hooks.useInfiniteScroll);
 const mockUsePostNavigation = vi.mocked(Hooks.usePostNavigation);
-const mockUseRepostGrouping = vi.mocked(Hooks.useRepostGrouping);
 
 const mockPostIds = ['author1:post1', 'author2:post2', 'author3:post3'];
+const emptyRepostOriginals = new Map<string, PlainRepostInfo>();
+
 describe('TimelinePosts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -119,9 +126,6 @@ describe('TimelinePosts', () => {
     mockUsePostNavigation.mockReturnValue({
       navigateToPost: mockPush,
     });
-
-    // Mock useLiveQuery to return no replies by default
-    mockUseLiveQuery.mockReturnValue({ id: 'test', replies: 0, tags: 0, unique_tags: 0, reposts: 0 });
   });
 
   afterEach(() => {
@@ -133,6 +137,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={[]}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={true}
           loadingMore={false}
           error={null}
@@ -148,6 +153,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={mockPostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -166,6 +172,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={mockPostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={true}
           error={null}
@@ -185,6 +192,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={[]}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -206,6 +214,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={fewPosts}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -227,6 +236,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={[]}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error="Network error"
@@ -247,6 +257,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={mockPostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error="Pagination failed"
@@ -266,6 +277,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={mockPostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error="Pagination failed"
@@ -286,6 +298,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={mockPostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -305,6 +318,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={mockPostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -319,24 +333,16 @@ describe('TimelinePosts', () => {
       });
     });
 
-    it('should pass repostGroup to PostMain when useRepostGrouping returns a repost group', async () => {
-      mockUseRepostGrouping.mockReturnValueOnce({
-        items: [
-          {
-            type: 'repost-group',
-            originalPostId: 'original:post1',
-            repostPostIds: ['user1:repost1', 'user2:repost2'],
-            reposterIds: ['user1', 'user2'],
-            earliestTimestamp: 1000,
-            includesCurrentUser: false,
-          },
-        ],
-        isGrouping: false,
-      });
+    it('should pass repostGroup to PostMain when plainRepostOriginals contains a group', async () => {
+      const repostOriginals = new Map<string, PlainRepostInfo>([
+        ['user1:repost1', { originalPostId: 'original:post1', indexedAt: 1000 }],
+        ['user2:repost2', { originalPostId: 'original:post1', indexedAt: 2000 }],
+      ]);
 
       render(
         <TimelinePosts
           postIds={['user1:repost1', 'user2:repost2']}
+          plainRepostOriginals={repostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -356,6 +362,7 @@ describe('TimelinePosts', () => {
       const { container } = render(
         <TimelinePosts
           postIds={mockPostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -376,6 +383,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={['author1:post123']}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -396,6 +404,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={mockPostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -419,6 +428,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={mockPostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -442,6 +452,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={mockPostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -460,6 +471,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={mockPostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={true}
           error={null}
@@ -480,6 +492,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={mockPostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -499,6 +512,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={largePostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -521,6 +535,7 @@ describe('TimelinePosts', () => {
       render(
         <TimelinePosts
           postIds={mockPostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -548,6 +563,7 @@ describe('TimelinePosts', () => {
       const { container } = render(
         <TimelinePosts
           postIds={mockPostIds}
+          plainRepostOriginals={emptyRepostOriginals}
           loading={false}
           loadingMore={false}
           error={null}
@@ -587,9 +603,6 @@ describe('TimelinePosts - Snapshots', () => {
     mockUsePostNavigation.mockReturnValue({
       navigateToPost: mockPush,
     });
-
-    // Mock useLiveQuery
-    mockUseLiveQuery.mockReturnValue({ id: 'test', replies: 0, tags: 0, unique_tags: 0, reposts: 0 });
   });
 
   afterEach(() => {
@@ -598,7 +611,15 @@ describe('TimelinePosts - Snapshots', () => {
 
   it('should match snapshot for loading state', () => {
     const { container } = render(
-      <TimelinePosts postIds={[]} loading={true} loadingMore={false} error={null} hasMore={true} loadMore={vi.fn()} />,
+      <TimelinePosts
+        postIds={[]}
+        plainRepostOriginals={emptyRepostOriginals}
+        loading={true}
+        loadingMore={false}
+        error={null}
+        hasMore={true}
+        loadMore={vi.fn()}
+      />,
     );
 
     expect(container).toMatchSnapshot();
@@ -608,6 +629,7 @@ describe('TimelinePosts - Snapshots', () => {
     const { container } = render(
       <TimelinePosts
         postIds={[]}
+        plainRepostOriginals={emptyRepostOriginals}
         loading={false}
         loadingMore={false}
         error={null}
@@ -627,6 +649,7 @@ describe('TimelinePosts - Snapshots', () => {
     const { container } = render(
       <TimelinePosts
         postIds={[]}
+        plainRepostOriginals={emptyRepostOriginals}
         loading={false}
         loadingMore={false}
         error="Network error"
@@ -646,6 +669,7 @@ describe('TimelinePosts - Snapshots', () => {
     const { container } = render(
       <TimelinePosts
         postIds={mockPostIds}
+        plainRepostOriginals={emptyRepostOriginals}
         loading={false}
         loadingMore={false}
         error={null}

@@ -48,6 +48,7 @@ describe('useStreamPagination', () => {
     vi.mocked(Core.StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
       nextPageIds: mockPostIds,
       timestamp: Date.now(),
+      plainRepostOriginals: new Map(),
     });
     // Mock PostDetailsModel to return posts with timestamps that preserve input order
     // (newer posts first = higher timestamps)
@@ -131,6 +132,7 @@ describe('useStreamPagination', () => {
         nextPageIds: [],
         timestamp: Date.now(),
         reachedEnd: true, // Actual end of stream
+        plainRepostOriginals: new Map(),
       });
 
       const { result } = renderHook(() =>
@@ -152,6 +154,7 @@ describe('useStreamPagination', () => {
         nextPageIds: [],
         timestamp: Date.now(),
         reachedEnd: false, // Filters removed all posts, but more exist
+        plainRepostOriginals: new Map(),
       });
 
       const { result } = renderHook(() =>
@@ -174,6 +177,7 @@ describe('useStreamPagination', () => {
         nextPageIds: Array(25).fill('post'),
         timestamp: Date.now(),
         reachedEnd: true, // Less than limit (30) means end of stream
+        plainRepostOriginals: new Map(),
       });
 
       const { result } = renderHook(() =>
@@ -232,6 +236,7 @@ describe('useStreamPagination', () => {
         nextPageIds: ['post1', 'post2'],
         timestamp: Date.now(),
         reachedEnd: true, // Less than limit (10) means end of stream
+        plainRepostOriginals: new Map(),
       });
 
       const { result } = renderHook(() =>
@@ -371,6 +376,7 @@ describe('useStreamPagination', () => {
       vi.mocked(Core.StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: ['post1', 'post2', 'post3'],
         timestamp: undefined, // Engagement streams don't use timestamp
+        plainRepostOriginals: new Map(),
       });
 
       const { result } = renderHook(() =>
@@ -433,6 +439,7 @@ describe('useStreamPagination', () => {
       vi.mocked(Core.StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: Array(limit).fill('post'),
         timestamp: Date.now(),
+        plainRepostOriginals: new Map(),
       });
 
       const { result } = renderHook(() =>
@@ -465,6 +472,7 @@ describe('useStreamPagination', () => {
         nextPageIds: [],
         timestamp: Date.now(),
         reachedEnd: true,
+        plainRepostOriginals: new Map(),
       });
 
       const { result } = renderHook(() =>
@@ -486,6 +494,7 @@ describe('useStreamPagination', () => {
         nextPageIds: [],
         timestamp: Date.now(),
         reachedEnd: false,
+        plainRepostOriginals: new Map(),
       });
 
       const { result } = renderHook(() =>

@@ -1,8 +1,15 @@
+import * as Core from '@/core';
+
 export interface TimelinePostsProps {
   /**
    * Post IDs to display
    */
   postIds: string[];
+  /**
+   * Mapping of plain repost IDs to their original post info.
+   * Used to display grouped repost headers instead of individual reposts.
+   */
+  plainRepostOriginals: Map<string, Core.PlainRepostInfo>;
   /**
    * Loading state
    */

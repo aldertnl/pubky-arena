@@ -113,6 +113,7 @@ const mockLoadMore = vi.fn();
 const mockRefresh = vi.fn();
 const defaultPaginationResult = {
   postIds: ['post1', 'post2', 'post3'],
+  plainRepostOriginals: new Map(),
   loading: false,
   loadingMore: false,
   error: null,

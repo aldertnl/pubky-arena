@@ -12,10 +12,15 @@ export interface TFetchStreamParams {
   order?: Core.StreamOrder;
 }
 
-export interface TInitialStreamParams {
-  streamId: Core.PostStreamId;
-  limit: number;
-  cachedStream: { stream: string[] } | null;
+/**
+ * Info about a plain repost identified by the Core layer.
+ * A plain repost has no content and no attachments.
+ */
+export interface PlainRepostInfo {
+  /** Composite ID of the original post (author:postId) */
+  originalPostId: string;
+  /** Timestamp of the repost (indexed_at) */
+  indexedAt: number;
 }
 
 export interface TPostStreamChunkResponse {
@@ -25,6 +30,12 @@ export interface TPostStreamChunkResponse {
   /** True only if we've reached the actual end of the stream (Nexus returned fewer posts than limit).
    * False if we hit MAX_FETCH_ITERATIONS or filled the limit. */
   reachedEnd?: boolean;
+  /**
+   * Mapping of plain repost IDs to their original post info.
+   * UI uses this to display the original post with a grouped repost header,
+   * while keeping the repost ID in postIds for operations (delete, prepend, remove).
+   */
+  plainRepostOriginals: Map<string, PlainRepostInfo>;
 }
 
 export interface TPartialCacheHitParams {

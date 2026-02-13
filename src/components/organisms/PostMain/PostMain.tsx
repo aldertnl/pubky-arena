@@ -9,6 +9,7 @@ import * as Molecules from '@/molecules';
 import * as Organisms from '@/organisms';
 import { POST_TAGS_MAX_COUNT, POST_TAGS_MAX_LENGTH, POST_TAGS_MAX_TOTAL_CHARS } from '@/config';
 import { POST_THREAD_CONNECTOR_VARIANTS } from '@/atoms';
+import type { RepostGroup } from '../Timeline/Posts/timelineItem.types';
 
 export interface PostMainProps {
   postId: string;
@@ -17,7 +18,7 @@ export interface PostMainProps {
   isReply?: boolean;
   isLastReply?: boolean;
   /** Optional repost group data when this post is displayed as part of a grouped repost */
-  repostGroup?: Core.RepostGroup;
+  repostGroup?: RepostGroup;
 }
 
 export function PostMain({

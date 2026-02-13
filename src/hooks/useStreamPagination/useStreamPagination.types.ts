@@ -21,6 +21,11 @@ export interface UseStreamPaginationResult {
    */
   postIds: string[];
   /**
+   * Mapping of plain repost IDs to their original post info.
+   * UI uses this to display the original post with a grouped repost header.
+   */
+  plainRepostOriginals: Map<string, Core.PlainRepostInfo>;
+  /**
    * Whether the initial load is in progress
    */
   loading: boolean;

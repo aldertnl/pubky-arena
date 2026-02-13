@@ -4,7 +4,9 @@ import * as Atoms from '@/atoms';
 import * as Molecules from '@/molecules';
 import * as Organisms from '@/organisms';
 import * as Hooks from '@/hooks';
-import { TIMELINE_ITEM_TYPE } from '@/core';
+import * as Core from '@/core';
+import { TIMELINE_ITEM_TYPE } from './timelineItem.constants';
+import { buildTimelineItems } from './Posts.utils';
 import type { TimelinePostsProps } from './Posts.types';
 
 /**
@@ -14,9 +16,21 @@ import type { TimelinePostsProps } from './Posts.types';
  * Receives all data and handlers from a parent component.
  * Groups plain reposts of the same original post into a single card.
  */
-export function TimelinePosts({ postIds, loading, loadingMore, error, hasMore, loadMore }: TimelinePostsProps) {
+export function TimelinePosts({
+  postIds,
+  plainRepostOriginals,
+  loading,
+  loadingMore,
+  error,
+  hasMore,
+  loadMore,
+}: TimelinePostsProps) {
   const { navigateToPost } = Hooks.usePostNavigation();
-  const { items, isGrouping } = Hooks.useRepostGrouping({ postIds });
+  const currentUserPubky = Core.useAuthStore((state) => state.currentUserPubky);
+
+  // Build timeline items from postIds and plainRepostOriginals
+  // React Compiler handles memoization automatically
+  const items = buildTimelineItems(postIds, plainRepostOriginals, currentUserPubky);
 
   // Infinite scroll hook
   const { sentinelRef } = Hooks.useInfiniteScroll({
@@ -28,7 +42,7 @@ export function TimelinePosts({ postIds, loading, loadingMore, error, hasMore, l
   });
 
   return (
-    <Molecules.TimelineStateWrapper loading={loading || isGrouping} error={error} hasItems={postIds.length > 0}>
+    <Molecules.TimelineStateWrapper loading={loading} error={error} hasItems={postIds.length > 0}>
       <Atoms.Container data-cy="timeline-container">
         <Atoms.Container data-cy="timeline-posts" overrideDefaults className="space-y-4">
           {items.map((item) => {

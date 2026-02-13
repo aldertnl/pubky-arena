@@ -1,4 +1,4 @@
-import type { Pubky } from '../../models.types';
+import type { Pubky } from '@/core';
 import { TIMELINE_ITEM_TYPE } from './timelineItem.constants';
 
 /**
