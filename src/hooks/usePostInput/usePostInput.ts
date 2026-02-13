@@ -22,7 +22,7 @@ import {
 import { useTimelineFeedContext } from '@/organisms/TimelineFeed/TimelineFeed';
 import { POST_INPUT_VARIANT } from '@/organisms/PostInput/PostInput.constants';
 import { useMentionAutocomplete, getContentWithMention } from '@/hooks/useMentionAutocomplete';
-import type { UsePostInputOptions, UsePostInputReturn } from './usePostInput.types';
+import type { UsePostInputOptions, UsePostInputReturn, ExistingAttachmentMeta } from './usePostInput.types';
 
 /**
  * Hook that encapsulates all PostInput logic.
@@ -48,11 +48,16 @@ export function usePostInput({
   expanded = false,
   onContentChange,
   onArticleModeChange,
+  editAttachments,
 }: UsePostInputOptions): UsePostInputReturn {
   // State
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isExpanded, setIsExpanded] = useState(expanded);
   const [isDragging, setIsDragging] = useState(false);
+  const [existingAttachments, setExistingAttachments] = useState<
+    Array<{ uri: string; name: string; type: string; previewUrl: string }>
+  >([]);
+  const [isLoadingExistingAttachments, setIsLoadingExistingAttachments] = useState(false);
 
   // Refs
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -111,6 +116,79 @@ export function usePostInput({
     handleKeyDown: mentionHandleKeyDown,
   } = useMentionAutocomplete({ content, onSelect: handleMentionSelect });
 
+  // Resolve existing attachment URIs to metadata for edit mode
+  useEffect(() => {
+    // Clear stale state from a previous edit target
+    setExistingAttachments([]);
+    setIsLoadingExistingAttachments(false);
+
+    if (!editAttachments || editAttachments.length === 0) return;
+
+    let cancelled = false;
+    setIsLoadingExistingAttachments(true);
+
+    const resolve = async () => {
+      try {
+        const metadata = await Core.FileController.getMetadata({ fileAttachments: editAttachments });
+        if (cancelled) return;
+
+        // Build lookup by URI for matching metadata to original URIs
+        const metadataByUri = new Map(metadata.map((m) => [m.uri, m]));
+
+        // Map ALL original editAttachments, using metadata when available,
+        // falling back to CDN URL generation for files not in local DB
+        const resolved: ExistingAttachmentMeta[] = editAttachments.map((uri) => {
+          const m = metadataByUri.get(uri);
+          if (m) {
+            const isImage = m.content_type.startsWith('image');
+            return {
+              uri,
+              name: m.name,
+              type: m.content_type,
+              previewUrl: Core.FileController.getFileUrl({
+                fileId: m.id,
+                variant: isImage ? Core.FileVariant.FEED : Core.FileVariant.MAIN,
+              }),
+            };
+          }
+          // Fallback: generate preview URL directly from URI without local DB
+          const compositeId = Core.buildCompositeIdFromPubkyUri({
+            uri,
+            domain: Core.CompositeIdDomain.FILES,
+          });
+          const previewUrl = compositeId
+            ? Core.FileController.getFileUrl({ fileId: compositeId, variant: Core.FileVariant.FEED })
+            : '';
+          return { uri, name: '', type: '', previewUrl };
+        });
+        setExistingAttachments(resolved);
+      } catch {
+        // If metadata resolution fails entirely, fall back to raw URIs so submit still preserves them
+        if (!cancelled) {
+          setExistingAttachments(
+            editAttachments.map((uri) => {
+              const compositeId = Core.buildCompositeIdFromPubkyUri({
+                uri,
+                domain: Core.CompositeIdDomain.FILES,
+              });
+              const previewUrl = compositeId
+                ? Core.FileController.getFileUrl({ fileId: compositeId, variant: Core.FileVariant.FEED })
+                : '';
+              return { uri, name: '', type: '', previewUrl };
+            }),
+          );
+        }
+      } finally {
+        if (!cancelled) setIsLoadingExistingAttachments(false);
+      }
+    };
+
+    resolve();
+    return () => {
+      cancelled = true;
+    };
+  }, [editAttachments]);
+
   // Notify parent of content changes
   useEffect(() => {
     onContentChange?.(content, tags, attachments, articleTitle);
@@ -161,7 +239,7 @@ export function usePostInput({
 
   // Handle submit using reply, repost, post, or edit method from hook
   const handleSubmit = useCallback(async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || isLoadingExistingAttachments) return;
 
     // For replies and posts, require content or attachments. For reposts, content is optional. Content and title is required for articles. Content is required for edits.
     if (
@@ -204,7 +282,12 @@ export function usePostInput({
         });
         break;
       case POST_INPUT_VARIANT.EDIT:
-        await edit({ editPostId: editPostId!, onSuccess: handleSuccess });
+        await edit({
+          editPostId: editPostId!,
+          newAttachments: attachments.length > 0 ? attachments : undefined,
+          existingAttachmentUrls: existingAttachments.map((a) => a.uri),
+          onSuccess: handleSuccess,
+        });
         break;
       case POST_INPUT_VARIANT.POST:
       default:
@@ -214,6 +297,7 @@ export function usePostInput({
   }, [
     content,
     attachments,
+    existingAttachments,
     isArticle,
     articleTitle,
     variant,
@@ -226,6 +310,7 @@ export function usePostInput({
     edit,
     editPostId,
     isSubmitting,
+    isLoadingExistingAttachments,
     onSuccess,
     timelineFeed,
     deletePost,
@@ -284,7 +369,8 @@ export function usePostInput({
         : POST_SUPPORTED_ATTACHMENT_MIME_TYPES;
       const SUPPORTED_FILE_TYPES = isArticle ? ARTICLE_SUPPORTED_FILE_TYPES : POST_SUPPORTED_FILE_TYPES;
 
-      const currentCount = attachments.length;
+      const existingCount = isLoadingExistingAttachments ? (editAttachments?.length ?? 0) : existingAttachments.length;
+      const currentCount = attachments.length + existingCount;
       const availableSlots = ATTACHMENT_MAX_FILES - currentCount;
 
       if (availableSlots <= 0) {
@@ -337,7 +423,16 @@ export function usePostInput({
         setAttachments((prev) => [...prev, ...validFiles]);
       }
     },
-    [isArticle, isSubmitting, attachments.length, setAttachments, toast],
+    [
+      isArticle,
+      isSubmitting,
+      isLoadingExistingAttachments,
+      editAttachments?.length,
+      attachments.length,
+      existingAttachments.length,
+      setAttachments,
+      toast,
+    ],
   );
 
   // Drag and drop handlers
@@ -450,6 +545,10 @@ export function usePostInput({
     setTags,
     attachments,
     setAttachments,
+    existingAttachments,
+    setExistingAttachments,
+    isLoadingExistingAttachments,
+    editHadAttachments: (editAttachments?.length ?? 0) > 0,
     isArticle,
     setIsArticle,
     articleTitle,

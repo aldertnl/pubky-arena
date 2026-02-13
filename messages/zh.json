@@ -409,6 +409,7 @@
     },
     "deleted": "此帖子已被作者删除。",
     "dropFiles": "将文件拖放到此处",
+    "editRequiresImage": "此帖子至少需要一张图片。",
     "articleTitle": "文章标题",
     "addTag": "添加标签",
     "limitReached": "已达上限",

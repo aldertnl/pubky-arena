@@ -79,12 +79,20 @@ describe('PostInputActionBar', () => {
     vi.clearAllMocks();
   });
 
-  it('renders all action buttons with aria labels', () => {
-    render(<PostInputActionBar />);
+  it('renders action buttons with aria labels (image button requires onImageClick)', () => {
+    render(<PostInputActionBar onImageClick={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: 'Add emoji' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add image' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add article' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Post' })).toBeInTheDocument();
+  });
+
+  it('hides image button when onImageClick is not provided', () => {
+    render(<PostInputActionBar />);
+
+    expect(screen.getByRole('button', { name: 'Add emoji' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add image' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Post' })).toBeInTheDocument();
   });
 
@@ -133,7 +141,7 @@ describe('PostInputActionBar', () => {
     render(<PostInputActionBar />);
 
     expect(screen.getByRole('button', { name: 'Add emoji' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Add image' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Add image' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add article' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Post' })).toBeDisabled();
   });
@@ -172,11 +180,11 @@ describe('PostInputActionBar', () => {
     expect(screen.getByRole('button', { name: 'Post' })).toBeInTheDocument();
   });
 
-  it('hides image and file buttons but shows emoji when isEdit is true', () => {
-    render(<PostInputActionBar isEdit={true} />);
+  it('shows all action buttons including image when onImageClick provided', () => {
+    render(<PostInputActionBar hideArticleButton={false} onImageClick={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: 'Add emoji' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Add image' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add image' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add article' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Post' })).toBeInTheDocument();
   });
@@ -232,8 +240,8 @@ describe('PostInputActionBar - Snapshots', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('matches snapshot with isEdit prop', () => {
-    const { container } = render(<PostInputActionBar isEdit={true} />);
+  it('matches snapshot with all buttons visible', () => {
+    const { container } = render(<PostInputActionBar hideArticleButton={false} />);
     expect(container.firstChild).toMatchSnapshot();
   });
 });

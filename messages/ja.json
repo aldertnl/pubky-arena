@@ -409,6 +409,7 @@
     },
     "deleted": "この投稿は作成者によって削除されました。",
     "dropFiles": "ここにファイルをドロップ",
+    "editRequiresImage": "この投稿には少なくとも1つの画像が必要です。",
     "articleTitle": "記事タイトル",
     "addTag": "タグを追加",
     "limitReached": "上限に達しました",

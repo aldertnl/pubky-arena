@@ -409,6 +409,7 @@
     },
     "deleted": "This post has been deleted by its author.",
     "dropFiles": "Drop files here",
+    "editRequiresImage": "This post requires at least one image.",
     "articleTitle": "Article Title",
     "addTag": "add tag",
     "limitReached": "limit reached",

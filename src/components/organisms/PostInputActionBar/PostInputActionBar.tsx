@@ -17,7 +17,6 @@ export function PostInputActionBar({
   postButtonIcon,
   hideArticleButton,
   isArticle,
-  isEdit,
 }: PostInputActionBarProps) {
   const commonButtonProps = React.useMemo(
     () => ({
@@ -29,28 +28,23 @@ export function PostInputActionBar({
   );
 
   const actionButtons: ActionButtonConfig[] = React.useMemo(() => {
-    const buttons: ActionButtonConfig[] = [
-      ...(isArticle
-        ? []
-        : [
-            {
-              icon: Libs.Smile,
-              onClick: onEmojiClick,
-              ariaLabel: 'Add emoji',
-              disabled: !onEmojiClick || isSubmitting,
-            },
-            ...(isEdit
-              ? []
-              : [
-                  {
-                    icon: Libs.Image,
-                    onClick: onImageClick,
-                    ariaLabel: 'Add image',
-                    disabled: !onImageClick || isSubmitting,
-                  },
-                ]),
-          ]),
-    ];
+    const buttons: ActionButtonConfig[] = [];
+    if (!isArticle) {
+      buttons.push({
+        icon: Libs.Smile,
+        onClick: onEmojiClick,
+        ariaLabel: 'Add emoji',
+        disabled: !onEmojiClick || isSubmitting,
+      });
+      if (onImageClick) {
+        buttons.push({
+          icon: Libs.Image,
+          onClick: onImageClick,
+          ariaLabel: 'Add image',
+          disabled: isSubmitting,
+        });
+      }
+    }
 
     // Only add article button if not hidden
     if (!hideArticleButton) {
@@ -75,7 +69,6 @@ export function PostInputActionBar({
     return buttons;
   }, [
     isArticle,
-    isEdit,
     onEmojiClick,
     onImageClick,
     onArticleClick,

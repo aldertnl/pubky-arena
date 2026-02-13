@@ -15,8 +15,8 @@ describe('getButtonLabel', () => {
     expect(getButtonLabel(POST_INPUT_VARIANT.REPOST)).toBe('Repost');
   });
 
-  it('returns "Edit" for EDIT variant', () => {
-    expect(getButtonLabel(POST_INPUT_VARIANT.EDIT)).toBe('Edit');
+  it('returns "Save" for EDIT variant', () => {
+    expect(getButtonLabel(POST_INPUT_VARIANT.EDIT)).toBe('Save');
   });
 
   it('returns "Post" for undefined variant', () => {
@@ -41,8 +41,8 @@ describe('getButtonLabel', () => {
       expect(getButtonLabel(undefined, true)).toBe('Publish');
     });
 
-    it('returns "Edit" when isArticle is true but variant is EDIT', () => {
-      expect(getButtonLabel(POST_INPUT_VARIANT.EDIT, true)).toBe('Edit');
+    it('returns "Save" when isArticle is true but variant is EDIT', () => {
+      expect(getButtonLabel(POST_INPUT_VARIANT.EDIT, true)).toBe('Save');
     });
 
     it('returns variant label when isArticle is false', () => {
@@ -53,7 +53,7 @@ describe('getButtonLabel', () => {
     it('returns variant label when isArticle is undefined', () => {
       expect(getButtonLabel(POST_INPUT_VARIANT.POST, undefined)).toBe('Post');
       expect(getButtonLabel(POST_INPUT_VARIANT.REPLY, undefined)).toBe('Reply');
-      expect(getButtonLabel(POST_INPUT_VARIANT.EDIT, undefined)).toBe('Edit');
+      expect(getButtonLabel(POST_INPUT_VARIANT.EDIT, undefined)).toBe('Save');
     });
   });
 });

@@ -266,7 +266,7 @@ vi.mock('@/hooks', () => ({
   })),
   useEmojiInsert: vi.fn(() => vi.fn()),
   useEnterSubmit: vi.fn(() => vi.fn()),
-  usePostInput: vi.fn((options: { variant: string; placeholder?: string }) => ({
+  usePostInput: vi.fn((options: { variant: string; placeholder?: string; editAttachments?: string[] }) => ({
     textareaRef: { current: null },
     markdownEditorRef: { current: null },
     containerRef: { current: null },
@@ -318,6 +318,17 @@ vi.mock('@/hooks', () => ({
     handleDragLeave: vi.fn(),
     handleDragOver: vi.fn(),
     handleDrop: vi.fn(),
+    handlePaste: vi.fn(),
+    existingAttachments: [],
+    setExistingAttachments: vi.fn(),
+    isLoadingExistingAttachments: false,
+    editHadAttachments: (options.editAttachments?.length ?? 0) > 0,
+    mentionUsers: [],
+    mentionIsOpen: false,
+    mentionSelectedIndex: null,
+    setMentionSelectedIndex: vi.fn(),
+    handleMentionSelect: vi.fn(),
+    handleMentionKeyDown: vi.fn(() => false),
   })),
 }));
 
@@ -500,10 +511,23 @@ describe('PostInput', () => {
     expect(screen.getByPlaceholderText('Edit post')).toBeInTheDocument();
   });
 
-  it('does not show PostInputAttachments for edit variant', () => {
+  it('hides PostInputAttachments for edit variant without original attachments', () => {
     render(<PostInput variant={POST_INPUT_VARIANT.EDIT} editPostId="test-post-123" editContent="Edit content" />);
 
     expect(screen.queryByTestId('post-input-attachments')).not.toBeInTheDocument();
+  });
+
+  it('shows PostInputAttachments for edit variant with original attachments', () => {
+    render(
+      <PostInput
+        variant={POST_INPUT_VARIANT.EDIT}
+        editPostId="test-post-123"
+        editContent="Edit content"
+        editAttachments={['pubky://test/pub/pubky.app/files/ABC']}
+      />,
+    );
+
+    expect(screen.getByTestId('post-input-attachments')).toBeInTheDocument();
   });
 
   it('shows PostInputAttachments for non-edit variants', () => {

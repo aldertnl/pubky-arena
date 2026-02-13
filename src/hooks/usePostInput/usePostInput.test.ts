@@ -392,6 +392,8 @@ describe('usePostInput', () => {
 
       expect(mockEdit).toHaveBeenCalledWith({
         editPostId: 'post-to-edit-id',
+        newAttachments: undefined,
+        existingAttachmentUrls: [],
         onSuccess: expect.any(Function),
       });
       expect(mockPost).not.toHaveBeenCalled();

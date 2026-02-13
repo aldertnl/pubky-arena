@@ -30,6 +30,7 @@ export function PostInput({
   onArticleModeChange,
   editContent,
   editIsArticle,
+  editAttachments,
   initialContent,
   initialAttachments,
 }: PostInputProps) {
@@ -79,6 +80,9 @@ export function PostInput({
     setMentionSelectedIndex,
     handleMentionSelect,
     handleMentionKeyDown,
+    existingAttachments,
+    setExistingAttachments,
+    editHadAttachments,
   } = Hooks.usePostInput({
     variant,
     postId,
@@ -89,11 +93,17 @@ export function PostInput({
     expanded,
     onContentChange,
     onArticleModeChange,
+    editAttachments,
   });
 
   const isValid = React.useCallback(() => {
-    return Libs.canSubmitPost(variant, content, attachments, isSubmitting, isArticle, articleTitle);
-  }, [variant, content, attachments, isSubmitting, isArticle, articleTitle]);
+    const baseValid = Libs.canSubmitPost(variant, content, attachments, isSubmitting, isArticle, articleTitle);
+    // If the original post had images, require at least one attachment to save
+    if (editHadAttachments && existingAttachments.length === 0 && attachments.length === 0) {
+      return false;
+    }
+    return baseValid;
+  }, [variant, content, attachments, isSubmitting, isArticle, articleTitle, editHadAttachments, existingAttachments]);
 
   const enterSubmitHandler = Hooks.useEnterSubmit(isValid, handleSubmit, {
     requireModifier: true,
@@ -106,6 +116,10 @@ export function PostInput({
   };
 
   const isEdit = variant === POST_INPUT_VARIANT.EDIT;
+  // In edit mode: only allow image operations if the original post had attachments
+  const editAllowsImages = isEdit && editHadAttachments;
+  // In edit mode without original images, disable all image features
+  const disableImageFeatures = isEdit && !editHadAttachments;
 
   const { toast } = Molecules.useToast();
 
@@ -156,10 +170,10 @@ export function PostInput({
         isDragging ? 'border-brand' : 'border-input',
       )}
       onClick={handleExpand}
-      onDragEnter={isEdit ? undefined : handleDragEnter}
-      onDragLeave={isEdit ? undefined : handleDragLeave}
-      onDragOver={isEdit ? undefined : handleDragOver}
-      onDrop={isEdit ? undefined : handleDrop}
+      onDragEnter={disableImageFeatures ? undefined : handleDragEnter}
+      onDragLeave={disableImageFeatures ? undefined : handleDragLeave}
+      onDragOver={disableImageFeatures ? undefined : handleDragOver}
+      onDrop={disableImageFeatures ? undefined : handleDrop}
     >
       {/* Drag overlay */}
       {isDragging && (
@@ -205,7 +219,7 @@ export function PostInput({
               onChange={handleChange}
               onFocus={handleExpand}
               onKeyDown={handleKeyDown}
-              onPaste={isEdit ? undefined : handlePaste}
+              onPaste={disableImageFeatures ? undefined : handlePaste}
               maxLength={POST_MAX_CHARACTER_LENGTH}
               rows={1}
               disabled={isSubmitting}
@@ -224,7 +238,7 @@ export function PostInput({
           </Atoms.Container>
         )}
 
-        {!isEdit && (
+        {!disableImageFeatures && (
           <PostInputAttachments
             ref={fileInputRef}
             attachments={attachments}
@@ -233,6 +247,23 @@ export function PostInput({
             isSubmitting={isSubmitting}
             isArticle={isArticle}
             handleFileClick={handleFileClick}
+            existingAttachments={editAllowsImages ? existingAttachments : undefined}
+            onRemoveExisting={
+              editAllowsImages
+                ? (index) => {
+                    // Prevent removing the last existing attachment when no new files are added
+                    const wouldBeEmpty = existingAttachments.length === 1 && attachments.length === 0;
+                    if (wouldBeEmpty) {
+                      toast({
+                        title: tCommon('error'),
+                        description: t('editRequiresImage'),
+                      });
+                      return;
+                    }
+                    setExistingAttachments((prev) => prev.filter((_, i) => i !== index));
+                  }
+                : undefined
+            }
           />
         )}
 
@@ -262,7 +293,7 @@ export function PostInput({
           showEmojiPicker={showEmojiPicker}
           setShowEmojiPicker={setShowEmojiPicker}
           onEmojiSelect={handleEmojiSelect}
-          onImageClick={handleFileClick}
+          onImageClick={disableImageFeatures ? undefined : handleFileClick}
           onArticleClick={handleArticleClick}
           isPostDisabled={!isValid()}
           submitMode={variant}

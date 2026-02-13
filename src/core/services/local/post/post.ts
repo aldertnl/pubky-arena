@@ -100,9 +100,21 @@ export class LocalPostService {
    *
    * @throws {DatabaseError} When database operations fail
    */
-  static async edit({ compositePostId, content }: { compositePostId: string; content: string }) {
+  static async edit({
+    compositePostId,
+    content,
+    attachments,
+  }: {
+    compositePostId: string;
+    content: string;
+    attachments?: string[] | null;
+  }) {
     try {
-      await Core.PostDetailsModel.update(compositePostId, { content });
+      const updateData: { content: string; attachments?: string[] | null } = { content };
+      if (attachments !== undefined) {
+        updateData.attachments = attachments;
+      }
+      await Core.PostDetailsModel.update(compositePostId, updateData);
       Logger.debug('Post edited successfully', { compositePostId });
     } catch (error) {
       throw Err.database(DatabaseErrorCode.WRITE_FAILED, 'Failed to edit post', {

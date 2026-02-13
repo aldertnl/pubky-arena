@@ -60,6 +60,7 @@ export function DialogEditPost({ open, onOpenChangeAction, postId }: DialogEditP
             editPostId={postDetails.id}
             editContent={postDetails.content}
             editIsArticle={isArticle}
+            editAttachments={postDetails.attachments ?? undefined}
           />
         </Atoms.DialogContent>
       </Atoms.Dialog>

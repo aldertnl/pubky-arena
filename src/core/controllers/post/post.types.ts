@@ -18,6 +18,8 @@ export interface TDeletePostParams {
 export interface TEditPostParams {
   compositePostId: string;
   content: string;
+  newAttachments?: File[];
+  existingAttachmentUrls?: string[];
 }
 
 export interface TFileAttachmentsParams {

@@ -170,7 +170,7 @@ export function usePost(): UsePostReturn {
     }
   };
 
-  const edit = async ({ editPostId, onSuccess }: UsePostEditOptions) => {
+  const edit = async ({ editPostId, newAttachments, existingAttachmentUrls, onSuccess }: UsePostEditOptions) => {
     // requires content if normal edit and title if article
     if (!content.trim() || (isArticle && (!content.trim() || !articleTitle.trim())) || !editPostId || !currentUserId)
       return;
@@ -181,8 +181,15 @@ export function usePost(): UsePostReturn {
       await Core.PostController.commitEdit({
         compositePostId: editPostId,
         content: isArticle ? JSON.stringify({ title: articleTitle.trim(), body: content.trim() }) : content.trim(),
+        newAttachments,
+        existingAttachmentUrls,
       });
+
+      // Clear local blob URLs for the edited post to force re-fetch from CDN
+      Core.useLocalFilesStore.getState().setPostAttachments(editPostId, []);
+
       setContent('');
+      setAttachments([]);
       setIsArticle(false);
       setArticleTitle('');
       showSuccessToast('Post edited', 'Your post has been edited successfully.');

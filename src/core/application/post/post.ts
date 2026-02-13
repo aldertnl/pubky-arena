@@ -134,11 +134,29 @@ export class PostApplication {
     }
   }
 
-  static async commitEdit({ compositePostId, post, postUrl }: Core.TEditPostInput) {
-    // Update local database
-    await Core.LocalPostService.edit({ compositePostId, content: post.content });
+  static async commitEdit({ compositePostId, post, postUrl, newFileAttachments }: Core.TEditPostInput) {
+    // Upload new file attachments if any
+    if (newFileAttachments && newFileAttachments.length > 0) {
+      await Core.FileApplication.commitCreate({ fileAttachments: newFileAttachments });
+    }
+
+    // Update local database (content + attachments)
+    // Note: post.attachments is undefined when internal value is null, but we need to pass null explicitly
+    const attachments = post.attachments === undefined ? null : post.attachments;
+    await Core.LocalPostService.edit({
+      compositePostId,
+      content: post.content,
+      attachments,
+    });
 
     // Sync to homeserver
-    await Core.HomeserverService.request({ method: HttpMethod.PUT, url: postUrl, bodyJson: post.toJson() });
+    // post.toJson() omits null/undefined fields (WASM serde skip_serializing_if).
+    // We must explicitly include attachments so the homeserver clears them.
+    // Use empty array [] instead of null — both null and missing deserialize to None in Rust.
+    const bodyJson = post.toJson();
+    if (!('attachments' in bodyJson)) {
+      bodyJson.attachments = [];
+    }
+    await Core.HomeserverService.request({ method: HttpMethod.PUT, url: postUrl, bodyJson });
   }
 }

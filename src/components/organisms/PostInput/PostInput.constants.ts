@@ -16,5 +16,5 @@ export const POST_INPUT_BUTTON_LABEL = {
   [POST_INPUT_VARIANT.REPLY]: 'Reply',
   [POST_INPUT_VARIANT.POST]: 'Post',
   [POST_INPUT_VARIANT.REPOST]: 'Repost',
-  [POST_INPUT_VARIANT.EDIT]: 'Edit',
+  [POST_INPUT_VARIANT.EDIT]: 'Save',
 } as const;

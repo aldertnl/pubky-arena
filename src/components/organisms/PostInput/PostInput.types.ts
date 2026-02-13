@@ -48,6 +48,7 @@ export type PostInputProps =
       editPostId?: never;
       editContent?: never;
       editIsArticle?: never;
+      editAttachments?: never;
     })
   | (PostInputBaseProps & {
       /** Variant: repost */
@@ -58,6 +59,7 @@ export type PostInputProps =
       editPostId?: never;
       editContent?: never;
       editIsArticle?: never;
+      editAttachments?: never;
     })
   | (PostInputBaseProps & {
       /** Variant: new root post */
@@ -67,6 +69,7 @@ export type PostInputProps =
       editPostId?: never;
       editContent?: never;
       editIsArticle?: never;
+      editAttachments?: never;
     })
   | (PostInputBaseProps & {
       /** Variant: edit post */
@@ -79,4 +82,6 @@ export type PostInputProps =
       editContent: string;
       /** Editable article mode (required for edit) */
       editIsArticle: boolean;
+      /** Existing attachment URIs for edit mode */
+      editAttachments?: string[];
     });

@@ -65,7 +65,8 @@ export class PostNormalizer {
     compositePostId,
     content,
     currentUserPubky,
-  }: Core.TEditPostParams & { currentUserPubky: Core.Pubky }): Promise<PostResult> {
+    attachments: attachmentOverride,
+  }: Core.TEditPostParams & { currentUserPubky: Core.Pubky; attachments?: string[] }): Promise<PostResult> {
     const { pubky: authorId, id: postId } = Core.parseCompositeId(compositePostId);
 
     if (authorId !== currentUserPubky) {
@@ -105,12 +106,17 @@ export class PostNormalizer {
       }
     }
 
+    // Use attachmentOverride if provided (even if empty array — means "remove all"),
+    // otherwise keep the original post's attachments
+    const resolvedAttachments =
+      attachmentOverride !== undefined ? attachmentOverride : (postDetails.attachments ?? null);
+
     const originalPost = new PubkyAppPost(
       postDetails.content,
       this.mapKindToEnum(postDetails.kind),
       postRelationships?.replied ?? null,
       embedObject ?? null,
-      postDetails.attachments,
+      resolvedAttachments,
     );
 
     const result = builder.editPost(originalPost, postId, content);

@@ -14,8 +14,17 @@ export const PostAttachments = ({ attachments, localAttachments }: PostAttachmen
   const { toast } = Molecules.useToast();
 
   useEffect(() => {
+    const clearState = () => {
+      setImagesAndVideos([]);
+      setAudios([]);
+      setGenericFiles([]);
+    };
+
     const constructAttachments = async () => {
-      if (!attachments?.length) return;
+      if (!attachments?.length) {
+        clearState();
+        return;
+      }
 
       try {
         const result = await Core.FileController.getMetadata({ fileAttachments: attachments });
@@ -69,7 +78,10 @@ export const PostAttachments = ({ attachments, localAttachments }: PostAttachmen
     };
 
     const constructLocalAttachments = () => {
-      if (!localAttachments?.length) return;
+      if (!localAttachments?.length) {
+        clearState();
+        return;
+      }
 
       const imagesAndVideos: AttachmentConstructed[] = [];
       const audios: AttachmentConstructed[] = [];

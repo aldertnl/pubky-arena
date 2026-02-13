@@ -20,6 +20,8 @@ export interface UsePostRepostOptions {
 
 export interface UsePostEditOptions {
   editPostId: string;
+  newAttachments?: File[];
+  existingAttachmentUrls?: string[];
   onSuccess?: (createdPostId: string) => void;
 }
 

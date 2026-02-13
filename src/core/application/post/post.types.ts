@@ -11,6 +11,7 @@ export interface TEditPostInput {
   compositePostId: string;
   post: PubkyAppPost;
   postUrl: string;
+  newFileAttachments?: Core.TFileAttachmentResult[];
 }
 
 export type TGetOrFetchPostParams = {

@@ -1,7 +1,14 @@
-import type { RefObject } from 'react';
+import type { Dispatch, RefObject, SetStateAction } from 'react';
 import { type MDXEditorProps, type MDXEditorMethods } from '@mdxeditor/editor';
 import type { PostInputVariant } from '@/organisms/PostInput/PostInput.types';
 import type { AutocompleteUserData } from '@/hooks/useUserDetailsFromIds';
+
+export type ExistingAttachmentMeta = {
+  uri: string;
+  name: string;
+  type: string;
+  previewUrl: string;
+};
 
 export interface UsePostInputOptions {
   /** Variant determines if this is a reply, repost, or a new post */
@@ -25,6 +32,8 @@ export interface UsePostInputOptions {
   onContentChange?: (content: string, tags: string[], attachments: File[], articleTitle: string) => void;
   /** Callback when article mode changes */
   onArticleModeChange?: (isArticle: boolean) => void;
+  /** Existing attachment URIs for edit mode */
+  editAttachments?: string[];
 }
 
 export interface UsePostInputReturn {
@@ -45,6 +54,11 @@ export interface UsePostInputReturn {
   setIsArticle: React.Dispatch<React.SetStateAction<boolean>>;
   articleTitle: string;
   setArticleTitle: React.Dispatch<React.SetStateAction<string>>;
+  existingAttachments: ExistingAttachmentMeta[];
+  setExistingAttachments: Dispatch<SetStateAction<ExistingAttachmentMeta[]>>;
+  isLoadingExistingAttachments: boolean;
+  /** Whether the original post (before edit) had attachments */
+  editHadAttachments: boolean;
   isDragging: boolean;
   isExpanded: boolean;
   isSubmitting: boolean;
