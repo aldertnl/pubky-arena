@@ -8,7 +8,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with all buttons visi
 >
   <button
     aria-label="Add emoji"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
     disabled=""
@@ -50,7 +50,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with all buttons visi
   </button>
   <button
     aria-label="Add article"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
     disabled=""
@@ -88,7 +88,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with all buttons visi
   </button>
   <button
     aria-label="Post"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
     disabled=""
@@ -139,7 +139,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with all callbacks 1`
 >
   <button
     aria-label="Add emoji"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
   >
@@ -180,7 +180,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with all callbacks 1`
   </button>
   <button
     aria-label="Add image"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
   >
@@ -217,7 +217,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with all callbacks 1`
   </button>
   <button
     aria-label="Add article"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
   >
@@ -254,7 +254,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with all callbacks 1`
   </button>
   <button
     aria-label="Post"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
   >
@@ -304,7 +304,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with default props 1`
 >
   <button
     aria-label="Add emoji"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
     disabled=""
@@ -346,7 +346,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with default props 1`
   </button>
   <button
     aria-label="Add article"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
     disabled=""
@@ -384,7 +384,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with default props 1`
   </button>
   <button
     aria-label="Post"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
     disabled=""
@@ -435,7 +435,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with disabled post bu
 >
   <button
     aria-label="Add emoji"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
     disabled=""
@@ -477,7 +477,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with disabled post bu
   </button>
   <button
     aria-label="Add article"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
     disabled=""
@@ -515,7 +515,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with disabled post bu
   </button>
   <button
     aria-label="Post"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
     disabled=""
@@ -566,7 +566,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with hideArticleButto
 >
   <button
     aria-label="Add emoji"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
     disabled=""
@@ -608,7 +608,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with hideArticleButto
   </button>
   <button
     aria-label="Post"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
     disabled=""
@@ -659,7 +659,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with isArticle prop 1
 >
   <button
     aria-label="Add article"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
     disabled=""
@@ -697,7 +697,7 @@ exports[`PostInputActionBar - Snapshots > matches snapshot with isArticle prop 1
   </button>
   <button
     aria-label="Post"
-    class="h-8 px-3 py-2 rounded-full border-none shadow-xs-dark"
+    class="h-8 px-3 py-2 rounded-full border-none shadow-xs"
     data-size="sm"
     data-variant="secondary"
     disabled=""
