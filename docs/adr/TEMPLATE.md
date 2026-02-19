@@ -253,7 +253,7 @@ Before merging an ADR:
 - [ ] File name follows naming convention
 - [ ] Status is set appropriately
 - [ ] Date is included
-- [ ] Linked from `AGENTS.md` and `.cursor/core-context.md`
+- [ ] Linked from `AGENTS.md` and `docs/architecture.md`
 
 ### Updating Existing ADRs
 

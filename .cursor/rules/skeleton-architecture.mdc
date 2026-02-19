@@ -73,3 +73,5 @@ src/components/organisms/HotTagsCardsSection/
 - [ ] If queried by `data-testid` in a test, does the skeleton component itself set that attribute (not just the mock)?
 - [ ] Are all counts/quantities sourced from constants or props — no hardcoded literals?
 - [ ] If a count is responsive, is it a prop (with a constant default) passed from the parent?
+
+For general component rules, see docs/components.md
