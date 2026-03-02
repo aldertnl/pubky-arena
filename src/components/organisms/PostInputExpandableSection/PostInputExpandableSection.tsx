@@ -9,6 +9,13 @@ import { getButtonLabel } from './PostInputExpandableSection.utils';
 import type { PostInputExpandableSectionProps } from './PostInputExpandableSection.types';
 import { POST_INPUT_VARIANT } from '../PostInput/PostInput.constants';
 
+const IconsButton = {
+  [POST_INPUT_VARIANT.EDIT]: Icons.Edit,
+  [POST_INPUT_VARIANT.REPOST]: Icons.Repeat,
+  [POST_INPUT_VARIANT.POST]: undefined,
+  [POST_INPUT_VARIANT.REPLY]: undefined,
+} as const;
+
 export function PostInputExpandableSection({
   isExpanded,
   content,
@@ -78,7 +85,7 @@ export function PostInputExpandableSection({
                 postButtonAriaLabel={postButtonAriaLabel}
                 hideArticleButton={submitMode !== POST_INPUT_VARIANT.POST || !!isArticle}
                 isArticle={isArticle}
-                postButtonIcon={isEdit ? Icons.Edit : undefined}
+                postButtonIcon={IconsButton[submitMode]}
               />
             </Atoms.Container>
           </Atoms.Container>
