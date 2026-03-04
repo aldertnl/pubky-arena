@@ -28,10 +28,6 @@ export function Header() {
   // or during profile setup (step 5)
   const shouldShowTitle = currentTitle && (!isAuthenticated || currentStep === 5);
 
-  // Onboarding or non-authenticated route
-  const isOnboardingOrNonAuthenticatedRoute = isOnboarding || !isAuthenticated;
-  // Add padding to the header container only on onboarding or non-authenticated routes
-  const classNameNav = isOnboardingOrNonAuthenticatedRoute ? '2xl:px-0' : 'xl:px-0';
   // Determine which header content to show:
   // - Onboarding: HeaderOnboarding
   // - Authenticated: HeaderSignIn (navigation + avatar)
@@ -60,10 +56,7 @@ export function Header() {
   }
 
   return (
-    <Molecules.HeaderContainer
-      classNameNav={classNameNav}
-      className={shouldHideHeaderOnMobile ? 'hidden lg:block' : undefined}
-    >
+    <Molecules.HeaderContainer className={shouldHideHeaderOnMobile ? 'hidden lg:block' : undefined}>
       <Molecules.Logo noLink={currentStep === 5} />
       {shouldShowTitle && <Molecules.HeaderTitle currentTitle={currentTitle} />}
       {renderHeaderContent()}

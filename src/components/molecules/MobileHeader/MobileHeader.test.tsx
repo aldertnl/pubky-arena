@@ -50,7 +50,7 @@ describe('MobileHeader', () => {
       'z-(--z-mobile-menu)',
       'bg-linear-to-b',
       'from-(--background)',
-      'from-35%',
+      'from-65%',
       'to-transparent',
       'lg:hidden',
     );
@@ -166,6 +166,12 @@ describe('MobileHeader - Snapshots', () => {
   it('matches snapshot with solid background (hasGradientBackground=false)', () => {
     const { container } = render(<MobileHeader hasGradientBackground={false} />);
     expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('matches snapshot with padding container', () => {
+    const { container } = render(<MobileHeader />);
+    const paddingContainer = container.querySelector('.px-6');
+    expect(paddingContainer).toMatchSnapshot();
   });
 
   it('matches snapshot with fixed positioning', () => {
