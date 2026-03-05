@@ -82,7 +82,8 @@
     "hot": "Tendances",
     "bookmarks": "Favoris",
     "settings": "Paramètres",
-    "signIn": "Se connecter"
+    "signIn": "Se connecter",
+    "feed": "Fil"
   },
   "settings": {
     "title": "Paramètres",
@@ -622,6 +623,29 @@
       "urlField": "URL",
       "urlPlaceholder": "https://twitter.com/satoshi",
       "saveButton": "Enregistrer le lien"
+    },
+    "customFeed": {
+      "createTitle": "Creer un flux",
+      "editTitle": "Modifier le flux",
+      "feedName": "Nom du flux",
+      "feedNamePlaceholder": "Pas vos cles...",
+      "reach": "Portee",
+      "reachPlaceholder": "Selectionner une portee",
+      "sort": "Trier",
+      "sortPlaceholder": "Selectionner un tri",
+      "layout": "Disposition",
+      "layoutPlaceholder": "Selectionner une disposition",
+      "content": "Contenu",
+      "contentPlaceholder": "Selectionner un contenu",
+      "filterTags": "Filtrer par tags de contenu",
+      "saveFeed": "Enregistrer le flux",
+      "deleteFeed": "Supprimer le flux",
+      "feedCreated": "Flux {name} cree !",
+      "feedCreateError": "Impossible de creer le flux, veuillez reessayer ou contacter le support.",
+      "feedEdited": "Flux {name} modifie !",
+      "feedEditError": "Impossible de modifier le flux, veuillez reessayer ou contacter le support.",
+      "feedDeleted": "Flux {name} supprime !",
+      "feedDeleteError": "Impossible de supprimer le flux, veuillez reessayer ou contacter le support."
     }
   },
   "sidebar": {
@@ -1152,5 +1176,15 @@
     "pullToRefresh": "Tirez pour actualiser",
     "releaseToRefresh": "Relâchez pour actualiser",
     "refreshing": "Actualisation..."
+  },
+  "markdownEditor": {
+    "emoji": "Émoji",
+    "richText": "Texte enrichi",
+    "markdown": "Markdown",
+    "clearToSwitch": "Effacez le contenu pour changer de mode",
+    "placeholder": "Commencez à écrire votre chef-d'œuvre",
+    "toolbarAriaLabel": "Barre d'outils d'édition Markdown",
+    "warningApproaching": "Vous approchez de la limite maximale de caractères.",
+    "warningReached": "Vous avez atteint la limite maximale de caractères."
   }
 }
