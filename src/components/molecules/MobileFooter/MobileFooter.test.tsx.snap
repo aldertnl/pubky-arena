@@ -60,10 +60,10 @@ exports[`MobileFooter - Snapshots > matches snapshot with custom className 1`] =
   class="flex justify-center pb-20 lg:hidden custom-footer"
 >
   <div
-    class="fixed bottom-0 z-40 w-full bg-gradient-to-t from-background via-background/95 to-transparent"
+    class="fixed bottom-0 z-40 w-full"
   >
     <div
-      class="flex w-full max-w-(--container-max-width) items-center justify-evenly overflow-x-auto px-3 py-4"
+      class="flex w-full max-w-(--container-max-width) items-center justify-evenly overflow-x-auto px-3 py-4 bg-gradient-to-t from-background via-background/95 to-transparent"
     >
       <a
         aria-label="Home"
@@ -226,10 +226,10 @@ exports[`MobileFooter - Snapshots > matches snapshot with default props 1`] = `
   class="flex justify-center pb-20 lg:hidden"
 >
   <div
-    class="fixed bottom-0 z-40 w-full bg-gradient-to-t from-background via-background/95 to-transparent"
+    class="fixed bottom-0 z-40 w-full"
   >
     <div
-      class="flex w-full max-w-(--container-max-width) items-center justify-evenly overflow-x-auto px-3 py-4"
+      class="flex w-full max-w-(--container-max-width) items-center justify-evenly overflow-x-auto px-3 py-4 bg-gradient-to-t from-background via-background/95 to-transparent"
     >
       <a
         aria-label="Home"
@@ -392,10 +392,10 @@ exports[`MobileFooter - Snapshots > matches snapshot with different active path 
   class="flex justify-center pb-20 lg:hidden"
 >
   <div
-    class="fixed bottom-0 z-40 w-full bg-gradient-to-t from-background via-background/95 to-transparent"
+    class="fixed bottom-0 z-40 w-full"
   >
     <div
-      class="flex w-full max-w-(--container-max-width) items-center justify-evenly overflow-x-auto px-3 py-4"
+      class="flex w-full max-w-(--container-max-width) items-center justify-evenly overflow-x-auto px-3 py-4 bg-gradient-to-t from-background via-background/95 to-transparent"
     >
       <a
         aria-label="Home"

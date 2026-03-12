@@ -58,19 +58,21 @@ export function MobileFooter({ className }: MobileFooterProps) {
 
   return (
     <div className={Libs.cn('flex justify-center pb-20 lg:hidden', className)}>
-      <div className="fixed bottom-0 z-40 w-full bg-gradient-to-t from-background via-background/95 to-transparent">
+      <div
+        className={Libs.cn('fixed bottom-0 z-40 w-full', isKeyboardVisible && 'transition-transform duration-75')}
+        style={
+          isKeyboardVisible && keyboardOffset > 0
+            ? {
+                transform: `translateY(-${keyboardOffset}px)`,
+              }
+            : undefined
+        }
+      >
         <div
           className={Libs.cn(
             'flex w-full max-w-(--container-max-width) items-center justify-evenly overflow-x-auto px-3 py-4',
-            isKeyboardVisible && 'transition-transform duration-75',
+            'bg-gradient-to-t from-background via-background/95 to-transparent',
           )}
-          style={
-            isKeyboardVisible && keyboardOffset > 0
-              ? {
-                  transform: `translateY(-${keyboardOffset}px)`,
-                }
-              : undefined
-          }
         >
           {navItems.map((item) => {
             const Icon = item.icon;
