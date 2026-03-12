@@ -58,86 +58,88 @@ export function MobileFooter({ className }: MobileFooterProps) {
 
   return (
     <div className={Libs.cn('flex justify-center pb-20 lg:hidden', className)}>
-      <div
-        className={Libs.cn(
-          'fixed bottom-0 z-40 flex w-full max-w-[380px] items-center justify-between overflow-x-auto bg-gradient-to-t from-background via-background/95 to-transparent px-3 py-4 sm:max-w-[600px] md:max-w-[720px]',
-          isKeyboardVisible && 'transition-transform duration-75',
-        )}
-        style={
-          isKeyboardVisible && keyboardOffset > 0
-            ? {
-                transform: `translateY(-${keyboardOffset}px)`,
-              }
-            : undefined
-        }
-      >
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isHome = item.href === App.APP_ROUTES.HOME;
-          const isHomeActive = isHome && isActive(item.href);
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-label={item.label}
-              onClick={(event) => {
-                // Don't hijack modified clicks (new tab/window, etc.)
-                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                if (!isHome) return;
-
-                if (isHomeActive) {
-                  event.preventDefault();
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                  return;
-                }
-
-                // Home feed is kept mounted to preserve scroll; mark explicit intent to reset to top on enter.
-                try {
-                  window.sessionStorage.setItem(FORCE_HOME_SCROLL_TOP_KEY, '1');
-                } catch {
-                  // Ignore storage errors and keep default navigation behavior.
-                }
-              }}
-              className={Libs.cn(
-                'rounded-full p-3 backdrop-blur-sm transition-all',
-                isActive(item.href) ? 'bg-secondary/30' : 'bg-secondary/20 hover:bg-secondary/25',
-              )}
-            >
-              <Icon className="h-6 w-6" />
-            </Link>
-          );
-        })}
-        <Link
-          data-cy="footer-nav-profile-btn"
-          href={App.APP_ROUTES.PROFILE}
-          aria-label={tCommon('profile')}
-          className="relative shrink-0"
-        >
-          <Organisms.AvatarWithFallback
-            avatarUrl={avatarUrl}
-            name={avatarName}
-            fallbackSeed={currentUserPubky || avatarName}
-            size="lg"
-            className="cursor-pointer"
-            alt={tCommon('profile')}
-          />
-          {unreadNotifications > 0 && (
-            <Atoms.Badge
-              data-testid="mobile-notification-counter"
-              data-cy="mobile-notification-counter"
-              className="absolute right-0 bottom-0 h-5 w-5 rounded-full bg-brand shadow-sm"
-              variant="secondary"
-            >
-              <Atoms.Typography
-                className={Libs.cn('font-semibold text-primary-foreground', unreadNotifications > 21 && 'text-xs')}
-                size="xs"
-              >
-                {unreadNotifications > 21 ? '21+' : unreadNotifications}
-              </Atoms.Typography>
-            </Atoms.Badge>
+      <div className="fixed bottom-0 z-40 w-full bg-gradient-to-t from-background via-background/95 to-transparent">
+        <div
+          className={Libs.cn(
+            'flex w-full max-w-(--container-max-width) items-center justify-evenly overflow-x-auto px-3 py-4',
+            isKeyboardVisible && 'transition-transform duration-75',
           )}
-        </Link>
+          style={
+            isKeyboardVisible && keyboardOffset > 0
+              ? {
+                  transform: `translateY(-${keyboardOffset}px)`,
+                }
+              : undefined
+          }
+        >
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isHome = item.href === App.APP_ROUTES.HOME;
+            const isHomeActive = isHome && isActive(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-label={item.label}
+                onClick={(event) => {
+                  // Don't hijack modified clicks (new tab/window, etc.)
+                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                  if (!isHome) return;
+
+                  if (isHomeActive) {
+                    event.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                  }
+
+                  // Home feed is kept mounted to preserve scroll; mark explicit intent to reset to top on enter.
+                  try {
+                    window.sessionStorage.setItem(FORCE_HOME_SCROLL_TOP_KEY, '1');
+                  } catch {
+                    // Ignore storage errors and keep default navigation behavior.
+                  }
+                }}
+                className={Libs.cn(
+                  'rounded-full p-3 backdrop-blur-sm transition-all',
+                  isActive(item.href) ? 'bg-secondary/30' : 'bg-secondary/20 hover:bg-secondary/25',
+                )}
+              >
+                <Icon className="h-6 w-6" />
+              </Link>
+            );
+          })}
+          <Link
+            data-cy="footer-nav-profile-btn"
+            href={App.APP_ROUTES.PROFILE}
+            aria-label={tCommon('profile')}
+            className="relative shrink-0"
+          >
+            <Organisms.AvatarWithFallback
+              avatarUrl={avatarUrl}
+              name={avatarName}
+              fallbackSeed={currentUserPubky || avatarName}
+              size="lg"
+              className="cursor-pointer"
+              alt={tCommon('profile')}
+            />
+            {unreadNotifications > 0 && (
+              <Atoms.Badge
+                data-testid="mobile-notification-counter"
+                data-cy="mobile-notification-counter"
+                className="absolute right-0 bottom-0 h-5 w-5 rounded-full bg-brand shadow-sm"
+                variant="secondary"
+              >
+                <Atoms.Typography
+                  className={Libs.cn('font-semibold text-primary-foreground', unreadNotifications > 21 && 'text-xs')}
+                  size="xs"
+                >
+                  {unreadNotifications > 21 ? '21+' : unreadNotifications}
+                </Atoms.Typography>
+              </Atoms.Badge>
+            )}
+          </Link>
+        </div>
       </div>
     </div>
   );

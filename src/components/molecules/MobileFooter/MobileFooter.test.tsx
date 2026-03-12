@@ -298,10 +298,10 @@ describe('MobileFooter', () => {
     vi.mocked(useKeyboardOffset).mockReturnValue({ isKeyboardVisible: true, keyboardOffset: 300 });
 
     const { container } = render(<MobileFooter />);
-    const footerContainer = container.querySelector('.fixed');
+    const navContainer = container.querySelector('.fixed > div');
 
-    expect(footerContainer).toBeInTheDocument();
-    expect(footerContainer?.getAttribute('style')).toContain('translateY(-300px)');
+    expect(navContainer).toBeInTheDocument();
+    expect(navContainer?.getAttribute('style')).toContain('translateY(-300px)');
   });
 
   it('does not apply transform when keyboard is not visible', async () => {
@@ -309,10 +309,10 @@ describe('MobileFooter', () => {
     vi.mocked(useKeyboardOffset).mockReturnValue({ isKeyboardVisible: false, keyboardOffset: 0 });
 
     const { container } = render(<MobileFooter />);
-    const footerContainer = container.querySelector('.fixed');
+    const navContainer = container.querySelector('.fixed > div');
 
-    expect(footerContainer).toBeInTheDocument();
-    expect(footerContainer?.getAttribute('style')).toBeFalsy();
+    expect(navContainer).toBeInTheDocument();
+    expect(navContainer?.getAttribute('style')).toBeFalsy();
   });
 
   it('adds transition class only when keyboard is visible', async () => {
@@ -321,14 +321,14 @@ describe('MobileFooter', () => {
     // When keyboard is not visible, no transition
     vi.mocked(useKeyboardOffset).mockReturnValue({ isKeyboardVisible: false, keyboardOffset: 0 });
     const { container, rerender } = render(<MobileFooter />);
-    let footerContainer = container.querySelector('.fixed');
-    expect(footerContainer).not.toHaveClass('transition-transform');
+    let navContainer = container.querySelector('.fixed > div');
+    expect(navContainer).not.toHaveClass('transition-transform');
 
     // When keyboard is visible, add transition for smooth opening
     vi.mocked(useKeyboardOffset).mockReturnValue({ isKeyboardVisible: true, keyboardOffset: 300 });
     rerender(<MobileFooter />);
-    footerContainer = container.querySelector('.fixed');
-    expect(footerContainer).toHaveClass('transition-transform', 'duration-75');
+    navContainer = container.querySelector('.fixed > div');
+    expect(navContainer).toHaveClass('transition-transform', 'duration-75');
   });
 });
 
