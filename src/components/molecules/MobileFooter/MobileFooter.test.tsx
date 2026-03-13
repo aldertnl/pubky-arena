@@ -298,10 +298,10 @@ describe('MobileFooter', () => {
     vi.mocked(useKeyboardOffset).mockReturnValue({ isKeyboardVisible: true, keyboardOffset: 300 });
 
     const { container } = render(<MobileFooter />);
-    const footerContainer = container.querySelector('.fixed');
+    const navContainer = container.querySelector('.lucide-house')?.closest('a')?.parentElement as HTMLElement | null;
 
-    expect(footerContainer).toBeInTheDocument();
-    expect(footerContainer).toHaveStyle({ transform: 'translateY(-300px)' });
+    expect(navContainer).toBeInTheDocument();
+    expect(navContainer?.style.transform).toBe('translateY(-300px)');
   });
 
   it('does not apply transform when keyboard is not visible', async () => {
@@ -309,10 +309,10 @@ describe('MobileFooter', () => {
     vi.mocked(useKeyboardOffset).mockReturnValue({ isKeyboardVisible: false, keyboardOffset: 0 });
 
     const { container } = render(<MobileFooter />);
-    const footerContainer = container.querySelector('.fixed');
+    const navContainer = container.querySelector('.lucide-house')?.closest('a')?.parentElement as HTMLElement | null;
 
-    expect(footerContainer).toBeInTheDocument();
-    expect(footerContainer?.getAttribute('style')).toBeNull();
+    expect(navContainer).toBeInTheDocument();
+    expect(navContainer?.style.transform).toBe('');
   });
 
   it('adds transition class only when keyboard is visible', async () => {
@@ -321,14 +321,14 @@ describe('MobileFooter', () => {
     // When keyboard is not visible, no transition
     vi.mocked(useKeyboardOffset).mockReturnValue({ isKeyboardVisible: false, keyboardOffset: 0 });
     const { container, rerender } = render(<MobileFooter />);
-    let footerContainer = container.querySelector('.fixed');
-    expect(footerContainer).not.toHaveClass('transition-transform');
+    let navContainer = container.querySelector('.lucide-house')?.closest('a')?.parentElement;
+    expect(navContainer).not.toHaveClass('transition-transform');
 
     // When keyboard is visible, add transition for smooth opening
     vi.mocked(useKeyboardOffset).mockReturnValue({ isKeyboardVisible: true, keyboardOffset: 300 });
     rerender(<MobileFooter />);
-    footerContainer = container.querySelector('.fixed');
-    expect(footerContainer).toHaveClass('transition-transform', 'duration-75');
+    navContainer = container.querySelector('.lucide-house')?.closest('a')?.parentElement;
+    expect(navContainer).toHaveClass('transition-transform', 'duration-75');
   });
 });
 
