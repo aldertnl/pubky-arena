@@ -185,7 +185,12 @@ export class PostController {
     await Core.PostApplication.commitDelete({ compositePostId });
   }
 
-  static async commitEdit({ compositePostId, content, newAttachments, existingAttachmentUrls }: Core.TEditPostParams) {
+  static async commitEdit({
+    compositePostId,
+    content,
+    newAttachments,
+    existingAttachmentUrls = [],
+  }: Core.TEditPostParams) {
     const currentUserPubky = Core.useAuthStore.getState().selectCurrentUserPubky();
 
     // Upload new files if any
@@ -199,10 +204,7 @@ export class PostController {
 
     // Combine existing URLs + newly uploaded URLs
     const newUploadUrls = newFileAttachments.map((f) => f.fileResult.meta.url);
-    const allAttachmentUrls =
-      existingAttachmentUrls || newUploadUrls.length > 0
-        ? [...(existingAttachmentUrls ?? []), ...newUploadUrls]
-        : undefined;
+    const allAttachmentUrls = [...existingAttachmentUrls, ...newUploadUrls];
 
     const { post, meta } = await Core.PostNormalizer.toEdit({
       compositePostId,

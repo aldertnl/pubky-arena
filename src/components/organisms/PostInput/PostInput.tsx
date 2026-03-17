@@ -86,6 +86,7 @@ export function PostInput({
     handleMentionKeyDown,
     existingAttachments,
     setExistingAttachments,
+    isLoadingExistingAttachments,
     editHadAttachments,
     editHadImageAttachments,
   } = Hooks.usePostInput({
@@ -102,6 +103,8 @@ export function PostInput({
   });
 
   const isValid = React.useCallback(() => {
+    if (isLoadingExistingAttachments) return false;
+
     const baseValid = Libs.canSubmitPost(variant, content, attachments, isSubmitting, isArticle, articleTitle);
     const hasExistingImages = existingAttachments.some(isImageExistingAttachment);
     const hasNewImages = attachments.some(isImageFile);
@@ -116,6 +119,7 @@ export function PostInput({
     content,
     attachments,
     isSubmitting,
+    isLoadingExistingAttachments,
     isArticle,
     articleTitle,
     editHadImageAttachments,

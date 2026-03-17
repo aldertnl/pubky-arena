@@ -258,6 +258,7 @@ const mockUsePostReturn = {
   isArticle: false,
   articleTitle: '',
 };
+let mockIsLoadingExistingAttachments = false;
 
 vi.mock('@/hooks', () => ({
   usePost: vi.fn(() => mockUsePostReturn),
@@ -321,7 +322,7 @@ vi.mock('@/hooks', () => ({
     handlePaste: vi.fn(),
     existingAttachments: [],
     setExistingAttachments: vi.fn(),
-    isLoadingExistingAttachments: false,
+    isLoadingExistingAttachments: mockIsLoadingExistingAttachments,
     editHadAttachments: (options.editAttachments?.length ?? 0) > 0,
     editHadImageAttachments: (options.editAttachments?.length ?? 0) > 0,
     mentionUsers: [],
@@ -354,6 +355,7 @@ describe('PostInput', () => {
     mockUsePostReturn.isSubmitting = false;
     mockUsePostReturn.isArticle = false;
     mockUsePostReturn.articleTitle = '';
+    mockIsLoadingExistingAttachments = false;
     mockUsePostReturn.setContent = mockSetContent;
     mockUsePostReturn.setTags = mockSetTags;
     mockUsePostReturn.setAttachments = mockSetAttachments;
@@ -564,6 +566,24 @@ describe('PostInput', () => {
 
     expect(screen.getByLabelText('Post')).toBeDisabled();
   });
+
+  it('disables submit while existing attachments are loading', () => {
+    mockUsePostReturn.content = 'Updated content';
+    mockUsePostReturn.attachments = [new File(['test'], 'replacement.png', { type: 'image/png' })];
+    mockIsLoadingExistingAttachments = true;
+
+    render(
+      <PostInput
+        editIsArticle={false}
+        variant={POST_INPUT_VARIANT.EDIT}
+        editPostId="test-post-123"
+        editContent="Updated content"
+        editAttachments={['pubky://test/pub/pubky.app/files/ABC']}
+      />,
+    );
+
+    expect(screen.getByLabelText('Post')).toBeDisabled();
+  });
 });
 
 describe('PostInput - Snapshots', () => {
@@ -576,6 +596,7 @@ describe('PostInput - Snapshots', () => {
     mockUsePostReturn.isSubmitting = false;
     mockUsePostReturn.isArticle = false;
     mockUsePostReturn.articleTitle = '';
+    mockIsLoadingExistingAttachments = false;
   });
 
   it('matches snapshot for post variant without content or attachments', () => {

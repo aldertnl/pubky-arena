@@ -542,6 +542,49 @@ describe('PostController', () => {
     });
   });
 
+  describe('commitEdit', () => {
+    it('should pass explicit empty attachment override when no existing or new attachments are provided', async () => {
+      const { PostController } = await import('./post');
+      const ApplicationModule = await import('@/core/application');
+      const authStore = Core.useAuthStore.getState();
+      const selectCurrentUserPubkySpy = vi
+        .spyOn(authStore, 'selectCurrentUserPubky')
+        .mockReturnValue(testData.authorPubky);
+
+      const toEditSpy = vi.spyOn(Core.PostNormalizer, 'toEdit').mockResolvedValue({
+        post: { toJson: () => ({}) } as never,
+        meta: { url: `pubky://${testData.authorPubky}/pub/pubky.app/posts/${testData.postId}` },
+      } as unknown as Awaited<ReturnType<typeof Core.PostNormalizer.toEdit>>);
+
+      const commitEditSpy = vi.spyOn(ApplicationModule.PostApplication, 'commitEdit').mockResolvedValue(undefined);
+
+      try {
+        await PostController.commitEdit({
+          compositePostId: testData.fullPostId,
+          content: 'Edited content',
+        });
+
+        expect(toEditSpy).toHaveBeenCalledWith({
+          compositePostId: testData.fullPostId,
+          content: 'Edited content',
+          currentUserPubky: testData.authorPubky,
+          attachments: [],
+        });
+
+        expect(commitEditSpy).toHaveBeenCalledWith({
+          compositePostId: testData.fullPostId,
+          post: expect.any(Object),
+          postUrl: `pubky://${testData.authorPubky}/pub/pubky.app/posts/${testData.postId}`,
+          newFileAttachments: undefined,
+        });
+      } finally {
+        toEditSpy.mockRestore();
+        commitEditSpy.mockRestore();
+        selectCurrentUserPubkySpy.mockRestore();
+      }
+    });
+  });
+
   describe('getOrFetchDetails', () => {
     const mockViewerId = 'test-viewer-id' as Core.Pubky;
 
