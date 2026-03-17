@@ -323,6 +323,7 @@ vi.mock('@/hooks', () => ({
     setExistingAttachments: vi.fn(),
     isLoadingExistingAttachments: false,
     editHadAttachments: (options.editAttachments?.length ?? 0) > 0,
+    editHadImageAttachments: (options.editAttachments?.length ?? 0) > 0,
     mentionUsers: [],
     mentionIsOpen: false,
     mentionSelectedIndex: null,
@@ -546,6 +547,22 @@ describe('PostInput', () => {
 
     // Drag overlay should not appear since drag handlers are disabled in edit mode
     expect(screen.queryByText('Drop files here')).not.toBeInTheDocument();
+  });
+
+  it('disables submit in edit mode when only non-image attachments remain after an image-origin edit', () => {
+    mockUsePostReturn.content = 'Updated content';
+    mockUsePostReturn.attachments = [new File(['test'], 'document.pdf', { type: 'application/pdf' })];
+
+    render(
+      <PostInput
+        variant={POST_INPUT_VARIANT.EDIT}
+        editPostId="test-post-123"
+        editContent="Updated content"
+        editAttachments={['pubky://test/pub/pubky.app/files/ABC']}
+      />,
+    );
+
+    expect(screen.getByLabelText('Post')).toBeDisabled();
   });
 });
 

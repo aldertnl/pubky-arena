@@ -16,6 +16,10 @@ import { PostInputExpandableSection } from '../PostInputExpandableSection';
 import { PostInputAttachments } from '@/molecules/PostInputAttachments/PostInputAttachments';
 import type { ArticleJSON } from '@/hooks';
 
+const isImageFile = (file: File): boolean => file.type.startsWith('image/');
+const isImageExistingAttachment = (attachment: Hooks.ExistingAttachmentMeta): boolean =>
+  attachment.type.startsWith('image/');
+
 export function PostInput({
   dataCy,
   variant,
@@ -83,6 +87,7 @@ export function PostInput({
     existingAttachments,
     setExistingAttachments,
     editHadAttachments,
+    editHadImageAttachments,
   } = Hooks.usePostInput({
     variant,
     postId,
@@ -98,12 +103,24 @@ export function PostInput({
 
   const isValid = React.useCallback(() => {
     const baseValid = Libs.canSubmitPost(variant, content, attachments, isSubmitting, isArticle, articleTitle);
-    // If the original post had images, require at least one attachment to save
-    if (editHadAttachments && existingAttachments.length === 0 && attachments.length === 0) {
+    const hasExistingImages = existingAttachments.some(isImageExistingAttachment);
+    const hasNewImages = attachments.some(isImageFile);
+
+    // If the original post had images, require at least one image attachment to save
+    if (editHadImageAttachments && !hasExistingImages && !hasNewImages) {
       return false;
     }
     return baseValid;
-  }, [variant, content, attachments, isSubmitting, isArticle, articleTitle, editHadAttachments, existingAttachments]);
+  }, [
+    variant,
+    content,
+    attachments,
+    isSubmitting,
+    isArticle,
+    articleTitle,
+    editHadImageAttachments,
+    existingAttachments,
+  ]);
 
   const enterSubmitHandler = Hooks.useEnterSubmit(isValid, handleSubmit, {
     requireModifier: true,
@@ -116,9 +133,9 @@ export function PostInput({
   };
 
   const isEdit = variant === POST_INPUT_VARIANT.EDIT;
-  // In edit mode: only allow image operations if the original post had attachments
+  // In edit mode: only allow attachment operations if the original post had attachments
   const editAllowsImages = isEdit && editHadAttachments;
-  // In edit mode without original images, disable all image features
+  // In edit mode without original attachments, disable attachment features
   const disableImageFeatures = isEdit && !editHadAttachments;
 
   const { toast } = Molecules.useToast();
@@ -160,6 +177,34 @@ export function PostInput({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only run on mount
   }, []);
+
+  function handleOnRemoveExistings(
+    existingAttachments: Hooks.ExistingAttachmentMeta[],
+    attachments: File[],
+    setExistingAttachments: React.Dispatch<React.SetStateAction<Hooks.ExistingAttachmentMeta[]>>,
+  ): ((index: number) => void) | undefined {
+    return (index) => {
+      const attachmentToRemove = existingAttachments[index];
+      if (!attachmentToRemove) return;
+
+      const hasNewImages = attachments.some(isImageFile);
+      const existingImageCount = existingAttachments.filter(isImageExistingAttachment).length;
+      const isRemovingImage = isImageExistingAttachment(attachmentToRemove);
+      const remainingImageCount = existingImageCount - (isRemovingImage ? 1 : 0);
+
+      // If the original post had images, preserve at least one image across existing + new attachments.
+      const wouldRemoveLastImage =
+        editHadImageAttachments && isRemovingImage && remainingImageCount === 0 && !hasNewImages;
+      if (wouldRemoveLastImage) {
+        toast({
+          title: tCommon('error'),
+          description: t('editRequiresImage'),
+        });
+        return;
+      }
+      setExistingAttachments((prev) => prev.filter((_, i) => i !== index));
+    };
+  }
 
   return (
     <Atoms.Container
@@ -250,18 +295,7 @@ export function PostInput({
             existingAttachments={editAllowsImages ? existingAttachments : undefined}
             onRemoveExisting={
               editAllowsImages
-                ? (index) => {
-                    // Prevent removing the last existing attachment when no new files are added
-                    const wouldBeEmpty = existingAttachments.length === 1 && attachments.length === 0;
-                    if (wouldBeEmpty) {
-                      toast({
-                        title: tCommon('error'),
-                        description: t('editRequiresImage'),
-                      });
-                      return;
-                    }
-                    setExistingAttachments((prev) => prev.filter((_, i) => i !== index));
-                  }
+                ? handleOnRemoveExistings(existingAttachments, attachments, setExistingAttachments)
                 : undefined
             }
           />

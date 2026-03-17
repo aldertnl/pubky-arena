@@ -58,6 +58,7 @@ export function usePostInput({
     Array<{ uri: string; name: string; type: string; previewUrl: string }>
   >([]);
   const [isLoadingExistingAttachments, setIsLoadingExistingAttachments] = useState(false);
+  const [editHadImageAttachments, setEditHadImageAttachments] = useState(false);
 
   // Refs
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -121,6 +122,7 @@ export function usePostInput({
     // Clear stale state from a previous edit target
     setExistingAttachments([]);
     setIsLoadingExistingAttachments(false);
+    setEditHadImageAttachments(false);
 
     if (!editAttachments || editAttachments.length === 0) return;
 
@@ -162,6 +164,7 @@ export function usePostInput({
           return { uri, name: '', type: '', previewUrl };
         });
         setExistingAttachments(resolved);
+        setEditHadImageAttachments(resolved.some((attachment) => attachment.type.startsWith('image/')));
       } catch {
         // If metadata resolution fails entirely, fall back to raw URIs so submit still preserves them
         if (!cancelled) {
@@ -562,6 +565,7 @@ export function usePostInput({
     setExistingAttachments,
     isLoadingExistingAttachments,
     editHadAttachments: (editAttachments?.length ?? 0) > 0,
+    editHadImageAttachments,
     isArticle,
     setIsArticle,
     articleTitle,
