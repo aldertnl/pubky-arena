@@ -48,24 +48,33 @@ vi.mock('@/core', () => ({
 }));
 
 // Mock useMobileAuth hook - use vi.hoisted so values are available in vi.mock
-const { mockFetchUrl, mockCopyAuthUrl, mockOnAuthorizeClick } = vi.hoisted(() => ({
+const { mockFetchUrl, mockCopyAuthUrl, mockOnAuthorizeClick, mockUseMobileAuth } = vi.hoisted(() => ({
   mockFetchUrl: vi.fn(),
   mockCopyAuthUrl: vi.fn().mockResolvedValue(undefined),
   mockOnAuthorizeClick: vi.fn(),
+  mockUseMobileAuth: vi.fn(),
 }));
+
+const createDefaultMobileAuthState = () => ({
+  url: 'mock-auth-url',
+  isLoading: false,
+  isExpired: false,
+  fetchUrl: mockFetchUrl,
+  copyAuthUrl: mockCopyAuthUrl,
+  isOpeningRing: false,
+  onAuthorizeClick: mockOnAuthorizeClick,
+});
+
+const resetUseMobileAuthMock = () => {
+  mockUseMobileAuth.mockReset();
+  mockUseMobileAuth.mockImplementation(() => createDefaultMobileAuthState());
+};
+
 vi.mock('@/hooks', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/hooks')>();
   return {
     ...actual,
-    useMobileAuth: vi.fn(() => ({
-      url: 'mock-auth-url',
-      isLoading: false,
-      isExpired: false,
-      fetchUrl: mockFetchUrl,
-      copyAuthUrl: mockCopyAuthUrl,
-      isOpeningRing: false,
-      onAuthorizeClick: mockOnAuthorizeClick,
-    })),
+    useMobileAuth: mockUseMobileAuth,
   };
 });
 
@@ -201,6 +210,10 @@ vi.mock('@/libs', async () => {
       warn: vi.fn(),
     },
   };
+});
+
+beforeEach(() => {
+  resetUseMobileAuthMock();
 });
 
 describe('ScanContent', () => {
