@@ -74,3 +74,6 @@ public/sw.js.map
 
 # AI Context Plans
 .plans
+
+# Sherlock extension related files
+project.inlang/cache/*
