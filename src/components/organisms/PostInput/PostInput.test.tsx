@@ -259,6 +259,8 @@ const mockUsePostReturn = {
   articleTitle: '',
 };
 let mockIsLoadingExistingAttachments = false;
+let mockExistingAttachments: Array<{ uri: string; name: string; type: string; previewUrl: string }> = [];
+let mockEditHadImageAttachments = false;
 
 vi.mock('@/hooks', () => ({
   usePost: vi.fn(() => mockUsePostReturn),
@@ -320,11 +322,11 @@ vi.mock('@/hooks', () => ({
     handleDragOver: vi.fn(),
     handleDrop: vi.fn(),
     handlePaste: vi.fn(),
-    existingAttachments: [],
+    existingAttachments: mockExistingAttachments,
     setExistingAttachments: vi.fn(),
     isLoadingExistingAttachments: mockIsLoadingExistingAttachments,
     editHadAttachments: (options.editAttachments?.length ?? 0) > 0,
-    editHadImageAttachments: (options.editAttachments?.length ?? 0) > 0,
+    editHadImageAttachments: mockEditHadImageAttachments || (options.editAttachments?.length ?? 0) > 0,
     mentionUsers: [],
     mentionIsOpen: false,
     mentionSelectedIndex: null,
@@ -356,6 +358,8 @@ describe('PostInput', () => {
     mockUsePostReturn.isArticle = false;
     mockUsePostReturn.articleTitle = '';
     mockIsLoadingExistingAttachments = false;
+    mockExistingAttachments = [];
+    mockEditHadImageAttachments = false;
     mockUsePostReturn.setContent = mockSetContent;
     mockUsePostReturn.setTags = mockSetTags;
     mockUsePostReturn.setAttachments = mockSetAttachments;
@@ -565,6 +569,31 @@ describe('PostInput', () => {
     );
 
     expect(screen.getByLabelText('Post')).toBeDisabled();
+  });
+
+  it('keeps submit enabled in edit mode when unresolved existing attachments remain', () => {
+    mockUsePostReturn.content = 'Updated content';
+    mockUsePostReturn.attachments = [];
+    mockEditHadImageAttachments = true;
+    mockExistingAttachments = [
+      {
+        uri: 'pubky://test/pub/pubky.app/files/ABC',
+        name: '',
+        type: '',
+        previewUrl: 'https://cdn.test/test-user:ABC',
+      },
+    ];
+
+    render(
+      <PostInput
+        variant={POST_INPUT_VARIANT.EDIT}
+        editPostId="test-post-123"
+        editContent="Updated content"
+        editAttachments={['pubky://test/pub/pubky.app/files/ABC']}
+      />,
+    );
+
+    expect(screen.getByLabelText('Post')).not.toBeDisabled();
   });
 
   it('disables submit while existing attachments are loading', () => {

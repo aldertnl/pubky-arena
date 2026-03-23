@@ -119,6 +119,9 @@ export function usePostInput({
 
   // Resolve existing attachment URIs to metadata for edit mode
   useEffect(() => {
+    const isImageOrUnknownAttachment = (attachment: ExistingAttachmentMeta): boolean =>
+      attachment.type.length === 0 || attachment.type.startsWith('image/');
+
     // Clear stale state from a previous edit target
     setExistingAttachments([]);
     setIsLoadingExistingAttachments(false);
@@ -164,22 +167,26 @@ export function usePostInput({
           return { uri, name: '', type: '', previewUrl };
         });
         setExistingAttachments(resolved);
-        setEditHadImageAttachments(resolved.some((attachment) => attachment.type.startsWith('image/')));
+        // Conservative fallback: unresolved attachment types are treated as images to
+        // keep edit-time image guards active when metadata cannot be determined.
+        setEditHadImageAttachments(resolved.some(isImageOrUnknownAttachment));
       } catch {
         // If metadata resolution fails entirely, fall back to raw URIs so submit still preserves them
         if (!cancelled) {
-          setExistingAttachments(
-            editAttachments.map((uri) => {
-              const compositeId = Core.buildCompositeIdFromPubkyUri({
-                uri,
-                domain: Core.CompositeIdDomain.FILES,
-              });
-              const previewUrl = compositeId
-                ? Core.FileController.getFileUrl({ fileId: compositeId, variant: Core.FileVariant.FEED })
-                : '';
-              return { uri, name: '', type: '', previewUrl };
-            }),
-          );
+          const fallback = editAttachments.map((uri) => {
+            const compositeId = Core.buildCompositeIdFromPubkyUri({
+              uri,
+              domain: Core.CompositeIdDomain.FILES,
+            });
+            const previewUrl = compositeId
+              ? Core.FileController.getFileUrl({ fileId: compositeId, variant: Core.FileVariant.FEED })
+              : '';
+            return { uri, name: '', type: '', previewUrl };
+          });
+          setExistingAttachments(fallback);
+          // Conservative fallback: if metadata fetch fails, assume unknown attachments can be images
+          // so "must keep at least one image" validation remains enforced.
+          setEditHadImageAttachments(fallback.some(isImageOrUnknownAttachment));
         }
       } finally {
         if (!cancelled) setIsLoadingExistingAttachments(false);

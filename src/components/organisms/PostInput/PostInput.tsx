@@ -18,7 +18,7 @@ import type { ArticleJSON } from '@/hooks';
 
 const isImageFile = (file: File): boolean => file.type.startsWith('image/');
 const isImageExistingAttachment = (attachment: Hooks.ExistingAttachmentMeta): boolean =>
-  attachment.type.startsWith('image/');
+  attachment.type.length === 0 || attachment.type.startsWith('image/');
 
 export function PostInput({
   dataCy,
