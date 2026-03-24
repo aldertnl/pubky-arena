@@ -1154,5 +1154,42 @@ describe('Post Application', () => {
       expect(readDetailsSpy).toHaveBeenCalledWith({ postId: mockData.compositePostId });
       expect(editSpy).toHaveBeenCalledTimes(2);
     });
+
+    it('should rollback newly uploaded files when homeserver sync fails', async () => {
+      const uploadedFiles = [createMockFileAttachment('edit-file-1'), createMockFileAttachment('edit-file-2')];
+      const mockData: Core.TEditPostInput = {
+        ...createMockEditInput(),
+        newFileAttachments: uploadedFiles,
+      };
+
+      const { requestSpy } = setupEditSpies();
+      const fileCreateSpy = vi.spyOn(Core.FileApplication, 'commitCreate').mockResolvedValue(undefined);
+      const fileDeleteSpy = vi.spyOn(Core.FileApplication, 'commitDelete').mockResolvedValue(undefined);
+      requestSpy.mockRejectedValue(new Error('Failed to PUT to homeserver: 500'));
+
+      await expect(Core.PostApplication.commitEdit(mockData)).rejects.toThrow('Failed to PUT to homeserver: 500');
+
+      expect(fileCreateSpy).toHaveBeenCalledWith({ fileAttachments: uploadedFiles });
+      expect(fileDeleteSpy).toHaveBeenCalledWith(uploadedFiles.map((f) => f.fileResult.meta.url));
+    });
+
+    it('should rollback newly uploaded files when local edit fails', async () => {
+      const uploadedFiles = [createMockFileAttachment('edit-file-local-failure')];
+      const mockData: Core.TEditPostInput = {
+        ...createMockEditInput(),
+        newFileAttachments: uploadedFiles,
+      };
+
+      const { editSpy, requestSpy } = setupEditSpies();
+      const fileCreateSpy = vi.spyOn(Core.FileApplication, 'commitCreate').mockResolvedValue(undefined);
+      const fileDeleteSpy = vi.spyOn(Core.FileApplication, 'commitDelete').mockResolvedValue(undefined);
+      editSpy.mockRejectedValue(new Error('Local edit failed'));
+
+      await expect(Core.PostApplication.commitEdit(mockData)).rejects.toThrow('Local edit failed');
+
+      expect(fileCreateSpy).toHaveBeenCalledWith({ fileAttachments: uploadedFiles });
+      expect(fileDeleteSpy).toHaveBeenCalledWith(uploadedFiles.map((f) => f.fileResult.meta.url));
+      expect(requestSpy).not.toHaveBeenCalled();
+    });
   });
 });

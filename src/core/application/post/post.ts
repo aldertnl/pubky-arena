@@ -187,22 +187,27 @@ export class PostApplication {
   }
 
   static async commitEdit({ compositePostId, post, postUrl, newFileAttachments }: Core.TEditPostInput) {
+    const hasNewFiles = newFileAttachments != null && newFileAttachments.length > 0;
+    const newFileUris = hasNewFiles ? newFileAttachments.map((f) => f.fileResult.meta.url) : [];
+
     // Upload new file attachments if any
-    if (newFileAttachments && newFileAttachments.length > 0) {
+    if (hasNewFiles) {
       await Core.FileApplication.commitCreate({ fileAttachments: newFileAttachments });
     }
 
     // Update local database (content + attachments)
     // Note: post.attachments is undefined when internal value is null, but we need to pass null explicitly
     const attachments = post.attachments === undefined ? null : post.attachments;
-    const originalPost = await Core.LocalPostService.readDetails({ postId: compositePostId });
-
-    await Core.LocalPostService.edit({ compositePostId, content: post.content, attachments });
-
+    let originalPost: Core.PostDetailsModelSchema | null = null;
+    let localEditApplied = false;
     try {
+      originalPost = await Core.LocalPostService.readDetails({ postId: compositePostId });
+      await Core.LocalPostService.edit({ compositePostId, content: post.content, attachments });
+      localEditApplied = true;
+
       await Core.HomeserverService.request({ method: HttpMethod.PUT, url: postUrl, bodyJson: post.toJson() });
     } catch (error) {
-      if (originalPost) {
+      if (localEditApplied && originalPost) {
         try {
           await Core.LocalPostService.edit({
             compositePostId,
@@ -213,6 +218,17 @@ export class PostApplication {
           Logger.error('[PostApplication.commitEdit] Failed to rollback local post edit', {
             compositePostId,
             rollbackError,
+          });
+        }
+      }
+
+      if (hasNewFiles) {
+        try {
+          await Core.FileApplication.commitDelete(newFileUris);
+        } catch (fileRollbackError) {
+          Logger.error('[PostApplication.commitEdit] Failed to rollback newly uploaded file attachments', {
+            compositePostId,
+            fileRollbackError,
           });
         }
       }
