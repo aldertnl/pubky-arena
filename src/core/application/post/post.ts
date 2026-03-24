@@ -204,7 +204,11 @@ export class PostApplication {
     } catch (error) {
       if (originalPost) {
         try {
-          await Core.LocalPostService.edit({ compositePostId, content: originalPost.content, attachments });
+          await Core.LocalPostService.edit({
+            compositePostId,
+            content: originalPost.content,
+            attachments: originalPost.attachments,
+          });
         } catch (rollbackError) {
           Logger.error('[PostApplication.commitEdit] Failed to rollback local post edit', {
             compositePostId,
