@@ -1110,7 +1110,11 @@ describe('Post Application', () => {
       await Core.PostApplication.commitEdit(mockData);
 
       expect(readDetailsSpy).toHaveBeenCalledWith({ postId: mockData.compositePostId });
-      expect(editSpy).toHaveBeenCalledWith({ compositePostId: mockData.compositePostId, content: 'Edited content' });
+      expect(editSpy).toHaveBeenCalledWith({
+        compositePostId: mockData.compositePostId,
+        content: 'Edited content',
+        attachments: null,
+      });
       expect(requestSpy).toHaveBeenCalledWith({
         method: HttpMethod.PUT,
         url: mockData.postUrl,
@@ -1130,10 +1134,12 @@ describe('Post Application', () => {
       expect(editSpy).toHaveBeenNthCalledWith(1, {
         compositePostId: mockData.compositePostId,
         content: 'Edited content',
+        attachments: null,
       });
       expect(editSpy).toHaveBeenNthCalledWith(2, {
         compositePostId: mockData.compositePostId,
         content: 'Original content',
+        attachments: null,
       });
     });
 
