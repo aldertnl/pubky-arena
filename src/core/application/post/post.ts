@@ -1,5 +1,5 @@
 import * as Core from '@/core';
-import { HttpMethod, Err, ClientErrorCode, ErrorService } from '@/libs';
+import { HttpMethod, Err, ClientErrorCode, ErrorService, Logger } from '@/libs';
 import { postUriBuilder } from 'pubky-app-specs';
 
 export class PostApplication {
@@ -125,11 +125,39 @@ export class PostApplication {
   }
 
   static async commitCreate({ postUrl, compositePostId, post, fileAttachments, tags }: Core.TCreatePostInput) {
-    if (fileAttachments && fileAttachments.length > 0) {
+    const hasFiles = fileAttachments != null && fileAttachments.length > 0;
+
+    if (hasFiles) {
       await Core.FileApplication.commitCreate({ fileAttachments });
     }
     await Core.LocalPostService.create({ compositePostId, post });
-    await Core.HomeserverService.request({ method: HttpMethod.PUT, url: postUrl, bodyJson: post.toJson() });
+
+    try {
+      await Core.HomeserverService.request({ method: HttpMethod.PUT, url: postUrl, bodyJson: post.toJson() });
+    } catch (error) {
+      try {
+        await Core.LocalPostService.delete({ compositePostId });
+      } catch (rollbackError) {
+        Logger.error('[PostApplication.commitCreate] Failed to rollback local post create', {
+          compositePostId,
+          rollbackError,
+        });
+      }
+
+      if (hasFiles) {
+        try {
+          const fileUris = fileAttachments.map((f) => f.fileResult.meta.url);
+          await Core.FileApplication.commitDelete(fileUris);
+        } catch (fileRollbackError) {
+          Logger.error('[PostApplication.commitCreate] Failed to rollback file attachments', {
+            compositePostId,
+            fileRollbackError,
+          });
+        }
+      }
+
+      throw error;
+    }
 
     if (tags && tags.length > 0) {
       await Core.TagApplication.commitCreate({ tagList: tags });
@@ -167,20 +195,24 @@ export class PostApplication {
     // Update local database (content + attachments)
     // Note: post.attachments is undefined when internal value is null, but we need to pass null explicitly
     const attachments = post.attachments === undefined ? null : post.attachments;
-    await Core.LocalPostService.edit({
-      compositePostId,
-      content: post.content,
-      attachments,
-    });
+    const originalPost = await Core.LocalPostService.readDetails({ postId: compositePostId });
 
-    // Sync to homeserver
-    // post.toJson() omits null/undefined fields (WASM serde skip_serializing_if).
-    // We must explicitly include attachments so the homeserver clears them.
-    // Use empty array [] instead of null — both null and missing deserialize to None in Rust.
-    const bodyJson = post.toJson();
-    if (!('attachments' in bodyJson)) {
-      bodyJson.attachments = [];
+    await Core.LocalPostService.edit({ compositePostId, content: post.content, attachments });
+
+    try {
+      await Core.HomeserverService.request({ method: HttpMethod.PUT, url: postUrl, bodyJson: post.toJson() });
+    } catch (error) {
+      if (originalPost) {
+        try {
+          await Core.LocalPostService.edit({ compositePostId, content: originalPost.content, attachments });
+        } catch (rollbackError) {
+          Logger.error('[PostApplication.commitEdit] Failed to rollback local post edit', {
+            compositePostId,
+            rollbackError,
+          });
+        }
+      }
+      throw error;
     }
-    await Core.HomeserverService.request({ method: HttpMethod.PUT, url: postUrl, bodyJson });
   }
 }
