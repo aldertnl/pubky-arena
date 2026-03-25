@@ -1,0 +1,132 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GroupedRepostPost - Snapshots > matches snapshot for default state 1`] = `
+<div
+  class="relative flex min-w-0"
+>
+  <div
+    class="min-w-0 flex-1 gap-0 rounded-md py-0"
+    data-testid="card"
+  >
+    <div
+      data-count="2"
+      data-testid="grouped-repost-header"
+      data-timestamp="1707000200"
+    >
+      Header
+    </div>
+    <div
+      class="flex min-w-0 cursor-pointer flex-col gap-4 p-6"
+      data-testid="card-content"
+    >
+      <div
+        data-testid="post-header-orlando:post50"
+      >
+        Header
+      </div>
+      <div
+        data-testid="post-content-orlando:post50"
+      >
+        Content
+      </div>
+      <div
+        class="flex-col items-start gap-2 md:flex-row md:justify-between md:gap-4 md:items-start"
+      >
+        <div
+          data-testid="tags-list"
+        >
+          Tags
+        </div>
+        <div
+          data-testid="post-actions-orlando:post50"
+        >
+          <button
+            data-testid="reply-btn"
+          >
+            Reply
+          </button>
+          <button
+            data-testid="repost-btn"
+          >
+            Repost
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`GroupedRepostPost - Snapshots > matches snapshot for deleted post 1`] = `
+<div
+  class="relative flex min-w-0"
+>
+  <div
+    class="min-w-0 flex-1 gap-0 rounded-md py-0"
+    data-testid="card"
+  >
+    <div
+      data-testid="post-deleted"
+    >
+      Deleted
+    </div>
+  </div>
+</div>
+`;
+
+exports[`GroupedRepostPost - Snapshots > matches snapshot for single reposter 1`] = `
+<div
+  class="relative flex min-w-0"
+>
+  <div
+    class="min-w-0 flex-1 gap-0 rounded-md py-0"
+    data-testid="card"
+  >
+    <div
+      data-count="1"
+      data-testid="grouped-repost-header"
+      data-timestamp="1707000200"
+    >
+      Header
+    </div>
+    <div
+      class="flex min-w-0 cursor-pointer flex-col gap-4 p-6"
+      data-testid="card-content"
+    >
+      <div
+        data-testid="post-header-orlando:post50"
+      >
+        Header
+      </div>
+      <div
+        data-testid="post-content-orlando:post50"
+      >
+        Content
+      </div>
+      <div
+        class="flex-col items-start gap-2 md:flex-row md:justify-between md:gap-4 md:items-start"
+      >
+        <div
+          data-testid="tags-list"
+        >
+          Tags
+        </div>
+        <div
+          data-testid="post-actions-orlando:post50"
+        >
+          <button
+            data-testid="reply-btn"
+          >
+            Reply
+          </button>
+          <button
+            data-testid="repost-btn"
+          >
+            Repost
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;

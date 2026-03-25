@@ -3,18 +3,18 @@
 import * as Atoms from '@/atoms';
 import { TAGS_PER_PAGE } from '@/hooks/usePostTags/usePostTags.constants';
 
-export function WhoTaggedExpandedListSkeleton() {
+export function UserExpandedListSkeleton() {
   return (
     <Atoms.Container
-      aria-label="Who tagged expanded list"
+      aria-label="Users expanded list"
       role="list"
       overrideDefaults
-      className="flex max-h-(--who-tagged-expanded-list-max-height) w-full max-w-(--who-tagged-expanded-list-width) flex-col gap-2 overflow-y-auto rounded-md border border-border bg-popover p-4 shadow-2xl"
-      data-testid="who-tagged-expanded-list-skeleton"
+      className="flex max-h-(--user-expanded-list-max-height) w-full max-w-(--user-expanded-list-width) flex-col gap-2 overflow-y-auto rounded-md border border-border bg-popover p-4 shadow-2xl"
+      data-testid="user-expanded-list-skeleton"
     >
       {Array.from({ length: TAGS_PER_PAGE }).map((_, index) => (
         <Atoms.Container
-          key={`who-tagged-expanded-list-skeleton-row-${index}`}
+          key={`user-expanded-list-skeleton-row-${index}`}
           overrideDefaults
           className="flex w-full items-center gap-3"
         >

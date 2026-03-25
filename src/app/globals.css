@@ -237,28 +237,28 @@ body {
   --mention-popover-max-height: 200px;
 
   /**
-   * Who tagged expanded list width
-   * - Width for the expanded list of users who tagged a post/content
-   * - Applied to: WhoTaggedExpandedList component
+   * User expanded list width
+   * - Width for the expanded list of users (taggers, reposters, etc)
+   * - Applied to: UserExpandedList component
    *
-   * Rationale for 320px:
+   * Rationale for 260px:
    * - Provides adequate space for user avatar, name, and follow button
    * - Consistent with other popover/list widths in the app
    * - Balances readability with efficient use of space
    */
-  --who-tagged-expanded-list-width: 260px;
+  --user-expanded-list-width: 260px;
 
   /**
-   * Who tagged expanded list max height
+   * User expanded list max height
    * - Maximum height for the expanded list before scrolling
-   * - Applied to: WhoTaggedExpandedList component
+   * - Applied to: UserExpandedList component
    *
    * Rationale for 300px:
    * - Shows approximately 5-6 user items at once
    * - Prevents list from obscuring too much content
    * - Enables scrolling when more users are available
    */
-  --who-tagged-expanded-list-max-height: 300px;
+  --user-expanded-list-max-height: 300px;
 
   /**
    * Avatar zoom modal size

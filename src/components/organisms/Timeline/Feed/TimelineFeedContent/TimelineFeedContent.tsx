@@ -66,6 +66,7 @@ export function TimelineFeedWithStream({
 function TimelineFeedContent({ streamId, variant, tagsLayout, layoutResolution, children }: TimelineFeedContentProps) {
   const isVisualActive = layoutResolution?.isVisualActive ?? false;
   const {
+    items,
     postIds: rawPostIds,
     loading,
     loadingMore,
@@ -75,7 +76,7 @@ function TimelineFeedContent({ streamId, variant, tagsLayout, layoutResolution, 
     refresh,
     prependPosts,
     removePosts,
-  } = Hooks.useStreamPagination({
+  } = Hooks.useTimelineItems({
     streamId,
   });
 
@@ -130,7 +131,7 @@ function TimelineFeedContent({ streamId, variant, tagsLayout, layoutResolution, 
         />
       ) : (
         <Organisms.TimelinePosts
-          postIds={postIds}
+          items={items}
           loading={loading}
           loadingMore={loadingMore}
           error={error}

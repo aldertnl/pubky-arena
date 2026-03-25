@@ -27,6 +27,7 @@ vi.mock('@/hooks', async (importOriginal) => {
     useCustomFeed: vi.fn(),
     useCustomStreamId: vi.fn(),
     useStreamPagination: vi.fn(),
+    useTimelineItems: vi.fn(),
     useFeedLayoutResolution: vi.fn(() => ({
       requestedLayout: 'columns',
       effectiveLayout: 'columns',
@@ -95,20 +96,20 @@ vi.mock('@/molecules', () => ({
 
 vi.mock('@/organisms', () => ({
   TimelinePosts: ({
-    postIds,
+    items,
     loading,
     loadingMore,
     error,
     hasMore,
   }: {
-    postIds: string[];
+    items: unknown[];
     loading: boolean;
     loadingMore: boolean;
     error: string | null;
     hasMore: boolean;
   }) => (
     <div data-testid="timeline-posts">
-      <span data-testid="post-count">{postIds.length}</span>
+      <span data-testid="post-count">{items.length}</span>
       <span data-testid="loading">{loading.toString()}</span>
       <span data-testid="loading-more">{loadingMore.toString()}</span>
       <span data-testid="error">{error || 'none'}</span>
@@ -146,6 +147,7 @@ const mockUseCustomFeed = vi.mocked(Hooks.useCustomFeed);
 const mockUseCustomStreamId = vi.mocked(Hooks.useCustomStreamId);
 const mockUseBookmarksStreamId = vi.mocked(Hooks.useBookmarksStreamId);
 const mockUseStreamPagination = vi.mocked(Hooks.useStreamPagination);
+const mockUseTimelineItems = vi.mocked(Hooks.useTimelineItems);
 const mockUseFeedLayoutResolution = vi.mocked(Hooks.useFeedLayoutResolution);
 
 const mockPrependPosts = vi.fn();
@@ -189,6 +191,13 @@ describe('TimelineFeed', () => {
     mockUseCustomStreamId.mockReturnValue('timeline:all:all:all' as Core.PostStreamId);
     mockUseBookmarksStreamId.mockReturnValue(Core.PostStreamTypes.TIMELINE_BOOKMARKS_ALL);
     mockUseStreamPagination.mockReturnValue(defaultPaginationResult);
+    mockUseTimelineItems.mockReturnValue({
+      ...defaultPaginationResult,
+      items: defaultPaginationResult.postIds.map((postId: string) => ({
+        type: 'single' as const,
+        postId,
+      })),
+    });
     mockUseFeedLayoutResolution.mockReturnValue({
       requestedLayout: 'columns',
       effectiveLayout: 'columns',
@@ -208,7 +217,7 @@ describe('TimelineFeed', () => {
       render(<TimelineFeed variant={TIMELINE_FEED_VARIANT.HOME} />);
 
       expect(screen.getByTestId('timeline-posts')).toBeInTheDocument();
-      expect(mockUseStreamPagination).toHaveBeenCalledWith({
+      expect(mockUseTimelineItems).toHaveBeenCalledWith({
         streamId: Core.PostStreamTypes.TIMELINE_ALL_ALL,
       });
     });
@@ -218,7 +227,7 @@ describe('TimelineFeed', () => {
       render(<TimelineFeed variant={TIMELINE_FEED_VARIANT.HOME} />);
 
       expect(screen.getByTestId('timeline-posts')).toBeInTheDocument();
-      expect(mockUseStreamPagination).toHaveBeenCalledWith({
+      expect(mockUseTimelineItems).toHaveBeenCalledWith({
         streamId: Core.PostStreamTypes.TIMELINE_FRIENDS_VIDEO,
       });
     });
@@ -267,7 +276,7 @@ describe('TimelineFeed', () => {
       render(<TimelineFeed variant={TIMELINE_FEED_VARIANT.HOME} />);
 
       expect(mockUseStreamIdFromFilters).toHaveBeenCalledWith(Core.CONTENT.ALL);
-      expect(mockUseStreamPagination).toHaveBeenCalledWith({
+      expect(mockUseTimelineItems).toHaveBeenCalledWith({
         streamId: Core.PostStreamTypes.TIMELINE_ALL_ALL,
       });
     });
@@ -333,7 +342,7 @@ describe('TimelineFeed', () => {
       render(<TimelineFeed variant={TIMELINE_FEED_VARIANT.BOOKMARKS} />);
 
       expect(screen.getByTestId('timeline-posts')).toBeInTheDocument();
-      expect(mockUseStreamPagination).toHaveBeenCalledWith({
+      expect(mockUseTimelineItems).toHaveBeenCalledWith({
         streamId: Core.PostStreamTypes.TIMELINE_BOOKMARKS_ALL,
       });
     });
@@ -378,7 +387,7 @@ describe('TimelineFeed', () => {
       render(<TimelineFeed variant={TIMELINE_FEED_VARIANT.CUSTOM} />);
 
       expect(screen.getByTestId('timeline-posts')).toBeInTheDocument();
-      expect(mockUseStreamPagination).toHaveBeenCalledWith({
+      expect(mockUseTimelineItems).toHaveBeenCalledWith({
         streamId: 'timeline:all:all:all',
       });
     });
@@ -501,9 +510,9 @@ describe('TimelineFeed', () => {
       );
 
       // When pubky is not available, streamId is undefined
-      // TimelineFeed shows loading state and doesn't call useStreamPagination
+      // TimelineFeed shows loading state and doesn't call useTimelineItems
       expect(screen.getByTestId('timeline-loading')).toBeInTheDocument();
-      expect(mockUseStreamPagination).not.toHaveBeenCalled();
+      expect(mockUseTimelineItems).not.toHaveBeenCalled();
     });
   });
 
@@ -514,13 +523,14 @@ describe('TimelineFeed', () => {
       render(<TimelineFeed variant={TIMELINE_FEED_VARIANT.HOME} />);
 
       expect(screen.getByTestId('timeline-loading')).toBeInTheDocument();
-      // Should not call useStreamPagination when streamId is undefined
-      expect(mockUseStreamPagination).not.toHaveBeenCalled();
+      // Should not call useTimelineItems when streamId is undefined
+      expect(mockUseTimelineItems).not.toHaveBeenCalled();
     });
 
     it('should pass loading state to TimelinePosts', () => {
-      mockUseStreamPagination.mockReturnValue({
+      mockUseTimelineItems.mockReturnValue({
         ...defaultPaginationResult,
+        items: [],
         loading: true,
       });
 
@@ -530,8 +540,12 @@ describe('TimelineFeed', () => {
     });
 
     it('should pass loadingMore state to TimelinePosts', () => {
-      mockUseStreamPagination.mockReturnValue({
+      mockUseTimelineItems.mockReturnValue({
         ...defaultPaginationResult,
+        items: defaultPaginationResult.postIds.map((postId: string) => ({
+          type: 'single' as const,
+          postId,
+        })),
         loadingMore: true,
       });
 
@@ -541,8 +555,12 @@ describe('TimelineFeed', () => {
     });
 
     it('should not pass loading and loadingMore state to TimelinePosts when loading is false', () => {
-      mockUseStreamPagination.mockReturnValue({
+      mockUseTimelineItems.mockReturnValue({
         ...defaultPaginationResult,
+        items: defaultPaginationResult.postIds.map((postId: string) => ({
+          type: 'single' as const,
+          postId,
+        })),
         loading: false,
       });
 
@@ -555,8 +573,12 @@ describe('TimelineFeed', () => {
 
   describe('Error States', () => {
     it('should pass error to TimelinePosts', () => {
-      mockUseStreamPagination.mockReturnValue({
+      mockUseTimelineItems.mockReturnValue({
         ...defaultPaginationResult,
+        items: defaultPaginationResult.postIds.map((postId: string) => ({
+          type: 'single' as const,
+          postId,
+        })),
         error: 'Network error',
       });
 
@@ -625,6 +647,13 @@ describe('TimelineFeed - Snapshots', () => {
     mockUseCustomStreamId.mockReturnValue('timeline:all:all:all' as Core.PostStreamId);
     mockUseBookmarksStreamId.mockReturnValue(Core.PostStreamTypes.TIMELINE_BOOKMARKS_ALL);
     mockUseStreamPagination.mockReturnValue(defaultPaginationResult);
+    mockUseTimelineItems.mockReturnValue({
+      ...defaultPaginationResult,
+      items: defaultPaginationResult.postIds.map((postId: string) => ({
+        type: 'single' as const,
+        postId,
+      })),
+    });
     mockUseFeedLayoutResolution.mockReturnValue({
       requestedLayout: 'columns',
       effectiveLayout: 'columns',
@@ -671,8 +700,12 @@ describe('TimelineFeed - Snapshots', () => {
   });
 
   it('should match snapshot for error state', () => {
-    mockUseStreamPagination.mockReturnValue({
+    mockUseTimelineItems.mockReturnValue({
       ...defaultPaginationResult,
+      items: defaultPaginationResult.postIds.map((postId: string) => ({
+        type: 'single' as const,
+        postId,
+      })),
       error: 'Network error',
     });
 
@@ -681,8 +714,9 @@ describe('TimelineFeed - Snapshots', () => {
   });
 
   it('should match snapshot for empty state', () => {
-    mockUseStreamPagination.mockReturnValue({
+    mockUseTimelineItems.mockReturnValue({
       ...defaultPaginationResult,
+      items: [],
       postIds: [],
     });
 

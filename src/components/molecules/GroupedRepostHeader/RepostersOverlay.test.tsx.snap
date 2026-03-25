@@ -1,0 +1,7 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`RepostersOverlay - Snapshots > matches snapshot on mobile 1`] = `null`;
+
+exports[`RepostersOverlay - Snapshots > matches snapshot when closed 1`] = `null`;
+
+exports[`RepostersOverlay - Snapshots > matches snapshot when open on desktop 1`] = `null`;

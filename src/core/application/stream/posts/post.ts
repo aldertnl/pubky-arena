@@ -81,6 +81,94 @@ export class PostStreamApplication {
   }
 
   /**
+   * Identifies plain reposts from a list of post IDs and resolves repost chains
+   * back to the true original post (Option B: flatten chains).
+   *
+   * A "plain repost" is a repost with no content and no attachments.
+   * When a repost chain exists (A reposts B which reposts C), this method
+   * resolves back to the root original post C.
+   *
+   * @param postIds - Array of composite post IDs to analyze
+   * @returns Map of repost composite ID to its original post info
+   */
+  static async identifyPlainReposts(postIds: string[]): Promise<Core.PlainRepostOriginals> {
+    const result: Core.PlainRepostOriginals = new Map();
+    if (postIds.length === 0) return result;
+
+    const [allDetails, allRelationships] = await Promise.all([
+      Core.LocalPostService.readDetailsByIds(postIds),
+      Core.LocalPostService.readRelationshipsByIds(postIds),
+    ]);
+
+    for (let i = 0; i < postIds.length; i++) {
+      const details = allDetails[i];
+      const relationships = allRelationships[i];
+
+      if (!details || !relationships?.reposted) continue;
+      if (!this.isPlainRepost(details)) continue;
+
+      // This is a plain repost — resolve the chain to find the true original
+      const originalPostId = await this.resolveRepostChain(relationships.reposted);
+      if (!originalPostId) continue;
+
+      result.set(postIds[i], {
+        originalPostId,
+        indexedAt: details.indexed_at,
+      });
+    }
+
+    return result;
+  }
+
+  private static isPlainRepost(details: Core.PostDetailsModelSchema): boolean {
+    return details.content.trim().length === 0 && (details.attachments?.length ?? 0) === 0;
+  }
+
+  /**
+   * Resolves a repost chain back to the root original post.
+   * Follows `reposted` URIs until we find a post that is not itself a plain repost.
+   * Guards against cycles with a visited set and max depth.
+   */
+  private static async resolveRepostChain(repostedUri: string): Promise<string | null> {
+    const MAX_CHAIN_DEPTH = 10;
+    const visited = new Set<string>();
+
+    let currentUri = repostedUri;
+
+    for (let depth = 0; depth < MAX_CHAIN_DEPTH; depth++) {
+      const compositeId = Core.buildCompositeIdFromPubkyUri({
+        uri: currentUri,
+        domain: Core.CompositeIdDomain.POSTS,
+      });
+
+      if (!compositeId || visited.has(compositeId)) {
+        return compositeId;
+      }
+      visited.add(compositeId);
+
+      const relationships = await Core.LocalPostService.readRelationships(compositeId);
+      if (!relationships?.reposted) {
+        return compositeId;
+      }
+
+      const details = await Core.LocalPostService.readDetails({ postId: compositeId });
+      if (!details || !this.isPlainRepost(details)) {
+        return compositeId;
+      }
+
+      // Continue following the chain
+      currentUri = relationships.reposted;
+    }
+
+    // Max depth reached — return the last resolved ID
+    const lastId = Core.buildCompositeIdFromPubkyUri({
+      uri: currentUri,
+      domain: Core.CompositeIdDomain.POSTS,
+    });
+    return lastId;
+  }
+
+  /**
    * Prepares the stream for initial load by performing cleanup operations.
    *
    * This method should be called before fetching the initial stream slice to ensure

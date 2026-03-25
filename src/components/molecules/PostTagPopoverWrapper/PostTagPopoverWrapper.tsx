@@ -89,10 +89,10 @@ export function PostTagPopoverWrapper({
                 onOpenAutoFocus={(e) => e.preventDefault()}
               >
                 {showAllTaggers && (
-                  <Molecules.WhoTaggedExpandedList
-                    taggerIds={expandedTaggerIds ?? initialTaggerIds}
-                    fallbackTaggers={taggers}
-                    isLoadingTaggers={isLoadingTaggers}
+                  <Molecules.UserExpandedList
+                    userIds={expandedTaggerIds ?? initialTaggerIds}
+                    fallbackUsers={taggers}
+                    isLoading={isLoadingTaggers}
                   />
                 )}
               </Atoms.PopoverContent>

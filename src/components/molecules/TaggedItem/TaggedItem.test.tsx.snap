@@ -144,7 +144,7 @@ exports[`TaggedItem - Snapshots > matches snapshot when expanded 1`] = `
     </button>
   </div>
   <div
-    data-testid="who-tagged-expanded-list"
+    data-testid="user-expanded-list"
   >
     Expanded List (
     3

@@ -2,6 +2,7 @@
 
 import { Virtuoso } from 'react-virtuoso';
 import { TIMELINE_VIRTUOSO_OVERSCAN_PX } from '@/config';
+import * as Core from '@/core';
 import * as Atoms from '@/atoms';
 import * as Molecules from '@/molecules';
 import * as Organisms from '@/organisms';
@@ -11,9 +12,10 @@ import {
   type TimelineVirtuosoContext,
 } from '@/components/molecules/Timeline/TimelineVirtuosoFooter';
 import type { TagsLayout } from '../../PostMain/PostMain.types';
+import { GroupedRepostPost } from './GroupedRepostPost';
 
 interface TimelinePostsProps {
-  postIds: string[];
+  items: Core.TimelineItem[];
   loading: boolean;
   loadingMore: boolean;
   error: string | null;
@@ -24,6 +26,13 @@ interface TimelinePostsProps {
 
 const virtuosoComponents = { Footer: TimelineVirtuosoFooter };
 
+function getItemKey(item: Core.TimelineItem): string {
+  if (item.type === Core.TIMELINE_ITEM_TYPE.SINGLE) {
+    return `main_${item.postId}`;
+  }
+  return `group_${item.originalPostId}`;
+}
+
 /**
  * TimelinePosts
  *
@@ -32,7 +41,7 @@ const virtuosoComponents = { Footer: TimelineVirtuosoFooter };
  * IntersectionObservers, and ResizeObservers.
  */
 export function TimelinePosts({
-  postIds,
+  items,
   loading,
   loadingMore,
   error,
@@ -46,35 +55,50 @@ export function TimelinePosts({
     loadingMore,
     error,
     hasMore,
-    itemCount: postIds.length,
+    itemCount: items.length,
   };
 
   return (
-    <Molecules.TimelineStateWrapper loading={loading} error={error} hasItems={postIds.length > 0}>
+    <Molecules.TimelineStateWrapper loading={loading} error={error} hasItems={items.length > 0}>
       <Atoms.Container data-cy="timeline-container">
         <Atoms.Container data-cy="timeline-posts" overrideDefaults>
           <Virtuoso
             useWindowScroll
-            data={postIds}
+            data={items}
             context={virtuosoContext}
             overscan={TIMELINE_VIRTUOSO_OVERSCAN_PX}
-            computeItemKey={(_index, postId) => `main_${postId}`}
+            computeItemKey={(_index, item) => getItemKey(item)}
             endReached={() => {
               if (!loadingMore && hasMore) {
                 void loadMore();
               }
             }}
-            itemContent={(_index, postId) => (
-              <Atoms.Container data-cy="post-card" overrideDefaults className="pb-4">
-                <Organisms.PostMain
-                  postId={postId}
-                  onClick={() => navigateToPost(postId)}
-                  isReply={false}
-                  tagsLayout={tagsLayout}
-                />
-                <Organisms.TimelinePostReplies postId={postId} />
-              </Atoms.Container>
-            )}
+            itemContent={(_index, item) => {
+              if (item.type === Core.TIMELINE_ITEM_TYPE.REPOST_GROUP) {
+                return (
+                  <Atoms.Container data-cy="post-card" overrideDefaults className="pb-4">
+                    <GroupedRepostPost
+                      item={item}
+                      onClick={() => navigateToPost(item.originalPostId)}
+                      tagsLayout={tagsLayout}
+                    />
+                    <Organisms.TimelinePostReplies postId={item.originalPostId} />
+                  </Atoms.Container>
+                );
+              }
+
+              return (
+                <Atoms.Container data-cy="post-card" overrideDefaults className="pb-4">
+                  <Organisms.PostMain
+                    postId={item.postId}
+                    onClick={() => navigateToPost(item.postId)}
+                    isReply={false}
+                    tagsLayout={tagsLayout}
+                  />
+                  <Organisms.TimelinePostReplies postId={item.postId} />
+                </Atoms.Container>
+              );
+            }}
             components={virtuosoComponents}
           />
         </Atoms.Container>

@@ -46,6 +46,27 @@ export class LocalPostService {
   }
 
   /**
+   * Reads post details for multiple posts, preserving input order.
+   *
+   * @param postIds - Array of composite post IDs (author:postId)
+   * @returns Array of post details (undefined entries for posts not found)
+   *
+   * @throws {DatabaseError} When database operations fail
+   */
+  static async readDetailsByIds(postIds: string[]): Promise<(Core.PostDetailsModelSchema | undefined)[]> {
+    try {
+      return await Core.PostDetailsModel.findByIdsPreserveOrder(postIds);
+    } catch (error) {
+      throw Err.database(DatabaseErrorCode.QUERY_FAILED, 'Failed to read post details by ids', {
+        service: ErrorService.Local,
+        operation: 'readDetailsByIds',
+        context: { postIds },
+        cause: error,
+      });
+    }
+  }
+
+  /**
    * Reads post relationships for multiple posts
    *
    * @param postIds - Array of composite post IDs (author:postId)
@@ -57,7 +78,6 @@ export class LocalPostService {
     try {
       return await Core.PostRelationshipsModel.findByIdsPreserveOrder(postIds);
     } catch (error) {
-      Logger.error('Failed to read post relationships by ids', { postIds, error });
       throw Err.database(DatabaseErrorCode.QUERY_FAILED, 'Failed to read post relationships by ids', {
         service: ErrorService.Local,
         operation: 'readRelationshipsByIds',

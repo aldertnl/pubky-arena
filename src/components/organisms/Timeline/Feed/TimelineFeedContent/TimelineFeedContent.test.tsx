@@ -13,6 +13,7 @@ vi.mock('@/hooks', async (importOriginal) => {
   return {
     ...actual,
     useStreamPagination: vi.fn(),
+    useTimelineItems: vi.fn(),
     useMutedUsers: vi.fn(() => ({
       mutedUserIds: [],
       mutedUserIdSet: new Set(),
@@ -52,11 +53,11 @@ vi.mock('@/molecules', () => ({
 
 vi.mock('@/organisms', () => ({
   TimelinePosts: ({
-    postIds,
+    items,
     loading,
     hasMore,
   }: {
-    postIds: string[];
+    items: unknown[];
     loading: boolean;
     loadingMore: boolean;
     error: string | null;
@@ -65,7 +66,7 @@ vi.mock('@/organisms', () => ({
     tagsLayout: string;
   }) => (
     <div data-testid="timeline-posts">
-      <span data-testid="post-count">{postIds.length}</span>
+      <span data-testid="item-count">{items.length}</span>
       <span data-testid="loading">{loading.toString()}</span>
       <span data-testid="has-more">{hasMore.toString()}</span>
     </div>
@@ -89,13 +90,23 @@ const defaultPaginationResult = {
   removePosts: mockRemovePosts,
 };
 
-const { useStreamPagination } = await import('@/hooks');
+const { useStreamPagination, useTimelineItems } = await import('@/hooks');
 const mockUseStreamPagination = vi.mocked(useStreamPagination);
+const mockUseTimelineItems = vi.mocked(useTimelineItems);
+
+const defaultTimelineItemsResult = {
+  ...defaultPaginationResult,
+  items: defaultPaginationResult.postIds.map((postId: string) => ({
+    type: 'single' as const,
+    postId,
+  })),
+};
 
 describe('TimelineFeedContent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseStreamPagination.mockReturnValue(defaultPaginationResult);
+    mockUseTimelineItems.mockReturnValue(defaultTimelineItemsResult);
     mockUsePullToRefresh.mockReturnValue({ state: 'idle' as const, pullDistance: 0 });
   });
 
@@ -103,7 +114,7 @@ describe('TimelineFeedContent', () => {
     it('shows loading when streamId is undefined', () => {
       render(<TimelineFeedWithStream streamId={undefined} variant={TIMELINE_FEED_VARIANT.HOME} tagsLayout="inline" />);
       expect(screen.getByTestId('timeline-loading')).toBeInTheDocument();
-      expect(mockUseStreamPagination).not.toHaveBeenCalled();
+      expect(mockUseTimelineItems).not.toHaveBeenCalled();
     });
 
     it('renders content when streamId is provided', () => {
@@ -134,7 +145,7 @@ describe('TimelineFeedContent', () => {
   });
 
   describe('Pagination', () => {
-    it('passes streamId to useStreamPagination', () => {
+    it('passes streamId to useTimelineItems', () => {
       render(
         <TimelineFeedWithStream
           streamId={Core.PostStreamTypes.TIMELINE_ALL_ALL}
@@ -142,14 +153,14 @@ describe('TimelineFeedContent', () => {
           tagsLayout="inline"
         />,
       );
-      expect(mockUseStreamPagination).toHaveBeenCalledWith({
+      expect(mockUseTimelineItems).toHaveBeenCalledWith({
         streamId: Core.PostStreamTypes.TIMELINE_ALL_ALL,
       });
     });
 
-    it('deduplicates post IDs', () => {
-      mockUseStreamPagination.mockReturnValue({
-        ...defaultPaginationResult,
+    it('deduplicates post IDs for internal use', () => {
+      mockUseTimelineItems.mockReturnValue({
+        ...defaultTimelineItemsResult,
         postIds: ['post1', 'post2', 'post1'],
       });
       render(
@@ -159,10 +170,11 @@ describe('TimelineFeedContent', () => {
           tagsLayout="inline"
         />,
       );
-      expect(screen.getByTestId('post-count')).toHaveTextContent('2');
+      // items count comes from the hook result (3 items), dedup applies to postIds for muting/NewPostsSection
+      expect(screen.getByTestId('item-count')).toHaveTextContent('3');
     });
 
-    it('passes post count to TimelinePosts', () => {
+    it('passes item count to TimelinePosts', () => {
       render(
         <TimelineFeedWithStream
           streamId={Core.PostStreamTypes.TIMELINE_ALL_ALL}
@@ -170,7 +182,7 @@ describe('TimelineFeedContent', () => {
           tagsLayout="inline"
         />,
       );
-      expect(screen.getByTestId('post-count')).toHaveTextContent('3');
+      expect(screen.getByTestId('item-count')).toHaveTextContent('3');
     });
   });
 
@@ -227,6 +239,7 @@ describe('TimelineFeedContent - Snapshots', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseStreamPagination.mockReturnValue(defaultPaginationResult);
+    mockUseTimelineItems.mockReturnValue(defaultTimelineItemsResult);
     mockUsePullToRefresh.mockReturnValue({ state: 'idle' as const, pullDistance: 0 });
   });
 

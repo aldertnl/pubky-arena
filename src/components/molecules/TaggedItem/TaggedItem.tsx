@@ -102,10 +102,10 @@ export function TaggedItem({
 
       {/* Expanded user list */}
       {isExpanded && !hideAvatars && (
-        <Molecules.WhoTaggedExpandedList
-          taggerIds={expandedTaggerIds ?? tag.taggers.map((tagger) => tagger.id)}
-          fallbackTaggers={tag.taggers}
-          isLoadingTaggers={isLoadingTaggers}
+        <Molecules.UserExpandedList
+          userIds={expandedTaggerIds ?? tag.taggers.map((tagger) => tagger.id)}
+          fallbackUsers={tag.taggers}
+          isLoading={isLoadingTaggers}
         />
       )}
     </Atoms.Container>

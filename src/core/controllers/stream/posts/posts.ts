@@ -164,4 +164,15 @@ export class StreamPostsController {
   static async filterDeletedPosts(postIds: string[]): Promise<string[]> {
     return Core.PostStreamApplication.filterDeletedPosts(postIds);
   }
+
+  /**
+   * Identifies plain reposts from the given post IDs and maps them to
+   * their original post IDs. Resolves repost chains (Option B).
+   *
+   * @param postIds - Array of composite post IDs to analyze
+   * @returns Map of repost composite ID to original post info
+   */
+  static async getPlainRepostOriginals(postIds: string[]): Promise<Core.PlainRepostOriginals> {
+    return Core.PostStreamApplication.identifyPlainReposts(postIds);
+  }
 }

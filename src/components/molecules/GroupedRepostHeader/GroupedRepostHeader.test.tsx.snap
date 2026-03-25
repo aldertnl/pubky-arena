@@ -1,0 +1,214 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GroupedRepostHeader - Snapshots > matches snapshot for many reposters 1`] = `
+<div
+  class="flex items-center gap-3 rounded-t-md bg-muted px-4 py-3 cursor-pointer"
+  data-testid="grouped-repost-header"
+  role="button"
+>
+  <svg
+    aria-label="Repeat"
+    class="lucide lucide-repeat size-5 shrink-0"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="m17 2 4 4-4 4"
+    />
+    <path
+      d="M3 11v-1a4 4 0 0 1 4-4h14"
+    />
+    <path
+      d="m7 22-4-4 4-4"
+    />
+    <path
+      d="M21 13v1a4 4 0 0 1-4 4H3"
+    />
+  </svg>
+  <span
+    class="min-w-0 truncate text-base font-bold text-foreground"
+  >
+    Alice and 2 others reposted this
+  </span>
+  <div
+    data-testid="avatar-group"
+    data-total="3"
+  >
+    Avatars
+  </div>
+  <div
+    class="ml-auto shrink-0"
+  >
+    <span
+      data-testid="timestamp"
+    >
+      2h
+    </span>
+  </div>
+</div>
+`;
+
+exports[`GroupedRepostHeader - Snapshots > matches snapshot for single reposter 1`] = `
+<div
+  class="flex items-center gap-3 rounded-t-md bg-muted px-4 py-3"
+  data-testid="grouped-repost-header"
+>
+  <svg
+    aria-label="Repeat"
+    class="lucide lucide-repeat size-5 shrink-0"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="m17 2 4 4-4 4"
+    />
+    <path
+      d="M3 11v-1a4 4 0 0 1 4-4h14"
+    />
+    <path
+      d="m7 22-4-4 4-4"
+    />
+    <path
+      d="M21 13v1a4 4 0 0 1-4 4H3"
+    />
+  </svg>
+  <span
+    class="min-w-0 truncate text-base font-bold text-foreground"
+  >
+    Alice reposted this
+  </span>
+  <div
+    data-testid="avatar-group"
+    data-total="1"
+  >
+    Avatars
+  </div>
+  <div
+    class="ml-auto shrink-0"
+  >
+    <span
+      data-testid="timestamp"
+    >
+      2h
+    </span>
+  </div>
+</div>
+`;
+
+exports[`GroupedRepostHeader - Snapshots > matches snapshot for two reposters 1`] = `
+<div
+  class="flex items-center gap-3 rounded-t-md bg-muted px-4 py-3 cursor-pointer"
+  data-testid="grouped-repost-header"
+  role="button"
+>
+  <svg
+    aria-label="Repeat"
+    class="lucide lucide-repeat size-5 shrink-0"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="m17 2 4 4-4 4"
+    />
+    <path
+      d="M3 11v-1a4 4 0 0 1 4-4h14"
+    />
+    <path
+      d="m7 22-4-4 4-4"
+    />
+    <path
+      d="M21 13v1a4 4 0 0 1-4 4H3"
+    />
+  </svg>
+  <span
+    class="min-w-0 truncate text-base font-bold text-foreground"
+  >
+    Alice and Bob reposted this
+  </span>
+  <div
+    data-testid="avatar-group"
+    data-total="2"
+  >
+    Avatars
+  </div>
+  <div
+    class="ml-auto shrink-0"
+  >
+    <span
+      data-testid="timestamp"
+    >
+      2h
+    </span>
+  </div>
+</div>
+`;
+
+exports[`GroupedRepostHeader - Snapshots > matches snapshot on mobile 1`] = `
+<div
+  class="flex items-center gap-3 rounded-t-md bg-muted px-4 py-3 cursor-pointer"
+  data-testid="grouped-repost-header"
+  role="button"
+>
+  <svg
+    aria-label="Repeat"
+    class="lucide lucide-repeat size-5 shrink-0"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="m17 2 4 4-4 4"
+    />
+    <path
+      d="M3 11v-1a4 4 0 0 1 4-4h14"
+    />
+    <path
+      d="m7 22-4-4 4-4"
+    />
+    <path
+      d="M21 13v1a4 4 0 0 1-4 4H3"
+    />
+  </svg>
+  <span
+    class="min-w-0 truncate text-base font-bold text-foreground"
+  >
+    Alice, others reposted
+  </span>
+  <div
+    class="ml-auto shrink-0"
+  >
+    <span
+      data-testid="timestamp"
+    >
+      2h
+    </span>
+  </div>
+</div>
+`;

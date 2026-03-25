@@ -61,13 +61,12 @@ vi.mock('@/organisms', async (importOriginal) => {
   };
 });
 
-// Mock WhoTaggedExpandedList
 vi.mock('@/molecules', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/molecules')>();
   return {
     ...actual,
-    WhoTaggedExpandedList: ({ taggerIds }: { taggerIds: Array<string> }) => (
-      <div data-testid="who-tagged-expanded-list">Expanded List ({taggerIds.length} users)</div>
+    UserExpandedList: ({ userIds }: { userIds: Array<string> }) => (
+      <div data-testid="user-expanded-list">Expanded List ({userIds.length} users)</div>
     ),
   };
 });
@@ -151,12 +150,12 @@ describe('TaggedItem - Expand/Collapse (Controlled)', () => {
 
   it('does not show expanded list when isExpanded is false', () => {
     render(<TaggedItem tag={mockTag} onTagClick={mockOnTagClick} isExpanded={false} />);
-    expect(screen.queryByTestId('who-tagged-expanded-list')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('user-expanded-list')).not.toBeInTheDocument();
   });
 
   it('shows expanded list when isExpanded is true', () => {
     render(<TaggedItem tag={mockTag} onTagClick={mockOnTagClick} isExpanded={true} />);
-    expect(screen.getByTestId('who-tagged-expanded-list')).toBeInTheDocument();
+    expect(screen.getByTestId('user-expanded-list')).toBeInTheDocument();
   });
 
   it('calls onExpandToggle with tag label when avatar group is clicked', () => {

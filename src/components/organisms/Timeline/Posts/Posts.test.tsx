@@ -3,9 +3,9 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { TimelinePosts } from './Posts';
+import * as Core from '@/core';
 import * as Hooks from '@/hooks';
 
-// Mock dependencies
 vi.mock('next/navigation');
 vi.mock('dexie-react-hooks');
 vi.mock('react-virtuoso', () => ({
@@ -16,9 +16,9 @@ vi.mock('react-virtuoso', () => ({
     components,
     endReached,
   }: {
-    data: string[];
+    data: unknown[];
     context?: Record<string, unknown>;
-    itemContent: (index: number, item: string) => React.ReactNode;
+    itemContent: (index: number, item: unknown) => React.ReactNode;
     components?: { Footer?: (props: { context?: Record<string, unknown> }) => React.ReactNode };
     endReached?: () => void;
   }) => (
@@ -48,7 +48,6 @@ vi.mock('@/libs', async () => {
   };
 });
 
-// Mock components
 vi.mock('@/atoms', () => ({
   Container: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => (
     <div data-testid="container" {...props}>
@@ -104,17 +103,30 @@ vi.mock('@/organisms', () => ({
   TimelinePostReplies: ({ postId }: { postId: string }) => <div data-testid={`replies-${postId}`} />,
 }));
 
+vi.mock('./GroupedRepostPost', () => ({
+  GroupedRepostPost: ({ item, onClick }: { item: { originalPostId: string }; onClick?: () => void }) => (
+    <div data-testid={`grouped-repost-${item.originalPostId}`} onClick={onClick}>
+      Grouped Repost
+    </div>
+  ),
+}));
+
+function toSingleItems(postIds: string[]): Core.SinglePostItem[] {
+  return postIds.map((postId) => ({ type: Core.TIMELINE_ITEM_TYPE.SINGLE, postId }));
+}
+
 const mockPush = vi.fn();
 const mockUseLiveQuery = vi.mocked(useLiveQuery);
 const mockUseRouter = vi.mocked(useRouter);
 const mockUsePostNavigation = vi.mocked(Hooks.usePostNavigation);
 
 const mockPostIds = ['author1:post1', 'author2:post2', 'author3:post3'];
+const mockItems = toSingleItems(mockPostIds);
+
 describe('TimelinePosts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock router
     mockUseRouter.mockReturnValue({
       push: mockPush,
       back: vi.fn(),
@@ -124,12 +136,10 @@ describe('TimelinePosts', () => {
       prefetch: vi.fn(),
     } as ReturnType<typeof useRouter>);
 
-    // Mock usePostNavigation
     mockUsePostNavigation.mockReturnValue({
       navigateToPost: mockPush,
     });
 
-    // Mock useLiveQuery to return no replies by default
     mockUseLiveQuery.mockReturnValue({ id: 'test', replies: 0, tags: 0, unique_tags: 0, reposts: 0 });
   });
 
@@ -140,14 +150,7 @@ describe('TimelinePosts', () => {
   describe('Loading States', () => {
     it('should render loading state initially', async () => {
       render(
-        <TimelinePosts
-          postIds={[]}
-          loading={true}
-          loadingMore={false}
-          error={null}
-          hasMore={true}
-          loadMore={vi.fn()}
-        />,
+        <TimelinePosts items={[]} loading={true} loadingMore={false} error={null} hasMore={true} loadMore={vi.fn()} />,
       );
 
       expect(screen.getByTestId('timeline-loading')).toBeInTheDocument();
@@ -156,7 +159,7 @@ describe('TimelinePosts', () => {
     it('should render posts after successful fetch', async () => {
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={false}
           error={null}
@@ -174,7 +177,7 @@ describe('TimelinePosts', () => {
     it('should show loading more indicator when paginating', async () => {
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={true}
           error={null}
@@ -193,7 +196,7 @@ describe('TimelinePosts', () => {
     it('should render empty state when no posts are returned', async () => {
       render(
         <TimelinePosts
-          postIds={[]}
+          items={[]}
           loading={false}
           loadingMore={false}
           error={null}
@@ -210,11 +213,11 @@ describe('TimelinePosts', () => {
     });
 
     it('should render end message when no more posts to load', async () => {
-      const fewPosts = ['author1:post1', 'author2:post2']; // Less than NEXUS_POSTS_PER_PAGE
+      const fewItems = toSingleItems(['author1:post1', 'author2:post2']);
 
       render(
         <TimelinePosts
-          postIds={fewPosts}
+          items={fewItems}
           loading={false}
           loadingMore={false}
           error={null}
@@ -235,7 +238,7 @@ describe('TimelinePosts', () => {
     it('should render error state on initial fetch failure', async () => {
       render(
         <TimelinePosts
-          postIds={[]}
+          items={[]}
           loading={false}
           loadingMore={false}
           error="Network error"
@@ -255,7 +258,7 @@ describe('TimelinePosts', () => {
     it('should show error message when pagination fails', async () => {
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={false}
           error="Pagination failed"
@@ -274,7 +277,7 @@ describe('TimelinePosts', () => {
     it('should stop loading more posts after pagination error', async () => {
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={false}
           error="Pagination failed"
@@ -294,7 +297,7 @@ describe('TimelinePosts', () => {
     it('should render all fetched posts', async () => {
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={false}
           error={null}
@@ -313,7 +316,7 @@ describe('TimelinePosts', () => {
     it('should render PostWithReplies for each post', async () => {
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={false}
           error={null}
@@ -331,7 +334,7 @@ describe('TimelinePosts', () => {
     it('should render posts with correct keys', async () => {
       const { container } = render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={false}
           error={null}
@@ -351,7 +354,7 @@ describe('TimelinePosts', () => {
     it('should navigate to post detail when post is clicked', async () => {
       render(
         <TimelinePosts
-          postIds={['author1:post123']}
+          items={toSingleItems(['author1:post123'])}
           loading={false}
           loadingMore={false}
           error={null}
@@ -371,7 +374,7 @@ describe('TimelinePosts', () => {
     it('should navigate with correct URL format for different posts', async () => {
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={false}
           error={null}
@@ -393,7 +396,7 @@ describe('TimelinePosts', () => {
     it('should render posts and allow loading more', async () => {
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={false}
           error={null}
@@ -410,7 +413,7 @@ describe('TimelinePosts', () => {
     it('should show end message when hasMore is false', async () => {
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={false}
           error={null}
@@ -427,7 +430,7 @@ describe('TimelinePosts', () => {
     it('should show loading more indicator when loadingMore is true', async () => {
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={true}
           error={null}
@@ -446,7 +449,7 @@ describe('TimelinePosts', () => {
     it('should render posts with provided props', async () => {
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={false}
           error={null}
@@ -465,7 +468,7 @@ describe('TimelinePosts', () => {
       const largePostIds = Array.from({ length: largePostCount }, (_, i) => `author${i + 1}:post${i + 1}`);
       render(
         <TimelinePosts
-          postIds={largePostIds}
+          items={toSingleItems(largePostIds)}
           loading={false}
           loadingMore={false}
           error={null}
@@ -487,7 +490,7 @@ describe('TimelinePosts', () => {
     it('should render posts inside Virtuoso', async () => {
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={false}
           error={null}
@@ -508,7 +511,7 @@ describe('TimelinePosts', () => {
       const mockLoadMore = vi.fn().mockResolvedValue(undefined);
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={false}
           error={null}
@@ -525,7 +528,7 @@ describe('TimelinePosts', () => {
       const mockLoadMore = vi.fn().mockResolvedValue(undefined);
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={true}
           error={null}
@@ -542,7 +545,7 @@ describe('TimelinePosts', () => {
       const mockLoadMore = vi.fn().mockResolvedValue(undefined);
       render(
         <TimelinePosts
-          postIds={mockPostIds}
+          items={mockItems}
           loading={false}
           loadingMore={false}
           error={null}
@@ -555,13 +558,43 @@ describe('TimelinePosts', () => {
       expect(mockLoadMore).not.toHaveBeenCalled();
     });
   });
+
+  describe('Grouped Reposts', () => {
+    it('should render GroupedRepostPost for REPOST_GROUP items', async () => {
+      const items: Core.TimelineItem[] = [
+        { type: 'single' as const, postId: 'alice:post1' },
+        {
+          type: 'repost-group' as const,
+          originalPostId: 'orlando:post50',
+          repostPostIds: ['miguel:repost1', 'vlada:repost2'],
+          reposterPubkys: ['miguel', 'vlada'],
+          earliestTimestamp: 1707000200,
+        },
+      ];
+
+      render(
+        <TimelinePosts
+          items={items}
+          loading={false}
+          loadingMore={false}
+          error={null}
+          hasMore={true}
+          loadMore={vi.fn()}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('post-alice:post1')).toBeInTheDocument();
+        expect(screen.getByTestId('grouped-repost-orlando:post50')).toBeInTheDocument();
+      });
+    });
+  });
 });
 
 describe('TimelinePosts - Snapshots', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock router
     mockUseRouter.mockReturnValue({
       push: mockPush,
       back: vi.fn(),
@@ -571,12 +604,10 @@ describe('TimelinePosts - Snapshots', () => {
       prefetch: vi.fn(),
     } as ReturnType<typeof useRouter>);
 
-    // Mock usePostNavigation
     mockUsePostNavigation.mockReturnValue({
       navigateToPost: mockPush,
     });
 
-    // Mock useLiveQuery
     mockUseLiveQuery.mockReturnValue({ id: 'test', replies: 0, tags: 0, unique_tags: 0, reposts: 0 });
   });
 
@@ -586,7 +617,7 @@ describe('TimelinePosts - Snapshots', () => {
 
   it('should match snapshot for loading state', () => {
     const { container } = render(
-      <TimelinePosts postIds={[]} loading={true} loadingMore={false} error={null} hasMore={true} loadMore={vi.fn()} />,
+      <TimelinePosts items={[]} loading={true} loadingMore={false} error={null} hasMore={true} loadMore={vi.fn()} />,
     );
 
     expect(container).toMatchSnapshot();
@@ -594,14 +625,7 @@ describe('TimelinePosts - Snapshots', () => {
 
   it('should match snapshot for empty state', async () => {
     const { container } = render(
-      <TimelinePosts
-        postIds={[]}
-        loading={false}
-        loadingMore={false}
-        error={null}
-        hasMore={false}
-        loadMore={vi.fn()}
-      />,
+      <TimelinePosts items={[]} loading={false} loadingMore={false} error={null} hasMore={false} loadMore={vi.fn()} />,
     );
 
     await waitFor(() => {
@@ -614,7 +638,7 @@ describe('TimelinePosts - Snapshots', () => {
   it('should match snapshot for error state', async () => {
     const { container } = render(
       <TimelinePosts
-        postIds={[]}
+        items={[]}
         loading={false}
         loadingMore={false}
         error="Network error"
@@ -633,7 +657,7 @@ describe('TimelinePosts - Snapshots', () => {
   it('should match snapshot with posts', async () => {
     const { container } = render(
       <TimelinePosts
-        postIds={mockPostIds}
+        items={toSingleItems(mockPostIds)}
         loading={false}
         loadingMore={false}
         error={null}
