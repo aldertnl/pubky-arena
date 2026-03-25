@@ -71,6 +71,9 @@ export const PUBLIC_ROUTES: string[] = [
   COPYRIGHT_ROUTES.COPYRIGHT,
   // Language settings page is public to allow language changes without auth issues
   SETTINGS_ROUTES.LANGUAGE,
+  // Share target must be public so OS share actions can open it before user authenticates.
+  // The share page handles unauthenticated state by prompting sign-in while preserving shared content.
+  APP_ROUTES.SHARE,
 ];
 
 export const ALLOWED_ROUTES = [

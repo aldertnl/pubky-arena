@@ -1175,7 +1175,10 @@
   },
   "share": {
     "title": "分享到 Pubky",
-    "cancel": "取消"
+    "cancel": "取消",
+    "signInRequired": "登录以将此内容分享到 Pubky。",
+    "signIn": "登录",
+    "attachmentsCount": "{count, plural, other {已附加 # 个文件}}"
   },
   "pullToRefresh": {
     "pullToRefresh": "下拉刷新",

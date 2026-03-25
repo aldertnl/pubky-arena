@@ -1175,7 +1175,10 @@
   },
   "share": {
     "title": "Share to Pubky",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "signInRequired": "Sign in to share this content to Pubky.",
+    "signIn": "Sign in",
+    "attachmentsCount": "{count, plural, one {# file attached} other {# files attached}}"
   },
   "pullToRefresh": {
     "pullToRefresh": "Pull to refresh",

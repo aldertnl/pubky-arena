@@ -1175,7 +1175,10 @@
   },
   "share": {
     "title": "مشاركة في Pubky",
-    "cancel": "إلغاء"
+    "cancel": "إلغاء",
+    "signInRequired": "سجّل الدخول لمشاركة هذا المحتوى على Pubky.",
+    "signIn": "تسجيل الدخول",
+    "attachmentsCount": "{count, plural, one {ملف واحد مرفق} other {# ملفات مرفقة}}"
   },
   "pullToRefresh": {
     "pullToRefresh": "اسحب للتحديث",
