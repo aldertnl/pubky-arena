@@ -63,12 +63,17 @@ export function GroupedRepostPost({ item, onClick, tagsLayout }: GroupedRepostPo
                       <Organisms.PostHeader postId={item.originalPostId} timeAgoPlacement="bottom-left" />
                       <Organisms.PostContent postId={item.originalPostId} />
                       <Atoms.Container overrideDefaults onClick={handleFooterClick} className="flex flex-col gap-4">
+                        <Organisms.PostTagsPanel postId={item.originalPostId} widthMode="full" className="lg:hidden" />
                         <Organisms.PostActionsBar
                           postId={item.originalPostId}
+                          onTagClick={() => setTagsExpanded((prev) => !prev)}
                           onReplyClick={() => setReplyDialogOpen(true)}
                           onRepostClick={() => setRepostDialogOpen(true)}
                         />
                       </Atoms.Container>
+                    </Atoms.Container>
+                    <Atoms.Container overrideDefaults onClick={handleFooterClick} className="hidden lg:flex">
+                      <Organisms.PostTagsPanel postId={item.originalPostId} widthMode="full" />
                     </Atoms.Container>
                   </Atoms.Container>
                 ) : (
