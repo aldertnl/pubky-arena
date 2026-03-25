@@ -126,6 +126,28 @@ describe('Tag', () => {
     // Should still have border
     expect(tag.style.border).toBe(`1px solid ${expectedBorderColor}`);
   });
+
+  // Note: It's to test whether jsdom environment returns 0 for clientWidth/scrollWidth for long tag name.
+  // NOT A REAL TEST.
+  it('logs jsdom scrollWidth/clientWidth for long tag name', () => {
+    const { container } = render(<Tag name="aaaaabbbbbcccccddddd" count={16} />);
+    const tagNameEl = container.querySelector('[data-testid="tag-name"]') as HTMLElement | null;
+
+    expect(tagNameEl).not.toBeNull();
+
+    const el = tagNameEl as HTMLElement;
+    // In Vitest's default jsdom environment there is no real layout engine (no font rendering / CSS layout),
+    // so DOM measurement APIs like clientWidth/scrollWidth often return 0. That's why we only log them here
+    // and avoid asserting ellipsis/truncation in this unit test (use a real browser for that).
+
+    console.log('[Tag jsdom metrics]', {
+      clientWidth: el.clientWidth,
+      scrollWidth: el.scrollWidth,
+    });
+
+    expect(typeof el.clientWidth).toBe('number');
+    expect(typeof el.scrollWidth).toBe('number');
+  });
 });
 
 describe('Tag - Snapshots', () => {
