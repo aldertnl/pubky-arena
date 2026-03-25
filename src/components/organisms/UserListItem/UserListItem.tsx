@@ -36,7 +36,7 @@ function FollowButton({ isFollowing, isLoading, isStatusLoading, displayName, va
         size="icon"
         onClick={onClick}
         disabled={showLoading}
-        className="group size-8 shrink-0 rounded-full"
+        className="group size-8 shrink-0 rounded-full p-1"
         aria-label={isFollowing ? `${t('unfollow')} ${displayName}` : `${t('follow')} ${displayName}`}
       >
         {showLoading ? (
@@ -47,7 +47,7 @@ function FollowButton({ isFollowing, isLoading, isStatusLoading, displayName, va
             <Libs.UserMinus className="hidden size-5 group-hover:block" />
           </>
         ) : (
-          <Libs.UserPlus className="size-5" />
+          <Libs.UserRoundPlus className="size-5" />
         )}
       </Atoms.Button>
     );
@@ -107,11 +107,13 @@ function MeButton({ variant = 'icon', className }: { variant?: 'iconWithText' | 
         data-cy="user-list-item-me-btn"
         variant="secondary"
         size="icon"
-        className={Libs.cn('size-8 shrink-0 cursor-not-allowed rounded-full opacity-50', className)}
-        disabled
+        className={Libs.cn(
+          'size-8 shrink-0 cursor-not-allowed border-none bg-transparent p-1 opacity-100 hover:bg-transparent',
+          className,
+        )}
         aria-label={tProfile('thisIsYou')}
       >
-        <Libs.CircleUserRound className="size-5 text-muted-foreground" />
+        <Libs.UserRound strokeWidth={2} className="size-5" />
       </Atoms.Button>
     );
   }
@@ -230,14 +232,14 @@ function CompactVariant({
     <Atoms.Container
       ref={ttlRef}
       overrideDefaults
-      className={Libs.cn('flex w-full items-center gap-3', className)}
+      className={Libs.cn('flex w-full items-center gap-2', className)}
       data-testid={dataTestId || `user-list-item-${user.id}`}
     >
       {/* Clickable user area */}
       <Atoms.Button
         overrideDefaults
         onClick={onUserClick}
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left transition-opacity hover:opacity-80"
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left transition-opacity hover:opacity-80"
         aria-label={`View ${displayName}'s profile`}
       >
         <Organisms.AvatarWithFallback
@@ -248,7 +250,7 @@ function CompactVariant({
           className="shrink-0"
         />
 
-        <Atoms.Container overrideDefaults className="flex min-w-0 flex-1 flex-col">
+        <Atoms.Container overrideDefaults className="flex max-w-25 min-w-0 flex-1 flex-col">
           <Atoms.Typography as="span" overrideDefaults className="truncate text-base font-bold text-foreground">
             {displayName}
           </Atoms.Typography>
@@ -310,7 +312,7 @@ function FullVariant({
         {/* User info */}
         <Atoms.Link href={`/profile/${user.id}`} className="flex min-w-0 flex-1 items-center gap-2">
           <Organisms.AvatarWithFallback avatarUrl={avatarUrl} name={displayName} fallbackSeed={user.id} size="md" />
-          <Atoms.Container overrideDefaults>
+          <Atoms.Container overrideDefaults className="min-w-0">
             <Atoms.Typography data-cy="profile-follower-item-name" size="sm" className="truncate font-bold">
               {displayName}
             </Atoms.Typography>
@@ -320,8 +322,8 @@ function FullVariant({
           </Atoms.Container>
         </Atoms.Link>
 
-        {/* Desktop: Tags - hidden between lg (1024px) and xl (1280px) */}
-        <TagsList userId={user.id} className="hidden xl:flex" />
+        {/* Desktop: Tags — constrained pills prevent overlay */}
+        <TagsList userId={user.id} className="hidden flex-nowrap justify-end *:max-w-[135px] xl:flex" />
 
         {/* Stats */}
         <UserStats tags={stats.tags} posts={stats.posts} />

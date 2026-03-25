@@ -1,0 +1,68 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SinglePost > matches snapshot 1`] = `
+<div>
+  <div
+    data-show-left-button="false"
+    data-show-right-button="false"
+    data-testid="mobile-header"
+  >
+    MobileHeader
+  </div>
+  <div
+    data-feed-variant="bookmarks"
+    data-testid="content-layout"
+    data-wrapper-class-name="gap-0"
+  >
+    <div
+      data-testid="left-sidebar"
+    >
+      <div
+        data-testid="single-post-left-sidebar"
+      >
+        SinglePostLeftSidebar
+      </div>
+    </div>
+    <div
+      data-testid="right-sidebar"
+    >
+      <div
+        data-post-id="author:post-1"
+        data-testid="single-post-sidebar"
+      >
+        SinglePostSidebar
+      </div>
+    </div>
+    <div
+      data-testid="left-drawer"
+    >
+      <div
+        data-testid="single-post-left-drawer"
+      >
+        SinglePostLeftDrawer
+      </div>
+    </div>
+    <div
+      data-testid="right-drawer"
+    >
+      <div
+        data-post-id="author:post-1"
+        data-testid="single-post-drawer"
+      >
+        SinglePostDrawer
+      </div>
+    </div>
+    <div
+      data-post-id="author:post-1"
+      data-testid="single-post-content"
+    >
+      SinglePostContent
+    </div>
+  </div>
+  <div
+    data-testid="mobile-footer"
+  >
+    MobileFooter
+  </div>
+</div>
+`;

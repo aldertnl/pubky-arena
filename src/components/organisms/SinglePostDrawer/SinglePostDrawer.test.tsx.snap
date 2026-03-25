@@ -1,0 +1,17 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SinglePostDrawer > matches snapshot 1`] = `
+<div>
+  <div
+    class="flex flex-col gap-6"
+    data-testid="container"
+  >
+    <div
+      data-post-id="author:post-1"
+      data-testid="single-post-participants"
+    >
+      SinglePostParticipants
+    </div>
+  </div>
+</div>
+`;
