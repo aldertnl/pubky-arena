@@ -26,9 +26,9 @@ export function SinglePost({ postId }: SinglePostProps) {
       <Organisms.ContentLayout
         classNameWrapperContent="gap-0"
         feedVariant={TIMELINE_FEED_VARIANT.BOOKMARKS}
-        leftSidebarContent={<Organisms.SinglePostLeftSidebar />}
+        leftSidebarContent={<Organisms.HomeFeedSidebar allowVisualLayout feedVariant={TIMELINE_FEED_VARIANT.HOME} />}
         rightSidebarContent={<Organisms.SinglePostSidebar postId={postId} />}
-        leftDrawerContent={<Organisms.SinglePostLeftDrawer />}
+        leftDrawerContent={<Organisms.HomeFeedDrawer allowVisualLayout feedVariant={TIMELINE_FEED_VARIANT.HOME} />}
         rightDrawerContent={<Organisms.SinglePostDrawer postId={postId} />}
       >
         <Organisms.SinglePostContent postId={postId} />
