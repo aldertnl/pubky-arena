@@ -9,4 +9,5 @@ export interface PostMenuActionsContentProps {
   onReportClick: () => void;
   /** Callback when edit action is clicked */
   onEditClick: () => void;
+  currentUserRepostId?: string;
 }

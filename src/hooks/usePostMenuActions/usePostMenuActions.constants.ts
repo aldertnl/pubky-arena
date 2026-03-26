@@ -11,6 +11,7 @@ export const POST_MENU_ACTION_IDS = {
   REPORT: 'report',
   EDIT: 'edit',
   DELETE: 'delete',
+  UNDO_REPOST: 'undo-repost',
 } as const;
 
 /**

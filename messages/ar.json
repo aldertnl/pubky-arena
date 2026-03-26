@@ -433,6 +433,7 @@
       "copyText": "نسخ نص المنشور",
       "editPost": "تعديل المنشور",
       "deletePost": "حذف المنشور",
+      "undoRepost": "التراجع عن إعادة النشر",
       "reportPost": "الابلاغ عن المنشور",
       "followUser": "متابعة {username}",
       "unfollowUser": "الغاء متابعة {username}",

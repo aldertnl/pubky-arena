@@ -31,7 +31,7 @@ export function usePostMenuActions(postId: string, options: UsePostMenuActionsOp
   const tCopy = useTranslations('toast.copy');
   const tFollow = useTranslations('toast.follow');
 
-  const { onReportClick, onEditClick } = options;
+  const { onReportClick, onEditClick, currentUserRepostId } = options;
   const parsedId = Core.parseCompositeId(postId);
   // Normalize author ID to ensure consistent format (strip pubky: or pk: prefix)
   // This is necessary because composite IDs may contain prefixed pubky IDs
@@ -168,6 +168,17 @@ export function usePostMenuActions(postId: string, options: UsePostMenuActionsOp
       icon: Libs.Flag,
       onClick: onReportClick,
       variant: POST_MENU_ACTION_VARIANTS.DEFAULT,
+    });
+  }
+
+  if (currentUserRepostId) {
+    menuItems.push({
+      id: POST_MENU_ACTION_IDS.UNDO_REPOST,
+      label: t('undoRepost'),
+      icon: Libs.Undo2,
+      onClick: () => deletePost(currentUserRepostId),
+      variant: POST_MENU_ACTION_VARIANTS.DEFAULT,
+      disabled: isDeleting,
     });
   }
 

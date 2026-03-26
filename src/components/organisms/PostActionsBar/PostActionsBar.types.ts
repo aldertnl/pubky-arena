@@ -7,6 +7,8 @@ export interface PostActionsBarProps {
   onRepostClick?: () => void;
   className?: string;
   variant?: 'default' | 'visual';
+  /** When set, the three-dot menu shows "Undo repost" targeting this repost ID */
+  currentUserRepostId?: string;
 }
 
 export interface ActionButtonConfig {

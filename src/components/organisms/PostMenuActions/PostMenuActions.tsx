@@ -9,7 +9,7 @@ import * as Organisms from '@/organisms';
 import { PostMenuActionsContent } from './PostMenuActionsContent';
 import type { PostMenuActionsProps } from './PostMenuActions.types';
 
-export function PostMenuActions({ postId, trigger }: PostMenuActionsProps) {
+export function PostMenuActions({ postId, trigger, currentUserRepostId }: PostMenuActionsProps) {
   const t = useTranslations('post.actions');
   const isMobile = Hooks.useIsMobile();
   const [open, setOpen] = useState(false);
@@ -52,6 +52,7 @@ export function PostMenuActions({ postId, trigger }: PostMenuActionsProps) {
                 variant={MENU_VARIANT.SHEET}
                 onActionComplete={closeMenu}
                 onReportClick={handleReportClick}
+                currentUserRepostId={currentUserRepostId}
                 onEditClick={handleEditClick}
               />
             </Atoms.Container>
@@ -70,6 +71,7 @@ export function PostMenuActions({ postId, trigger }: PostMenuActionsProps) {
               variant={MENU_VARIANT.DROPDOWN}
               onActionComplete={closeMenu}
               onReportClick={handleReportClick}
+              currentUserRepostId={currentUserRepostId}
               onEditClick={handleEditClick}
             />
           </Atoms.DropdownMenuContent>

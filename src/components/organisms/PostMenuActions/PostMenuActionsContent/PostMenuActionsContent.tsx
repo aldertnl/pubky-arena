@@ -13,8 +13,13 @@ export function PostMenuActionsContent({
   onActionComplete,
   onReportClick,
   onEditClick,
+  currentUserRepostId,
 }: PostMenuActionsContentProps) {
-  const { menuItems, isLoading } = Hooks.usePostMenuActions(postId, { onReportClick, onEditClick });
+  const { menuItems, isLoading } = Hooks.usePostMenuActions(postId, {
+    onReportClick,
+    onEditClick,
+    currentUserRepostId,
+  });
 
   if (isLoading) {
     return (

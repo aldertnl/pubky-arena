@@ -433,6 +433,7 @@
       "copyText": "Copiar texto de la publicación",
       "editPost": "Editar publicación",
       "deletePost": "Eliminar publicación",
+      "undoRepost": "Deshacer repost",
       "reportPost": "Reportar publicación",
       "followUser": "Seguir a {username}",
       "unfollowUser": "Dejar de seguir a {username}",

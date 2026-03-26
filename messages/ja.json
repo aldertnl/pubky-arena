@@ -433,6 +433,7 @@
       "copyText": "投稿テキストをコピー",
       "editPost": "投稿を編集",
       "deletePost": "投稿を削除",
+      "undoRepost": "リポストを取り消す",
       "reportPost": "投稿を報告",
       "followUser": "{username}をフォロー",
       "unfollowUser": "{username}のフォローを解除",

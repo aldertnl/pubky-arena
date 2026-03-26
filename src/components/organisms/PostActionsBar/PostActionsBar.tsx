@@ -51,6 +51,7 @@ export function PostActionsBar({
   onRepostClick,
   className,
   variant = 'default',
+  currentUserRepostId,
 }: PostActionsBarProps) {
   const t = useTranslations('common');
   const { postCounts, isLoading: isCountsLoading } = Hooks.usePostCounts(postId);
@@ -146,7 +147,7 @@ export function PostActionsBar({
           </Atoms.Button>
         ),
       )}
-      <Organisms.PostMenuActions postId={postId} trigger={moreButton} />
+      <Organisms.PostMenuActions postId={postId} trigger={moreButton} currentUserRepostId={currentUserRepostId} />
     </Atoms.Container>
   );
 }

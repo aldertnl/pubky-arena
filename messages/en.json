@@ -427,6 +427,7 @@
       "copyText": "Copy text of post",
       "editPost": "Edit post",
       "deletePost": "Delete post",
+      "undoRepost": "Undo repost",
       "reportPost": "Report post",
       "followUser": "Follow {username}",
       "unfollowUser": "Unfollow {username}",

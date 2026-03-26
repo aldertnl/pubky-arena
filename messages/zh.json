@@ -433,6 +433,7 @@
       "copyText": "复制帖子文本",
       "editPost": "编辑帖子",
       "deletePost": "删除帖子",
+      "undoRepost": "撤销转发",
       "reportPost": "举报帖子",
       "followUser": "关注 {username}",
       "unfollowUser": "取消关注 {username}",

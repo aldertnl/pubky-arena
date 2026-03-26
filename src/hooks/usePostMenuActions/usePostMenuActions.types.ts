@@ -18,6 +18,8 @@ export interface UsePostMenuActionsOptions {
   onReportClick: () => void;
   /** Callback when edit action is clicked - opens the edit dialog */
   onEditClick: () => void;
+  /** When set, shows "Undo repost" in the menu, deleting the user's repost */
+  currentUserRepostId?: string;
 }
 
 export interface UsePostMenuActionsResult {

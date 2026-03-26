@@ -35,6 +35,10 @@ export function GroupedRepostPost({ item, onClick, tagsLayout }: GroupedRepostPo
   const effectiveTagsLayout = tagsLayout === 'side' && isMobile ? 'inline' : tagsLayout;
   const { postDetails } = Hooks.usePostDetails(item.originalPostId);
   const isDeleted = Libs.isPostDeleted(postDetails?.content);
+  const currentUserPubky = Core.useAuthStore((state) => state.currentUserPubky);
+
+  const currentUserRepostIdx = currentUserPubky != null ? item.reposterPubkys.indexOf(currentUserPubky) : -1;
+  const currentUserRepostId = currentUserRepostIdx >= 0 ? item.repostPostIds[currentUserRepostIdx] : undefined;
 
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
   const [repostDialogOpen, setRepostDialogOpen] = useState(false);
@@ -69,6 +73,7 @@ export function GroupedRepostPost({ item, onClick, tagsLayout }: GroupedRepostPo
                           onTagClick={() => setTagsExpanded((prev) => !prev)}
                           onReplyClick={() => setReplyDialogOpen(true)}
                           onRepostClick={() => setRepostDialogOpen(true)}
+                          currentUserRepostId={currentUserRepostId}
                         />
                       </Atoms.Container>
                     </Atoms.Container>
@@ -113,6 +118,7 @@ export function GroupedRepostPost({ item, onClick, tagsLayout }: GroupedRepostPo
                         onTagClick={() => setTagsExpanded((prev) => !prev)}
                         onReplyClick={() => setReplyDialogOpen(true)}
                         onRepostClick={() => setRepostDialogOpen(true)}
+                        currentUserRepostId={currentUserRepostId}
                         className="shrink-0 justify-start md:justify-end"
                       />
                     </Atoms.Container>

@@ -433,6 +433,7 @@
       "copyText": "Text des Beitrags kopieren",
       "editPost": "Beitrag bearbeiten",
       "deletePost": "Beitrag löschen",
+      "undoRepost": "Repost rückgängig machen",
       "reportPost": "Beitrag melden",
       "followUser": "{username} folgen",
       "unfollowUser": "{username} entfolgen",
