@@ -39,7 +39,12 @@ export function RepostersOverlay({ reposterPubkys, open, onOpenChangeAction }: R
   if (isMobile) {
     return (
       <Atoms.Sheet open={open} onOpenChange={onOpenChangeAction}>
-        <Atoms.SheetContent side="bottom" className="rounded-t-2xl pb-8" onClick={handleContentClick}>
+        <Atoms.SheetContent
+          side="bottom"
+          className="rounded-t-2xl pb-8"
+          onClick={handleContentClick}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
           <Atoms.SheetHeader className="mb-4">
             <Atoms.SheetTitle>{title}</Atoms.SheetTitle>
           </Atoms.SheetHeader>
@@ -51,7 +56,11 @@ export function RepostersOverlay({ reposterPubkys, open, onOpenChangeAction }: R
 
   return (
     <Atoms.Dialog open={open} onOpenChange={onOpenChangeAction}>
-      <Atoms.DialogContent className="max-w-md" onClick={handleContentClick}>
+      <Atoms.DialogContent
+        className="max-w-md outline-none"
+        onClick={handleContentClick}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <Atoms.DialogHeader>
           <Atoms.DialogTitle>{title}</Atoms.DialogTitle>
         </Atoms.DialogHeader>
