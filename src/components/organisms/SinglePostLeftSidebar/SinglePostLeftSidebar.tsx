@@ -15,7 +15,10 @@ function SinglePostFilters() {
 
   return (
     <Atoms.Container overrideDefaults className="flex flex-col gap-6">
+      <Molecules.FilterReach selectedTab={undefined} defaultSelectedTab={undefined} disabled />
+      <Molecules.FilterSort selectedTab={undefined} defaultSelectedTab={undefined} disabled />
       <Molecules.FilterLayout selectedTab={layout} onTabChange={setLayout} />
+      <Molecules.FilterContent selectedTab={undefined} defaultSelectedTab={undefined} disabled />
     </Atoms.Container>
   );
 }

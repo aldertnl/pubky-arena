@@ -59,6 +59,7 @@ vi.mock('@/libs', () => ({
   UserMinus: (props: Record<string, unknown>) => <svg data-testid="user-minus-icon" {...props} />,
   UserPlus: (props: Record<string, unknown>) => <svg data-testid="user-plus-icon" {...props} />,
   UserRoundPlus: (props: Record<string, unknown>) => <svg data-testid="user-round-plus-icon" {...props} />,
+  UserRound: (props: Record<string, unknown>) => <svg data-testid="user-round-icon" {...props} />,
   CircleUserRound: (props: Record<string, unknown>) => <svg data-testid="circle-user-round" {...props} />,
 }));
 

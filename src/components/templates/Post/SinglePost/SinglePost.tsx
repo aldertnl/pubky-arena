@@ -19,16 +19,13 @@ import { TIMELINE_FEED_VARIANT } from '@/config';
 export function SinglePost({ postId }: SinglePostProps) {
   return (
     <>
-      {/* Mobile header */}
-      <Molecules.MobileHeader showLeftButton={false} showRightButton={false} />
-
       {/* Main content container */}
       <Organisms.ContentLayout
         classNameWrapperContent="gap-0"
         feedVariant={TIMELINE_FEED_VARIANT.BOOKMARKS}
-        leftSidebarContent={<Organisms.HomeFeedSidebar allowVisualLayout feedVariant={TIMELINE_FEED_VARIANT.HOME} />}
+        leftSidebarContent={<Organisms.SinglePostLeftSidebar />}
         rightSidebarContent={<Organisms.SinglePostSidebar postId={postId} />}
-        leftDrawerContent={<Organisms.HomeFeedDrawer allowVisualLayout feedVariant={TIMELINE_FEED_VARIANT.HOME} />}
+        leftDrawerContent={<Organisms.SinglePostLeftDrawer />}
         rightDrawerContent={<Organisms.SinglePostDrawer postId={postId} />}
       >
         <Organisms.SinglePostContent postId={postId} />

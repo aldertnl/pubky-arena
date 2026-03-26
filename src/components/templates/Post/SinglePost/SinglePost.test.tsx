@@ -3,15 +3,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { SinglePost } from './SinglePost';
 
 vi.mock('@/molecules', () => ({
-  MobileHeader: ({ showLeftButton, showRightButton }: { showLeftButton?: boolean; showRightButton?: boolean }) => (
-    <div
-      data-testid="mobile-header"
-      data-show-left-button={String(showLeftButton)}
-      data-show-right-button={String(showRightButton)}
-    >
-      MobileHeader
-    </div>
-  ),
   MobileFooter: () => <div data-testid="mobile-footer">MobileFooter</div>,
 }));
 
@@ -75,16 +66,8 @@ describe('SinglePost', () => {
   it('renders content layout and mobile shell', () => {
     render(<SinglePost postId="author:post-1" />);
 
-    expect(screen.getByTestId('mobile-header')).toBeInTheDocument();
     expect(screen.getByTestId('content-layout')).toBeInTheDocument();
     expect(screen.getByTestId('mobile-footer')).toBeInTheDocument();
-  });
-
-  it('renders mobile header buttons disabled', () => {
-    render(<SinglePost postId="author:post-1" />);
-
-    expect(screen.getByTestId('mobile-header')).toHaveAttribute('data-show-left-button', 'false');
-    expect(screen.getByTestId('mobile-header')).toHaveAttribute('data-show-right-button', 'false');
   });
 
   it('renders SinglePostLeftSidebar in left sidebar', () => {
