@@ -1,6 +1,5 @@
 'use client';
 
-import * as Molecules from '@/molecules';
 import * as Organisms from '@/organisms';
 
 import type { SinglePostProps } from './SinglePost.types';
@@ -30,9 +29,6 @@ export function SinglePost({ postId }: SinglePostProps) {
       >
         <Organisms.SinglePostContent postId={postId} />
       </Organisms.ContentLayout>
-
-      {/* Mobile footer navigation */}
-      <Molecules.MobileFooter />
     </>
   );
 }
