@@ -8,7 +8,7 @@ import * as Atoms from '@/atoms';
 import * as Molecules from '@/molecules';
 import * as Hooks from '@/hooks';
 import type { Pubky } from '@/core';
-import { RepostersOverlay } from './RepostersOverlay';
+import { RepostersOverlay } from './RepostersOverlay/RepostersOverlay';
 
 interface GroupedRepostHeaderProps {
   reposterPubkys: Pubky[];

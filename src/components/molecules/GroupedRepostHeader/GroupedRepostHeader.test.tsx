@@ -83,7 +83,7 @@ vi.mock('@/molecules', () => ({
   PostHeaderTimestamp: ({ timeAgo }: { timeAgo: string }) => <span data-testid="timestamp">{timeAgo}</span>,
 }));
 
-vi.mock('./RepostersOverlay', () => ({
+vi.mock('./RepostersOverlay/RepostersOverlay', () => ({
   RepostersOverlay: ({ open }: { open: boolean }) => (open ? <div data-testid="reposters-overlay">Overlay</div> : null),
 }));
 
