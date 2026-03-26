@@ -195,7 +195,12 @@ describe('TimelineFeedContent', () => {
           tagsLayout="inline"
         />,
       );
-      expect(mockUsePullToRefresh).toHaveBeenCalledWith(expect.objectContaining({ disabled: false }));
+      expect(mockUsePullToRefresh).toHaveBeenCalledWith(
+        expect.objectContaining({
+          disabled: false,
+          containerRef: expect.objectContaining({ current: expect.any(Object) }),
+        }),
+      );
     });
 
     it('disables pull-to-refresh for bookmarks variant', () => {
@@ -206,7 +211,9 @@ describe('TimelineFeedContent', () => {
           tagsLayout="inline"
         />,
       );
-      expect(mockUsePullToRefresh).toHaveBeenCalledWith(expect.objectContaining({ disabled: true }));
+      expect(mockUsePullToRefresh).toHaveBeenCalledWith(
+        expect.objectContaining({ disabled: true, containerRef: expect.any(Object) }),
+      );
     });
 
     it('shows pull-to-refresh indicator when pulling', () => {
