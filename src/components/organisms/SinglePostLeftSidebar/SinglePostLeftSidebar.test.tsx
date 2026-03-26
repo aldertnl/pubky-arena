@@ -4,6 +4,27 @@ import { SinglePostLeftSidebar, SinglePostLeftDrawer } from './SinglePostLeftSid
 
 const mockSetLayout = vi.fn();
 const mockUseHomeStore = vi.fn();
+type BaseFilterMockProps = {
+  selectedTab?: string;
+  defaultSelectedTab?: string;
+  disabled?: boolean;
+  onTabChange?: (tab: string) => void;
+};
+const mockFilterReach = vi.fn(({ disabled }: BaseFilterMockProps) => (
+  <div data-testid="filter-reach" data-disabled={disabled ? 'true' : 'false'}>
+    FilterReach
+  </div>
+));
+const mockFilterSort = vi.fn(({ disabled }: BaseFilterMockProps) => (
+  <div data-testid="filter-sort" data-disabled={disabled ? 'true' : 'false'}>
+    FilterSort
+  </div>
+));
+const mockFilterContent = vi.fn(({ disabled }: BaseFilterMockProps) => (
+  <div data-testid="filter-content" data-disabled={disabled ? 'true' : 'false'}>
+    FilterContent
+  </div>
+));
 const mockFilterLayout = vi.fn(
   ({ selectedTab, onTabChange }: { selectedTab?: string; onTabChange?: (tab: string) => void }) => (
     <div data-testid="filter-layout" data-selected-tab={selectedTab}>
@@ -27,9 +48,9 @@ vi.mock('@/atoms', () => ({
 }));
 
 vi.mock('@/molecules', () => ({
-  FilterReach: () => <div data-testid="filter-reach">FilterReach</div>,
-  FilterSort: () => <div data-testid="filter-sort">FilterSort</div>,
-  FilterContent: () => <div data-testid="filter-content">FilterContent</div>,
+  FilterReach: (props: BaseFilterMockProps) => mockFilterReach(props),
+  FilterSort: (props: BaseFilterMockProps) => mockFilterSort(props),
+  FilterContent: (props: BaseFilterMockProps) => mockFilterContent(props),
   FilterLayout: ({ selectedTab, onTabChange }: { selectedTab?: string; onTabChange?: (tab: string) => void }) =>
     mockFilterLayout({ selectedTab, onTabChange }),
 }));
@@ -37,6 +58,9 @@ vi.mock('@/molecules', () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   mockSetLayout.mockClear();
+  mockFilterReach.mockClear();
+  mockFilterSort.mockClear();
+  mockFilterContent.mockClear();
   mockFilterLayout.mockClear();
   mockUseHomeStore.mockReturnValue({
     layout: 'columns',
@@ -45,13 +69,16 @@ beforeEach(() => {
 });
 
 describe('SinglePostLeftSidebar', () => {
-  it('renders only FilterLayout', () => {
+  it('renders only the layout filter', () => {
     render(<SinglePostLeftSidebar />);
 
     expect(screen.getByTestId('filter-layout')).toBeInTheDocument();
-    expect(screen.queryByTestId('filter-reach')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('filter-sort')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('filter-content')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('filter-reach')).toBeInTheDocument();
+    expect(screen.queryByTestId('filter-sort')).toBeInTheDocument();
+    expect(screen.queryByTestId('filter-content')).toBeInTheDocument();
+    expect(mockFilterReach).toHaveBeenCalled();
+    expect(mockFilterSort).toHaveBeenCalled();
+    expect(mockFilterContent).toHaveBeenCalled();
   });
 
   it('passes home layout state to FilterLayout', () => {
@@ -76,13 +103,16 @@ describe('SinglePostLeftSidebar', () => {
 });
 
 describe('SinglePostLeftDrawer', () => {
-  it('renders only FilterLayout', () => {
+  it('renders only the layout filter', () => {
     render(<SinglePostLeftDrawer />);
 
     expect(screen.getByTestId('filter-layout')).toBeInTheDocument();
-    expect(screen.queryByTestId('filter-reach')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('filter-sort')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('filter-content')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('filter-reach')).toBeInTheDocument();
+    expect(screen.queryByTestId('filter-sort')).toBeInTheDocument();
+    expect(screen.queryByTestId('filter-content')).toBeInTheDocument();
+    expect(mockFilterReach).toHaveBeenCalled();
+    expect(mockFilterSort).toHaveBeenCalled();
+    expect(mockFilterContent).toHaveBeenCalled();
   });
 
   it('passes home layout state to FilterLayout', () => {

@@ -7,11 +7,13 @@ exports[`SinglePostLeftDrawer > matches snapshot 1`] = `
     data-testid="container"
   >
     <div
+      data-disabled="true"
       data-testid="filter-reach"
     >
       FilterReach
     </div>
     <div
+      data-disabled="true"
       data-testid="filter-sort"
     >
       FilterSort
@@ -27,6 +29,7 @@ exports[`SinglePostLeftDrawer > matches snapshot 1`] = `
       </button>
     </div>
     <div
+      data-disabled="true"
       data-testid="filter-content"
     >
       FilterContent
@@ -42,11 +45,13 @@ exports[`SinglePostLeftSidebar > matches snapshot 1`] = `
     data-testid="container"
   >
     <div
+      data-disabled="true"
       data-testid="filter-reach"
     >
       FilterReach
     </div>
     <div
+      data-disabled="true"
       data-testid="filter-sort"
     >
       FilterSort
@@ -62,6 +67,7 @@ exports[`SinglePostLeftSidebar > matches snapshot 1`] = `
       </button>
     </div>
     <div
+      data-disabled="true"
       data-testid="filter-content"
     >
       FilterContent
