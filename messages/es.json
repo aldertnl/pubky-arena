@@ -286,6 +286,8 @@
     "signIn": {
       "title": "Inicia sesión en <highlight>Pubky.</highlight>",
       "subtitle": "Autoriza con Pubky Ring para iniciar sesión.",
+      "progressTitle": "Iniciando sesión.",
+      "progressSubtitle": "Espera mientras se carga tu experiencia en Pubky.",
       "generating": "Generando código QR...",
       "generatingShort": "Generando...",
 
@@ -686,7 +688,8 @@
       "subtitle2": "Puedes buscar multiples etiquetas separadas por comas."
     },
     "userSuggestion": "Usuario {name} ({pubky})",
-    "viewProfile": "Ver perfil de {name}"
+    "viewProfile": "Ver perfil de {name}",
+    "invalidTag": "Las etiquetas deben tener 20 caracteres o menos y no pueden contener caracteres especiales"
   },
   "feedback": {
     "title": "Enviar comentarios",
@@ -741,7 +744,7 @@
       "repostedPost": "republicó tu publicación",
       "mentionedYou": "te mencionó en una publicación",
       "deletedPost": "eliminó una publicación",
-      "editedPost": "editó una publicación",
+      "editedPost": "editó una publicación con la que interactuaste",
       "fallback": "Nueva notificación"
     },
     "settings": {
@@ -962,6 +965,10 @@
       "userIdRequired": "ID de usuario requerido",
       "loginRequired": "Debes iniciar sesión para agregar etiquetas",
       "alreadyAdded": "Ya has agregado esta etiqueta",
+      "added": "Etiqueta agregada",
+      "addedDesc": "Se agregó correctamente \"{label}\".",
+      "removed": "Etiqueta eliminada",
+      "removedDesc": "Se eliminó correctamente \"{label}\".",
       "addFailed": "Error al agregar etiqueta",
       "addFailedDesc": "No se pudo agregar \"{label}\". Por favor intenta de nuevo.",
       "removeFailed": "Error al eliminar etiqueta",

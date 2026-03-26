@@ -286,6 +286,8 @@
     "signIn": {
       "title": "Accedi a <highlight>Pubky.</highlight>",
       "subtitle": "Autorizza con Pubky Ring per accedere.",
+      "progressTitle": "Accesso in corso.",
+      "progressSubtitle": "Attendi mentre la tua esperienza Pubky viene caricata.",
       "generating": "Generazione codice QR...",
       "generatingShort": "Generazione...",
 
@@ -686,7 +688,8 @@
       "subtitle2": "Puoi cercare più tag separati da virgole."
     },
     "userSuggestion": "Utente {name} ({pubky})",
-    "viewProfile": "Vedi profilo di {name}"
+    "viewProfile": "Vedi profilo di {name}",
+    "invalidTag": "I tag devono avere al massimo 20 caratteri e non possono contenere caratteri speciali"
   },
   "feedback": {
     "title": "Invia feedback",
@@ -741,7 +744,7 @@
       "repostedPost": "ha ripubblicato il tuo post",
       "mentionedYou": "ti ha menzionato in un post",
       "deletedPost": "ha eliminato un post",
-      "editedPost": "ha modificato un post",
+      "editedPost": "ha modificato un post con cui hai interagito",
       "fallback": "Nuova notifica"
     },
     "settings": {
@@ -962,6 +965,10 @@
       "userIdRequired": "ID utente obbligatorio",
       "loginRequired": "Devi accedere per aggiungere tag",
       "alreadyAdded": "Hai già aggiunto questo tag",
+      "added": "Tag aggiunto",
+      "addedDesc": "\"{label}\" è stato aggiunto con successo.",
+      "removed": "Tag rimosso",
+      "removedDesc": "\"{label}\" è stato rimosso con successo.",
       "addFailed": "Aggiunta tag fallita",
       "addFailedDesc": "Impossibile aggiungere \"{label}\". Riprova.",
       "removeFailed": "Rimozione tag fallita",
