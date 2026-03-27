@@ -37,8 +37,8 @@ export function GroupedRepostPost({ item, onClick, tagsLayout }: GroupedRepostPo
   const isDeleted = Libs.isPostDeleted(postDetails?.content);
   const currentUserPubky = Core.useAuthStore((state) => state.currentUserPubky);
 
-  const currentUserRepostIdx = currentUserPubky != null ? item.reposterPubkys.indexOf(currentUserPubky) : -1;
-  const currentUserRepostId = currentUserRepostIdx >= 0 ? item.repostPostIds[currentUserRepostIdx] : undefined;
+  const currentUserRepostId =
+    currentUserPubky != null ? item.repostPostIds.find((id) => id.startsWith(`${currentUserPubky}:`)) : undefined;
 
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
   const [repostDialogOpen, setRepostDialogOpen] = useState(false);

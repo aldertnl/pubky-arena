@@ -38,6 +38,7 @@ exports[`GroupedRepostPost - Snapshots > matches snapshot for default state 1`] 
           Tags
         </div>
         <div
+          data-current-user-repost-id=""
           data-testid="post-actions-orlando:post50"
         >
           <button
@@ -112,6 +113,7 @@ exports[`GroupedRepostPost - Snapshots > matches snapshot for single reposter 1`
           Tags
         </div>
         <div
+          data-current-user-repost-id=""
           data-testid="post-actions-orlando:post50"
         >
           <button

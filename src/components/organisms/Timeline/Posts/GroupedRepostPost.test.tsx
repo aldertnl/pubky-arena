@@ -79,12 +79,14 @@ vi.mock('@/organisms', () => ({
     postId,
     onReplyClick,
     onRepostClick,
+    currentUserRepostId,
   }: {
     postId: string;
     onReplyClick?: () => void;
     onRepostClick?: () => void;
+    currentUserRepostId?: string;
   }) => (
-    <div data-testid={`post-actions-${postId}`}>
+    <div data-testid={`post-actions-${postId}`} data-current-user-repost-id={currentUserRepostId ?? ''}>
       <button data-testid="reply-btn" onClick={onReplyClick}>
         Reply
       </button>
@@ -188,6 +190,30 @@ describe('GroupedRepostPost', () => {
     render(<GroupedRepostPost item={mockItem} />);
 
     expect(screen.getByTestId('tags-list')).toBeInTheDocument();
+  });
+
+  it('finds correct currentUserRepostId when repostPostIds and reposterPubkys have different lengths', () => {
+    const authStore = Core.useAuthStore.getState();
+    authStore.init({
+      currentUserPubky: 'bob' as Core.Pubky,
+      session: {} as Parameters<typeof authStore.init>[0]['session'],
+      hasProfile: false,
+    });
+
+    const misalignedItem: Core.RepostGroupItem = {
+      type: Core.TIMELINE_ITEM_TYPE.REPOST_GROUP,
+      originalPostId: 'orlando:post50',
+      repostPostIds: ['alice:r1', 'alice:r2', 'bob:r3'],
+      reposterPubkys: ['alice', 'bob'],
+      earliestTimestamp: 1707000200,
+    };
+
+    render(<GroupedRepostPost item={misalignedItem} />);
+
+    const actionsBar = screen.getAllByTestId(/^post-actions-/)[0];
+    expect(actionsBar).toHaveAttribute('data-current-user-repost-id', 'bob:r3');
+
+    Core.useAuthStore.getState().reset();
   });
 });
 
