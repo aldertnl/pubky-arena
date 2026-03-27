@@ -61,6 +61,9 @@ export interface UsePostInputReturn {
   hasContent: boolean;
   displayPlaceholder: string;
   currentUserPubky: string | null;
+  /** Resolved embed target for repost preview (matches persisted embed after plain-repost chain walk). */
+  repostPreviewPostId: string | null;
+  isRepostPreviewResolving: boolean;
 
   // Handlers
   handleExpand: () => void;

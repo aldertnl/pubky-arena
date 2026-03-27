@@ -79,6 +79,8 @@ export function PostInput({
     setMentionSelectedIndex,
     handleMentionSelect,
     handleMentionKeyDown,
+    repostPreviewPostId,
+    isRepostPreviewResolving,
   } = Hooks.usePostInput({
     variant,
     postId,
@@ -246,9 +248,18 @@ export function PostInput({
           />
         )}
 
-        {/* Show original post preview for reposts */}
+        {/* Show original post preview for reposts (resolved embed matches commitCreate) */}
         {variant === POST_INPUT_VARIANT.REPOST && originalPostId && (
-          <Molecules.PostPreviewCard postId={originalPostId} className="bg-card" />
+          <>
+            {isRepostPreviewResolving && (
+              <Atoms.Container overrideDefaults className="rounded-md border border-border bg-card p-4">
+                <Atoms.Skeleton className="h-24 w-full rounded-md" />
+              </Atoms.Container>
+            )}
+            {!isRepostPreviewResolving && repostPreviewPostId && (
+              <Molecules.PostPreviewCard postId={repostPreviewPostId} className="bg-card" />
+            )}
+          </>
         )}
 
         <PostInputExpandableSection

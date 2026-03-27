@@ -107,8 +107,9 @@ export class PostStreamApplication {
       if (!details || !relationships?.reposted) continue;
       if (!this.isPlainRepost(details)) continue;
 
-      // This is a plain repost — resolve the chain to find the true original
-      const originalPostId = await this.resolveRepostChain(relationships.reposted);
+      const originalPostId = await this.resolveReshareEmbedTargetCompositeId({
+        surfacePostId: postIds[i],
+      });
       if (!originalPostId) continue;
 
       result.set(postIds[i], {
@@ -125,47 +126,74 @@ export class PostStreamApplication {
   }
 
   /**
-   * Resolves a repost chain back to the root original post.
-   * Follows `reposted` URIs until we find a post that is not itself a plain repost.
-   * Guards against cycles with a visited set and max depth.
+   * Walks from a surface post: while the node is a plain repost with a `reposted` parent,
+   * move to the parent; stop at a root, a quote, or an unresolvable hop. Used for timeline
+   * grouping, reshare create (plain + quote), and honest preview.
+   *
+   * @returns Resolved composite id, or `null` if the next parent URI cannot be parsed (malformed graph).
    */
-  private static async resolveRepostChain(repostedUri: string): Promise<string | null> {
-    const MAX_CHAIN_DEPTH = 10;
+  static async resolveReshareEmbedTargetCompositeId({
+    surfacePostId,
+    viewerId = null,
+  }: {
+    surfacePostId: string;
+    /** Viewer for `getOrFetch` on missing hops. Callers (Controllers) should supply this. */
+    viewerId?: Core.Pubky | null;
+  }): Promise<string | null> {
+    return this.walkReshareSurfaceToEmbedTargetCompositeId({ surfacePostId, viewerId });
+  }
+
+  private static async walkReshareSurfaceToEmbedTargetCompositeId({
+    surfacePostId,
+    viewerId,
+  }: {
+    surfacePostId: string;
+    viewerId: Core.Pubky | null;
+  }): Promise<string | null> {
+    let current = surfacePostId;
     const visited = new Set<string>();
 
-    let currentUri = repostedUri;
+    while (visited.size < Config.PLAIN_REPOST_CHAIN_MAX_DEPTH) {
+      if (visited.has(current)) {
+        return current;
+      }
+      visited.add(current);
 
-    for (let depth = 0; depth < MAX_CHAIN_DEPTH; depth++) {
-      const compositeId = Core.buildCompositeIdFromPubkyUri({
-        uri: currentUri,
+      await this.ensurePostRowForChainStep({ compositeId: current, viewerId });
+
+      const details = await Core.LocalPostService.readDetails({ postId: current });
+      const relationships = await Core.LocalPostService.readRelationships(current);
+
+      if (!details) {
+        return current;
+      }
+      if (!this.isPlainRepost(details) || !relationships?.reposted) {
+        return current;
+      }
+
+      const nextId = Core.buildCompositeIdFromPubkyUri({
+        uri: relationships.reposted,
         domain: Core.CompositeIdDomain.POSTS,
       });
-
-      if (!compositeId || visited.has(compositeId)) {
-        return compositeId;
+      if (!nextId) {
+        return null;
       }
-      visited.add(compositeId);
-
-      const relationships = await Core.LocalPostService.readRelationships(compositeId);
-      if (!relationships?.reposted) {
-        return compositeId;
-      }
-
-      const details = await Core.LocalPostService.readDetails({ postId: compositeId });
-      if (!details || !this.isPlainRepost(details)) {
-        return compositeId;
-      }
-
-      // Continue following the chain
-      currentUri = relationships.reposted;
+      current = nextId;
     }
 
-    // Max depth reached — return the last resolved ID
-    const lastId = Core.buildCompositeIdFromPubkyUri({
-      uri: currentUri,
-      domain: Core.CompositeIdDomain.POSTS,
-    });
-    return lastId;
+    return current;
+  }
+
+  private static async ensurePostRowForChainStep({
+    compositeId,
+    viewerId,
+  }: {
+    compositeId: string;
+    viewerId: Core.Pubky | null;
+  }): Promise<void> {
+    const existing = await Core.LocalPostService.readDetails({ postId: compositeId });
+    if (existing) return;
+    await Core.PostApplication.getOrFetch({ compositeId, viewerId: viewerId ?? undefined });
   }
 
   /**

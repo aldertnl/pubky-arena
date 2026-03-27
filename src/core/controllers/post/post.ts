@@ -100,6 +100,15 @@ export class PostController {
   }
 
   /**
+   * Resolves the stored embed target for a reshare surface (plain or quote):
+   * walks through consecutive plain-repost parents to the root or first non-plain post.
+   */
+  static async resolveReshareEmbedTarget({ surfacePostId }: { surfacePostId: string }): Promise<string | null> {
+    const viewerId = Core.useAuthStore.getState().currentUserPubky;
+    return Core.PostStreamApplication.resolveReshareEmbedTargetCompositeId({ surfacePostId, viewerId });
+  }
+
+  /**
    * Create a post (including replies and reposts)
    * @param params - Parameters object
    * @param params.authorId - ID of the user creating the post
@@ -129,7 +138,19 @@ export class PostController {
       parentUri = await Core.PostValidators.validatePostId({ postId: parentPostId, message: 'Parent post' });
     }
     if (originalPostId) {
-      repostedUri = await Core.PostValidators.validatePostId({ postId: originalPostId, message: 'Original post' });
+      const resolved = await Core.PostStreamApplication.resolveReshareEmbedTargetCompositeId({
+        surfacePostId: originalPostId,
+        viewerId: authorId,
+      });
+      if (!resolved) {
+        throw Err.client(ClientErrorCode.NOT_FOUND, 'Original post not found', {
+          service: ErrorService.Local,
+          operation: 'commitCreate',
+          context: { originalPostId },
+        });
+      }
+      await this.getOrFetch({ compositeId: resolved, viewerId: authorId });
+      repostedUri = await Core.PostValidators.validatePostId({ postId: resolved, message: 'Original post' });
     }
 
     const postKind = Core.inferPostKindForCreate({ content, attachments, isArticle });

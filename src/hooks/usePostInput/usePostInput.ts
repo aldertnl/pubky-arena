@@ -53,6 +53,8 @@ export function usePostInput({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isExpanded, setIsExpanded] = useState(expanded);
   const [isDragging, setIsDragging] = useState(false);
+  const [repostPreviewPostId, setRepostPreviewPostId] = useState<string | null>(null);
+  const [isRepostPreviewResolving, setIsRepostPreviewResolving] = useState(false);
 
   // Refs
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -110,6 +112,37 @@ export function usePostInput({
     setSelectedIndex: setMentionSelectedIndex,
     handleKeyDown: mentionHandleKeyDown,
   } = useMentionAutocomplete({ content, onSelect: handleMentionSelect });
+
+  // Resolve embed target for repost preview (matches commitCreate / Nexus embed)
+  useEffect(() => {
+    if (variant !== POST_INPUT_VARIANT.REPOST || !originalPostId) {
+      setRepostPreviewPostId(null);
+      setIsRepostPreviewResolving(false);
+      return;
+    }
+    let cancelled = false;
+    setRepostPreviewPostId(null);
+    setIsRepostPreviewResolving(true);
+    void (async () => {
+      try {
+        const resolved = await Core.PostController.resolveReshareEmbedTarget({ surfacePostId: originalPostId });
+        if (cancelled) return;
+        if (resolved) {
+          await Core.PostController.getOrFetch({ compositeId: resolved, viewerId: currentUserPubky ?? undefined });
+          if (!cancelled) setRepostPreviewPostId(resolved);
+        } else {
+          setRepostPreviewPostId(originalPostId);
+        }
+      } catch {
+        if (!cancelled) setRepostPreviewPostId(originalPostId);
+      } finally {
+        if (!cancelled) setIsRepostPreviewResolving(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [variant, originalPostId, currentUserPubky]);
 
   // Notify parent of content changes
   useEffect(() => {
@@ -483,6 +516,8 @@ export function usePostInput({
     hasContent,
     displayPlaceholder,
     currentUserPubky,
+    repostPreviewPostId,
+    isRepostPreviewResolving,
 
     // Handlers
     handleExpand,

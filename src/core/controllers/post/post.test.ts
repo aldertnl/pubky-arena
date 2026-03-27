@@ -478,6 +478,51 @@ describe('PostController', () => {
         bodyJson: expect.any(Object),
       });
     });
+
+    it('should resolve plain-repost chain so embed and repost count target the root post', async () => {
+      await setupExistingPost();
+      const rootUri = `pubky://${testData.authorPubky}/pub/pubky.app/posts/${testData.postId}`;
+      const middleCompositeId = Core.buildCompositeId({ pubky: testData.authorPubky, id: 'middlePlainRepost' });
+
+      await Core.PostDetailsModel.table.add({
+        id: middleCompositeId,
+        content: '',
+        indexed_at: Date.now(),
+        kind: 'short',
+        uri: `pubky://${testData.authorPubky}/pub/pubky.app/posts/middlePlainRepost`,
+        attachments: null,
+      });
+      await Core.PostCountsModel.table.add({
+        id: middleCompositeId,
+        tags: 0,
+        unique_tags: 0,
+        replies: 0,
+        reposts: 0,
+      });
+      await Core.PostRelationshipsModel.table.add({
+        id: middleCompositeId,
+        replied: null,
+        reposted: rootUri,
+        mentioned: [],
+      });
+
+      const { PostController } = await import('./post');
+      await PostController.commitCreate({
+        content: '',
+        authorId: testData.authorPubky,
+        originalPostId: middleCompositeId,
+      });
+
+      const newRel = await Core.PostRelationshipsModel.table
+        .toArray()
+        .then((rows) => rows.find((r) => r.id !== testData.fullPostId && r.id !== middleCompositeId));
+      expect(newRel?.reposted).toBe(rootUri);
+
+      const rootCounts = await Core.PostCountsModel.findById(testData.fullPostId);
+      const middleCounts = await Core.PostCountsModel.findById(middleCompositeId);
+      expect(rootCounts?.reposts).toBe(1);
+      expect(middleCounts?.reposts).toBe(0);
+    });
   });
 
   describe('commitDelete', () => {

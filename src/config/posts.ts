@@ -62,3 +62,10 @@ export const POST_SUPPORTED_FILE_TYPES = POST_SUPPORTED_ATTACHMENT_MIME_TYPES.ma
 export const ARTICLE_SUPPORTED_FILE_TYPES = ARTICLE_SUPPORTED_ATTACHMENT_MIME_TYPES.map(
   (mime) => mime.split('/')[1],
 ).join(', ');
+
+/**
+ * Safety cap for plain-repost chain walk depth.
+ * Real-world chains are 2-3 hops; this prevents runaway serial network
+ * requests on pathological (but non-cyclic) data without affecting normal use.
+ */
+export const PLAIN_REPOST_CHAIN_MAX_DEPTH = 20;

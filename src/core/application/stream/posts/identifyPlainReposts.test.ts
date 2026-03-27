@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import * as Core from '@/core';
 
 function makeDetails(id: string, overrides: Partial<Core.PostDetailsModelSchema> = {}): Core.PostDetailsModelSchema {
@@ -26,14 +27,27 @@ function makeRelationships(
   };
 }
 
+type ChainGraph = Record<
+  string,
+  { details: Core.PostDetailsModelSchema | null; rel: Core.PostRelationshipsModelSchema | null }
+>;
+
+function stubChainGraph(spyReadDetails: Mock, spyReadRelationships: Mock, graph: ChainGraph) {
+  spyReadDetails.mockImplementation(({ postId }: { postId: string }) =>
+    Promise.resolve(graph[postId]?.details ?? null),
+  );
+  spyReadRelationships.mockImplementation((postId: string) => Promise.resolve(graph[postId]?.rel ?? null));
+}
+
 describe('PostStreamApplication.identifyPlainReposts', () => {
   const spyReadDetailsByIds = vi.spyOn(Core.LocalPostService, 'readDetailsByIds');
   const spyReadRelationshipsByIds = vi.spyOn(Core.LocalPostService, 'readRelationshipsByIds');
-  const _spyReadDetails = vi.spyOn(Core.LocalPostService, 'readDetails');
+  const spyReadDetails = vi.spyOn(Core.LocalPostService, 'readDetails');
   const spyReadRelationships = vi.spyOn(Core.LocalPostService, 'readRelationships');
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(Core.PostApplication, 'getOrFetch').mockResolvedValue(null);
   });
 
   it('returns empty map for empty input', async () => {
@@ -88,7 +102,18 @@ describe('PostStreamApplication.identifyPlainReposts', () => {
         reposted: 'pubky://bob/pub/pubky.app/posts/orig1',
       }),
     ]);
-    spyReadRelationships.mockResolvedValue(makeRelationships('bob:orig1', { reposted: null }));
+    stubChainGraph(spyReadDetails, spyReadRelationships, {
+      'alice:repost1': {
+        details: makeDetails('alice:repost1', { content: '', indexed_at: 2000 }),
+        rel: makeRelationships('alice:repost1', {
+          reposted: 'pubky://bob/pub/pubky.app/posts/orig1',
+        }),
+      },
+      'bob:orig1': {
+        details: makeDetails('bob:orig1', { content: 'root' }),
+        rel: makeRelationships('bob:orig1', { reposted: null }),
+      },
+    });
 
     const result = await Core.PostStreamApplication.identifyPlainReposts(postIds);
     expect(result.size).toBe(1);
@@ -112,7 +137,20 @@ describe('PostStreamApplication.identifyPlainReposts', () => {
       makeRelationships('charlie:repost2', { reposted: repostedUri }),
       makeRelationships('dave:post3'),
     ]);
-    spyReadRelationships.mockResolvedValue(makeRelationships('bob:orig1', { reposted: null }));
+    stubChainGraph(spyReadDetails, spyReadRelationships, {
+      'alice:repost1': {
+        details: makeDetails('alice:repost1', { content: '' }),
+        rel: makeRelationships('alice:repost1', { reposted: repostedUri }),
+      },
+      'charlie:repost2': {
+        details: makeDetails('charlie:repost2', { content: '' }),
+        rel: makeRelationships('charlie:repost2', { reposted: repostedUri }),
+      },
+      'bob:orig1': {
+        details: makeDetails('bob:orig1', { content: 'root' }),
+        rel: makeRelationships('bob:orig1', { reposted: null }),
+      },
+    });
 
     const result = await Core.PostStreamApplication.identifyPlainReposts(postIds);
     expect(result.size).toBe(2);
@@ -141,7 +179,18 @@ describe('PostStreamApplication.identifyPlainReposts', () => {
         reposted: 'pubky://bob/pub/pubky.app/posts/orig1',
       }),
     ]);
-    spyReadRelationships.mockResolvedValue(makeRelationships('bob:orig1', { reposted: null }));
+    stubChainGraph(spyReadDetails, spyReadRelationships, {
+      'alice:repost1': {
+        details: makeDetails('alice:repost1', { content: '   \n\t  ' }),
+        rel: makeRelationships('alice:repost1', {
+          reposted: 'pubky://bob/pub/pubky.app/posts/orig1',
+        }),
+      },
+      'bob:orig1': {
+        details: makeDetails('bob:orig1', { content: 'root' }),
+        rel: makeRelationships('bob:orig1', { reposted: null }),
+      },
+    });
 
     const result = await Core.PostStreamApplication.identifyPlainReposts(postIds);
     expect(result.size).toBe(1);
@@ -156,6 +205,7 @@ describe('PostStreamApplication.identifyPlainReposts — repost chain resolution
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(Core.PostApplication, 'getOrFetch').mockResolvedValue(null);
   });
 
   it('resolves a 2-deep repost chain (A→B→C)', async () => {
@@ -168,15 +218,24 @@ describe('PostStreamApplication.identifyPlainReposts — repost chain resolution
       }),
     ]);
 
-    // Chain: bob:repost2 → charlie:orig
-    spyReadRelationships
-      .mockResolvedValueOnce(
-        makeRelationships('bob:repost2', {
+    stubChainGraph(spyReadDetails, spyReadRelationships, {
+      'alice:repost1': {
+        details: makeDetails('alice:repost1', { content: '', indexed_at: 3000 }),
+        rel: makeRelationships('alice:repost1', {
+          reposted: 'pubky://bob/pub/pubky.app/posts/repost2',
+        }),
+      },
+      'bob:repost2': {
+        details: makeDetails('bob:repost2', { content: '' }),
+        rel: makeRelationships('bob:repost2', {
           reposted: 'pubky://charlie/pub/pubky.app/posts/orig',
         }),
-      )
-      .mockResolvedValueOnce(makeRelationships('charlie:orig', { reposted: null }));
-    spyReadDetails.mockResolvedValueOnce(makeDetails('bob:repost2', { content: '' }));
+      },
+      'charlie:orig': {
+        details: makeDetails('charlie:orig', { content: 'root' }),
+        rel: makeRelationships('charlie:orig', { reposted: null }),
+      },
+    });
 
     const result = await Core.PostStreamApplication.identifyPlainReposts(postIds);
     expect(result.size).toBe(1);
@@ -193,13 +252,20 @@ describe('PostStreamApplication.identifyPlainReposts — repost chain resolution
       }),
     ]);
 
-    // bob:quote1 has content — chain stops here
-    spyReadRelationships.mockResolvedValueOnce(
-      makeRelationships('bob:quote1', {
-        reposted: 'pubky://charlie/pub/pubky.app/posts/orig',
-      }),
-    );
-    spyReadDetails.mockResolvedValueOnce(makeDetails('bob:quote1', { content: 'My thoughts' }));
+    stubChainGraph(spyReadDetails, spyReadRelationships, {
+      'alice:repost1': {
+        details: makeDetails('alice:repost1', { content: '' }),
+        rel: makeRelationships('alice:repost1', {
+          reposted: 'pubky://bob/pub/pubky.app/posts/quote1',
+        }),
+      },
+      'bob:quote1': {
+        details: makeDetails('bob:quote1', { content: 'My thoughts' }),
+        rel: makeRelationships('bob:quote1', {
+          reposted: 'pubky://charlie/pub/pubky.app/posts/orig',
+        }),
+      },
+    });
 
     const result = await Core.PostStreamApplication.identifyPlainReposts(postIds);
     expect(result.size).toBe(1);
@@ -216,17 +282,23 @@ describe('PostStreamApplication.identifyPlainReposts — repost chain resolution
       }),
     ]);
 
-    // bob:repost2 → alice:repost1 (cycle)
-    spyReadRelationships.mockResolvedValueOnce(
-      makeRelationships('bob:repost2', {
-        reposted: 'pubky://alice/pub/pubky.app/posts/repost1',
-      }),
-    );
-    spyReadDetails.mockResolvedValueOnce(makeDetails('bob:repost2', { content: '' }));
+    stubChainGraph(spyReadDetails, spyReadRelationships, {
+      'alice:repost1': {
+        details: makeDetails('alice:repost1', { content: '' }),
+        rel: makeRelationships('alice:repost1', {
+          reposted: 'pubky://bob/pub/pubky.app/posts/repost2',
+        }),
+      },
+      'bob:repost2': {
+        details: makeDetails('bob:repost2', { content: '' }),
+        rel: makeRelationships('bob:repost2', {
+          reposted: 'pubky://alice/pub/pubky.app/posts/repost1',
+        }),
+      },
+    });
 
     const result = await Core.PostStreamApplication.identifyPlainReposts(postIds);
     expect(result.size).toBe(1);
-    // visited set catches the cycle, returns alice:repost1
     expect(result.get('alice:repost1')?.originalPostId).toBe('alice:repost1');
   });
 
@@ -240,8 +312,14 @@ describe('PostStreamApplication.identifyPlainReposts — repost chain resolution
       }),
     ]);
 
+    stubChainGraph(spyReadDetails, spyReadRelationships, {
+      'alice:repost1': {
+        details: makeDetails('alice:repost1', { content: '' }),
+        rel: makeRelationships('alice:repost1', { reposted: 'not-a-valid-uri' }),
+      },
+    });
+
     const result = await Core.PostStreamApplication.identifyPlainReposts(postIds);
-    // buildCompositeIdFromPubkyUri returns null → skip
     expect(result.size).toBe(0);
   });
 
@@ -255,13 +333,20 @@ describe('PostStreamApplication.identifyPlainReposts — repost chain resolution
       }),
     ]);
 
-    // bob:repost2 has relationships but no details → treat as original
-    spyReadRelationships.mockResolvedValueOnce(
-      makeRelationships('bob:repost2', {
-        reposted: 'pubky://charlie/pub/pubky.app/posts/orig',
-      }),
-    );
-    spyReadDetails.mockResolvedValueOnce(null);
+    stubChainGraph(spyReadDetails, spyReadRelationships, {
+      'alice:repost1': {
+        details: makeDetails('alice:repost1', { content: '' }),
+        rel: makeRelationships('alice:repost1', {
+          reposted: 'pubky://bob/pub/pubky.app/posts/repost2',
+        }),
+      },
+      'bob:repost2': {
+        details: null,
+        rel: makeRelationships('bob:repost2', {
+          reposted: 'pubky://charlie/pub/pubky.app/posts/orig',
+        }),
+      },
+    });
 
     const result = await Core.PostStreamApplication.identifyPlainReposts(postIds);
     expect(result.size).toBe(1);

@@ -266,7 +266,7 @@ vi.mock('@/hooks', () => ({
   })),
   useEmojiInsert: vi.fn(() => vi.fn()),
   useEnterSubmit: vi.fn(() => vi.fn()),
-  usePostInput: vi.fn((options: { variant: string; placeholder?: string }) => ({
+  usePostInput: vi.fn((options: { variant: string; placeholder?: string; originalPostId?: string | null }) => ({
     textareaRef: { current: null },
     markdownEditorRef: { current: null },
     containerRef: { current: null },
@@ -300,6 +300,8 @@ vi.mock('@/hooks', () => ({
             ? 'Edit post'
             : "What's on your mind?"),
     currentUserPubky: 'test-user-id:pubkey',
+    repostPreviewPostId: options.variant === 'repost' && options.originalPostId ? options.originalPostId : null,
+    isRepostPreviewResolving: false,
     handleExpand: vi.fn(),
     handleSubmit: vi.fn(async () => {
       if (options.variant === 'reply') {
