@@ -74,3 +74,4 @@ public/sw.js.map
 
 # AI Context Plans
 .plans
+.vitest-attachments

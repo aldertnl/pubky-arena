@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vitest/globals", "@vitest/browser/matchers"]
+  },
+  "include": ["**/*.browser.test.tsx", "src/config/__mocks__/**/*.ts", "src/config/test.browser.ts"]
+}
