@@ -2,10 +2,6 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { SinglePost } from './SinglePost';
 
-vi.mock('@/molecules', () => ({
-  MobileFooter: () => <div data-testid="mobile-footer">MobileFooter</div>,
-}));
-
 vi.mock('@/organisms', () => ({
   ContentLayout: ({
     children,
@@ -63,11 +59,10 @@ vi.mock('@/config', async (importOriginal) => {
 });
 
 describe('SinglePost', () => {
-  it('renders content layout and mobile shell', () => {
+  it('renders content layout shell', () => {
     render(<SinglePost postId="author:post-1" />);
 
     expect(screen.getByTestId('content-layout')).toBeInTheDocument();
-    expect(screen.getByTestId('mobile-footer')).toBeInTheDocument();
   });
 
   it('renders SinglePostLeftSidebar in left sidebar', () => {
