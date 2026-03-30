@@ -15,6 +15,7 @@ import type { PostInputProps } from './PostInput.types';
 import { PostInputExpandableSection } from '../PostInputExpandableSection';
 import { PostInputAttachments } from '@/molecules/PostInputAttachments/PostInputAttachments';
 import type { ArticleJSON } from '@/hooks';
+import { sanitizeCodeBlockLanguages } from '@/molecules/MarkdownEditor/InitializedMDXEditor.utils';
 
 const isImageFile = (file: File): boolean => file.type.startsWith('image/');
 const isImageExistingAttachment = (attachment: Hooks.ExistingAttachmentMeta): boolean =>
@@ -35,6 +36,7 @@ export function PostInput({
   editContent,
   editIsArticle,
   editAttachments,
+  autoFocusTextarea = false,
   initialContent,
   initialAttachments,
 }: PostInputProps) {
@@ -273,6 +275,7 @@ export function PostInput({
               rows={1}
               disabled={isSubmitting}
               aria-haspopup="listbox"
+              autoFocus={autoFocusTextarea}
             />
 
             {/* Mention autocomplete popover */}
@@ -309,7 +312,7 @@ export function PostInput({
           <Molecules.MarkdownEditor
             ref={markdownEditorRef}
             autoFocus
-            markdown={content}
+            markdown={sanitizeCodeBlockLanguages(content)}
             onChange={handleArticleBodyChange}
             readOnly={isSubmitting}
           />
