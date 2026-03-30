@@ -8,8 +8,8 @@ import * as Libs from '@/libs';
 import { SinglePostArticle } from '../SinglePostArticle';
 import { SinglePostCard } from '../SinglePostCard';
 
-import { ThreadTree } from '../ThreadTree';
 import { PostPageHeader } from '../PostPageHeader';
+import { ThreadTree } from '../ThreadTree/ThreadTree';
 import type { SinglePostContentProps } from './SinglePostContent.types';
 
 /**
