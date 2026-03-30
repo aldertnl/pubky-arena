@@ -52,10 +52,5 @@ exports[`SinglePost > matches snapshot 1`] = `
       SinglePostContent
     </div>
   </div>
-  <div
-    data-testid="mobile-footer"
-  >
-    MobileFooter
-  </div>
 </div>
 `;
