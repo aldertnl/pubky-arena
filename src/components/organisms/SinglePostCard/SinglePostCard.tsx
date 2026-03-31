@@ -21,20 +21,25 @@ import type { SinglePostCardProps } from './SinglePostCard.types';
  */
 export function SinglePostCard({ postId, className }: SinglePostCardProps) {
   const isMobile = Hooks.useIsMobile();
+  const { layout, setLayout } = Core.useHomeStore();
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
   const [repostDialogOpen, setRepostDialogOpen] = useState(false);
   const [tagsExpanded, setTagsExpanded] = useState(false);
   const mobileTagsPanelRef = useRef<PostTagsPanelHandle>(null);
   const desktopTagsPanelRef = useRef<PostTagsPanelHandle>(null);
+  const isWideLayout = layout === 'wide';
 
   const handleTagClick = () => {
     if (isMobile) {
       setTagsExpanded((prev) => !prev);
+      mobileTagsPanelRef.current?.focus();
       return;
     }
-
-    mobileTagsPanelRef.current?.focus();
-    desktopTagsPanelRef.current?.focus();
+    if (!isMobile) {
+      setLayout(isWideLayout ? 'columns' : 'wide');
+      desktopTagsPanelRef.current?.focus();
+      return;
+    }
   };
 
   const handleReplyClick = () => {
@@ -43,6 +48,9 @@ export function SinglePostCard({ postId, className }: SinglePostCardProps) {
 
   const handleRepostClick = () => {
     setRepostDialogOpen(true);
+  };
+  const handleFooterClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
   };
 
   return (
@@ -93,7 +101,9 @@ export function SinglePostCard({ postId, className }: SinglePostCardProps) {
               </Atoms.Container>
             </>
           ) : (
-            <Atoms.Container className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
+            <Atoms.Container
+              className={Libs.cn('grid min-w-0 grid-cols-1 gap-6', isWideLayout ? 'lg:grid-cols-3' : 'lg:grid-cols-2')}
+            >
               {/* Left column - Post content */}
               <Atoms.Container className="flex min-w-0 flex-col gap-4 lg:col-span-2">
                 <Organisms.PostHeader postId={postId} timeAgoPlacement="bottom-left" />
@@ -103,29 +113,47 @@ export function SinglePostCard({ postId, className }: SinglePostCardProps) {
                 {/* Spacer to push actions bar to bottom */}
                 <Atoms.Container overrideDefaults className="flex-1" />
 
-                {/* Tags on mobile - always visible */}
-                <Organisms.PostTagsPanel
-                  ref={mobileTagsPanelRef}
-                  postId={postId}
-                  widthMode="full"
-                  className="lg:hidden"
-                />
+                <Atoms.Container
+                  onClick={handleFooterClick}
+                  className={Libs.cn(
+                    'flex-col items-start gap-2 md:flex-row md:justify-between md:gap-4',
+                    tagsExpanded ? 'md:items-end' : 'md:items-start',
+                  )}
+                >
+                  {!isWideLayout &&
+                    (tagsExpanded ? (
+                      <Organisms.PostTagsPanel
+                        postId={postId}
+                        widthMode="fit"
+                        autoFocusInput
+                        enableLoadingSkeleton={false}
+                        className="flex-1"
+                      />
+                    ) : (
+                      <Organisms.ClickableTagsList
+                        taggedId={postId}
+                        taggedKind={Core.TagKind.POST}
+                        maxTags={POST_TAGS_MAX_COUNT}
+                        maxTagLength={POST_TAGS_MAX_LENGTH}
+                        maxTotalChars={POST_TAGS_MAX_TOTAL_CHARS}
+                        showCount={true}
+                        showInput={false}
+                        showAddButton={true}
+                        addMode={true}
+                      />
+                    ))}
 
-                <Organisms.PostActionsBar
-                  postId={postId}
-                  onTagClick={handleTagClick}
-                  onReplyClick={handleReplyClick}
-                  onRepostClick={handleRepostClick}
-                />
+                  <Organisms.PostActionsBar
+                    postId={postId}
+                    onTagClick={handleTagClick}
+                    onReplyClick={handleReplyClick}
+                    onRepostClick={handleRepostClick}
+                  />
+                </Atoms.Container>
               </Atoms.Container>
 
               {/* Right column - Tags (desktop only) */}
-              <Organisms.PostTagsPanel
-                ref={desktopTagsPanelRef}
-                postId={postId}
-                widthMode="full"
-                className="hidden lg:flex"
-              />
+              {isWideLayout && <Organisms.PostTagsPanel ref={desktopTagsPanelRef} postId={postId} widthMode="full" />}
             </Atoms.Container>
           )}
         </Atoms.CardContent>
