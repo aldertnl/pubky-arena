@@ -163,23 +163,25 @@ describe('SinglePostCard', () => {
   });
 
   describe('interactions', () => {
-    it('should toggle desktop layout to wide and show desktop tags panel when tag action is clicked', () => {
+    it('should expand inline tags panel in columns layout when tag action is clicked', () => {
       render(<SinglePostCard postId={mockPostId} />);
 
       expect(Core.useHomeStore.getState().layout).toBe(Core.LAYOUT.COLUMNS);
       expect(screen.getByTestId('clickable-tags-list')).toBeInTheDocument();
+      expect(screen.queryByTestId('post-tags-panel-inline')).not.toBeInTheDocument();
       expect(screen.queryByTestId('post-tags-panel-desktop')).not.toBeInTheDocument();
 
       fireEvent.click(screen.getByTestId('tag-action'));
 
-      expect(Core.useHomeStore.getState().layout).toBe(Core.LAYOUT.WIDE);
+      expect(Core.useHomeStore.getState().layout).toBe(Core.LAYOUT.COLUMNS);
       expect(screen.queryByTestId('clickable-tags-list')).not.toBeInTheDocument();
-      expect(screen.getByTestId('post-tags-panel-desktop')).toBeInTheDocument();
+      expect(screen.getByTestId('post-tags-panel-inline')).toBeInTheDocument();
+      expect(screen.queryByTestId('post-tags-panel-desktop')).not.toBeInTheDocument();
       // No ref exists in columns mode, so focus callback should not run on first toggle.
       expect(mockPostTagsPanelFocus).not.toHaveBeenCalled();
     });
 
-    it('should toggle desktop layout back to columns and focus desktop tags panel in wide mode', () => {
+    it('should keep wide layout and focus desktop tags panel when tag action is clicked in wide mode', () => {
       Core.useHomeStore.getState().setLayout(Core.LAYOUT.WIDE);
       render(<SinglePostCard postId={mockPostId} />);
 
@@ -189,9 +191,10 @@ describe('SinglePostCard', () => {
       fireEvent.click(screen.getByTestId('tag-action'));
 
       expect(mockPostTagsPanelFocus).toHaveBeenCalledWith('desktop');
-      expect(Core.useHomeStore.getState().layout).toBe(Core.LAYOUT.COLUMNS);
-      expect(screen.queryByTestId('post-tags-panel-desktop')).not.toBeInTheDocument();
-      expect(screen.getByTestId('clickable-tags-list')).toBeInTheDocument();
+      expect(Core.useHomeStore.getState().layout).toBe(Core.LAYOUT.WIDE);
+      expect(screen.getByTestId('post-tags-panel-desktop')).toBeInTheDocument();
+      expect(screen.queryByTestId('clickable-tags-list')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('post-tags-panel-inline')).not.toBeInTheDocument();
     });
 
     it('should open reply dialog when reply action is clicked', () => {
