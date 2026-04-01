@@ -1,7 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
 import * as Core from '@/core';
 import * as Hooks from '@/hooks';
 import * as Libs from '@/libs';
@@ -22,12 +23,25 @@ export function WhoToFollow() {
   const t = useTranslations('sidebar');
   const tCommon = useTranslations('common');
   const router = useRouter();
-  const { users, isLoading: isStreamLoading } = Hooks.useUserStream({
+  const pathname = usePathname();
+  const {
+    users,
+    isLoading: isStreamLoading,
+    refetch,
+  } = Hooks.useUserStream({
     streamId: Core.UserStreamTypes.RECOMMENDED,
     limit: USERS_LIMIT,
     includeRelationships: true,
   });
   const { toggleFollow, isUserLoading } = Hooks.useFollowUser();
+
+  const prevPathnameRef = useRef(pathname);
+  useEffect(() => {
+    if (prevPathnameRef.current !== pathname) {
+      prevPathnameRef.current = pathname;
+      void refetch();
+    }
+  }, [pathname, refetch]);
 
   const handleUserClick = (pubky: Core.Pubky) => {
     router.push(`${APP_ROUTES.PROFILE}/${pubky}`);

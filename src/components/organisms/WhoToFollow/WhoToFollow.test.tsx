@@ -10,6 +10,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: vi.fn(),
   }),
+  usePathname: () => '/home',
 }));
 
 vi.mock('@/hooks', async () => {
