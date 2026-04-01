@@ -21,7 +21,7 @@ import type { SinglePostCardProps } from './SinglePostCard.types';
  */
 export function SinglePostCard({ postId, className }: SinglePostCardProps) {
   const isMobile = Hooks.useIsMobile();
-  const { layout, setLayout } = Core.useHomeStore();
+  const { layout } = Core.useHomeStore();
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
   const [repostDialogOpen, setRepostDialogOpen] = useState(false);
   const [tagsExpanded, setTagsExpanded] = useState(false);
@@ -30,16 +30,9 @@ export function SinglePostCard({ postId, className }: SinglePostCardProps) {
   const isWideLayout = layout === 'wide';
 
   const handleTagClick = () => {
-    if (isMobile) {
-      setTagsExpanded((prev) => !prev);
-      mobileTagsPanelRef.current?.focus();
-      return;
-    }
-    if (!isMobile) {
-      setLayout(isWideLayout ? 'columns' : 'wide');
-      desktopTagsPanelRef.current?.focus();
-      return;
-    }
+    setTagsExpanded((prev) => !prev);
+    mobileTagsPanelRef.current?.focus();
+    desktopTagsPanelRef.current?.focus();
   };
 
   const handleReplyClick = () => {
