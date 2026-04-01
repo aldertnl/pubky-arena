@@ -24,15 +24,15 @@ export const LAYOUT = {
    * Main content header offset in pixels.
    * Vertical offset for sticky sidebars and floating elements below main header.
    *
-   * CSS equivalent: --header-offset-main: 150px
+   * CSS equivalent: --header-offset-main: 144px
    *
    * Value rationale:
    * - Header outer container: py-6 (24px top + 24px bottom) = 48px
    * - Header inner container: py-6 (24px top + 24px bottom) = 48px
    * - Header content height (buttons h-12) = 48px
-   * - Total header visual height ~144px, rounded up to 150px for spacing
+   * - Total header visual height ~144px
    */
-  HEADER_OFFSET_MAIN: 150,
+  HEADER_OFFSET_MAIN: 144,
 
   /**
    * Bottom offset for sidebar sticky behavior in pixels.
