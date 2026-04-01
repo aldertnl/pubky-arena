@@ -138,15 +138,18 @@ function MeButton({ variant = 'icon', className }: { variant?: 'iconWithText' | 
  */
 function StatsSubtitle({ tags, posts }: StatsSubtitleProps) {
   return (
-    <Atoms.Container overrideDefaults className="flex items-center gap-2 text-sm text-muted-foreground">
+    <Atoms.Container
+      overrideDefaults
+      className="flex items-center gap-3 text-xs font-medium tracking-[1.2px] text-muted-foreground"
+    >
       <Atoms.Container overrideDefaults className="flex items-center gap-1">
-        <Libs.Tag className="size-3.5" />
+        <Libs.Tag className="size-3" />
         <Atoms.Typography as="span" overrideDefaults>
           {tags}
         </Atoms.Typography>
       </Atoms.Container>
       <Atoms.Container overrideDefaults className="flex items-center gap-1">
-        <Libs.StickyNote className="size-3.5" />
+        <Libs.StickyNote className="size-3" />
         <Atoms.Typography as="span" overrideDefaults>
           {posts}
         </Atoms.Typography>
@@ -251,13 +254,17 @@ function CompactVariant({
         />
 
         <Atoms.Container overrideDefaults className="flex max-w-25 min-w-0 flex-1 flex-col">
-          <Atoms.Typography as="span" overrideDefaults className="truncate text-base font-bold text-foreground">
+          <Atoms.Typography as="span" overrideDefaults className="truncate text-sm font-bold text-foreground">
             {displayName}
           </Atoms.Typography>
           {showStats ? (
             <StatsSubtitle tags={stats.tags} posts={stats.posts} />
           ) : (
-            <Atoms.Typography as="span" overrideDefaults className="truncate text-sm text-muted-foreground uppercase">
+            <Atoms.Typography
+              as="span"
+              overrideDefaults
+              className="truncate text-xs font-medium tracking-[1.2px] text-muted-foreground uppercase"
+            >
               {formattedPublicKey}
             </Atoms.Typography>
           )}
