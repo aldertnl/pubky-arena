@@ -223,6 +223,11 @@ export class LocalFollowService {
       );
     }
 
+    // Invalidate recommended stream so next mount fetches fresh suggestions
+    if (isFollowing) {
+      ops.push(Core.LocalStreamUsersService.deleteById(Core.UserStreamTypes.RECOMMENDED));
+    }
+
     // Invalidate timeline caches
     ops.push(this.invalidateTimelineStreams({ includeFriends: friendshipChanged, activeStreamId }));
 
