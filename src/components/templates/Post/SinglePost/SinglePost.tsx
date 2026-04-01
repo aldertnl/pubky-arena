@@ -3,7 +3,7 @@
 import { ContentLayout } from '@/organisms/ContentLayout';
 
 import type { SinglePostProps } from './SinglePost.types';
-import { TIMELINE_FEED_VARIANT } from '@/config';
+
 import { SinglePostContent } from '@/organisms/SinglePostContent';
 import { SinglePostLeftDrawer, SinglePostLeftSidebar } from '@/organisms/SinglePostLeftSidebar';
 import { SinglePostDrawer } from '@/organisms/SinglePostDrawer';
@@ -25,7 +25,6 @@ export function SinglePost({ postId }: SinglePostProps) {
       {/* Main content container */}
       <ContentLayout
         classNameWrapperContent="gap-0"
-        feedVariant={TIMELINE_FEED_VARIANT.BOOKMARKS}
         leftSidebarContent={<SinglePostLeftSidebar />}
         rightSidebarContent={<SinglePostSidebar postId={postId} />}
         leftDrawerContent={<SinglePostLeftDrawer />}

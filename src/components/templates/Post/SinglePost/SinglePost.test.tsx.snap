@@ -3,7 +3,6 @@
 exports[`SinglePost > matches snapshot 1`] = `
 <div>
   <div
-    data-feed-variant="bookmarks"
     data-testid="content-layout"
     data-wrapper-class-name="gap-0"
   >
