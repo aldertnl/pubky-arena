@@ -2,7 +2,7 @@ import { createRef } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PostInputAttachments } from './PostInputAttachments';
-import { ATTACHMENT_ACCEPT_STRING } from '@/config';
+import { ARTICLE_ATTACHMENT_ACCEPT_STRING, POST_ATTACHMENT_ACCEPT_STRING } from '@/config';
 
 // Mock URL.createObjectURL and URL.revokeObjectURL
 const mockCreateObjectURL = vi.fn();
@@ -70,6 +70,7 @@ vi.mock('@/atoms', () => ({
     disabled,
     className,
     'data-testid': dataTestId,
+    'data-cy': dataCy,
   }: {
     children: React.ReactNode;
     variant?: string;
@@ -78,11 +79,13 @@ vi.mock('@/atoms', () => ({
     disabled?: boolean;
     className?: string;
     'data-testid'?: string;
+    'data-cy'?: string;
   }) => (
     <button
       data-testid={dataTestId || 'button'}
       data-variant={variant}
       data-size={size}
+      data-cy={dataCy}
       onClick={onClick}
       disabled={disabled}
       className={className}
@@ -230,14 +233,14 @@ describe('PostInputAttachments', () => {
       render(<PostInputAttachments {...defaultProps} />);
 
       const fileInput = screen.getByTestId('file-input');
-      expect(fileInput).toHaveAttribute('accept', ATTACHMENT_ACCEPT_STRING);
+      expect(fileInput).toHaveAttribute('accept', POST_ATTACHMENT_ACCEPT_STRING);
     });
 
     it('renders file input with correct accept attribute for articles', () => {
       render(<PostInputAttachments {...defaultProps} isArticle={true} />);
 
       const fileInput = screen.getByTestId('file-input');
-      expect(fileInput).toHaveAttribute('accept', 'image/gif,image/jpeg,image/png,image/svg+xml,image/webp');
+      expect(fileInput).toHaveAttribute('accept', ARTICLE_ATTACHMENT_ACCEPT_STRING);
     });
 
     it('renders file input with multiple attribute for posts', () => {
@@ -457,6 +460,27 @@ describe('PostInputAttachments', () => {
       expect(mockSetAttachments).toHaveBeenCalled();
     });
 
+    it('calls onRemoveAttachment when provided for new attachment removal', () => {
+      const mockOnRemoveAttachment = vi.fn();
+      const mockSetAttachments = vi.fn();
+      const attachments = [createMockImageFile('image1.jpg'), createMockImageFile('image2.jpg')];
+
+      render(
+        <PostInputAttachments
+          {...defaultProps}
+          attachments={attachments}
+          setAttachments={mockSetAttachments}
+          onRemoveAttachment={mockOnRemoveAttachment}
+        />,
+      );
+
+      const deleteButtons = screen.getAllByTestId('button');
+      fireEvent.click(deleteButtons[0]);
+
+      expect(mockOnRemoveAttachment).toHaveBeenCalledWith(0);
+      expect(mockSetAttachments).not.toHaveBeenCalled();
+    });
+
     it('filters out the correct attachment when delete is clicked', () => {
       const mockSetAttachments = vi.fn();
       const file1 = createMockImageFile('image1.jpg');
@@ -490,6 +514,72 @@ describe('PostInputAttachments', () => {
 
       const deleteButton = screen.getByTestId('button');
       expect(deleteButton).not.toBeDisabled();
+    });
+
+    it('sets stable data-cy selectors for existing and new remove buttons', () => {
+      const attachments = [createMockImageFile('new-image.jpg')];
+      const existingAttachments = [
+        {
+          uri: 'pubky://test/pub/pubky.app/files/ABC',
+          name: 'existing-image.jpg',
+          type: 'image/jpeg',
+          previewUrl: 'https://cdn.test/existing-image.jpg',
+        },
+      ];
+
+      render(
+        <PostInputAttachments {...defaultProps} attachments={attachments} existingAttachments={existingAttachments} />,
+      );
+
+      expect(document.querySelector('[data-cy="post-input-attachment-remove-existing-0"]')).toBeInTheDocument();
+      expect(document.querySelector('[data-cy="post-input-attachment-remove-new-0"]')).toBeInTheDocument();
+    });
+
+    it('disables existing remove button when isRemoveExistingDisabled returns true', () => {
+      const mockOnRemoveExisting = vi.fn();
+      const existingAttachments = [
+        {
+          uri: 'pubky://test/pub/pubky.app/files/ABC',
+          name: 'existing-image.jpg',
+          type: 'image/jpeg',
+          previewUrl: 'https://cdn.test/existing-image.jpg',
+        },
+      ];
+
+      render(
+        <PostInputAttachments
+          {...defaultProps}
+          existingAttachments={existingAttachments}
+          onRemoveExisting={mockOnRemoveExisting}
+          isRemoveExistingDisabled={() => true}
+        />,
+      );
+
+      const button = document.querySelector('[data-cy="post-input-attachment-remove-existing-0"]') as HTMLButtonElement;
+      expect(button).toBeDisabled();
+
+      fireEvent.click(button);
+      expect(mockOnRemoveExisting).not.toHaveBeenCalled();
+    });
+
+    it('disables new remove button when isRemoveAttachmentDisabled returns true', () => {
+      const mockOnRemoveAttachment = vi.fn();
+      const attachments = [createMockImageFile('new-image.jpg')];
+
+      render(
+        <PostInputAttachments
+          {...defaultProps}
+          attachments={attachments}
+          onRemoveAttachment={mockOnRemoveAttachment}
+          isRemoveAttachmentDisabled={() => true}
+        />,
+      );
+
+      const button = document.querySelector('[data-cy="post-input-attachment-remove-new-0"]') as HTMLButtonElement;
+      expect(button).toBeDisabled();
+
+      fireEvent.click(button);
+      expect(mockOnRemoveAttachment).not.toHaveBeenCalled();
     });
   });
 

@@ -17,9 +17,9 @@ import { PostInputAttachments } from '@/molecules/PostInputAttachments/PostInput
 import type { ArticleJSON } from '@/hooks';
 import { sanitizeCodeBlockLanguages } from '@/molecules/MarkdownEditor/InitializedMDXEditor.utils';
 
-const isImageFile = (file: File): boolean => file.type.startsWith('image/');
-const isImageExistingAttachment = (attachment: Hooks.ExistingAttachmentMeta): boolean =>
-  attachment.type.length === 0 || attachment.type.startsWith('image/');
+const isMediaFile = (file: File): boolean => file.type.startsWith('image/') || file.type.startsWith('video/');
+const isMediaExistingAttachment = (attachment: Hooks.ExistingAttachmentMeta): boolean =>
+  attachment.type.length === 0 || attachment.type.startsWith('image/') || attachment.type.startsWith('video/');
 
 export function PostInput({
   dataCy,
@@ -90,8 +90,7 @@ export function PostInput({
     existingAttachments,
     setExistingAttachments,
     isLoadingExistingAttachments,
-    editHadAttachments,
-    editHadImageAttachments,
+    editHadMediaAttachments,
   } = Hooks.usePostInput({
     variant,
     postId,
@@ -108,12 +107,19 @@ export function PostInput({
   const isValid = React.useCallback(() => {
     if (isLoadingExistingAttachments) return false;
 
-    const baseValid = Libs.canSubmitPost(variant, content, attachments, isSubmitting, isArticle, articleTitle);
-    const hasExistingImages = existingAttachments.some(isImageExistingAttachment);
-    const hasNewImages = attachments.some(isImageFile);
+    const hasTrimmedContent = Boolean(content.trim());
+    const hasNewAttachments = attachments.length > 0;
+    const hasExistingAttachments = existingAttachments.length > 0;
+    const hasAnyAttachments = hasNewAttachments || hasExistingAttachments;
+    const baseValid =
+      variant === POST_INPUT_VARIANT.EDIT && !isArticle
+        ? !isSubmitting && (hasTrimmedContent || hasAnyAttachments)
+        : Libs.canSubmitPost(variant, content, attachments, isSubmitting, isArticle, articleTitle);
+    const hasExistingMedia = existingAttachments.some(isMediaExistingAttachment);
+    const hasNewMedia = attachments.some(isMediaFile);
 
-    // If the original post had images, require at least one image attachment to save
-    if (editHadImageAttachments && !hasExistingImages && !hasNewImages) {
+    // If the original post had media, require at least one media attachment to save.
+    if (editHadMediaAttachments && !hasExistingMedia && !hasNewMedia) {
       return false;
     }
     return baseValid;
@@ -125,7 +131,7 @@ export function PostInput({
     isLoadingExistingAttachments,
     isArticle,
     articleTitle,
-    editHadImageAttachments,
+    editHadMediaAttachments,
     existingAttachments,
   ]);
 
@@ -140,12 +146,19 @@ export function PostInput({
   };
 
   const isEdit = variant === POST_INPUT_VARIANT.EDIT;
-  // In edit mode: only allow attachment operations if the original post had attachments
-  const editAllowsImages = isEdit && editHadAttachments;
-  // In edit mode without original attachments, disable attachment features
-  const disableImageFeatures = isEdit && !editHadAttachments;
 
   const { toast } = Molecules.useToast();
+
+  const hasRequiredMediaForEdit = React.useCallback(
+    (nextExistingAttachments: Hooks.ExistingAttachmentMeta[], nextAttachments: File[]): boolean => {
+      if (!editHadMediaAttachments) return true;
+
+      const hasExistingMedia = nextExistingAttachments.some(isMediaExistingAttachment);
+      const hasNewMedia = nextAttachments.some(isMediaFile);
+      return hasExistingMedia || hasNewMedia;
+    },
+    [editHadMediaAttachments],
+  );
 
   React.useEffect(() => {
     if (isEdit) {
@@ -185,33 +198,69 @@ export function PostInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only run on mount
   }, []);
 
-  function handleOnRemoveExistings(
-    existingAttachments: Hooks.ExistingAttachmentMeta[],
-    attachments: File[],
-    setExistingAttachments: React.Dispatch<React.SetStateAction<Hooks.ExistingAttachmentMeta[]>>,
-  ): ((index: number) => void) | undefined {
-    return (index) => {
+  const handleOnRemoveExisting = React.useCallback(
+    (index: number) => {
+      if (!isEdit) return;
+
       const attachmentToRemove = existingAttachments[index];
       if (!attachmentToRemove) return;
 
-      const hasNewImages = attachments.some(isImageFile);
-      const existingImageCount = existingAttachments.filter(isImageExistingAttachment).length;
-      const isRemovingImage = isImageExistingAttachment(attachmentToRemove);
-      const remainingImageCount = existingImageCount - (isRemovingImage ? 1 : 0);
+      const nextExistingAttachments = existingAttachments.filter((_, i) => i !== index);
+      const canRemove = hasRequiredMediaForEdit(nextExistingAttachments, attachments);
 
-      // If the original post had images, preserve at least one image across existing + new attachments.
-      const wouldRemoveLastImage =
-        editHadImageAttachments && isRemovingImage && remainingImageCount === 0 && !hasNewImages;
-      if (wouldRemoveLastImage) {
+      if (!canRemove) {
         toast({
           title: tCommon('error'),
           description: t('editRequiresImage'),
         });
         return;
       }
-      setExistingAttachments((prev) => prev.filter((_, i) => i !== index));
-    };
-  }
+
+      setExistingAttachments(nextExistingAttachments);
+    },
+    [isEdit, existingAttachments, hasRequiredMediaForEdit, attachments, toast, tCommon, t, setExistingAttachments],
+  );
+
+  const isRemoveExistingDisabled = React.useCallback(
+    (index: number) => {
+      if (!isEdit) return false;
+      const nextExistingAttachments = existingAttachments.filter((_, i) => i !== index);
+      return !hasRequiredMediaForEdit(nextExistingAttachments, attachments);
+    },
+    [isEdit, existingAttachments, attachments, hasRequiredMediaForEdit],
+  );
+
+  const handleOnRemoveAttachment = React.useCallback(
+    (index: number) => {
+      if (!isEdit) return;
+
+      const attachmentToRemove = attachments[index];
+      if (!attachmentToRemove) return;
+
+      const nextAttachments = attachments.filter((_, i) => i !== index);
+      const canRemove = hasRequiredMediaForEdit(existingAttachments, nextAttachments);
+
+      if (!canRemove) {
+        toast({
+          title: tCommon('error'),
+          description: t('editRequiresImage'),
+        });
+        return;
+      }
+
+      setAttachments(nextAttachments);
+    },
+    [isEdit, attachments, hasRequiredMediaForEdit, existingAttachments, toast, tCommon, t, setAttachments],
+  );
+
+  const isRemoveAttachmentDisabled = React.useCallback(
+    (index: number) => {
+      if (!isEdit) return false;
+      const nextAttachments = attachments.filter((_, i) => i !== index);
+      return !hasRequiredMediaForEdit(existingAttachments, nextAttachments);
+    },
+    [isEdit, attachments, existingAttachments, hasRequiredMediaForEdit],
+  );
 
   return (
     <Atoms.Container
@@ -223,10 +272,10 @@ export function PostInput({
         isDragging ? 'border-brand' : 'border-input',
       )}
       onClick={handleExpand}
-      onDragEnter={disableImageFeatures ? undefined : handleDragEnter}
-      onDragLeave={disableImageFeatures ? undefined : handleDragLeave}
-      onDragOver={disableImageFeatures ? undefined : handleDragOver}
-      onDrop={disableImageFeatures ? undefined : handleDrop}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       {/* Drag overlay */}
       {isDragging && (
@@ -272,7 +321,7 @@ export function PostInput({
               onChange={handleChange}
               onFocus={handleExpand}
               onKeyDown={handleKeyDown}
-              onPaste={disableImageFeatures ? undefined : handlePaste}
+              onPaste={handlePaste}
               maxLength={POST_MAX_CHARACTER_LENGTH}
               rows={1}
               disabled={isSubmitting}
@@ -292,23 +341,20 @@ export function PostInput({
           </Atoms.Container>
         )}
 
-        {!disableImageFeatures && (
-          <PostInputAttachments
-            ref={fileInputRef}
-            attachments={attachments}
-            setAttachments={setAttachments}
-            handleFilesAdded={handleFilesAdded}
-            isSubmitting={isSubmitting}
-            isArticle={isArticle}
-            handleFileClick={handleFileClick}
-            existingAttachments={editAllowsImages ? existingAttachments : undefined}
-            onRemoveExisting={
-              editAllowsImages
-                ? handleOnRemoveExistings(existingAttachments, attachments, setExistingAttachments)
-                : undefined
-            }
-          />
-        )}
+        <PostInputAttachments
+          ref={fileInputRef}
+          attachments={attachments}
+          setAttachments={setAttachments}
+          handleFilesAdded={handleFilesAdded}
+          isSubmitting={isSubmitting}
+          isArticle={isArticle}
+          handleFileClick={handleFileClick}
+          existingAttachments={isEdit ? existingAttachments : undefined}
+          onRemoveExisting={isEdit ? handleOnRemoveExisting : undefined}
+          onRemoveAttachment={isEdit ? handleOnRemoveAttachment : undefined}
+          isRemoveExistingDisabled={isEdit ? isRemoveExistingDisabled : undefined}
+          isRemoveAttachmentDisabled={isEdit ? isRemoveAttachmentDisabled : undefined}
+        />
 
         {isArticle && (
           <Molecules.MarkdownEditor
@@ -336,7 +382,7 @@ export function PostInput({
           showEmojiPicker={showEmojiPicker}
           setShowEmojiPicker={setShowEmojiPicker}
           onEmojiSelect={handleEmojiSelect}
-          onImageClick={disableImageFeatures ? undefined : handleFileClick}
+          onImageClick={handleFileClick}
           onArticleClick={handleArticleClick}
           isPostDisabled={!isValid()}
           submitMode={variant}

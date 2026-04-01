@@ -441,7 +441,7 @@
     },
     "deleted": "Esta publicación ha sido eliminada por su autor.",
     "dropFiles": "Suelta los archivos aqui",
-    "editRequiresImage": "Esta publicacion requiere al menos una imagen.",
+    "editRequiresImage": "Esta publicacion requiere al menos un archivo multimedia.",
     "articleTitle": "Titulo del articulo",
     "addTag": "agregar etiqueta",
     "limitReached": "limite alcanzado",

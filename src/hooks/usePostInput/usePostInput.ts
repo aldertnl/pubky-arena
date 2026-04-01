@@ -58,7 +58,7 @@ export function usePostInput({
     Array<{ uri: string; name: string; type: string; previewUrl: string }>
   >([]);
   const [isLoadingExistingAttachments, setIsLoadingExistingAttachments] = useState(false);
-  const [editHadImageAttachments, setEditHadImageAttachments] = useState(false);
+  const [editHadMediaAttachments, setEditHadMediaAttachments] = useState(false);
 
   // Refs
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -66,6 +66,7 @@ export function usePostInput({
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
+  const isSavingEditRef = useRef(false);
 
   // Hooks
   const t = useTranslations('post.placeholder');
@@ -121,13 +122,17 @@ export function usePostInput({
 
   // Resolve existing attachment URIs to metadata for edit mode
   useEffect(() => {
-    const isImageOrUnknownAttachment = (attachment: ExistingAttachmentMeta): boolean =>
-      attachment.type.length === 0 || attachment.type.startsWith('image/');
+    // During edit save, post details may update and temporarily mutate editAttachments.
+    // Ignore those transient updates to prevent flickering ghost attachments in the dialog.
+    if (isSavingEditRef.current) return;
+
+    const isMediaOrUnknownAttachment = (attachment: ExistingAttachmentMeta): boolean =>
+      attachment.type.length === 0 || attachment.type.startsWith('image/') || attachment.type.startsWith('video/');
 
     // Clear stale state from a previous edit target
     setExistingAttachments([]);
     setIsLoadingExistingAttachments(false);
-    setEditHadImageAttachments(false);
+    setEditHadMediaAttachments(false);
 
     if (!editAttachments || editAttachments.length === 0) return;
 
@@ -169,9 +174,9 @@ export function usePostInput({
           return { uri, name: '', type: '', previewUrl };
         });
         setExistingAttachments(resolved);
-        // Conservative fallback: unresolved attachment types are treated as images to
-        // keep edit-time image guards active when metadata cannot be determined.
-        setEditHadImageAttachments(resolved.some(isImageOrUnknownAttachment));
+        // Conservative fallback: unresolved attachment types are treated as media to
+        // keep edit-time media guards active when metadata cannot be determined.
+        setEditHadMediaAttachments(resolved.some(isMediaOrUnknownAttachment));
       } catch {
         // If metadata resolution fails entirely, fall back to raw URIs so submit still preserves them
         if (!cancelled) {
@@ -186,9 +191,9 @@ export function usePostInput({
             return { uri, name: '', type: '', previewUrl };
           });
           setExistingAttachments(fallback);
-          // Conservative fallback: if metadata fetch fails, assume unknown attachments can be images
-          // so "must keep at least one image" validation remains enforced.
-          setEditHadImageAttachments(fallback.some(isImageOrUnknownAttachment));
+          // Conservative fallback: if metadata fetch fails, assume unknown attachments can be media
+          // so "must keep at least one media" validation remains enforced.
+          setEditHadMediaAttachments(fallback.some(isMediaOrUnknownAttachment));
         }
       } finally {
         if (!cancelled) setIsLoadingExistingAttachments(false);
@@ -200,6 +205,10 @@ export function usePostInput({
       cancelled = true;
     };
   }, [editAttachments]);
+
+  useEffect(() => {
+    isSavingEditRef.current = false;
+  }, [variant, editPostId]);
 
   // Notify parent of content changes
   useEffect(() => {
@@ -266,24 +275,56 @@ export function usePostInput({
   const handleSubmit = useCallback(async () => {
     if (isSubmitting || isLoadingExistingAttachments) return;
 
-    // For replies and posts, require content or attachments. For reposts, content is optional. Content and title is required for articles. Content is required for edits.
+    const hasContent = Boolean(content.trim());
+    const hasNewAttachments = attachments.length > 0;
+    const hasExistingAttachments = existingAttachments.length > 0;
+
+    // For replies and posts, require content or new attachments.
+    // For reposts, content is optional.
+    // For article mode, require both content and title.
+    // For edits, allow text-only or attachment-only updates.
+    if (isArticle && (!hasContent || !articleTitle.trim())) return;
+    if (variant === POST_INPUT_VARIANT.EDIT && !hasContent && !hasNewAttachments && !hasExistingAttachments) return;
     if (
-      (variant !== POST_INPUT_VARIANT.REPOST && !content.trim() && attachments.length === 0) ||
-      (isArticle && (!content.trim() || !articleTitle.trim())) ||
-      (variant === POST_INPUT_VARIANT.EDIT && !content.trim())
+      variant !== POST_INPUT_VARIANT.REPOST &&
+      variant !== POST_INPUT_VARIANT.EDIT &&
+      !hasContent &&
+      !hasNewAttachments
     )
       return;
 
-    // Wrapper that prepends to timeline and calls original onSuccess
-    const handleSuccess = (createdPostId: string) => {
-      if (attachments.length) {
-        const localAttachments = attachments.map((a) => {
-          const url = URL.createObjectURL(a);
-          const isImage = a.type.startsWith('image');
-          return { type: a.type, name: a.name, urls: { main: url, feed: isImage ? url : undefined } };
-        });
+    const getLocalAttachmentFromFile = (file: File) => {
+      const url = URL.createObjectURL(file);
+      const isImage = file.type.startsWith('image/');
+      return { type: file.type, name: file.name, urls: { main: url, feed: isImage ? url : undefined } };
+    };
 
-        Core.useLocalFilesStore.getState().setPostAttachments(createdPostId, localAttachments);
+    const getLocalAttachmentFromExisting = (attachment: ExistingAttachmentMeta) => {
+      const isImage = attachment.type.startsWith('image/');
+      return {
+        type: attachment.type,
+        name: attachment.name,
+        urls: { main: attachment.previewUrl, feed: isImage ? attachment.previewUrl : undefined },
+      };
+    };
+
+    let didEditSucceed = false;
+
+    // Wrapper that syncs local-first attachments, prepends to timeline, and calls original onSuccess
+    const handleSuccess = (createdPostId: string) => {
+      if (variant === POST_INPUT_VARIANT.EDIT) {
+        didEditSucceed = true;
+      }
+
+      const localAttachmentsFromNewFiles = attachments.map(getLocalAttachmentFromFile);
+
+      if (variant === POST_INPUT_VARIANT.EDIT) {
+        const localAttachmentsFromExistingFiles = existingAttachments.map(getLocalAttachmentFromExisting);
+        Core.useLocalFilesStore
+          .getState()
+          .setPostAttachments(createdPostId, [...localAttachmentsFromExistingFiles, ...localAttachmentsFromNewFiles]);
+      } else if (localAttachmentsFromNewFiles.length > 0) {
+        Core.useLocalFilesStore.getState().setPostAttachments(createdPostId, localAttachmentsFromNewFiles);
       }
 
       // Only prepend to timeline for posts and reposts, not replies or edits
@@ -308,12 +349,19 @@ export function usePostInput({
         });
         break;
       case POST_INPUT_VARIANT.EDIT:
+        isSavingEditRef.current = true;
         await edit({
           editPostId: editPostId!,
           newAttachments: attachments.length > 0 ? attachments : undefined,
           existingAttachmentUrls: existingAttachments.map((a) => a.uri),
           onSuccess: handleSuccess,
         });
+
+        // Keep the guard active after a successful edit to avoid late prop-driven flicker
+        // right before the dialog unmounts. Reset only when edit did not succeed.
+        if (!didEditSucceed) {
+          isSavingEditRef.current = false;
+        }
         break;
       case POST_INPUT_VARIANT.POST:
       default:
@@ -575,7 +623,7 @@ export function usePostInput({
     setExistingAttachments,
     isLoadingExistingAttachments,
     editHadAttachments: (editAttachments?.length ?? 0) > 0,
-    editHadImageAttachments,
+    editHadMediaAttachments,
     isArticle,
     setIsArticle,
     articleTitle,

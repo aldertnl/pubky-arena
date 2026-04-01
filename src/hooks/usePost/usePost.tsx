@@ -171,9 +171,14 @@ export function usePost(): UsePostReturn {
   };
 
   const edit = async ({ editPostId, newAttachments, existingAttachmentUrls, onSuccess }: UsePostEditOptions) => {
-    // requires content if normal edit and title if article
-    if (!content.trim() || (isArticle && (!content.trim() || !articleTitle.trim())) || !editPostId || !currentUserId)
-      return;
+    const hasContent = Boolean(content.trim());
+    const hasAnyAttachments = (newAttachments?.length ?? 0) > 0 || (existingAttachmentUrls?.length ?? 0) > 0;
+
+    // For edits, allow text-only or attachment-only updates.
+    // Article edits still require content and title.
+    if (!editPostId || !currentUserId) return;
+    if (isArticle && (!hasContent || !articleTitle.trim())) return;
+    if (!isArticle && !hasContent && !hasAnyAttachments) return;
 
     setIsSubmitting(true);
 

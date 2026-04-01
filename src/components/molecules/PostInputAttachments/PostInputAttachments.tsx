@@ -16,6 +16,9 @@ type PostInputAttachmentsProps = {
   handleFileClick?: () => void;
   existingAttachments?: ExistingAttachmentMeta[];
   onRemoveExisting?: (index: number) => void;
+  onRemoveAttachment?: (index: number) => void;
+  isRemoveExistingDisabled?: (index: number) => boolean;
+  isRemoveAttachmentDisabled?: (index: number) => boolean;
 };
 
 type AttachmentType = 'image' | 'video' | 'audio' | 'pdf';
@@ -51,6 +54,9 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
       handleFileClick,
       existingAttachments,
       onRemoveExisting,
+      onRemoveAttachment,
+      isRemoveExistingDisabled,
+      isRemoveAttachmentDisabled,
     },
     ref,
   ) => {
@@ -126,8 +132,9 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
                   <Atoms.Button
                     variant="dark"
                     size="icon"
+                    data-cy={`post-input-attachment-remove-existing-${i}`}
                     onClick={() => onRemoveExisting?.(i)}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isRemoveExistingDisabled?.(i)}
                     className={Utils.cn(
                       'absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100',
                       type === 'image' || type === 'video' ? 'top-4 size-12' : 'top-1/2 -translate-y-1/2',
@@ -169,8 +176,15 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
                 <Atoms.Button
                   variant="dark"
                   size="icon"
-                  onClick={() => setAttachments((prev) => prev.filter((_, index) => index !== i))}
-                  disabled={isSubmitting}
+                  data-cy={`post-input-attachment-remove-new-${i}`}
+                  onClick={() => {
+                    if (onRemoveAttachment) {
+                      onRemoveAttachment(i);
+                      return;
+                    }
+                    setAttachments((prev) => prev.filter((_, index) => index !== i));
+                  }}
+                  disabled={isSubmitting || isRemoveAttachmentDisabled?.(i)}
                   className={Utils.cn(
                     'absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100',
                     a.type === 'image' || a.type === 'video' ? 'top-4 size-12' : 'top-1/2 -translate-y-1/2',

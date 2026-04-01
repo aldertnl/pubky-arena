@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { usePostInput } from './usePostInput';
 import { POST_INPUT_VARIANT } from '@/organisms/PostInput/PostInput.constants';
@@ -788,6 +788,148 @@ describe('usePostInput', () => {
       expect(mockPrependPosts).not.toHaveBeenCalled();
       // But onSuccess should still be called
       expect(mockOnSuccess).toHaveBeenCalledWith('edited-post-id');
+    });
+
+    it('stores merged existing and new attachments in local store after edit success', async () => {
+      mockContent = '';
+      const pdfFile = new File(['pdf content'], 'new-file.pdf', { type: 'application/pdf' });
+      const imageFile = new File(['image content'], 'new-image.png', { type: 'image/png' });
+      mockAttachments = [pdfFile, imageFile];
+
+      mockEdit.mockImplementation(async ({ onSuccess }) => {
+        onSuccess('edited-post-id');
+      });
+
+      const { result } = renderHook(() =>
+        usePostInput({
+          variant: 'edit',
+          editPostId: 'post-to-edit-id',
+        }),
+      );
+
+      act(() => {
+        result.current.setExistingAttachments([
+          {
+            uri: 'pubky://test/pub/pubky.app/files/existing-image',
+            name: 'existing-image.jpg',
+            type: 'image/jpeg',
+            previewUrl: 'https://cdn.example.com/existing-image-feed.jpg',
+          },
+          {
+            uri: 'pubky://test/pub/pubky.app/files/existing-pdf',
+            name: 'existing-file.pdf',
+            type: 'application/pdf',
+            previewUrl: 'https://cdn.example.com/existing-file.pdf',
+          },
+        ]);
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(mockSetPostAttachments).toHaveBeenCalledWith('edited-post-id', [
+        {
+          type: 'image/jpeg',
+          name: 'existing-image.jpg',
+          urls: {
+            main: 'https://cdn.example.com/existing-image-feed.jpg',
+            feed: 'https://cdn.example.com/existing-image-feed.jpg',
+          },
+        },
+        {
+          type: 'application/pdf',
+          name: 'existing-file.pdf',
+          urls: {
+            main: 'https://cdn.example.com/existing-file.pdf',
+            feed: undefined,
+          },
+        },
+        {
+          type: 'application/pdf',
+          name: 'new-file.pdf',
+          urls: {
+            main: 'blob:new-file.pdf',
+            feed: undefined,
+          },
+        },
+        {
+          type: 'image/png',
+          name: 'new-image.png',
+          urls: {
+            main: 'blob:new-image.png',
+            feed: 'blob:new-image.png',
+          },
+        },
+      ]);
+      expect(mockCreateObjectURL).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not rehydrate existing attachments from props while edit save is in flight', async () => {
+      mockContent = 'Updated post content';
+
+      let resolveEdit: (() => void) | undefined;
+      mockEdit.mockImplementation(
+        ({ onSuccess }: { onSuccess: (postId: string) => void }) =>
+          new Promise<void>((resolve) => {
+            resolveEdit = () => {
+              onSuccess('edited-post-id');
+              resolve();
+            };
+          }),
+      );
+
+      const { result, rerender } = renderHook(
+        ({ editAttachments }) =>
+          usePostInput({
+            variant: 'edit',
+            editPostId: 'post-to-edit-id',
+            editAttachments,
+          }),
+        {
+          initialProps: {
+            editAttachments: undefined as string[] | undefined,
+          },
+        },
+      );
+
+      act(() => {
+        result.current.setExistingAttachments([
+          {
+            uri: 'pubky://test/pub/pubky.app/files/original-kept',
+            name: 'kept-image.jpg',
+            type: 'image/jpeg',
+            previewUrl: 'https://cdn.example.com/kept-image.jpg',
+          },
+        ]);
+      });
+
+      let submitPromise: Promise<void>;
+      act(() => {
+        submitPromise = result.current.handleSubmit();
+      });
+
+      act(() => {
+        rerender({
+          editAttachments: ['pubky://test/pub/pubky.app/files/new-b'],
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.existingAttachments).toEqual([
+          {
+            uri: 'pubky://test/pub/pubky.app/files/original-kept',
+            name: 'kept-image.jpg',
+            type: 'image/jpeg',
+            previewUrl: 'https://cdn.example.com/kept-image.jpg',
+          },
+        ]);
+      });
+
+      await act(async () => {
+        resolveEdit?.();
+        await submitPromise!;
+      });
     });
   });
 

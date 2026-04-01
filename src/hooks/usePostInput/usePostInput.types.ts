@@ -59,8 +59,8 @@ export interface UsePostInputReturn {
   isLoadingExistingAttachments: boolean;
   /** Whether the original post (before edit) had attachments */
   editHadAttachments: boolean;
-  /** Whether the original post (before edit) had at least one image attachment */
-  editHadImageAttachments: boolean;
+  /** Whether the original post (before edit) had at least one media attachment */
+  editHadMediaAttachments: boolean;
   isDragging: boolean;
   isExpanded: boolean;
   isSubmitting: boolean;

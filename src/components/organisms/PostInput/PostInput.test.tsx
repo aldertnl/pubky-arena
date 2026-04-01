@@ -5,6 +5,36 @@ import { PostInput } from './PostInput';
 import { POST_INPUT_VARIANT } from './PostInput.constants';
 import { POST_THREAD_CONNECTOR_VARIANTS } from '@/components/atoms/PostThreadConnector/PostThreadConnector.constants';
 
+type MockedPostInputAttachmentsProps = {
+  ref: React.RefObject<HTMLInputElement>;
+  attachments: File[];
+  setAttachments: React.Dispatch<React.SetStateAction<File[]>>;
+  handleFilesAdded: (files: FileList | File[]) => void;
+  isSubmitting: boolean;
+  isArticle?: boolean;
+  handleFileClick?: () => void;
+  existingAttachments?: Array<{ uri: string; name: string; type: string; previewUrl: string }>;
+  onRemoveExisting?: (index: number) => void;
+  onRemoveAttachment?: (index: number) => void;
+  isRemoveExistingDisabled?: (index: number) => boolean;
+  isRemoveAttachmentDisabled?: (index: number) => boolean;
+};
+
+const { mockPostInputAttachmentsComponent, mockToast } = vi.hoisted(() => ({
+  mockPostInputAttachmentsComponent: vi.fn(
+    ({ attachments, isSubmitting, isArticle }: MockedPostInputAttachmentsProps) => (
+      <div data-testid="post-input-attachments" data-submitting={isSubmitting} data-is-article={isArticle}>
+        {attachments.map((file: File, index: number) => (
+          <div key={index} data-testid={`attachment-${file.name}`}>
+            {file.name}
+          </div>
+        ))}
+      </div>
+    ),
+  ),
+  mockToast: vi.fn(),
+}));
+
 // next-intl is mocked globally in src/config/test.ts
 
 vi.mock('@/atoms', async () => {
@@ -173,29 +203,7 @@ vi.mock('@/molecules', () => ({
     }
     return null;
   }),
-  PostInputAttachments: vi.fn(
-    ({
-      attachments,
-      isSubmitting,
-      isArticle,
-    }: {
-      ref: React.RefObject<HTMLInputElement>;
-      attachments: File[];
-      setAttachments: React.Dispatch<React.SetStateAction<File[]>>;
-      handleFilesAdded: (files: FileList | File[]) => void;
-      isSubmitting: boolean;
-      isArticle?: boolean;
-      handleFileClick?: () => void;
-    }) => (
-      <div data-testid="post-input-attachments" data-submitting={isSubmitting} data-is-article={isArticle}>
-        {attachments.map((file: File, index: number) => (
-          <div key={index} data-testid={`attachment-${file.name}`}>
-            {file.name}
-          </div>
-        ))}
-      </div>
-    ),
-  ),
+  PostInputAttachments: mockPostInputAttachmentsComponent,
   EmojiPickerDialog: vi.fn(
     ({
       open,
@@ -217,34 +225,12 @@ vi.mock('@/molecules', () => ({
         </div>
       ) : null,
   ),
-  useToast: vi.fn(() => ({ toast: vi.fn() })),
+  useToast: vi.fn(() => ({ toast: mockToast })),
 }));
 
 // Mock the direct import of PostInputAttachments
 vi.mock('@/molecules/PostInputAttachments/PostInputAttachments', () => ({
-  PostInputAttachments: vi.fn(
-    ({
-      attachments,
-      isSubmitting,
-      isArticle,
-    }: {
-      ref: React.RefObject<HTMLInputElement>;
-      attachments: File[];
-      setAttachments: React.Dispatch<React.SetStateAction<File[]>>;
-      handleFilesAdded: (files: FileList | File[]) => void;
-      isSubmitting: boolean;
-      isArticle?: boolean;
-      handleFileClick?: () => void;
-    }) => (
-      <div data-testid="post-input-attachments" data-submitting={isSubmitting} data-is-article={isArticle}>
-        {attachments.map((file: File, index: number) => (
-          <div key={index} data-testid={`attachment-${file.name}`}>
-            {file.name}
-          </div>
-        ))}
-      </div>
-    ),
-  ),
+  PostInputAttachments: mockPostInputAttachmentsComponent,
 }));
 
 // Shared refs so React populates them when mock components render
@@ -270,7 +256,7 @@ const mockUsePostReturn = {
 };
 let mockIsLoadingExistingAttachments = false;
 let mockExistingAttachments: Array<{ uri: string; name: string; type: string; previewUrl: string }> = [];
-let mockEditHadImageAttachments = false;
+let mockEditHadMediaAttachments = false;
 
 vi.mock('@/hooks', () => ({
   usePost: vi.fn(() => mockUsePostReturn),
@@ -336,7 +322,7 @@ vi.mock('@/hooks', () => ({
     setExistingAttachments: vi.fn(),
     isLoadingExistingAttachments: mockIsLoadingExistingAttachments,
     editHadAttachments: (options.editAttachments?.length ?? 0) > 0,
-    editHadImageAttachments: mockEditHadImageAttachments || (options.editAttachments?.length ?? 0) > 0,
+    editHadMediaAttachments: mockEditHadMediaAttachments || (options.editAttachments?.length ?? 0) > 0,
     mentionUsers: [],
     mentionIsOpen: false,
     mentionSelectedIndex: null,
@@ -369,7 +355,7 @@ describe('PostInput', () => {
     mockUsePostReturn.articleTitle = '';
     mockIsLoadingExistingAttachments = false;
     mockExistingAttachments = [];
-    mockEditHadImageAttachments = false;
+    mockEditHadMediaAttachments = false;
     mockUsePostReturn.setContent = mockSetContent;
     mockUsePostReturn.setTags = mockSetTags;
     mockUsePostReturn.setAttachments = mockSetAttachments;
@@ -535,27 +521,17 @@ describe('PostInput', () => {
     expect(screen.getByPlaceholderText('Edit post')).toBeInTheDocument();
   });
 
-  it('hides PostInputAttachments for edit variant without original attachments', () => {
+  it('shows PostInputAttachments for edit variant without original attachments', () => {
     render(
       <PostInput
         editIsArticle={false}
         variant={POST_INPUT_VARIANT.EDIT}
         editPostId="test-post-123"
         editContent="Edit content"
-      />,
-    );
-  });
-  it('does not show PostInputAttachments for edit variant', () => {
-    render(
-      <PostInput
-        variant={POST_INPUT_VARIANT.EDIT}
-        editPostId="test-post-123"
-        editContent="Edit content"
-        editIsArticle={false}
       />,
     );
 
-    expect(screen.queryByTestId('post-input-attachments')).not.toBeInTheDocument();
+    expect(screen.getByTestId('post-input-attachments')).toBeInTheDocument();
   });
 
   it('shows PostInputAttachments for edit variant with original attachments', () => {
@@ -578,28 +554,83 @@ describe('PostInput', () => {
     expect(screen.getByTestId('post-input-attachments')).toBeInTheDocument();
   });
 
-  it('does not trigger drag handlers in edit mode', () => {
+  it('passes edit-mode remove handlers to PostInputAttachments', () => {
     render(
       <PostInput
         variant={POST_INPUT_VARIANT.EDIT}
         editPostId="test-post-123"
         editContent="Edit content"
         editIsArticle={false}
+        editAttachments={['pubky://test/pub/pubky.app/files/ABC']}
       />,
     );
 
-    const container = screen.getAllByTestId('container')[0];
-
-    // Simulate drag events - they should not trigger isDragging state change in edit mode
-    fireEvent.dragEnter(container, { dataTransfer: { files: [] } });
-
-    // Drag overlay should not appear since drag handlers are disabled in edit mode
-    expect(screen.queryByText('Drop files here')).not.toBeInTheDocument();
+    const latestCall = mockPostInputAttachmentsComponent.mock.calls.at(-1);
+    const props = latestCall?.[0] as MockedPostInputAttachmentsProps;
+    expect(props.onRemoveExisting).toEqual(expect.any(Function));
+    expect(props.onRemoveAttachment).toEqual(expect.any(Function));
+    expect(props.isRemoveExistingDisabled).toEqual(expect.any(Function));
+    expect(props.isRemoveAttachmentDisabled).toEqual(expect.any(Function));
   });
 
-  it('disables submit in edit mode when only non-image attachments remain after an image-origin edit', () => {
+  it('disables remove for the last remaining existing media attachment in edit mode', () => {
+    mockUsePostReturn.attachments = [];
+    mockEditHadMediaAttachments = true;
+    mockExistingAttachments = [
+      {
+        uri: 'pubky://test/pub/pubky.app/files/ABC',
+        name: 'existing-image.jpg',
+        type: 'image/jpeg',
+        previewUrl: 'https://cdn.test/test-user:ABC',
+      },
+    ];
+
+    render(
+      <PostInput
+        variant={POST_INPUT_VARIANT.EDIT}
+        editPostId="test-post-123"
+        editContent="Edit content"
+        editIsArticle={false}
+        editAttachments={['pubky://test/pub/pubky.app/files/ABC']}
+      />,
+    );
+
+    const latestCall = mockPostInputAttachmentsComponent.mock.calls.at(-1);
+    const props = latestCall?.[0] as MockedPostInputAttachmentsProps;
+    expect(props.isRemoveExistingDisabled?.(0)).toBe(true);
+  });
+
+  it('disables remove for the last remaining new media attachment in edit mode', () => {
+    mockUsePostReturn.attachments = [new File(['test'], 'replacement.png', { type: 'image/png' })];
+    mockEditHadMediaAttachments = true;
+    mockExistingAttachments = [
+      {
+        uri: 'pubky://test/pub/pubky.app/files/ABC',
+        name: 'notes.pdf',
+        type: 'application/pdf',
+        previewUrl: 'https://cdn.test/test-user:ABC',
+      },
+    ];
+
+    render(
+      <PostInput
+        variant={POST_INPUT_VARIANT.EDIT}
+        editPostId="test-post-123"
+        editContent="Edit content"
+        editIsArticle={false}
+        editAttachments={['pubky://test/pub/pubky.app/files/ABC']}
+      />,
+    );
+
+    const latestCall = mockPostInputAttachmentsComponent.mock.calls.at(-1);
+    const props = latestCall?.[0] as MockedPostInputAttachmentsProps;
+    expect(props.isRemoveAttachmentDisabled?.(0)).toBe(true);
+  });
+
+  it('disables submit in edit mode when only non-media attachments remain after a media-origin edit', () => {
     mockUsePostReturn.content = 'Updated content';
     mockUsePostReturn.attachments = [new File(['test'], 'document.pdf', { type: 'application/pdf' })];
+    mockEditHadMediaAttachments = true;
 
     render(
       <PostInput
@@ -614,10 +645,54 @@ describe('PostInput', () => {
     expect(screen.getByLabelText('Post')).toBeDisabled();
   });
 
+  it('enables submit in edit mode when content is empty but existing attachments remain', () => {
+    mockUsePostReturn.content = '';
+    mockUsePostReturn.attachments = [];
+    mockEditHadMediaAttachments = true;
+    mockExistingAttachments = [
+      {
+        uri: 'pubky://test/pub/pubky.app/files/ABC',
+        name: 'existing-image.jpg',
+        type: 'image/jpeg',
+        previewUrl: 'https://cdn.test/test-user:ABC',
+      },
+    ];
+
+    render(
+      <PostInput
+        editIsArticle={false}
+        variant={POST_INPUT_VARIANT.EDIT}
+        editPostId="test-post-123"
+        editContent=""
+        editAttachments={['pubky://test/pub/pubky.app/files/ABC']}
+      />,
+    );
+
+    expect(screen.getByLabelText('Post')).not.toBeDisabled();
+  });
+
+  it('keeps submit enabled in edit mode when video attachment remains after a media-origin edit', () => {
+    mockUsePostReturn.content = 'Updated content';
+    mockUsePostReturn.attachments = [new File(['test'], 'replacement.mp4', { type: 'video/mp4' })];
+    mockEditHadMediaAttachments = true;
+
+    render(
+      <PostInput
+        editIsArticle={false}
+        variant={POST_INPUT_VARIANT.EDIT}
+        editPostId="test-post-123"
+        editContent="Updated content"
+        editAttachments={['pubky://test/pub/pubky.app/files/ABC']}
+      />,
+    );
+
+    expect(screen.getByLabelText('Post')).not.toBeDisabled();
+  });
+
   it('keeps submit enabled in edit mode when unresolved existing attachments remain', () => {
     mockUsePostReturn.content = 'Updated content';
     mockUsePostReturn.attachments = [];
-    mockEditHadImageAttachments = true;
+    mockEditHadMediaAttachments = true;
     mockExistingAttachments = [
       {
         uri: 'pubky://test/pub/pubky.app/files/ABC',
@@ -638,6 +713,41 @@ describe('PostInput', () => {
     );
 
     expect(screen.getByLabelText('Post')).not.toBeDisabled();
+  });
+
+  it('blocks removing the last remaining media from new attachments in edit mode', () => {
+    mockUsePostReturn.content = 'Updated content';
+    mockUsePostReturn.attachments = [new File(['test'], 'replacement.png', { type: 'image/png' })];
+    mockEditHadMediaAttachments = true;
+    mockExistingAttachments = [
+      {
+        uri: 'pubky://test/pub/pubky.app/files/ABC',
+        name: 'notes.pdf',
+        type: 'application/pdf',
+        previewUrl: 'https://cdn.test/test-user:ABC',
+      },
+    ];
+
+    render(
+      <PostInput
+        editIsArticle={false}
+        variant={POST_INPUT_VARIANT.EDIT}
+        editPostId="test-post-123"
+        editContent="Updated content"
+        editAttachments={['pubky://test/pub/pubky.app/files/ABC']}
+      />,
+    );
+
+    const latestCall = mockPostInputAttachmentsComponent.mock.calls.at(-1);
+    const props = latestCall?.[0] as MockedPostInputAttachmentsProps;
+    props.onRemoveAttachment?.(0);
+
+    expect(mockSetAttachments).not.toHaveBeenCalled();
+    expect(mockToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        description: 'This post requires at least one media.',
+      }),
+    );
   });
 
   it('disables submit while existing attachments are loading', () => {

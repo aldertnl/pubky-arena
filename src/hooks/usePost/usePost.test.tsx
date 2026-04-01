@@ -1307,6 +1307,47 @@ describe('usePost', () => {
         expect(mockOnSuccess).not.toHaveBeenCalled();
       });
 
+      it('should submit edit when content is empty but existing attachments are provided', async () => {
+        const { result } = renderHook(() => usePost());
+        const mockOnSuccess = vi.fn();
+
+        await act(async () => {
+          await result.current.edit({
+            editPostId: 'test-post-123',
+            existingAttachmentUrls: ['pubky://test/pub/pubky.app/files/ABC'],
+            onSuccess: mockOnSuccess,
+          });
+        });
+
+        expect(mockPostControllerEdit).toHaveBeenCalledWith({
+          compositePostId: 'test-post-123',
+          content: '',
+          existingAttachmentUrls: ['pubky://test/pub/pubky.app/files/ABC'],
+        });
+        expect(mockOnSuccess).toHaveBeenCalledWith('test-post-123');
+      });
+
+      it('should submit edit when content is empty but new attachments are provided', async () => {
+        const { result } = renderHook(() => usePost());
+        const mockOnSuccess = vi.fn();
+        const file = new File(['test'], 'replacement.png', { type: 'image/png' });
+
+        await act(async () => {
+          await result.current.edit({
+            editPostId: 'test-post-123',
+            newAttachments: [file],
+            onSuccess: mockOnSuccess,
+          });
+        });
+
+        expect(mockPostControllerEdit).toHaveBeenCalledWith({
+          compositePostId: 'test-post-123',
+          content: '',
+          newAttachments: [file],
+        });
+        expect(mockOnSuccess).toHaveBeenCalledWith('test-post-123');
+      });
+
       it('should not submit edit when content is only whitespace', async () => {
         const { result } = renderHook(() => usePost());
         const mockOnSuccess = vi.fn();

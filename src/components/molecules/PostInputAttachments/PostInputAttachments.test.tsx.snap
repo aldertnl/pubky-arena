@@ -60,6 +60,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot in article mode wit
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-4 size-12"
+        data-cy="post-input-attachment-remove-new-0"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -140,6 +141,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot when submitting 1`]
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-4 size-12"
+        data-cy="post-input-attachment-remove-new-0"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -180,6 +182,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot with maximum attach
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-4 size-12"
+        data-cy="post-input-attachment-remove-new-0"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -202,6 +205,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot with maximum attach
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-4 size-12"
+        data-cy="post-input-attachment-remove-new-1"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -224,6 +228,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot with maximum attach
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-4 size-12"
+        data-cy="post-input-attachment-remove-new-2"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -263,6 +268,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot with mixed attachme
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-4 size-12"
+        data-cy="post-input-attachment-remove-new-0"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -285,6 +291,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot with mixed attachme
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-4 size-12"
+        data-cy="post-input-attachment-remove-new-1"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -306,6 +313,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot with mixed attachme
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-1/2 -translate-y-1/2 size-6"
+        data-cy="post-input-attachment-remove-new-2"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -328,6 +336,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot with mixed attachme
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-1/2 -translate-y-1/2 size-8"
+        data-cy="post-input-attachment-remove-new-3"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -377,6 +386,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot with multiple image
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-4 size-12"
+        data-cy="post-input-attachment-remove-new-0"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -399,6 +409,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot with multiple image
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-4 size-12"
+        data-cy="post-input-attachment-remove-new-1"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -421,6 +432,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot with multiple image
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-4 size-12"
+        data-cy="post-input-attachment-remove-new-2"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -472,6 +484,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot with single PDF att
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-1/2 -translate-y-1/2 size-8"
+        data-cy="post-input-attachment-remove-new-0"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -521,6 +534,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot with single audio a
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-1/2 -translate-y-1/2 size-6"
+        data-cy="post-input-attachment-remove-new-0"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -560,6 +574,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot with single image a
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-4 size-12"
+        data-cy="post-input-attachment-remove-new-0"
         data-size="icon"
         data-testid="button"
         data-variant="dark"
@@ -599,6 +614,7 @@ exports[`PostInputAttachments - Snapshots > matches snapshot with single video a
     >
       <button
         class="absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100 top-4 size-12"
+        data-cy="post-input-attachment-remove-new-0"
         data-size="icon"
         data-testid="button"
         data-variant="dark"

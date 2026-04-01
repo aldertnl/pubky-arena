@@ -113,6 +113,11 @@ exports[`PostInput - Snapshots > matches snapshot for edit variant 1`] = `
       </textarea>
     </div>
     <div
+      data-is-article="false"
+      data-submitting="false"
+      data-testid="post-input-attachments"
+    />
+    <div
       class="grid transition-all duration-300 ease-in-out grid-rows-[1fr] opacity-100 "
       data-override-defaults="true"
       data-testid="container"
@@ -183,6 +188,11 @@ exports[`PostInput - Snapshots > matches snapshot for edit variant with article 
       data-is-reply="true"
       data-post-id="test-user-id:pubkey"
       data-testid="post-header"
+    />
+    <div
+      data-is-article="true"
+      data-submitting="false"
+      data-testid="post-input-attachments"
     />
     <div
       contenteditable="true"
