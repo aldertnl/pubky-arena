@@ -1,9 +1,13 @@
 'use client';
 
-import * as Organisms from '@/organisms';
+import { ContentLayout } from '@/organisms/ContentLayout';
 
 import type { SinglePostProps } from './SinglePost.types';
 import { TIMELINE_FEED_VARIANT } from '@/config';
+import { SinglePostContent } from '@/organisms/SinglePostContent';
+import { SinglePostLeftDrawer, SinglePostLeftSidebar } from '@/organisms/SinglePostLeftSidebar';
+import { SinglePostDrawer } from '@/organisms/SinglePostDrawer';
+import { SinglePostSidebar } from '@/organisms/SinglePostSidebar';
 
 /**
  * SinglePost Template
@@ -19,16 +23,16 @@ export function SinglePost({ postId }: SinglePostProps) {
   return (
     <>
       {/* Main content container */}
-      <Organisms.ContentLayout
+      <ContentLayout
         classNameWrapperContent="gap-0"
         feedVariant={TIMELINE_FEED_VARIANT.BOOKMARKS}
-        leftSidebarContent={<Organisms.SinglePostLeftSidebar />}
-        rightSidebarContent={<Organisms.SinglePostSidebar postId={postId} />}
-        leftDrawerContent={<Organisms.SinglePostLeftDrawer />}
-        rightDrawerContent={<Organisms.SinglePostDrawer postId={postId} />}
+        leftSidebarContent={<SinglePostLeftSidebar />}
+        rightSidebarContent={<SinglePostSidebar postId={postId} />}
+        leftDrawerContent={<SinglePostLeftDrawer />}
+        rightDrawerContent={<SinglePostDrawer postId={postId} />}
       >
-        <Organisms.SinglePostContent postId={postId} />
-      </Organisms.ContentLayout>
+        <SinglePostContent postId={postId} />
+      </ContentLayout>
     </>
   );
 }

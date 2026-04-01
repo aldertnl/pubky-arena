@@ -35,11 +35,15 @@ const mockFilterLayout = vi.fn(
   ),
 );
 
-vi.mock('@/core', () => ({
-  useHomeStore: () => mockUseHomeStore(),
-}));
+vi.mock('@/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/core')>();
+  return {
+    ...actual,
+    useHomeStore: () => mockUseHomeStore(),
+  };
+});
 
-vi.mock('@/atoms', () => ({
+vi.mock('@/atoms/Container', () => ({
   Container: ({ children, className }: { children: React.ReactNode; className?: string }) => (
     <div data-testid="container" className={className}>
       {children}
@@ -47,7 +51,7 @@ vi.mock('@/atoms', () => ({
   ),
 }));
 
-vi.mock('@/molecules', () => ({
+vi.mock('@/molecules/Filters/', () => ({
   FilterReach: (props: BaseFilterMockProps) => mockFilterReach(props),
   FilterSort: (props: BaseFilterMockProps) => mockFilterSort(props),
   FilterContent: (props: BaseFilterMockProps) => mockFilterContent(props),

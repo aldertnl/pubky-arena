@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { SinglePost } from './SinglePost';
 
-vi.mock('@/organisms', () => ({
+vi.mock('@/organisms/ContentLayout', () => ({
   ContentLayout: ({
     children,
     leftSidebarContent,
@@ -28,18 +28,30 @@ vi.mock('@/organisms', () => ({
       {children}
     </div>
   ),
+}));
+
+vi.mock('@/organisms/SinglePostLeftSidebar', () => ({
   SinglePostLeftSidebar: () => <div data-testid="single-post-left-sidebar">SinglePostLeftSidebar</div>,
+  SinglePostLeftDrawer: () => <div data-testid="single-post-left-drawer">SinglePostLeftDrawer</div>,
+}));
+
+vi.mock('@/organisms/SinglePostSidebar', () => ({
   SinglePostSidebar: ({ postId }: { postId: string }) => (
     <div data-testid="single-post-sidebar" data-post-id={postId}>
       SinglePostSidebar
     </div>
   ),
-  SinglePostLeftDrawer: () => <div data-testid="single-post-left-drawer">SinglePostLeftDrawer</div>,
+}));
+
+vi.mock('@/organisms/SinglePostDrawer', () => ({
   SinglePostDrawer: ({ postId }: { postId: string }) => (
     <div data-testid="single-post-drawer" data-post-id={postId}>
       SinglePostDrawer
     </div>
   ),
+}));
+
+vi.mock('@/organisms/SinglePostContent', () => ({
   SinglePostContent: ({ postId }: { postId: string }) => (
     <div data-testid="single-post-content" data-post-id={postId}>
       SinglePostContent

@@ -1,8 +1,9 @@
 'use client';
 
-import * as Atoms from '@/atoms';
+import { Container } from '@/atoms/Container';
 import * as Core from '@/core';
-import * as Molecules from '@/molecules';
+
+import { FilterReach, FilterSort, FilterLayout, FilterContent } from '@/molecules/Filters/';
 
 /**
  * SinglePostFilters
@@ -14,12 +15,12 @@ function SinglePostFilters() {
   const { layout, setLayout } = Core.useHomeStore();
 
   return (
-    <Atoms.Container overrideDefaults className="flex flex-col gap-6">
-      <Molecules.FilterReach selectedTab={undefined} defaultSelectedTab={undefined} disabled />
-      <Molecules.FilterSort selectedTab={undefined} defaultSelectedTab={undefined} disabled />
-      <Molecules.FilterLayout selectedTab={layout} onTabChange={setLayout} />
-      <Molecules.FilterContent selectedTab={undefined} defaultSelectedTab={undefined} disabled />
-    </Atoms.Container>
+    <Container overrideDefaults className="flex flex-col gap-6">
+      <FilterReach selectedTab={undefined} defaultSelectedTab={undefined} disabled />
+      <FilterSort selectedTab={undefined} defaultSelectedTab={undefined} disabled />
+      <FilterLayout selectedTab={layout} onTabChange={setLayout} />
+      <FilterContent selectedTab={undefined} defaultSelectedTab={undefined} disabled />
+    </Container>
   );
 }
 

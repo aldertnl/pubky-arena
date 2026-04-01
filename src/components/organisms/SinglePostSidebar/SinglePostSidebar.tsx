@@ -1,14 +1,14 @@
-import * as Atoms from '@/atoms';
-import * as Organisms from '@/organisms';
+import { Container } from '@/atoms/Container';
+import { FeedbackCard } from '@/organisms/FeedbackCard';
 import { SinglePostParticipants } from '../SinglePostParticipants';
 
 import { SinglePostSidebarProps } from './SinglePostSidebar.types';
 
 export const SinglePostSidebar = ({ postId }: SinglePostSidebarProps) => {
   return (
-    <Atoms.Container overrideDefaults className="flex flex-col gap-6">
+    <Container overrideDefaults className="flex flex-col gap-6">
       <SinglePostParticipants postId={postId} />
-      <Organisms.FeedbackCard />
-    </Atoms.Container>
+      <FeedbackCard />
+    </Container>
   );
 };

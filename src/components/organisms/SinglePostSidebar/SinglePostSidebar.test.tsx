@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { SinglePostSidebar } from './SinglePostSidebar';
 
-vi.mock('@/atoms', () => ({
+vi.mock('@/atoms/Container', () => ({
   Container: ({ children, className }: { children: React.ReactNode; className?: string }) => (
     <div data-testid="container" className={className}>
       {children}
@@ -10,7 +10,7 @@ vi.mock('@/atoms', () => ({
   ),
 }));
 
-vi.mock('@/organisms', () => ({
+vi.mock('@/organisms/FeedbackCard', () => ({
   FeedbackCard: () => <div data-testid="feedback-card">FeedbackCard</div>,
 }));
 
