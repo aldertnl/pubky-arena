@@ -261,6 +261,9 @@ export function PostInput({
     },
     [isEdit, attachments, existingAttachments, hasRequiredMediaForEdit],
   );
+  const characterLimit = isArticle
+    ? undefined
+    : { count: Libs.getCharacterCount(content), max: POST_MAX_CHARACTER_LENGTH };
 
   return (
     <Atoms.Container
@@ -304,9 +307,7 @@ export function PostInput({
           <Organisms.PostHeader
             postId={currentUserPubky}
             isReplyInput={true}
-            characterLimit={
-              isArticle ? undefined : { count: Libs.getCharacterCount(content), max: POST_MAX_CHARACTER_LENGTH }
-            }
+            characterLimit={characterLimit}
             showPopover={false}
           />
         )}
@@ -386,6 +387,7 @@ export function PostInput({
           onArticleClick={handleArticleClick}
           isPostDisabled={!isValid()}
           submitMode={variant}
+          characterLimit={characterLimit}
         />
       </Atoms.Container>
     </Atoms.Container>

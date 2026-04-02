@@ -4,6 +4,11 @@ import type { PostInputVariant } from '../PostInput/PostInput.types';
 
 export type PostInputActionSubmitMode = PostInputVariant;
 
+export interface CharacterLimit {
+  count: number;
+  max: number;
+}
+
 export interface PostInputActionBarProps {
   onEmojiClick?: () => void;
   onImageClick?: () => void;
@@ -16,6 +21,8 @@ export interface PostInputActionBarProps {
   postButtonIcon?: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   hideArticleButton: boolean;
   isArticle?: boolean;
+  isEdit?: boolean;
+  characterLimit?: CharacterLimit;
 }
 
 export interface ActionButtonConfig {
