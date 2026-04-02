@@ -1,0 +1,133 @@
+diff --git a/node_modules/react-tweet/dist/twitter-theme/tweet-media-video.js b/node_modules/react-tweet/dist/twitter-theme/tweet-media-video.js
+index 8847a3f..1328b70 100644
+--- a/node_modules/react-tweet/dist/twitter-theme/tweet-media-video.js
++++ b/node_modules/react-tweet/dist/twitter-theme/tweet-media-video.js
+@@ -1,6 +1,6 @@
+ 'use client';
+ import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
+-import { useState } from 'react';
++import { useState, useEffect, useRef } from 'react';
+ import clsx from 'clsx';
+ import { getMediaUrl, getMp4Video } from '../utils.js';
+ import mediaStyles from './tweet-media.module.css';
+@@ -9,11 +9,66 @@ export const TweetMediaVideo = ({ tweet, media })=>{
+     const [playButton, setPlayButton] = useState(true);
+     const [isPlaying, setIsPlaying] = useState(false);
+     const [ended, setEnded] = useState(false);
++    const [blobUrl, setBlobUrl] = useState(null);
++    const blobRef = useRef(null);
++    const abortRef = useRef(null);
++    const videoRef = useRef(null);
+     const mp4Video = getMp4Video(media);
+     let timeout = 0;
++    // Cleanup on unmount: abort any in-flight fetch and revoke blob to free memory
++    useEffect(()=>{
++        return ()=>{
++            if (abortRef.current) abortRef.current.abort();
++            if (blobRef.current) URL.revokeObjectURL(blobRef.current);
++        };
++    }, []);
++    // Fetch video without Referer header to bypass Twitter CDN 403 block.
++    // Uses fetch() + blob URL instead of <video src> because <video> doesn't
++    // support referrerPolicy. See: https://github.com/vercel/react-tweet/issues/212
++    const fetchAndPlay = (video)=>{
++        // Abort previous fetch if user re-clicks before download completes
++        if (abortRef.current) abortRef.current.abort();
++        // Revoke previous blob URL to prevent memory leaks on retry
++        if (blobRef.current) {
++            URL.revokeObjectURL(blobRef.current);
++            blobRef.current = null;
++        }
++        const controller = new AbortController();
++        abortRef.current = controller;
++        fetch(mp4Video.url, { referrerPolicy: 'no-referrer', signal: controller.signal })
++            .then((res)=>{
++                // Reject non-OK responses (e.g. 403) to avoid creating blob from error HTML
++                if (!res.ok) throw new Error('Failed to fetch video: ' + res.status);
++                return res.blob();
++            })
++            .then((blob)=>{
++                const url = URL.createObjectURL(blob);
++                blobRef.current = url;
++                abortRef.current = null;
++                setBlobUrl(url);
++                video.src = url;
++                video.load();
++                video.play().then(()=>{
++                    setIsPlaying(true);
++                    video.focus();
++                }).catch((error)=>{
++                    console.error('Error playing video:', error);
++                    setPlayButton(true);
++                    setIsPlaying(false);
++                });
++            })
++            .catch((error)=>{
++                // Silently ignore aborted fetches (unmount or re-click)
++                if (error.name === 'AbortError') return;
++                console.error('Error fetching video:', error);
++                setPlayButton(true);
++                setIsPlaying(false);
++            });
++    };
+     return /*#__PURE__*/ _jsxs(_Fragment, {
+         children: [
+             /*#__PURE__*/ _jsx("video", {
++                ref: videoRef,
+                 className: mediaStyles.image,
+                 poster: getMediaUrl(media, 'small'),
+                 controls: !playButton,
+@@ -26,8 +81,6 @@ export const TweetMediaVideo = ({ tweet, media })=>{
+                     if (ended) setEnded(false);
+                 },
+                 onPause: ()=>{
+-                    // When the video is seeked (moved to a different timestamp), it will pause for a moment
+-                    // before resuming. We don't want to show the message in that case so we wait a bit.
+                     if (timeout) window.clearTimeout(timeout);
+                     timeout = window.setTimeout(()=>{
+                         if (isPlaying) setIsPlaying(false);
+@@ -37,8 +90,9 @@ export const TweetMediaVideo = ({ tweet, media })=>{
+                 onEnded: ()=>{
+                     setEnded(true);
+                 },
+-                children: /*#__PURE__*/ _jsx("source", {
+-                    src: mp4Video.url,
++                // Only render <source> after blob is ready to avoid a 403 request to Twitter CDN
++                children: blobUrl && /*#__PURE__*/ _jsx("source", {
++                    src: blobUrl,
+                     type: mp4Video.content_type
+                 })
+             }),
+@@ -47,18 +101,22 @@ export const TweetMediaVideo = ({ tweet, media })=>{
+                 className: s.videoButton,
+                 "aria-label": "View video on X",
+                 onClick: (e)=>{
+-                    const video = e.currentTarget.previousSibling;
++                    const video = videoRef.current;
+                     e.preventDefault();
+                     setPlayButton(false);
+-                    video.load();
+-                    video.play().then(()=>{
+-                        setIsPlaying(true);
+-                        video.focus();
+-                    }).catch((error)=>{
+-                        console.error('Error playing video:', error);
+-                        setPlayButton(true);
+-                        setIsPlaying(false);
+-                    });
++                    if (blobUrl) {
++                        video.load();
++                        video.play().then(()=>{
++                            setIsPlaying(true);
++                            video.focus();
++                        }).catch((error)=>{
++                            console.error('Error playing video:', error);
++                            setPlayButton(true);
++                            setIsPlaying(false);
++                        });
++                    } else {
++                        fetchAndPlay(video);
++                    }
+                 },
+                 children: /*#__PURE__*/ _jsx("svg", {
+                     viewBox: "0 0 24 24",
