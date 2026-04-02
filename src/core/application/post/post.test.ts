@@ -1191,5 +1191,47 @@ describe('Post Application', () => {
       expect(fileDeleteSpy).toHaveBeenCalledWith(uploadedFiles.map((f) => f.fileResult.meta.url));
       expect(requestSpy).not.toHaveBeenCalled();
     });
+
+    it('should cleanup attachments removed by a successful edit', async () => {
+      const keptAttachmentUri = 'pubky://author/pub/pubky.app/files/keep-file';
+      const removedAttachmentUri = 'pubky://author/pub/pubky.app/files/remove-file';
+      const mockPost = new PubkyAppPost('Edited content', PubkyAppPostKind.Short, undefined, undefined, [
+        keptAttachmentUri,
+      ]);
+      const mockData: Core.TEditPostInput = {
+        compositePostId: 'author:post123',
+        post: mockPost,
+        postUrl: 'pubky://author/pub/pubky.app/posts/post123',
+      };
+
+      const { readDetailsSpy } = setupEditSpies();
+      readDetailsSpy.mockResolvedValue({
+        ...mockPostDetails,
+        attachments: [keptAttachmentUri, removedAttachmentUri],
+      });
+      const fileDeleteSpy = vi.spyOn(Core.FileApplication, 'commitDelete').mockResolvedValue(undefined);
+
+      await Core.PostApplication.commitEdit(mockData);
+
+      expect(fileDeleteSpy).toHaveBeenCalledWith([removedAttachmentUri]);
+    });
+
+    it('should keep edit successful when removed attachment cleanup fails', async () => {
+      const removedAttachmentUri = 'pubky://author/pub/pubky.app/files/remove-file';
+      const mockData = createMockEditInput();
+
+      const { readDetailsSpy } = setupEditSpies();
+      readDetailsSpy.mockResolvedValue({
+        ...mockPostDetails,
+        attachments: [removedAttachmentUri],
+      });
+      const fileDeleteSpy = vi
+        .spyOn(Core.FileApplication, 'commitDelete')
+        .mockRejectedValue(new Error('cleanup failed'));
+
+      await expect(Core.PostApplication.commitEdit(mockData)).resolves.toBeUndefined();
+
+      expect(fileDeleteSpy).toHaveBeenCalledWith([removedAttachmentUri]);
+    });
   });
 });

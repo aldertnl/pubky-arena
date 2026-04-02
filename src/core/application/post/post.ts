@@ -198,14 +198,30 @@ export class PostApplication {
     // Update local database (content + attachments)
     // Note: post.attachments is undefined when internal value is null, but we need to pass null explicitly
     const attachments = post.attachments === undefined ? null : post.attachments;
+    let removedOriginalAttachmentUris: string[] = [];
     let originalPost: Core.PostDetailsModelSchema | null = null;
     let localEditApplied = false;
     try {
       originalPost = await Core.LocalPostService.readDetails({ postId: compositePostId });
+      const originalAttachments = originalPost?.attachments ?? [];
+      const nextAttachments = attachments ?? [];
+      removedOriginalAttachmentUris = originalAttachments.filter((uri) => !nextAttachments.includes(uri));
+
       await Core.LocalPostService.edit({ compositePostId, content: post.content, attachments });
       localEditApplied = true;
 
       await Core.HomeserverService.request({ method: HttpMethod.PUT, url: postUrl, bodyJson: post.toJson() });
+
+      if (removedOriginalAttachmentUris.length > 0) {
+        try {
+          await Core.FileApplication.commitDelete(removedOriginalAttachmentUris);
+        } catch (cleanupError) {
+          Logger.error('[PostApplication.commitEdit] Failed to cleanup removed file attachments', {
+            compositePostId,
+            cleanupError,
+          });
+        }
+      }
     } catch (error) {
       if (localEditApplied && originalPost) {
         try {

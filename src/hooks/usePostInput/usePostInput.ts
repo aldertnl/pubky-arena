@@ -169,7 +169,7 @@ export function usePostInput({
             domain: Core.CompositeIdDomain.FILES,
           });
           const previewUrl = compositeId
-            ? Core.FileController.getFileUrl({ fileId: compositeId, variant: Core.FileVariant.FEED })
+            ? Core.FileController.getFileUrl({ fileId: compositeId, variant: Core.FileVariant.MAIN })
             : '';
           return { uri, name: '', type: '', previewUrl };
         });
@@ -186,7 +186,7 @@ export function usePostInput({
               domain: Core.CompositeIdDomain.FILES,
             });
             const previewUrl = compositeId
-              ? Core.FileController.getFileUrl({ fileId: compositeId, variant: Core.FileVariant.FEED })
+              ? Core.FileController.getFileUrl({ fileId: compositeId, variant: Core.FileVariant.MAIN })
               : '';
             return { uri, name: '', type: '', previewUrl };
           });
