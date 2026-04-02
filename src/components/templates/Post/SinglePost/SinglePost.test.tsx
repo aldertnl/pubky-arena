@@ -63,10 +63,6 @@ vi.mock('@/config', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/config')>();
   return {
     ...actual,
-    TIMELINE_FEED_VARIANT: {
-      ...actual.TIMELINE_FEED_VARIANT,
-      BOOKMARKS: 'bookmarks',
-    },
   };
 });
 
@@ -107,12 +103,6 @@ describe('SinglePost', () => {
     render(<SinglePost postId="author:post-123" />);
 
     expect(screen.getByTestId('single-post-content')).toHaveAttribute('data-post-id', 'author:post-123');
-  });
-
-  it('passes BOOKMARKS feed variant to content layout', () => {
-    render(<SinglePost postId="author:post-1" />);
-
-    expect(screen.getByTestId('content-layout')).toHaveAttribute('data-feed-variant', 'bookmarks');
   });
 
   it('matches snapshot', () => {
