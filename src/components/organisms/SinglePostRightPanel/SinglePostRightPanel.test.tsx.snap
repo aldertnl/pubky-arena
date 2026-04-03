@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`SinglePostDrawer > matches snapshot 1`] = `
+exports[`SinglePostRightPanel > matches snapshot 1`] = `
 <div>
   <div
     class="flex flex-col gap-6"
@@ -11,6 +11,11 @@ exports[`SinglePostDrawer > matches snapshot 1`] = `
       data-testid="single-post-participants"
     >
       SinglePostParticipants
+    </div>
+    <div
+      data-testid="feedback-card"
+    >
+      FeedbackCard
     </div>
   </div>
 </div>

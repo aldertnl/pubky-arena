@@ -20,9 +20,10 @@ exports[`SinglePost > matches snapshot 1`] = `
     >
       <div
         data-post-id="author:post-1"
-        data-testid="single-post-sidebar"
+        data-show-feedback="true"
+        data-testid="single-post-right-panel"
       >
-        SinglePostSidebar
+        SinglePostRightPanel
       </div>
     </div>
     <div
@@ -39,9 +40,10 @@ exports[`SinglePost > matches snapshot 1`] = `
     >
       <div
         data-post-id="author:post-1"
-        data-testid="single-post-drawer"
+        data-show-feedback="false"
+        data-testid="single-post-right-panel"
       >
-        SinglePostDrawer
+        SinglePostRightPanel
       </div>
     </div>
     <div

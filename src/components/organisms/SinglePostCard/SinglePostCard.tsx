@@ -45,6 +45,28 @@ export function SinglePostCard({ postId, className }: SinglePostCardProps) {
     e.stopPropagation();
   };
 
+  const tagsSection = tagsExpanded ? (
+    <Organisms.PostTagsPanel
+      postId={postId}
+      widthMode="fit"
+      autoFocusInput
+      enableLoadingSkeleton={false}
+      className="flex-1"
+    />
+  ) : (
+    <Organisms.ClickableTagsList
+      taggedId={postId}
+      taggedKind={Core.TagKind.POST}
+      maxTags={POST_TAGS_MAX_COUNT}
+      maxTagLength={POST_TAGS_MAX_LENGTH}
+      maxTotalChars={POST_TAGS_MAX_TOTAL_CHARS}
+      showCount={true}
+      showInput={false}
+      showAddButton={true}
+      addMode={true}
+    />
+  );
+
   return (
     <>
       <Atoms.Card data-cy="single-post-card" className={Libs.cn('min-w-0 rounded-lg py-0', className)}>
@@ -61,27 +83,7 @@ export function SinglePostCard({ postId, className }: SinglePostCardProps) {
                   tagsExpanded ? 'md:items-end' : 'md:items-start',
                 )}
               >
-                {tagsExpanded ? (
-                  <Organisms.PostTagsPanel
-                    postId={postId}
-                    widthMode="fit"
-                    autoFocusInput
-                    enableLoadingSkeleton={false}
-                    className="flex-1"
-                  />
-                ) : (
-                  <Organisms.ClickableTagsList
-                    taggedId={postId}
-                    taggedKind={Core.TagKind.POST}
-                    maxTags={POST_TAGS_MAX_COUNT}
-                    maxTagLength={POST_TAGS_MAX_LENGTH}
-                    maxTotalChars={POST_TAGS_MAX_TOTAL_CHARS}
-                    showCount={true}
-                    showInput={false}
-                    showAddButton={true}
-                    addMode={true}
-                  />
-                )}
+                {tagsSection}
 
                 <Organisms.PostActionsBar
                   postId={postId}
@@ -112,28 +114,7 @@ export function SinglePostCard({ postId, className }: SinglePostCardProps) {
                     tagsExpanded ? 'md:items-end' : 'md:items-start',
                   )}
                 >
-                  {!isWideLayout &&
-                    (tagsExpanded ? (
-                      <Organisms.PostTagsPanel
-                        postId={postId}
-                        widthMode="fit"
-                        autoFocusInput
-                        enableLoadingSkeleton={false}
-                        className="flex-1"
-                      />
-                    ) : (
-                      <Organisms.ClickableTagsList
-                        taggedId={postId}
-                        taggedKind={Core.TagKind.POST}
-                        maxTags={POST_TAGS_MAX_COUNT}
-                        maxTagLength={POST_TAGS_MAX_LENGTH}
-                        maxTotalChars={POST_TAGS_MAX_TOTAL_CHARS}
-                        showCount={true}
-                        showInput={false}
-                        showAddButton={true}
-                        addMode={true}
-                      />
-                    ))}
+                  {!isWideLayout && tagsSection}
 
                   <Organisms.PostActionsBar
                     postId={postId}

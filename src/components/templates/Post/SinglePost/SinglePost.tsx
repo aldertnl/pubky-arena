@@ -6,8 +6,7 @@ import type { SinglePostProps } from './SinglePost.types';
 
 import { SinglePostContent } from '@/organisms/SinglePostContent';
 import { SinglePostLeftDrawer, SinglePostLeftSidebar } from '@/organisms/SinglePostLeftSidebar';
-import { SinglePostDrawer } from '@/organisms/SinglePostDrawer';
-import { SinglePostSidebar } from '@/organisms/SinglePostSidebar';
+import { SinglePostRightPanel } from '@/organisms/SinglePostRightPanel';
 
 /**
  * SinglePost Template
@@ -21,17 +20,14 @@ import { SinglePostSidebar } from '@/organisms/SinglePostSidebar';
  */
 export function SinglePost({ postId }: SinglePostProps) {
   return (
-    <>
-      {/* Main content container */}
-      <ContentLayout
-        classNameWrapperContent="gap-0"
-        leftSidebarContent={<SinglePostLeftSidebar />}
-        rightSidebarContent={<SinglePostSidebar postId={postId} />}
-        leftDrawerContent={<SinglePostLeftDrawer />}
-        rightDrawerContent={<SinglePostDrawer postId={postId} />}
-      >
-        <SinglePostContent postId={postId} />
-      </ContentLayout>
-    </>
+    <ContentLayout
+      classNameWrapperContent="gap-0"
+      leftSidebarContent={<SinglePostLeftSidebar />}
+      rightSidebarContent={<SinglePostRightPanel postId={postId} />}
+      leftDrawerContent={<SinglePostLeftDrawer />}
+      rightDrawerContent={<SinglePostRightPanel postId={postId} showFeedback={false} />}
+    >
+      <SinglePostContent postId={postId} />
+    </ContentLayout>
   );
 }

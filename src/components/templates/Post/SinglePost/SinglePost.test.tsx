@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { SinglePost } from './SinglePost';
 
@@ -35,18 +35,10 @@ vi.mock('@/organisms/SinglePostLeftSidebar', () => ({
   SinglePostLeftDrawer: () => <div data-testid="single-post-left-drawer">SinglePostLeftDrawer</div>,
 }));
 
-vi.mock('@/organisms/SinglePostSidebar', () => ({
-  SinglePostSidebar: ({ postId }: { postId: string }) => (
-    <div data-testid="single-post-sidebar" data-post-id={postId}>
-      SinglePostSidebar
-    </div>
-  ),
-}));
-
-vi.mock('@/organisms/SinglePostDrawer', () => ({
-  SinglePostDrawer: ({ postId }: { postId: string }) => (
-    <div data-testid="single-post-drawer" data-post-id={postId}>
-      SinglePostDrawer
+vi.mock('@/organisms/SinglePostRightPanel', () => ({
+  SinglePostRightPanel: ({ postId, showFeedback = true }: { postId: string; showFeedback?: boolean }) => (
+    <div data-testid="single-post-right-panel" data-post-id={postId} data-show-feedback={String(showFeedback)}>
+      SinglePostRightPanel
     </div>
   ),
 }));
@@ -87,16 +79,24 @@ describe('SinglePost', () => {
     expect(screen.getByTestId('left-drawer')).toContainElement(screen.getByTestId('single-post-left-drawer'));
   });
 
-  it('renders SinglePostSidebar in right sidebar with postId', () => {
+  it('renders SinglePostRightPanel in right sidebar with postId', () => {
     render(<SinglePost postId="author:post-123" />);
 
-    expect(screen.getByTestId('single-post-sidebar')).toHaveAttribute('data-post-id', 'author:post-123');
+    const rightSidebar = screen.getByTestId('right-sidebar');
+    const rightPanel = within(rightSidebar).getByTestId('single-post-right-panel');
+
+    expect(rightPanel).toHaveAttribute('data-post-id', 'author:post-123');
+    expect(rightPanel).toHaveAttribute('data-show-feedback', 'true');
   });
 
-  it('renders SinglePostDrawer in right drawer with postId', () => {
+  it('renders SinglePostRightPanel in right drawer with postId and hidden feedback', () => {
     render(<SinglePost postId="author:post-123" />);
 
-    expect(screen.getByTestId('single-post-drawer')).toHaveAttribute('data-post-id', 'author:post-123');
+    const rightDrawer = screen.getByTestId('right-drawer');
+    const rightPanel = within(rightDrawer).getByTestId('single-post-right-panel');
+
+    expect(rightPanel).toHaveAttribute('data-post-id', 'author:post-123');
+    expect(rightPanel).toHaveAttribute('data-show-feedback', 'false');
   });
 
   it('renders SinglePostContent with postId', () => {
