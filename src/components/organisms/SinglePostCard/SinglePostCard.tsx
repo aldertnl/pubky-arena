@@ -25,13 +25,12 @@ export function SinglePostCard({ postId, className }: SinglePostCardProps) {
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
   const [repostDialogOpen, setRepostDialogOpen] = useState(false);
   const [tagsExpanded, setTagsExpanded] = useState(false);
-  const mobileTagsPanelRef = useRef<PostTagsPanelHandle>(null);
   const desktopTagsPanelRef = useRef<PostTagsPanelHandle>(null);
   const isWideLayout = layout === 'wide';
 
   const handleTagClick = () => {
     setTagsExpanded((prev) => !prev);
-    mobileTagsPanelRef.current?.focus();
+
     desktopTagsPanelRef.current?.focus();
   };
 
