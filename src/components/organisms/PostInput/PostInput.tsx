@@ -20,6 +20,7 @@ import { sanitizeCodeBlockLanguages } from '@/molecules/MarkdownEditor/Initializ
 const isMediaFile = (file: File): boolean => file.type.startsWith('image/') || file.type.startsWith('video/');
 const isMediaExistingAttachment = (attachment: Hooks.ExistingAttachmentMeta): boolean =>
   attachment.type.length === 0 || attachment.type.startsWith('image/') || attachment.type.startsWith('video/');
+const EXPANDABLE_SECTION_PARENT_GAP_PX = 16;
 
 export function PostInput({
   dataCy,
@@ -317,7 +318,7 @@ export function PostInput({
             <Atoms.Textarea
               ref={textareaRef}
               placeholder={displayPlaceholder}
-              className="min-h-6 resize-none border-none p-0 font-medium text-secondary-foreground shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              variant="inline"
               value={content}
               onChange={handleChange}
               onFocus={handleExpand}
@@ -387,6 +388,7 @@ export function PostInput({
           onArticleClick={handleArticleClick}
           isPostDisabled={!isValid()}
           submitMode={variant}
+          parentGapPx={EXPANDABLE_SECTION_PARENT_GAP_PX}
           characterLimit={characterLimit}
         />
       </Atoms.Container>
