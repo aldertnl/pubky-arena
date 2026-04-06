@@ -36,9 +36,9 @@ const envSchema = z.object({
   // For production, override these with your production URLs.
 
   /** Main API endpoint */
-  NEXT_PUBLIC_NEXUS_URL: z.string().url().default('https://nexus.staging.pubky.app'),
+  NEXT_PUBLIC_NEXUS_URL: z.string().default('https://nexus.staging.pubky.app'),
   /** CDN URL for static assets */
-  NEXT_PUBLIC_CDN_URL: z.string().url().default('https://nexus.staging.pubky.app/static'),
+  NEXT_PUBLIC_CDN_URL: z.string().default('https://nexus.staging.pubky.app/static'),
 
   NEXT_PUBLIC_NOTIFICATION_POLL_INTERVAL_MS: z
     .string()
@@ -144,7 +144,7 @@ const envSchema = z.object({
     .transform((val) => (val && val.trim() !== '' ? val : undefined))
     .default(JSON.stringify(DEFAULT_PKARR_RELAYS))
     .transform(parsePkarrRelays)
-    .pipe(z.array(z.string().url()).min(1)),
+    .pipe(z.array(z.string())),
 
   /** Homeserver public key */
   NEXT_PUBLIC_HOMESERVER: z.string().min(1).default('ufibwbmed6jeq9k4p583go95wofakh9fwpp4k734trq79pd9u1uy'),
@@ -155,7 +155,7 @@ const envSchema = z.object({
   HOMESERVER_ADMIN_PASSWORD: z.string().default('admin'),
 
   /** HTTP relay for pubky protocol */
-  NEXT_PUBLIC_DEFAULT_HTTP_RELAY: z.string().url().default('https://httprelay.staging.pubky.app'),
+  NEXT_PUBLIC_DEFAULT_HTTP_RELAY: z.string().default('https://httprelay.staging.pubky.app'),
   NEXT_PUBLIC_MODERATION_ID: z.string().default('euwmq57zefw5ynnkhh37b3gcmhs7g3cptdbw1doaxj1pbmzp3wro'),
   NEXT_PUBLIC_MODERATED_TAGS: z
     .string()
@@ -166,7 +166,7 @@ const envSchema = z.object({
     .pipe(z.array(z.string().min(1)).min(1)),
   NEXT_PUBLIC_EXCHANGE_RATE_API: z.url().default('https://api1.blocktank.to/api/fx/rates/btc'),
   /** Homegate authentication service URL */
-  NEXT_PUBLIC_HOMEGATE_URL: z.url().default('https://homegate.staging.pubky.app'),
+  NEXT_PUBLIC_HOMEGATE_URL: z.string().default('https://homegate.staging.pubky.app'),
 
   // Test environment variable (optional)
   VITEST: z.string().optional(),
@@ -366,17 +366,8 @@ function parseEnv(): z.infer<typeof envSchema> {
 
 function parsePkarrRelays(val: string): string[] {
   try {
-    const relays = JSON.parse(val) as unknown;
-    if (!Array.isArray(relays)) {
-      throw new Error('NEXT_PUBLIC_PKARR_RELAYS must be a JSON array');
-    }
-    // Validate each relay is a valid URL
-    for (const relay of relays) {
-      if (typeof relay !== 'string') {
-        throw new Error('Each relay must be a string');
-      }
-      new URL(relay);
-    }
+    const relays = [];
+    relays.push(val);
     return relays;
   } catch {
     // Using console.warn here instead of Logger.warn due to circular dependency:
