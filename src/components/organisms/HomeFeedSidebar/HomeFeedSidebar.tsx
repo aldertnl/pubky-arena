@@ -1,74 +1,9 @@
 'use client';
 
-import * as React from 'react';
-import * as Atoms from '@/atoms';
-import * as Molecules from '@/molecules';
-import * as Core from '@/core';
-import * as Hooks from '@/hooks';
 import { TIMELINE_FEED_VARIANT } from '@/config';
-import {
-  resolveVisualFeedContent,
-  VISUAL_DISABLED_CONTENT,
-} from '../Timeline/Feed/TimelineFeed/TimelineFeedVisual.helpers';
-import type { HomeFeedSidebarProps } from './HomeFeedSidebar.types';
+import { LeftSidebarFilters, type LeftSidebarFiltersProps } from '@/organisms/LeftSidebarFilters';
 
-/**
- * HomeFeedFilters
- *
- * Base component for Home feed filters - manages filter state via Core.useHomeStore.
- * Used by sidebar (desktop) and drawer (tablet/mobile) variants.
- *
- * Order follows Figma design: Reach → Sort → Layout → Content
- * Gap between sections: 24px (gap-6)
- */
-function HomeFeedFilters({
-  hideReachFilter = false,
-  hideLayoutFilter = false,
-  allowVisualLayout = false,
-  feedVariant = TIMELINE_FEED_VARIANT.HOME,
-  variant = 'drawer',
-}: HomeFeedSidebarProps) {
-  const { layout, setLayout, reach, setReach, sort, setSort, content, setContent } = Core.useHomeStore();
-  const { isPhoneViewport, isVisualActive } = Hooks.useFeedLayoutResolution(feedVariant);
-  const resolvedContent = resolveVisualFeedContent({
-    content,
-    variant: feedVariant,
-    isVisualActive,
-  });
-
-  const disabledContentTabs = isVisualActive ? VISUAL_DISABLED_CONTENT : [];
-  const showVisualLayout = allowVisualLayout && !isPhoneViewport;
-
-  return (
-    <Atoms.Container overrideDefaults className="flex flex-col gap-6">
-      {!hideReachFilter && <Molecules.FilterReach selectedTab={reach} onTabChange={setReach} />}
-      <Molecules.FilterSort selectedTab={sort} onTabChange={setSort} />
-      {variant === 'sidebar' ? (
-        <Atoms.Container overrideDefaults className="sticky top-[100px] flex w-full flex-col gap-6 self-start">
-          {!hideLayoutFilter && (
-            <Molecules.FilterLayout selectedTab={layout} onTabChange={setLayout} showVisual={showVisualLayout} />
-          )}
-          <Molecules.FilterContent
-            selectedTab={resolvedContent}
-            onTabChange={setContent}
-            disabledTabs={disabledContentTabs}
-          />
-        </Atoms.Container>
-      ) : (
-        <>
-          {!hideLayoutFilter && (
-            <Molecules.FilterLayout selectedTab={layout} onTabChange={setLayout} showVisual={showVisualLayout} />
-          )}
-          <Molecules.FilterContent
-            selectedTab={resolvedContent}
-            onTabChange={setContent}
-            disabledTabs={disabledContentTabs}
-          />
-        </>
-      )}
-    </Atoms.Container>
-  );
-}
+type HomeFeedSidebarOptions = Omit<LeftSidebarFiltersProps, 'variant' | 'hideLayoutFilter'>;
 
 /**
  * HomeFeedSidebar
@@ -79,12 +14,14 @@ function HomeFeedFilters({
 export function HomeFeedSidebar({
   hideReachFilter = false,
   allowVisualLayout = false,
+  layoutOnly = false,
   feedVariant = TIMELINE_FEED_VARIANT.HOME,
-}: HomeFeedSidebarProps) {
+}: HomeFeedSidebarOptions) {
   return (
-    <HomeFeedFilters
+    <LeftSidebarFilters
       hideReachFilter={hideReachFilter}
       allowVisualLayout={allowVisualLayout}
+      layoutOnly={layoutOnly}
       feedVariant={feedVariant}
       variant="sidebar"
     />
@@ -99,12 +36,14 @@ export function HomeFeedSidebar({
 export function HomeFeedDrawer({
   hideReachFilter = false,
   allowVisualLayout = false,
+  layoutOnly = false,
   feedVariant = TIMELINE_FEED_VARIANT.HOME,
-}: HomeFeedSidebarProps) {
+}: HomeFeedSidebarOptions) {
   return (
-    <HomeFeedFilters
+    <LeftSidebarFilters
       hideReachFilter={hideReachFilter}
       allowVisualLayout={allowVisualLayout}
+      layoutOnly={layoutOnly}
       feedVariant={feedVariant}
       variant="drawer"
     />
@@ -120,13 +59,15 @@ export function HomeFeedDrawer({
 export function HomeFeedDrawerMobile({
   hideReachFilter = false,
   allowVisualLayout = false,
+  layoutOnly = false,
   feedVariant = TIMELINE_FEED_VARIANT.HOME,
-}: HomeFeedSidebarProps) {
+}: HomeFeedSidebarOptions) {
   return (
-    <HomeFeedFilters
+    <LeftSidebarFilters
       hideReachFilter={hideReachFilter}
       hideLayoutFilter
       allowVisualLayout={allowVisualLayout}
+      layoutOnly={layoutOnly}
       feedVariant={feedVariant}
       variant="drawer"
     />

@@ -53,6 +53,7 @@ export * from './HotTagsOverview';
 export * from './HotActiveUsers';
 export * from './Settings/LanguageSelector';
 export * from './LeftSidebar';
+export * from './LeftSidebarFilters';
 export * from './Settings/MutedUsersList';
 export * from './PostActionsBar';
 export * from './PostArticle';

@@ -1,43 +1,22 @@
 'use client';
 
-import { Container } from '@/atoms/Container';
-import * as Core from '@/core';
-
-import { FilterReach, FilterSort, FilterLayout, FilterContent } from '@/molecules/Filters/';
-
-/**
- * SinglePostFilters
- *
- * Filter set for SinglePost page left panels.
- * Currently supports layout only.
- */
-function SinglePostFilters() {
-  const { layout, setLayout } = Core.useHomeStore();
-
-  return (
-    <Container overrideDefaults className="flex flex-col gap-6">
-      <FilterReach selectedTab={undefined} defaultSelectedTab={undefined} disabled />
-      <FilterSort selectedTab={undefined} defaultSelectedTab={undefined} disabled />
-      <FilterLayout selectedTab={layout} onTabChange={setLayout} />
-      <FilterContent selectedTab={undefined} defaultSelectedTab={undefined} disabled />
-    </Container>
-  );
-}
+import { LeftSidebarFilters } from '@/organisms/LeftSidebarFilters';
 
 /**
  * SinglePostLeftSidebar
  *
- * Left sidebar for SinglePost page (desktop).
+ * Left sidebar for SinglePost page (desktop). Reuses feed left filters with
+ * reach/sort/content disabled; only layout is interactive.
  */
 export function SinglePostLeftSidebar() {
-  return <SinglePostFilters />;
+  return <LeftSidebarFilters layoutOnly variant="sidebar" />;
 }
 
 /**
  * SinglePostLeftDrawer
  *
- * Left drawer for SinglePost page (tablet/mobile).
+ * Left drawer for SinglePost page (tablet/mobile). Same filter set as sidebar.
  */
 export function SinglePostLeftDrawer() {
-  return <SinglePostFilters />;
+  return <LeftSidebarFilters layoutOnly variant="drawer" />;
 }

@@ -1,35 +1,30 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`SinglePostLeftDrawer > matches snapshot 1`] = `
+exports[`LeftSidebarFilters > layoutOnly > matches snapshot (drawer) 1`] = `
 <div>
   <div
     class="flex flex-col gap-6"
     data-testid="container"
   >
     <div
-      data-disabled="true"
+      data-props="{\\"disabled\\":true}"
       data-testid="filter-reach"
     >
       FilterReach
     </div>
     <div
-      data-disabled="true"
+      data-props="{\\"disabled\\":true}"
       data-testid="filter-sort"
     >
       FilterSort
     </div>
     <div
-      data-selected-tab="columns"
       data-testid="filter-layout"
     >
-      <button
-        data-testid="change-layout"
-      >
-        Change layout
-      </button>
+      FilterLayout
     </div>
     <div
-      data-disabled="true"
+      data-props="{\\"disabled\\":true}"
       data-testid="filter-content"
     >
       FilterContent
@@ -38,20 +33,20 @@ exports[`SinglePostLeftDrawer > matches snapshot 1`] = `
 </div>
 `;
 
-exports[`SinglePostLeftSidebar > matches snapshot 1`] = `
+exports[`LeftSidebarFilters > layoutOnly > matches snapshot (sidebar) 1`] = `
 <div>
   <div
     class="flex flex-col gap-6"
     data-testid="container"
   >
     <div
-      data-disabled="true"
+      data-props="{\\"disabled\\":true}"
       data-testid="filter-reach"
     >
       FilterReach
     </div>
     <div
-      data-disabled="true"
+      data-props="{\\"disabled\\":true}"
       data-testid="filter-sort"
     >
       FilterSort
@@ -61,17 +56,12 @@ exports[`SinglePostLeftSidebar > matches snapshot 1`] = `
       data-testid="container"
     >
       <div
-        data-selected-tab="columns"
         data-testid="filter-layout"
       >
-        <button
-          data-testid="change-layout"
-        >
-          Change layout
-        </button>
+        FilterLayout
       </div>
       <div
-        data-disabled="true"
+        data-props="{\\"disabled\\":true}"
         data-testid="filter-content"
       >
         FilterContent
