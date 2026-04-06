@@ -6,6 +6,8 @@ import * as Libs from '@/libs';
 import type { PostInputActionBarProps } from './PostInputActionBar.types';
 import { useIsMobile } from '@/hooks';
 
+const COMMON_ACTION_BUTTON_PROPS = { variant: 'secondary' as const, size: 'sm' as const };
+
 interface ActionButtonContentProps {
   Icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   iconClassName?: string;
@@ -30,13 +32,6 @@ export function PostInputActionBar({
   characterLimit,
 }: PostInputActionBarProps) {
   const isMobile = useIsMobile();
-  const commonButtonProps = React.useMemo(
-    () => ({
-      variant: 'secondary' as const,
-      size: 'sm' as const,
-    }),
-    [],
-  );
 
   const getButtonDataCy = (ariaLabel: string) => `post-input-action-bar-${ariaLabel.toLowerCase().replace(' ', '-')}`;
 
@@ -51,7 +46,7 @@ export function PostInputActionBar({
         {!isArticle ? (
           <Atoms.Button
             data-cy={getButtonDataCy('Add emoji')}
-            {...commonButtonProps}
+            {...COMMON_ACTION_BUTTON_PROPS}
             onClick={onEmojiClick}
             disabled={!onEmojiClick || isSubmitting}
             aria-label="Add emoji"
@@ -62,7 +57,7 @@ export function PostInputActionBar({
         {!isArticle && onImageClick ? (
           <Atoms.Button
             data-cy={getButtonDataCy('Add image')}
-            {...commonButtonProps}
+            {...COMMON_ACTION_BUTTON_PROPS}
             onClick={onImageClick}
             disabled={isSubmitting}
             aria-label="Add image"
@@ -73,7 +68,7 @@ export function PostInputActionBar({
         {!hideArticleButton ? (
           <Atoms.Button
             data-cy={getButtonDataCy('Add article')}
-            {...commonButtonProps}
+            {...COMMON_ACTION_BUTTON_PROPS}
             onClick={onArticleClick}
             disabled={!onArticleClick || isSubmitting}
             aria-label="Add article"
@@ -94,7 +89,6 @@ export function PostInputActionBar({
         ) : null}
         <Atoms.Button
           data-cy={getButtonDataCy(postButtonAriaText)}
-          {...commonButtonProps}
           onClick={onPostClick}
           disabled={isPostDisabled || !onPostClick}
           aria-label={postButtonAriaText}

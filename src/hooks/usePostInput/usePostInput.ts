@@ -21,8 +21,10 @@ import {
 } from '@/config';
 import { useTimelineFeedContext } from '@/organisms/Timeline/Feed/TimelineFeed';
 import { POST_INPUT_VARIANT } from '@/organisms/PostInput/PostInput.constants';
+import * as Libs from '@/libs';
 import { useMentionAutocomplete, getContentWithMention } from '@/hooks/useMentionAutocomplete';
 import type { UsePostInputOptions, UsePostInputReturn, ExistingAttachmentMeta } from './usePostInput.types';
+import { buildExistingAttachmentMetaWithoutMetadata, isMediaOrUnknownAttachment } from './usePostInput.utils';
 
 /**
  * Hook that encapsulates all PostInput logic.
@@ -54,9 +56,7 @@ export function usePostInput({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isExpanded, setIsExpanded] = useState(expanded);
   const [isDragging, setIsDragging] = useState(false);
-  const [existingAttachments, setExistingAttachments] = useState<
-    Array<{ uri: string; name: string; type: string; previewUrl: string }>
-  >([]);
+  const [existingAttachments, setExistingAttachments] = useState<ExistingAttachmentMeta[]>([]);
   const [isLoadingExistingAttachments, setIsLoadingExistingAttachments] = useState(false);
   const [editHadMediaAttachments, setEditHadMediaAttachments] = useState(false);
 
@@ -126,9 +126,6 @@ export function usePostInput({
     // Ignore those transient updates to prevent flickering ghost attachments in the dialog.
     if (isSavingEditRef.current) return;
 
-    const isMediaOrUnknownAttachment = (attachment: ExistingAttachmentMeta): boolean =>
-      attachment.type.length === 0 || attachment.type.startsWith('image/') || attachment.type.startsWith('video/');
-
     // Clear stale state from a previous edit target
     setExistingAttachments([]);
     setIsLoadingExistingAttachments(false);
@@ -163,33 +160,17 @@ export function usePostInput({
               }),
             };
           }
-          // Fallback: generate preview URL directly from URI without local DB
-          const compositeId = Core.buildCompositeIdFromPubkyUri({
-            uri,
-            domain: Core.CompositeIdDomain.FILES,
-          });
-          const previewUrl = compositeId
-            ? Core.FileController.getFileUrl({ fileId: compositeId, variant: Core.FileVariant.MAIN })
-            : '';
-          return { uri, name: '', type: '', previewUrl };
+          return buildExistingAttachmentMetaWithoutMetadata(uri);
         });
         setExistingAttachments(resolved);
         // Conservative fallback: unresolved attachment types are treated as media to
         // keep edit-time media guards active when metadata cannot be determined.
         setEditHadMediaAttachments(resolved.some(isMediaOrUnknownAttachment));
-      } catch {
+      } catch (error) {
+        Libs.Logger.error('[usePostInput] Failed to resolve edit attachment metadata', { error, editAttachments });
         // If metadata resolution fails entirely, fall back to raw URIs so submit still preserves them
         if (!cancelled) {
-          const fallback = editAttachments.map((uri) => {
-            const compositeId = Core.buildCompositeIdFromPubkyUri({
-              uri,
-              domain: Core.CompositeIdDomain.FILES,
-            });
-            const previewUrl = compositeId
-              ? Core.FileController.getFileUrl({ fileId: compositeId, variant: Core.FileVariant.MAIN })
-              : '';
-            return { uri, name: '', type: '', previewUrl };
-          });
+          const fallback = editAttachments.map(buildExistingAttachmentMetaWithoutMetadata);
           setExistingAttachments(fallback);
           // Conservative fallback: if metadata fetch fails, assume unknown attachments can be media
           // so "must keep at least one media" validation remains enforced.
@@ -622,7 +603,6 @@ export function usePostInput({
     existingAttachments,
     setExistingAttachments,
     isLoadingExistingAttachments,
-    editHadAttachments: (editAttachments?.length ?? 0) > 0,
     editHadMediaAttachments,
     isArticle,
     setIsArticle,

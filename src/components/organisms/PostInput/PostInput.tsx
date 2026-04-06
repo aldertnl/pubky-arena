@@ -15,11 +15,10 @@ import type { PostInputProps } from './PostInput.types';
 import { PostInputExpandableSection } from '../PostInputExpandableSection';
 import { PostInputAttachments } from '@/molecules/PostInputAttachments/PostInputAttachments';
 import type { ArticleJSON } from '@/hooks';
+import { isMediaOrUnknownAttachment } from '@/hooks/usePostInput/usePostInput.utils';
 import { sanitizeCodeBlockLanguages } from '@/molecules/MarkdownEditor/InitializedMDXEditor.utils';
 
 const isMediaFile = (file: File): boolean => file.type.startsWith('image/') || file.type.startsWith('video/');
-const isMediaExistingAttachment = (attachment: Hooks.ExistingAttachmentMeta): boolean =>
-  attachment.type.length === 0 || attachment.type.startsWith('image/') || attachment.type.startsWith('video/');
 
 export function PostInput({
   dataCy,
@@ -104,7 +103,20 @@ export function PostInput({
     editAttachments,
   });
 
-  const isValid = React.useCallback(() => {
+  const { toast } = Molecules.useToast();
+
+  function hasRequiredMediaForEdit(
+    nextExistingAttachments: Hooks.ExistingAttachmentMeta[],
+    nextAttachments: File[],
+  ): boolean {
+    if (!editHadMediaAttachments) return true;
+
+    const hasExistingMedia = nextExistingAttachments.some(isMediaOrUnknownAttachment);
+    const hasNewMedia = nextAttachments.some(isMediaFile);
+    return hasExistingMedia || hasNewMedia;
+  }
+
+  function isValid() {
     if (isLoadingExistingAttachments) return false;
 
     const hasTrimmedContent = Boolean(content.trim());
@@ -115,25 +127,10 @@ export function PostInput({
       variant === POST_INPUT_VARIANT.EDIT && !isArticle
         ? !isSubmitting && (hasTrimmedContent || hasAnyAttachments)
         : Libs.canSubmitPost(variant, content, attachments, isSubmitting, isArticle, articleTitle);
-    const hasExistingMedia = existingAttachments.some(isMediaExistingAttachment);
-    const hasNewMedia = attachments.some(isMediaFile);
 
-    // If the original post had media, require at least one media attachment to save.
-    if (editHadMediaAttachments && !hasExistingMedia && !hasNewMedia) {
-      return false;
-    }
+    if (!hasRequiredMediaForEdit(existingAttachments, attachments)) return false;
     return baseValid;
-  }, [
-    variant,
-    content,
-    attachments,
-    isSubmitting,
-    isLoadingExistingAttachments,
-    isArticle,
-    articleTitle,
-    editHadMediaAttachments,
-    existingAttachments,
-  ]);
+  }
 
   const enterSubmitHandler = Hooks.useEnterSubmit(isValid, handleSubmit, {
     requireModifier: true,
@@ -146,19 +143,6 @@ export function PostInput({
   };
 
   const isEdit = variant === POST_INPUT_VARIANT.EDIT;
-
-  const { toast } = Molecules.useToast();
-
-  const hasRequiredMediaForEdit = React.useCallback(
-    (nextExistingAttachments: Hooks.ExistingAttachmentMeta[], nextAttachments: File[]): boolean => {
-      if (!editHadMediaAttachments) return true;
-
-      const hasExistingMedia = nextExistingAttachments.some(isMediaExistingAttachment);
-      const hasNewMedia = nextAttachments.some(isMediaFile);
-      return hasExistingMedia || hasNewMedia;
-    },
-    [editHadMediaAttachments],
-  );
 
   React.useEffect(() => {
     if (isEdit) {
@@ -198,69 +182,57 @@ export function PostInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only run on mount
   }, []);
 
-  const handleOnRemoveExisting = React.useCallback(
-    (index: number) => {
-      if (!isEdit) return;
+  function handleOnRemoveExisting(index: number) {
+    if (!isEdit) return;
 
-      const attachmentToRemove = existingAttachments[index];
-      if (!attachmentToRemove) return;
+    const attachmentToRemove = existingAttachments[index];
+    if (!attachmentToRemove) return;
 
-      const nextExistingAttachments = existingAttachments.filter((_, i) => i !== index);
-      const canRemove = hasRequiredMediaForEdit(nextExistingAttachments, attachments);
+    const nextExistingAttachments = existingAttachments.filter((_, i) => i !== index);
+    const canRemove = hasRequiredMediaForEdit(nextExistingAttachments, attachments);
 
-      if (!canRemove) {
-        toast({
-          title: tCommon('error'),
-          description: t('editRequiresImage'),
-        });
-        return;
-      }
+    if (!canRemove) {
+      toast({
+        title: tCommon('error'),
+        description: t('editRequiresMedia'),
+      });
+      return;
+    }
 
-      setExistingAttachments(nextExistingAttachments);
-    },
-    [isEdit, existingAttachments, hasRequiredMediaForEdit, attachments, toast, tCommon, t, setExistingAttachments],
-  );
+    setExistingAttachments(nextExistingAttachments);
+  }
 
-  const isRemoveExistingDisabled = React.useCallback(
-    (index: number) => {
-      if (!isEdit) return false;
-      const nextExistingAttachments = existingAttachments.filter((_, i) => i !== index);
-      return !hasRequiredMediaForEdit(nextExistingAttachments, attachments);
-    },
-    [isEdit, existingAttachments, attachments, hasRequiredMediaForEdit],
-  );
+  function isRemoveExistingDisabled(index: number) {
+    if (!isEdit) return false;
+    const nextExistingAttachments = existingAttachments.filter((_, i) => i !== index);
+    return !hasRequiredMediaForEdit(nextExistingAttachments, attachments);
+  }
 
-  const handleOnRemoveAttachment = React.useCallback(
-    (index: number) => {
-      if (!isEdit) return;
+  function handleOnRemoveAttachment(index: number) {
+    if (!isEdit) return;
 
-      const attachmentToRemove = attachments[index];
-      if (!attachmentToRemove) return;
+    const attachmentToRemove = attachments[index];
+    if (!attachmentToRemove) return;
 
-      const nextAttachments = attachments.filter((_, i) => i !== index);
-      const canRemove = hasRequiredMediaForEdit(existingAttachments, nextAttachments);
+    const nextAttachments = attachments.filter((_, i) => i !== index);
+    const canRemove = hasRequiredMediaForEdit(existingAttachments, nextAttachments);
 
-      if (!canRemove) {
-        toast({
-          title: tCommon('error'),
-          description: t('editRequiresImage'),
-        });
-        return;
-      }
+    if (!canRemove) {
+      toast({
+        title: tCommon('error'),
+        description: t('editRequiresMedia'),
+      });
+      return;
+    }
 
-      setAttachments(nextAttachments);
-    },
-    [isEdit, attachments, hasRequiredMediaForEdit, existingAttachments, toast, tCommon, t, setAttachments],
-  );
+    setAttachments(nextAttachments);
+  }
 
-  const isRemoveAttachmentDisabled = React.useCallback(
-    (index: number) => {
-      if (!isEdit) return false;
-      const nextAttachments = attachments.filter((_, i) => i !== index);
-      return !hasRequiredMediaForEdit(existingAttachments, nextAttachments);
-    },
-    [isEdit, attachments, existingAttachments, hasRequiredMediaForEdit],
-  );
+  function isRemoveAttachmentDisabled(index: number) {
+    if (!isEdit) return false;
+    const nextAttachments = attachments.filter((_, i) => i !== index);
+    return !hasRequiredMediaForEdit(existingAttachments, nextAttachments);
+  }
   const characterLimit = isArticle
     ? undefined
     : { count: Libs.getCharacterCount(content), max: POST_MAX_CHARACTER_LENGTH };

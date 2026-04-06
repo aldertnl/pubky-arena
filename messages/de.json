@@ -443,7 +443,7 @@
     },
     "deleted": "Dieser Beitrag wurde vom Autor gelöscht.",
     "dropFiles": "Dateien hier ablegen",
-    "editRequiresImage": "Dieser Beitrag erfordert mindestens ein Medium.",
+    "editRequiresMedia": "Dieser Beitrag erfordert mindestens ein Medium.",
     "articleTitle": "Artikeltitel",
     "addTag": "Tag hinzufügen",
     "limitReached": "Limit erreicht",
