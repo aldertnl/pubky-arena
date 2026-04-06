@@ -18,8 +18,14 @@ export interface UsePostMenuActionsOptions {
   onReportClick: () => void;
   /** Callback when edit action is clicked - opens the edit dialog */
   onEditClick: () => void;
+  /** Callback when delete action is clicked - opens the confirm delete dialog */
+  onDeleteClick: () => void;
+  /** Whether a delete operation is in progress (disables the delete menu item) */
+  isDeleting?: boolean;
   /** When set, shows "Undo repost" in the menu, deleting the user's repost */
   currentUserRepostId?: string;
+  /** Same deletePost as PostMenuActions' useDeletePost (undo repost) */
+  deletePost?: (postId: string) => void | Promise<void>;
 }
 
 export interface UsePostMenuActionsResult {

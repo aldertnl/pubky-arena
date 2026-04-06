@@ -15,9 +15,13 @@ import type { PostInputProps } from './PostInput.types';
 import { PostInputExpandableSection } from '../PostInputExpandableSection';
 import { PostInputAttachments } from '@/molecules/PostInputAttachments/PostInputAttachments';
 import type { ArticleJSON } from '@/hooks';
+import { sanitizeCodeBlockLanguages } from '@/molecules/MarkdownEditor/InitializedMDXEditor.utils';
+
+const EXPANDABLE_SECTION_PARENT_GAP_PX = 16;
 
 export function PostInput({
   dataCy,
+  id,
   variant,
   postId,
   originalPostId,
@@ -30,6 +34,7 @@ export function PostInput({
   onArticleModeChange,
   editContent,
   editIsArticle,
+  autoFocusTextarea = false,
   initialContent,
   initialAttachments,
 }: PostInputProps) {
@@ -149,9 +154,14 @@ export function PostInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only run on mount
   }, []);
 
+  const characterLimit = isArticle
+    ? undefined
+    : { count: Libs.getCharacterCount(content), max: POST_MAX_CHARACTER_LENGTH };
+
   return (
     <Atoms.Container
       data-cy={dataCy}
+      id={id}
       ref={containerRef}
       className={Libs.cn(
         'relative cursor-pointer rounded-md border border-dashed p-4 transition-colors duration-200',
@@ -190,9 +200,7 @@ export function PostInput({
           <Organisms.PostHeader
             postId={currentUserPubky}
             isReplyInput={true}
-            characterLimit={
-              isArticle ? undefined : { count: Libs.getCharacterCount(content), max: POST_MAX_CHARACTER_LENGTH }
-            }
+            characterLimit={characterLimit}
             showPopover={false}
           />
         )}
@@ -202,7 +210,7 @@ export function PostInput({
             <Atoms.Textarea
               ref={textareaRef}
               placeholder={displayPlaceholder}
-              className="min-h-6 resize-none border-none p-0 font-medium text-secondary-foreground shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              variant="inline"
               value={content}
               onChange={handleChange}
               onFocus={handleExpand}
@@ -212,6 +220,7 @@ export function PostInput({
               rows={1}
               disabled={isSubmitting}
               aria-haspopup="listbox"
+              autoFocus={autoFocusTextarea}
             />
 
             {/* Mention autocomplete popover */}
@@ -242,7 +251,7 @@ export function PostInput({
           <Molecules.MarkdownEditor
             ref={markdownEditorRef}
             autoFocus
-            markdown={content}
+            markdown={sanitizeCodeBlockLanguages(content)}
             onChange={handleArticleBodyChange}
             readOnly={isSubmitting}
           />
@@ -277,6 +286,8 @@ export function PostInput({
           onArticleClick={handleArticleClick}
           isPostDisabled={!isValid()}
           submitMode={variant}
+          parentGapPx={EXPANDABLE_SECTION_PARENT_GAP_PX}
+          characterLimit={characterLimit}
         />
       </Atoms.Container>
     </Atoms.Container>
