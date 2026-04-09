@@ -177,6 +177,7 @@ describe('VisualTimelinePosts', () => {
       tail: [],
       tiles: [],
       hasPendingTiles: false,
+      resolvedPostCount: 1,
     });
   });
 
@@ -239,6 +240,7 @@ describe('VisualTimelinePosts', () => {
       tail: [],
       tiles: [],
       hasPendingTiles: true,
+      resolvedPostCount: 1,
     });
 
     render(
@@ -287,6 +289,7 @@ describe('VisualTimelinePosts', () => {
       tail: [],
       tiles: [],
       hasPendingTiles: false,
+      resolvedPostCount: 1,
     });
 
     render(
@@ -363,6 +366,145 @@ describe('VisualTimelinePosts', () => {
     expect(screen.getByTestId('visual-overlay-content-stack')).toHaveClass('flex', 'flex-col', 'gap-4');
   });
 
+  describe('auto-pagination through media-less pages', () => {
+    it('calls loadMore when rows are empty, posts are settled in Dexie, and hasMore is true', () => {
+      const mockLoadMore = vi.fn().mockResolvedValue(undefined);
+      mockUseVisualFeedTiles.mockReturnValue({
+        rows: [],
+        tail: [],
+        tiles: [],
+        hasPendingTiles: false,
+        resolvedPostCount: 1,
+      });
+
+      render(
+        <VisualTimelinePosts
+          postIds={['author:textonly1']}
+          loading={false}
+          loadingMore={false}
+          error={null}
+          hasMore={true}
+          loadMore={mockLoadMore}
+        />,
+      );
+
+      expect(mockLoadMore).toHaveBeenCalledOnce();
+    });
+
+    it('does not auto-paginate until all postIds are resolved in Dexie', () => {
+      const mockLoadMore = vi.fn().mockResolvedValue(undefined);
+      mockUseVisualFeedTiles.mockReturnValue({
+        rows: [],
+        tail: [],
+        tiles: [],
+        hasPendingTiles: false,
+        resolvedPostCount: 0,
+      });
+
+      render(
+        <VisualTimelinePosts
+          postIds={['author:pending1', 'author:pending2']}
+          loading={false}
+          loadingMore={false}
+          error={null}
+          hasMore={true}
+          loadMore={mockLoadMore}
+        />,
+      );
+
+      expect(mockLoadMore).not.toHaveBeenCalled();
+    });
+
+    it('does not auto-paginate when loadingMore is true', () => {
+      const mockLoadMore = vi.fn().mockResolvedValue(undefined);
+      mockUseVisualFeedTiles.mockReturnValue({
+        rows: [],
+        tail: [],
+        tiles: [],
+        hasPendingTiles: false,
+        resolvedPostCount: 1,
+      });
+
+      render(
+        <VisualTimelinePosts
+          postIds={['author:textonly1']}
+          loading={false}
+          loadingMore={true}
+          error={null}
+          hasMore={true}
+          loadMore={mockLoadMore}
+        />,
+      );
+
+      expect(mockLoadMore).not.toHaveBeenCalled();
+    });
+
+    it('does not auto-paginate when hasMore is false', () => {
+      const mockLoadMore = vi.fn().mockResolvedValue(undefined);
+      mockUseVisualFeedTiles.mockReturnValue({
+        rows: [],
+        tail: [],
+        tiles: [],
+        hasPendingTiles: false,
+        resolvedPostCount: 1,
+      });
+
+      render(
+        <VisualTimelinePosts
+          postIds={['author:textonly1']}
+          loading={false}
+          loadingMore={false}
+          error={null}
+          hasMore={false}
+          loadMore={mockLoadMore}
+        />,
+      );
+
+      expect(mockLoadMore).not.toHaveBeenCalled();
+    });
+
+    it('does not auto-paginate while tile probes are pending', () => {
+      const mockLoadMore = vi.fn().mockResolvedValue(undefined);
+      mockUseVisualFeedTiles.mockReturnValue({
+        rows: [],
+        tail: [],
+        tiles: [],
+        hasPendingTiles: true,
+        resolvedPostCount: 1,
+      });
+
+      render(
+        <VisualTimelinePosts
+          postIds={['author:post1']}
+          loading={false}
+          loadingMore={false}
+          error={null}
+          hasMore={true}
+          loadMore={mockLoadMore}
+        />,
+      );
+
+      expect(mockLoadMore).not.toHaveBeenCalled();
+    });
+
+    it('does not auto-paginate when rows already grew from the last stable count', () => {
+      const mockLoadMore = vi.fn().mockResolvedValue(undefined);
+
+      render(
+        <VisualTimelinePosts
+          postIds={['author:post1']}
+          loading={false}
+          loadingMore={false}
+          error={null}
+          hasMore={true}
+          loadMore={mockLoadMore}
+        />,
+      );
+
+      expect(mockLoadMore).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Virtuoso endReached', () => {
     it('calls loadMore when hasMore and not loadingMore', () => {
       const mockLoadMore = vi.fn().mockResolvedValue(undefined);
@@ -426,6 +568,7 @@ describe('VisualTimelinePosts - Snapshots', () => {
       tail: [],
       tiles: [],
       hasPendingTiles: false,
+      resolvedPostCount: 1,
     });
   });
 
@@ -450,6 +593,7 @@ describe('VisualTimelinePosts - Snapshots', () => {
       tail: [],
       tiles: [],
       hasPendingTiles: false,
+      resolvedPostCount: 1,
     });
 
     const { container } = render(

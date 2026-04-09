@@ -98,6 +98,7 @@ describe('useVisualFeedTiles', () => {
     mockUseLiveQuery.mockReturnValue({
       tiles: [],
       missingFileUris: [],
+      resolvedPostCount: 0,
     });
     mockFetchFiles.mockResolvedValue(undefined);
     mockGetOrFetch.mockResolvedValue(undefined);
@@ -111,6 +112,7 @@ describe('useVisualFeedTiles', () => {
     mockUseLiveQuery.mockReturnValue({
       tiles: [],
       missingFileUris: ['pubky://user-1/pub/pubky.app/files/file-1'],
+      resolvedPostCount: 1,
     });
 
     renderHook(() => useVisualFeedTiles({ postIds: ['author:post-1'], hasMore: false }));
@@ -172,6 +174,7 @@ describe('useVisualFeedTiles', () => {
         }),
       ],
       missingFileUris: [],
+      resolvedPostCount: 3,
     });
 
     const createdImages: Array<{

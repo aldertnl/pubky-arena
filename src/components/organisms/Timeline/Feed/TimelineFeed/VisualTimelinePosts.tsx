@@ -300,13 +300,17 @@ export function VisualTimelinePosts({
   loadMore,
 }: VisualTimelinePostsProps) {
   const { navigateToPost } = Hooks.usePostNavigation();
-  const { rows, hasPendingTiles } = useVisualFeedTiles({ postIds, hasMore });
+  const { rows, hasPendingTiles, resolvedPostCount } = useVisualFeedTiles({ postIds, hasMore });
 
   // The visual grid only renders posts with image/video attachments. When a page of
   // posts contains no media, the row count stays unchanged and Virtuoso won't fire
   // endReached again (the data length didn't change). Track the row count from the
   // last stable state so we can auto-paginate through media-less pages until visual
   // tiles appear or the stream is exhausted.
+  //
+  // Wait until Dexie has a row for every postId before comparing row counts — otherwise
+  // when loadMore completes, rows can still reflect only an older batch and we skip
+  // auto-pagination for a new batch that has no media.
   const stableRowCountRef = React.useRef(0);
 
   React.useEffect(() => {
@@ -319,12 +323,16 @@ export function VisualTimelinePosts({
       return;
     }
 
+    if (resolvedPostCount < postIds.length) {
+      return;
+    }
+
     if (rows.length <= stableRowCountRef.current) {
       void loadMore();
     }
 
     stableRowCountRef.current = rows.length;
-  }, [loading, loadingMore, error, hasMore, postIds.length, rows.length, hasPendingTiles, loadMore]);
+  }, [loading, loadingMore, error, hasMore, postIds.length, rows.length, hasPendingTiles, resolvedPostCount, loadMore]);
 
   const showFilteredEmptyState =
     !loading && !error && postIds.length > 0 && rows.length === 0 && !hasMore && !loadingMore && !hasPendingTiles;

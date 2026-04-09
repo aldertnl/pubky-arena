@@ -25,11 +25,13 @@ import type { VisualTile } from './TimelineFeedVisual.types';
 type VisualFeedSnapshot = {
   tiles: VisualTile[];
   missingFileUris: string[];
+  resolvedPostCount: number;
 };
 
 const EMPTY_SNAPSHOT: VisualFeedSnapshot = {
   tiles: [],
   missingFileUris: [],
+  resolvedPostCount: 0,
 };
 
 function buildLocalTile(
@@ -259,6 +261,7 @@ export function useVisualFeedTiles({ postIds, hasMore }: { postIds: string[]; ha
       return {
         tiles,
         missingFileUris: Array.from(missingFileUris),
+        resolvedPostCount: existingPosts.length,
       };
     },
     [postIdsKey, localPostAttachments],
@@ -335,10 +338,13 @@ export function useVisualFeedTiles({ postIds, hasMore }: { postIds: string[]; ha
     firstPendingTileIndex === -1 && !hasMore,
   );
 
+  const resolvedPostCount = snapshot?.resolvedPostCount ?? 0;
+
   return {
     rows,
     tail,
     tiles: stabilizedTiles,
     hasPendingTiles: firstPendingTileIndex !== -1,
+    resolvedPostCount,
   };
 }
