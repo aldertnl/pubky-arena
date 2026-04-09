@@ -160,10 +160,10 @@ export function useStreamPagination({
   /**
    * Load more function - fetches next page
    */
-  const loadMore = useCallback(async () => {
+  async function loadMore() {
     if (loadingMore || !hasMore) return;
     await fetchStreamSlice(false);
-  }, [loadingMore, hasMore, fetchStreamSlice]);
+  }
 
   /**
    * Add post(s) to the timeline, sorted by timestamp
