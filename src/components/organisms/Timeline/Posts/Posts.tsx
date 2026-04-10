@@ -1,7 +1,7 @@
 'use client';
 
 import { Virtuoso } from 'react-virtuoso';
-import { TIMELINE_VIRTUOSO_OVERSCAN_PX } from '@/config';
+import { TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS, TIMELINE_VIRTUOSO_OVERSCAN_PX } from '@/config';
 import * as Libs from '@/libs';
 import * as Atoms from '@/atoms';
 import * as Molecules from '@/molecules';
@@ -84,6 +84,7 @@ export function TimelinePosts({
             data={postIds}
             context={virtuosoContext}
             overscan={TIMELINE_VIRTUOSO_OVERSCAN_PX}
+            minOverscanItemCount={TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS}
             computeItemKey={(_index, postId) => `main_${postId}`}
             endReached={() => {
               if (!loadingMore && hasMore) {
