@@ -30,3 +30,15 @@ export const TIMELINE_VIRTUOSO_OVERSCAN_PX = 800;
  * Lighter than the previous 10/15 cap while still buffering tall/variable post cards.
  */
 export const TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS = { top: 3, bottom: 4 } as const;
+
+/**
+ * Default row height for Virtuoso (`defaultItemHeight`) before/while a row's measured height stabilizes.
+ * Without this, posts that render thin "Loading…" lines then expand to full cards cause large scroll jumps.
+ */
+export const TIMELINE_VIRTUOSO_DEFAULT_ITEM_HEIGHT_PX = 320;
+
+/**
+ * Minimum height for the post card body while details are loading (`PostMain`).
+ * Aligns with {@link TIMELINE_VIRTUOSO_DEFAULT_ITEM_HEIGHT_PX} so Virtuoso's estimate matches DOM.
+ */
+export const TIMELINE_POST_CARD_LOADING_MIN_HEIGHT_PX = TIMELINE_VIRTUOSO_DEFAULT_ITEM_HEIGHT_PX;

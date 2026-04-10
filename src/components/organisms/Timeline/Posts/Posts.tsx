@@ -1,7 +1,11 @@
 'use client';
 
 import { Virtuoso } from 'react-virtuoso';
-import { TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS, TIMELINE_VIRTUOSO_OVERSCAN_PX } from '@/config';
+import {
+  TIMELINE_VIRTUOSO_DEFAULT_ITEM_HEIGHT_PX,
+  TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS,
+  TIMELINE_VIRTUOSO_OVERSCAN_PX,
+} from '@/config';
 import * as Atoms from '@/atoms';
 import * as Molecules from '@/molecules';
 import * as Organisms from '@/organisms';
@@ -79,6 +83,7 @@ export function TimelinePosts({
             useWindowScroll
             data={postIds}
             context={virtuosoContext}
+            defaultItemHeight={TIMELINE_VIRTUOSO_DEFAULT_ITEM_HEIGHT_PX}
             overscan={TIMELINE_VIRTUOSO_OVERSCAN_PX}
             minOverscanItemCount={TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS}
             firstItemIndex={virtuosoFirstItemIndex}

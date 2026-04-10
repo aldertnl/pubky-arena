@@ -8,7 +8,12 @@ import * as Atoms from '@/atoms';
 import * as Molecules from '@/molecules';
 import * as Organisms from '@/organisms';
 import type { PostTagsPanelHandle } from '@/organisms';
-import { POST_TAGS_MAX_COUNT, POST_TAGS_MAX_LENGTH, POST_TAGS_MAX_TOTAL_CHARS } from '@/config';
+import {
+  POST_TAGS_MAX_COUNT,
+  POST_TAGS_MAX_LENGTH,
+  POST_TAGS_MAX_TOTAL_CHARS,
+  TIMELINE_POST_CARD_LOADING_MIN_HEIGHT_PX,
+} from '@/config';
 import { POST_THREAD_CONNECTOR_VARIANTS } from '@/atoms';
 
 import type { PostMainProps } from './PostMain.types';
@@ -23,7 +28,7 @@ export function PostMain({
 }: PostMainProps) {
   const isMobile = Hooks.useIsMobile();
   const effectiveTagsLayout = tagsLayout === 'side' && isMobile ? 'inline' : tagsLayout;
-  const { postDetails } = Hooks.usePostDetails(postId);
+  const { postDetails, isLoading: isPostDetailsLoading } = Hooks.usePostDetails(postId);
   const isDeleted = Libs.isPostDeleted(postDetails?.content);
 
   const { showRepostHeader, shouldShowPostHeader } = Hooks.usePostHeaderVisibility(postId);
@@ -78,7 +83,16 @@ export function PostMain({
           ) : (
             <>
               {showRepostHeader && <Molecules.RepostHeader />}
-              <Atoms.CardContent className="flex min-w-0 flex-col gap-4 p-6">
+              <Atoms.CardContent
+                className="flex min-w-0 flex-col gap-4 p-6"
+                style={
+                  isPostDetailsLoading && !isDeleted
+                    ? {
+                        minHeight: `min(${TIMELINE_POST_CARD_LOADING_MIN_HEIGHT_PX}px, 70dvh)`,
+                      }
+                    : undefined
+                }
+              >
                 {effectiveTagsLayout === 'side' ? (
                   <Atoms.Container className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
                     <Atoms.Container className="flex min-w-0 flex-col gap-4 lg:col-span-2">
