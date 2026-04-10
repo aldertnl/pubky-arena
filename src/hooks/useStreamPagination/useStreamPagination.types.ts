@@ -54,4 +54,8 @@ export interface UseStreamPaginationResult {
    * @param postIds - A single post ID or array of post IDs to remove
    */
   removePosts: (postIds: string | string[]) => void;
+  /**
+   * Virtuoso `firstItemIndex` for the first row in `postIds`. Decremented when posts are prepended so scroll position stays stable.
+   */
+  virtuosoFirstItemIndex: number;
 }

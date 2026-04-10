@@ -85,6 +85,7 @@ describe('RepliesWithParent', () => {
       refresh: vi.fn(),
       prependPosts: vi.fn(),
       removePosts: vi.fn(),
+      virtuosoFirstItemIndex: 1_000_000,
     });
 
     // Mock usePostNavigation
@@ -113,6 +114,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       render(<RepliesWithParent streamId={mockStreamId} />);
@@ -131,6 +133,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       render(<RepliesWithParent streamId={mockStreamId} />);
@@ -151,6 +154,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       render(<RepliesWithParent streamId={mockStreamId} />);
@@ -169,6 +173,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       render(<RepliesWithParent streamId={mockStreamId} />);
@@ -189,6 +194,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       render(<RepliesWithParent streamId={mockStreamId} />);
@@ -208,6 +214,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       render(<RepliesWithParent streamId={mockStreamId} />);
@@ -230,6 +237,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       // Mock useLiveQuery to return null (no parent)
@@ -258,6 +266,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       // Mock useLiveQuery to handle multiple calls:
@@ -288,6 +297,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       // Mock useLiveQuery to handle multiple calls:
@@ -319,6 +329,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       // Mock useLiveQuery to handle multiple calls:
@@ -351,6 +362,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       // Mock useLiveQuery to handle multiple calls:
@@ -384,6 +396,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       render(<RepliesWithParent streamId={mockStreamId} />);
@@ -419,6 +432,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       // Mock useLiveQuery to return parent ID but no parent post (triggers fetch)
@@ -456,6 +470,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       const { container } = render(<RepliesWithParent streamId={mockStreamId} />);
@@ -474,6 +489,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       const { container } = render(<RepliesWithParent streamId={mockStreamId} />);
@@ -492,6 +508,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       const { container } = render(<RepliesWithParent streamId={mockStreamId} />);
@@ -510,6 +527,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       // Mock useLiveQuery to handle multiple calls (2 replies × 2 queries each = 4 calls):
@@ -540,6 +558,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
+        virtuosoFirstItemIndex: 1_000_000,
       });
 
       // Mock useLiveQuery to handle multiple calls (2 replies × 2 queries each = 4 calls):

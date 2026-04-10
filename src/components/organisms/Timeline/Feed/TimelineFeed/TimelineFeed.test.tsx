@@ -161,6 +161,7 @@ const defaultPaginationResult = {
   refresh: mockRefresh,
   prependPosts: mockPrependPosts,
   removePosts: vi.fn(),
+  virtuosoFirstItemIndex: 1_000_000,
 };
 
 describe('TimelineFeed', () => {

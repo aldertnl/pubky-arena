@@ -87,6 +87,7 @@ const defaultPaginationResult = {
   refresh: mockRefresh,
   prependPosts: mockPrependPosts,
   removePosts: mockRemovePosts,
+  virtuosoFirstItemIndex: 1_000_000,
 };
 
 const { useStreamPagination } = await import('@/hooks');

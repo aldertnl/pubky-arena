@@ -13,13 +13,20 @@ export const TIMELINE_FEED_VARIANT = {
 export type TimelineFeedVariant = (typeof TIMELINE_FEED_VARIANT)[keyof typeof TIMELINE_FEED_VARIANT];
 
 /**
- * Pixel overscan buffer for Virtuoso-based timeline lists.
- * Higher values keep more rows mounted off-screen (helps smaller viewports / scroll-back).
+ * Initial virtual index for Virtuoso `firstItemIndex` (must stay positive).
+ * Decremented in `useStreamPagination` when posts are prepended so window scroll stays stable.
  */
-export const TIMELINE_VIRTUOSO_OVERSCAN_PX = 2800;
+export const TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX = 1_000_000;
 
 /**
- * Minimum item count to render beyond the viewport on each side (Virtuoso `minOverscanItemCount`).
- * Complements pixel overscan when rows are tall or heights vary.
+ * Pixel overscan for Virtuoso timeline lists (`overscan`).
+ * Lower than the previous 2800px default to reduce off-screen measurement churn during scroll;
+ * still above the 400px stress-test value to avoid obvious blank strips when scrolling quickly.
  */
-export const TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS = { top: 10, bottom: 15 } as const;
+export const TIMELINE_VIRTUOSO_OVERSCAN_PX = 800;
+
+/**
+ * Minimum rows rendered beyond the viewport (`minOverscanItemCount`).
+ * Lighter than the previous 10/15 cap while still buffering tall/variable post cards.
+ */
+export const TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS = { top: 3, bottom: 4 } as const;

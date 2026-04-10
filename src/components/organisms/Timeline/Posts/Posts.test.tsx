@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX } from '@/config';
 import { TimelinePosts } from './Posts';
 import * as Hooks from '@/hooks';
 
@@ -147,6 +148,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -162,6 +164,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -180,6 +183,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -199,6 +203,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={false}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -220,6 +225,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={false}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -241,6 +247,7 @@ describe('TimelinePosts', () => {
           error="Network error"
           hasMore={false}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -261,6 +268,7 @@ describe('TimelinePosts', () => {
           error="Pagination failed"
           hasMore={false}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -280,6 +288,7 @@ describe('TimelinePosts', () => {
           error="Pagination failed"
           hasMore={false}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -300,6 +309,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -319,6 +329,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -337,6 +348,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -357,6 +369,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -377,6 +390,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -399,6 +413,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -416,6 +431,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={false}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -433,6 +449,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -452,6 +469,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -471,6 +489,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -493,6 +512,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={vi.fn()}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -514,6 +534,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={mockLoadMore}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -531,6 +552,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={mockLoadMore}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -548,6 +570,7 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={false}
           loadMore={mockLoadMore}
+          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
@@ -586,7 +609,15 @@ describe('TimelinePosts - Snapshots', () => {
 
   it('should match snapshot for loading state', () => {
     const { container } = render(
-      <TimelinePosts postIds={[]} loading={true} loadingMore={false} error={null} hasMore={true} loadMore={vi.fn()} />,
+      <TimelinePosts
+        postIds={[]}
+        loading={true}
+        loadingMore={false}
+        error={null}
+        hasMore={true}
+        loadMore={vi.fn()}
+        virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+      />,
     );
 
     expect(container).toMatchSnapshot();
@@ -601,6 +632,7 @@ describe('TimelinePosts - Snapshots', () => {
         error={null}
         hasMore={false}
         loadMore={vi.fn()}
+        virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
       />,
     );
 
@@ -620,6 +652,7 @@ describe('TimelinePosts - Snapshots', () => {
         error="Network error"
         hasMore={false}
         loadMore={vi.fn()}
+        virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
       />,
     );
 
@@ -639,6 +672,7 @@ describe('TimelinePosts - Snapshots', () => {
         error={null}
         hasMore={true}
         loadMore={vi.fn()}
+        virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
       />,
     );
 

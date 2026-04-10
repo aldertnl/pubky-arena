@@ -20,6 +20,8 @@ interface TimelinePostsProps {
   hasMore: boolean;
   loadMore: () => Promise<void>;
   tagsLayout?: TagsLayout;
+  /** Virtuoso `firstItemIndex` — kept in sync when posts are prepended (see `useStreamPagination`). */
+  virtuosoFirstItemIndex: number;
 }
 
 const virtuosoComponents = { Footer: TimelineVirtuosoFooter };
@@ -60,6 +62,7 @@ export function TimelinePosts({
   hasMore,
   loadMore,
   tagsLayout,
+  virtuosoFirstItemIndex,
 }: TimelinePostsProps) {
   const virtuosoContext: TimelineVirtuosoContext = {
     loadingMore,
@@ -78,6 +81,7 @@ export function TimelinePosts({
             context={virtuosoContext}
             overscan={TIMELINE_VIRTUOSO_OVERSCAN_PX}
             minOverscanItemCount={TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS}
+            firstItemIndex={virtuosoFirstItemIndex}
             computeItemKey={(_index, postId) => `main_${postId}`}
             endReached={() => {
               if (!loadingMore && hasMore) {
