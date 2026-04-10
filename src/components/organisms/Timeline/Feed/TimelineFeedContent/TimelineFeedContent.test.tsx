@@ -61,7 +61,7 @@ vi.mock('@/organisms', () => ({
     loadingMore: boolean;
     error: string | null;
     hasMore: boolean;
-    loadMore: () => void;
+    loadMore: () => Promise<string[]>;
     tagsLayout: string;
   }) => (
     <div data-testid="timeline-posts">
@@ -87,7 +87,7 @@ const defaultPaginationResult = {
   refresh: mockRefresh,
   prependPosts: mockPrependPosts,
   removePosts: mockRemovePosts,
-  virtuosoFirstItemIndex: 1_000_000,
+  getLoadedPostIdsSnapshot: () => ['post1', 'post2', 'post3'],
 };
 
 const { useStreamPagination } = await import('@/hooks');

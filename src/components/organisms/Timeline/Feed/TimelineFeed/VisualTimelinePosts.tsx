@@ -1,13 +1,8 @@
 'use client';
 
+import BidirectionalList from 'broad-infinite-list/react';
 import * as React from 'react';
-import { Virtuoso } from 'react-virtuoso';
-import {
-  TIMELINE_VIRTUOSO_DEFAULT_ITEM_HEIGHT_PX,
-  TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS,
-  TIMELINE_VIRTUOSO_OVERSCAN_PX,
-  TIMELINE_VIRTUOSO_SKIP_ANIMATION_FRAME_IN_RESIZE_OBSERVER,
-} from '@/config';
+import { TIMELINE_BIDIRECTIONAL_LIST_THRESHOLD_PX, TIMELINE_BIDIRECTIONAL_LIST_VIEW_COUNT } from '@/config';
 import * as Atoms from '@/atoms';
 import * as Core from '@/core';
 import * as Hooks from '@/hooks';
@@ -19,6 +14,7 @@ import {
   VISUAL_TILE_ASPECT_RATIOS,
   VISUAL_TILE_COLUMN_SPANS,
 } from './TimelineFeedVisual.helpers';
+import type { VisualRow } from './TimelineFeedVisual.types';
 import type {
   VisualTimelinePostsProps,
   VisualTileImageProps,
@@ -27,13 +23,9 @@ import type {
   VisualTimelineTileProps,
   VisualTileVideoProps,
 } from './VisualTimelinePosts.types';
-import {
-  TimelineVirtuosoFooter,
-  type TimelineVirtuosoContext,
-} from '@/components/molecules/Timeline/TimelineVirtuosoFooter';
+import { TimelineListFooter, type TimelineListFooterContext } from '@/components/molecules/Timeline/TimelineListFooter';
 import { useVisualFeedTiles } from './useVisualFeedTiles';
-
-const visualVirtuosoComponents = { Footer: TimelineVirtuosoFooter };
+import { useVisualTimelineBidirectionalRows } from './useVisualTimelineBidirectionalRows';
 
 function stopPropagation(event: React.SyntheticEvent) {
   event.stopPropagation();
@@ -59,7 +51,7 @@ function VisualTileVideo({ tile }: VisualTileVideoProps) {
     });
   }, [isVisible]);
 
-  const handleTimeUpdate = React.useCallback(() => {
+  function handleTimeUpdate() {
     const videoElement = videoRef.current;
     if (!videoElement) return;
 
@@ -69,7 +61,7 @@ function VisualTileVideo({ tile }: VisualTileVideoProps) {
         // Ignore autoplay restarts that are blocked by the browser.
       });
     }
-  }, []);
+  }
 
   return (
     <Atoms.Container ref={ref} overrideDefaults className="absolute inset-0">
@@ -98,36 +90,31 @@ function VisualTileImage({ tile }: VisualTileImageProps) {
     hasFallenBackToMainRef.current = tile.previewSrc === tile.mainSrc;
   }, [tile.mainSrc, tile.previewSrc]);
 
-  const handleError = React.useCallback(() => {
+  function handleError() {
     if (hasFallenBackToMainRef.current || tile.previewSrc === tile.mainSrc) {
       return;
     }
 
     hasFallenBackToMainRef.current = true;
     setCurrentSrc(tile.mainSrc);
-  }, [tile.mainSrc, tile.previewSrc]);
+  }
 
   return <Atoms.Image src={currentSrc} alt={tile.attachmentName} fill className="object-cover" onError={handleError} />;
 }
 
 function VisualTimelineTileOverlay({ tile, size, onReplyClick, onRepostClick }: VisualTimelineTileOverlayProps) {
-  const userId = React.useMemo(() => Core.parseCompositeId(tile.postId).pubky, [tile.postId]);
+  const userId = Core.parseCompositeId(tile.postId).pubky;
   const { userDetails } = Hooks.useUserDetails(userId);
   const avatarUrl = Hooks.useAvatarUrl(userDetails);
   const { formatRelativeTime } = Hooks.useRelativeTime();
   const indexedAt = new Date(tile.indexedAt);
   const [tagsExpanded, setTagsExpanded] = React.useState(false);
   const isCompact = size === 'square';
-  const truncatedContent = React.useMemo(() => {
-    const trimmedContent = tile.content.trim();
-
-    if (!trimmedContent) {
-      return trimmedContent;
-    }
-
-    const limit = isCompact ? 120 : size === 'wide' ? 260 : 180;
-    return Molecules.truncateAtWordBoundary(trimmedContent, limit);
-  }, [isCompact, size, tile.content]);
+  const trimmedContent = tile.content.trim();
+  const truncatedContent =
+    trimmedContent === ''
+      ? trimmedContent
+      : Molecules.truncateAtWordBoundary(trimmedContent, isCompact ? 120 : size === 'wide' ? 260 : 180);
 
   return (
     <Atoms.Container
@@ -220,21 +207,18 @@ function VisualTimelineTile({ tile, size, onNavigate }: VisualTimelineTileProps)
   const [replyDialogOpen, setReplyDialogOpen] = React.useState(false);
   const [repostDialogOpen, setRepostDialogOpen] = React.useState(false);
 
-  const handleNavigate = React.useCallback(() => {
+  function handleNavigate() {
     onNavigate(tile.postId);
-  }, [onNavigate, tile.postId]);
+  }
 
-  const handleKeyDown = React.useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (event.target !== event.currentTarget) return;
+  function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.target !== event.currentTarget) return;
 
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        handleNavigate();
-      }
-    },
-    [handleNavigate],
-  );
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleNavigate();
+    }
+  }
 
   return (
     <>
@@ -307,11 +291,13 @@ export function VisualTimelinePosts({
   const { navigateToPost } = Hooks.usePostNavigation();
   const { rows, hasPendingTiles } = useVisualFeedTiles({ postIds, hasMore });
 
-  // The visual grid only renders posts with image/video attachments. When a page of
-  // posts contains no media, the row count stays unchanged and Virtuoso won't fire
-  // endReached again (the data length didn't change). Track the row count from the
-  // last stable state so we can auto-paginate through media-less pages until visual
-  // tiles appear or the stream is exhausted.
+  const { items, onItemsChange, onLoadMore, hasPrevious, hasNext } = useVisualTimelineBidirectionalRows({
+    rows,
+    loadMore,
+    hasMore,
+    viewCount: TIMELINE_BIDIRECTIONAL_LIST_VIEW_COUNT,
+  });
+
   const stableRowCountRef = React.useRef(0);
 
   React.useEffect(() => {
@@ -334,7 +320,7 @@ export function VisualTimelinePosts({
   const showFilteredEmptyState =
     !loading && !error && postIds.length > 0 && rows.length === 0 && !hasMore && !loadingMore && !hasPendingTiles;
 
-  const virtuosoContext: TimelineVirtuosoContext = {
+  const footerContext: TimelineListFooterContext = {
     loadingMore,
     error,
     hasMore,
@@ -354,29 +340,31 @@ export function VisualTimelinePosts({
             className="mx-auto w-full"
             style={{ maxWidth: `${VISUAL_GRID_MAX_WIDTH_PX}px` }}
           >
-            <Virtuoso
-              useWindowScroll
-              data={rows}
-              context={virtuosoContext}
-              defaultItemHeight={TIMELINE_VIRTUOSO_DEFAULT_ITEM_HEIGHT_PX}
-              overscan={TIMELINE_VIRTUOSO_OVERSCAN_PX}
-              minOverscanItemCount={TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS}
-              skipAnimationFrameInResizeObserver={TIMELINE_VIRTUOSO_SKIP_ANIMATION_FRAME_IN_RESIZE_OBSERVER}
-              computeItemKey={(_index, row) => row.key}
-              endReached={() => {
-                if (!loadingMore && hasMore) {
-                  void loadMore();
-                }
-              }}
-              itemContent={(_index, row) => (
+            <BidirectionalList<VisualRow>
+              useWindow
+              items={items}
+              itemKey={(row) => row.key}
+              renderItem={(row) => (
                 <Atoms.Container overrideDefaults className="grid grid-cols-12 gap-6 pb-6">
                   {row.cells.map((cell) => (
                     <VisualTimelineRow key={cell.key} cell={cell} onNavigate={navigateToPost} />
                   ))}
                 </Atoms.Container>
               )}
-              components={visualVirtuosoComponents}
+              onLoadMore={onLoadMore}
+              onItemsChange={onItemsChange}
+              hasPrevious={hasPrevious}
+              hasNext={hasNext}
+              viewCount={TIMELINE_BIDIRECTIONAL_LIST_VIEW_COUNT}
+              threshold={TIMELINE_BIDIRECTIONAL_LIST_THRESHOLD_PX}
+              spinnerRow={
+                <Atoms.Container overrideDefaults className="flex justify-center py-4">
+                  <Molecules.TimelineLoadingMore />
+                </Atoms.Container>
+              }
+              disable={(loading && postIds.length === 0) || loadingMore}
             />
+            <TimelineListFooter context={footerContext} />
           </Atoms.Container>
         </Atoms.Container>
       ) : null}

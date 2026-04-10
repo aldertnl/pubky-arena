@@ -6,7 +6,7 @@ export interface VisualTimelinePostsProps {
   loadingMore: boolean;
   error: string | null;
   hasMore: boolean;
-  loadMore: () => void;
+  loadMore: () => Promise<string[]>;
 }
 
 export interface VisualTileVideoProps {

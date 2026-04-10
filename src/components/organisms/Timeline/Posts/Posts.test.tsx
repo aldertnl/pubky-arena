@@ -2,33 +2,38 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX } from '@/config';
+import { TIMELINE_BIDIRECTIONAL_LIST_VIEW_COUNT } from '@/config';
 import { TimelinePosts } from './Posts';
 import * as Hooks from '@/hooks';
 
 // Mock dependencies
 vi.mock('next/navigation');
 vi.mock('dexie-react-hooks');
-vi.mock('react-virtuoso', () => ({
-  Virtuoso: ({
-    data,
-    context,
-    itemContent,
-    components,
-    endReached,
+vi.mock('broad-infinite-list/react', () => ({
+  default: ({
+    items,
+    renderItem,
+    onLoadMore,
+    disable,
   }: {
-    data: string[];
-    context?: Record<string, unknown>;
-    itemContent: (index: number, item: string) => React.ReactNode;
-    components?: { Footer?: (props: { context?: Record<string, unknown> }) => React.ReactNode };
-    endReached?: () => void;
+    items: string[];
+    renderItem: (item: string) => React.ReactNode;
+    onLoadMore: (direction: 'up' | 'down', refItem: string) => Promise<string[]>;
+    disable?: boolean;
   }) => (
-    <div data-testid="virtuoso">
-      {data?.map((item, index) => (
-        <div key={index}>{itemContent(index, item)}</div>
+    <div data-testid="bidirectional-list">
+      {items?.map((item) => (
+        <div key={item}>{renderItem(item)}</div>
       ))}
-      {components?.Footer?.({ context })}
-      <button data-testid="virtuoso-end-reached" onClick={() => endReached?.()} />
+      <button
+        type="button"
+        data-testid="bil-load-more-down"
+        onClick={async () => {
+          if (disable || items.length === 0) return;
+          const last = items[items.length - 1];
+          await onLoadMore('down', last);
+        }}
+      />
     </div>
   ),
 }));
@@ -58,8 +63,8 @@ vi.mock('@/atoms', () => ({
   ),
 }));
 
-vi.mock('@/components/molecules/Timeline/TimelineVirtuosoFooter', () => ({
-  TimelineVirtuosoFooter: ({
+vi.mock('@/components/molecules/Timeline/TimelineListFooter', () => ({
+  TimelineListFooter: ({
     context,
   }: {
     context?: { loadingMore: boolean; error: string | null; hasMore: boolean; itemCount: number };
@@ -147,8 +152,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error={null}
           hasMore={true}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -163,8 +167,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error={null}
           hasMore={true}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -182,8 +185,7 @@ describe('TimelinePosts', () => {
           loadingMore={true}
           error={null}
           hasMore={true}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -202,8 +204,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error={null}
           hasMore={false}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -224,8 +225,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error={null}
           hasMore={false}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -246,8 +246,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error="Network error"
           hasMore={false}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -267,8 +266,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error="Pagination failed"
           hasMore={false}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -287,8 +285,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error="Pagination failed"
           hasMore={false}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -308,8 +305,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error={null}
           hasMore={true}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -328,8 +324,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error={null}
           hasMore={true}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -347,8 +342,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error={null}
           hasMore={true}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -368,8 +362,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error={null}
           hasMore={true}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -389,8 +382,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error={null}
           hasMore={true}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -412,8 +404,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error={null}
           hasMore={true}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -430,8 +421,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error={null}
           hasMore={false}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -448,8 +438,7 @@ describe('TimelinePosts', () => {
           loadingMore={true}
           error={null}
           hasMore={true}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -468,8 +457,7 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error={null}
           hasMore={true}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
@@ -478,7 +466,7 @@ describe('TimelinePosts', () => {
       });
     });
 
-    it('should handle large number of posts in list', async () => {
+    it('should only mount a capped window of posts when many IDs are loaded', async () => {
       const largePostCount = 2100;
       const largePostIds = Array.from({ length: largePostCount }, (_, i) => `author${i + 1}:post${i + 1}`);
       render(
@@ -488,22 +476,25 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error={null}
           hasMore={true}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
       await waitFor(() => {
         const postContainers = screen.getAllByTestId(/^post-/);
-        expect(postContainers).toHaveLength(largePostCount);
+        expect(postContainers).toHaveLength(TIMELINE_BIDIRECTIONAL_LIST_VIEW_COUNT);
         expect(screen.getByTestId('post-author1:post1')).toBeInTheDocument();
-        expect(screen.getByTestId(`post-author${largePostCount}:post${largePostCount}`)).toBeInTheDocument();
+        expect(
+          screen.getByTestId(
+            `post-author${TIMELINE_BIDIRECTIONAL_LIST_VIEW_COUNT}:post${TIMELINE_BIDIRECTIONAL_LIST_VIEW_COUNT}`,
+          ),
+        ).toBeInTheDocument();
       });
     });
   });
 
-  describe('Virtuoso Configuration', () => {
-    it('should render posts inside Virtuoso', async () => {
+  describe('BidirectionalList configuration', () => {
+    it('should render posts inside BidirectionalList', async () => {
       render(
         <TimelinePosts
           postIds={mockPostIds}
@@ -511,21 +502,20 @@ describe('TimelinePosts', () => {
           loadingMore={false}
           error={null}
           hasMore={true}
-          loadMore={vi.fn()}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+          loadMore={vi.fn().mockResolvedValue([])}
         />,
       );
 
       await waitFor(() => {
-        expect(screen.getByTestId('virtuoso')).toBeInTheDocument();
+        expect(screen.getByTestId('bidirectional-list')).toBeInTheDocument();
         mockPostIds.forEach((postId) => {
           expect(screen.getByTestId(`post-${postId}`)).toBeInTheDocument();
         });
       });
     });
 
-    it('should call loadMore via endReached when hasMore and not loading', async () => {
-      const mockLoadMore = vi.fn().mockResolvedValue(undefined);
+    it('should call loadMore when scrolling down triggers load and hasMore and not loadingMore', async () => {
+      const mockLoadMore = vi.fn().mockResolvedValue([]);
       render(
         <TimelinePosts
           postIds={mockPostIds}
@@ -534,16 +524,15 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={mockLoadMore}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
-      fireEvent.click(screen.getByTestId('virtuoso-end-reached'));
+      fireEvent.click(screen.getByTestId('bil-load-more-down'));
       expect(mockLoadMore).toHaveBeenCalledOnce();
     });
 
-    it('should not call loadMore via endReached when loadingMore is true', async () => {
-      const mockLoadMore = vi.fn().mockResolvedValue(undefined);
+    it('should not call loadMore when loadingMore is true', async () => {
+      const mockLoadMore = vi.fn().mockResolvedValue([]);
       render(
         <TimelinePosts
           postIds={mockPostIds}
@@ -552,16 +541,15 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={true}
           loadMore={mockLoadMore}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
-      fireEvent.click(screen.getByTestId('virtuoso-end-reached'));
+      fireEvent.click(screen.getByTestId('bil-load-more-down'));
       expect(mockLoadMore).not.toHaveBeenCalled();
     });
 
-    it('should not call loadMore via endReached when hasMore is false', async () => {
-      const mockLoadMore = vi.fn().mockResolvedValue(undefined);
+    it('should not call loadMore when hasMore is false', async () => {
+      const mockLoadMore = vi.fn().mockResolvedValue([]);
       render(
         <TimelinePosts
           postIds={mockPostIds}
@@ -570,11 +558,10 @@ describe('TimelinePosts', () => {
           error={null}
           hasMore={false}
           loadMore={mockLoadMore}
-          virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
         />,
       );
 
-      fireEvent.click(screen.getByTestId('virtuoso-end-reached'));
+      fireEvent.click(screen.getByTestId('bil-load-more-down'));
       expect(mockLoadMore).not.toHaveBeenCalled();
     });
   });
@@ -615,8 +602,7 @@ describe('TimelinePosts - Snapshots', () => {
         loadingMore={false}
         error={null}
         hasMore={true}
-        loadMore={vi.fn()}
-        virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 
@@ -631,8 +617,7 @@ describe('TimelinePosts - Snapshots', () => {
         loadingMore={false}
         error={null}
         hasMore={false}
-        loadMore={vi.fn()}
-        virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 
@@ -651,8 +636,7 @@ describe('TimelinePosts - Snapshots', () => {
         loadingMore={false}
         error="Network error"
         hasMore={false}
-        loadMore={vi.fn()}
-        virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 
@@ -671,8 +655,7 @@ describe('TimelinePosts - Snapshots', () => {
         loadingMore={false}
         error={null}
         hasMore={true}
-        loadMore={vi.fn()}
-        virtuosoFirstItemIndex={TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 

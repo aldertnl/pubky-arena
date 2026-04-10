@@ -81,11 +81,11 @@ describe('RepliesWithParent', () => {
       loadingMore: false,
       error: null,
       hasMore: true,
-      loadMore: vi.fn(),
+      loadMore: vi.fn().mockResolvedValue([]),
       refresh: vi.fn(),
       prependPosts: vi.fn(),
       removePosts: vi.fn(),
-      virtuosoFirstItemIndex: 1_000_000,
+      getLoadedPostIdsSnapshot: vi.fn(() => []),
     });
 
     // Mock usePostNavigation
@@ -110,11 +110,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: null,
         hasMore: true,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       render(<RepliesWithParent streamId={mockStreamId} />);
@@ -129,11 +129,11 @@ describe('RepliesWithParent', () => {
         loadingMore: true,
         error: null,
         hasMore: true,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       render(<RepliesWithParent streamId={mockStreamId} />);
@@ -150,11 +150,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: null,
         hasMore: false,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       render(<RepliesWithParent streamId={mockStreamId} />);
@@ -169,11 +169,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: null,
         hasMore: false,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       render(<RepliesWithParent streamId={mockStreamId} />);
@@ -190,11 +190,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: 'Network error',
         hasMore: false,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       render(<RepliesWithParent streamId={mockStreamId} />);
@@ -210,11 +210,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: 'Pagination failed',
         hasMore: false,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       render(<RepliesWithParent streamId={mockStreamId} />);
@@ -233,11 +233,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: null,
         hasMore: true,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       // Mock useLiveQuery to return null (no parent)
@@ -262,11 +262,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: null,
         hasMore: true,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       // Mock useLiveQuery to handle multiple calls:
@@ -293,11 +293,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: null,
         hasMore: true,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       // Mock useLiveQuery to handle multiple calls:
@@ -325,11 +325,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: null,
         hasMore: true,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       // Mock useLiveQuery to handle multiple calls:
@@ -358,11 +358,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: null,
         hasMore: true,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       // Mock useLiveQuery to handle multiple calls:
@@ -396,7 +396,7 @@ describe('RepliesWithParent', () => {
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       render(<RepliesWithParent streamId={mockStreamId} />);
@@ -428,11 +428,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: null,
         hasMore: true,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       // Mock useLiveQuery to return parent ID but no parent post (triggers fetch)
@@ -466,11 +466,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: null,
         hasMore: true,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       const { container } = render(<RepliesWithParent streamId={mockStreamId} />);
@@ -485,11 +485,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: null,
         hasMore: false,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       const { container } = render(<RepliesWithParent streamId={mockStreamId} />);
@@ -504,11 +504,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: 'Network error',
         hasMore: false,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       const { container } = render(<RepliesWithParent streamId={mockStreamId} />);
@@ -523,11 +523,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: null,
         hasMore: true,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       // Mock useLiveQuery to handle multiple calls (2 replies × 2 queries each = 4 calls):
@@ -554,11 +554,11 @@ describe('RepliesWithParent', () => {
         loadingMore: false,
         error: null,
         hasMore: true,
-        loadMore: vi.fn(),
+        loadMore: vi.fn().mockResolvedValue([]),
         refresh: vi.fn(),
         prependPosts: vi.fn(),
         removePosts: vi.fn(),
-        virtuosoFirstItemIndex: 1_000_000,
+        getLoadedPostIdsSnapshot: vi.fn(() => []),
       });
 
       // Mock useLiveQuery to handle multiple calls (2 replies × 2 queries each = 4 calls):

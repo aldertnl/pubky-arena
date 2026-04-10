@@ -1,20 +1,12 @@
 'use client';
 
-import { Virtuoso } from 'react-virtuoso';
-import {
-  TIMELINE_VIRTUOSO_DEFAULT_ITEM_HEIGHT_PX,
-  TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS,
-  TIMELINE_VIRTUOSO_OVERSCAN_PX,
-  TIMELINE_VIRTUOSO_SKIP_ANIMATION_FRAME_IN_RESIZE_OBSERVER,
-} from '@/config';
+import BidirectionalList from 'broad-infinite-list/react';
+import { TIMELINE_BIDIRECTIONAL_LIST_THRESHOLD_PX, TIMELINE_BIDIRECTIONAL_LIST_VIEW_COUNT } from '@/config';
 import * as Atoms from '@/atoms';
 import * as Molecules from '@/molecules';
 import * as Organisms from '@/organisms';
 import * as Hooks from '@/hooks';
-import {
-  TimelineVirtuosoFooter,
-  type TimelineVirtuosoContext,
-} from '@/components/molecules/Timeline/TimelineVirtuosoFooter';
+import { TimelineListFooter, type TimelineListFooterContext } from '@/components/molecules/Timeline/TimelineListFooter';
 import type { TagsLayout } from '../../PostMain/PostMain.types';
 
 interface TimelinePostsProps {
@@ -23,18 +15,14 @@ interface TimelinePostsProps {
   loadingMore: boolean;
   error: string | null;
   hasMore: boolean;
-  loadMore: () => Promise<void>;
+  loadMore: () => Promise<string[]>;
   tagsLayout?: TagsLayout;
-  /** Virtuoso `firstItemIndex` — kept in sync when posts are prepended (see `useStreamPagination`). */
-  virtuosoFirstItemIndex: number;
 }
 
-const virtuosoComponents = { Footer: TimelineVirtuosoFooter };
-
 /**
- * Extracted from Virtuoso's `itemContent` so hooks run at component level.
+ * Extracted from the list `renderItem` so hooks run at component level.
  * Deleted posts are filtered upstream in TimelineFeedContent; this component
- * is a pure renderer that never returns null (Virtuoso requires non-zero-height items).
+ * is a pure renderer that never returns null (list rows must be non-zero height).
  */
 function TimelinePostItem({ postId, tagsLayout }: { postId: string; tagsLayout?: TagsLayout }) {
   const { navigateToPost } = Hooks.usePostNavigation();
@@ -55,9 +43,8 @@ function TimelinePostItem({ postId, tagsLayout }: { postId: string; tagsLayout?:
 /**
  * TimelinePosts
  *
- * Virtualized timeline that only mounts posts near the viewport.
- * Off-screen posts are unmounted, freeing their Dexie subscriptions,
- * IntersectionObservers, and ResizeObservers.
+ * Bidirectional infinite list: only a capped window of posts is mounted in the DOM.
+ * Off-screen posts are unmounted, freeing Dexie subscriptions, IntersectionObservers, and ResizeObservers.
  */
 export function TimelinePosts({
   postIds,
@@ -67,9 +54,15 @@ export function TimelinePosts({
   hasMore,
   loadMore,
   tagsLayout,
-  virtuosoFirstItemIndex,
 }: TimelinePostsProps) {
-  const virtuosoContext: TimelineVirtuosoContext = {
+  const { items, onItemsChange, onLoadMore, hasPrevious, hasNext } = Hooks.useTimelineBidirectionalItems({
+    postIds,
+    loadMore,
+    hasMore,
+    viewCount: TIMELINE_BIDIRECTIONAL_LIST_VIEW_COUNT,
+  });
+
+  const footerContext: TimelineListFooterContext = {
     loadingMore,
     error,
     hasMore,
@@ -80,24 +73,25 @@ export function TimelinePosts({
     <Molecules.TimelineStateWrapper loading={loading} error={error} hasItems={postIds.length > 0}>
       <Atoms.Container data-cy="timeline-container">
         <Atoms.Container data-cy="timeline-posts" overrideDefaults>
-          <Virtuoso
-            useWindowScroll
-            data={postIds}
-            context={virtuosoContext}
-            defaultItemHeight={TIMELINE_VIRTUOSO_DEFAULT_ITEM_HEIGHT_PX}
-            overscan={TIMELINE_VIRTUOSO_OVERSCAN_PX}
-            minOverscanItemCount={TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS}
-            skipAnimationFrameInResizeObserver={TIMELINE_VIRTUOSO_SKIP_ANIMATION_FRAME_IN_RESIZE_OBSERVER}
-            firstItemIndex={virtuosoFirstItemIndex}
-            computeItemKey={(_index, postId) => `main_${postId}`}
-            endReached={() => {
-              if (!loadingMore && hasMore) {
-                void loadMore();
-              }
-            }}
-            itemContent={(_index, postId) => <TimelinePostItem postId={postId} tagsLayout={tagsLayout} />}
-            components={virtuosoComponents}
+          <BidirectionalList<string>
+            useWindow
+            items={items}
+            itemKey={(id) => id}
+            renderItem={(postId) => <TimelinePostItem postId={postId} tagsLayout={tagsLayout} />}
+            onLoadMore={onLoadMore}
+            onItemsChange={onItemsChange}
+            hasPrevious={hasPrevious}
+            hasNext={hasNext}
+            viewCount={TIMELINE_BIDIRECTIONAL_LIST_VIEW_COUNT}
+            threshold={TIMELINE_BIDIRECTIONAL_LIST_THRESHOLD_PX}
+            spinnerRow={
+              <Atoms.Container overrideDefaults className="flex justify-center py-4">
+                <Molecules.TimelineLoadingMore />
+              </Atoms.Container>
+            }
+            disable={(loading && postIds.length === 0) || loadingMore}
           />
+          <TimelineListFooter context={footerContext} />
         </Atoms.Container>
       </Atoms.Container>
     </Molecules.TimelineStateWrapper>

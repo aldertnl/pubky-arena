@@ -25,9 +25,6 @@ export function useStreamPagination({
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
-  const [virtuosoFirstItemIndex, setVirtuosoFirstItemIndex] = useState(
-    Config.TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX,
-  );
 
   const postIdsRef = useRef<string[]>([]);
 
@@ -150,7 +147,6 @@ export function useStreamPagination({
     setStreamTail(0);
     setHasMore(true);
     setError(null);
-    setVirtuosoFirstItemIndex(Config.TIMELINE_VIRTUOSO_INITIAL_FIRST_ITEM_INDEX);
   }, []);
 
   /**
@@ -162,12 +158,16 @@ export function useStreamPagination({
   }, [clearState, fetchStreamSlice]);
 
   /**
-   * Load more function - fetches next page
+   * Load more function - fetches next page. Returns newly appended post IDs (empty if none or skipped).
    */
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
+  const loadMore = useCallback(async (): Promise<string[]> => {
+    if (loadingMore || !hasMore) return [];
+    const lenBefore = postIdsRef.current.length;
     await fetchStreamSlice(false);
+    return postIdsRef.current.slice(lenBefore);
   }, [loadingMore, hasMore, fetchStreamSlice]);
+
+  const getLoadedPostIdsSnapshot = useCallback(() => [...postIdsRef.current], []);
 
   /**
    * Add post(s) to the timeline, sorted by timestamp
@@ -192,13 +192,11 @@ export function useStreamPagination({
       // Fetch post details to get timestamps and sort
       const sortedIds = await Core.sortPostIdsByTimestamp(allIds);
       postIdsRef.current = sortedIds;
-      setVirtuosoFirstItemIndex((idx) => idx - newIds.length);
       setPostIds(sortedIds);
     } catch (err) {
       Libs.Logger.error('Failed to prepend posts:', err);
       // Fallback: add without sorting
       postIdsRef.current = allIds;
-      setVirtuosoFirstItemIndex((idx) => idx - newIds.length);
       setPostIds(allIds);
     }
   }, []);
@@ -236,6 +234,6 @@ export function useStreamPagination({
     refresh,
     prependPosts,
     removePosts,
-    virtuosoFirstItemIndex,
+    getLoadedPostIdsSnapshot,
   };
 }

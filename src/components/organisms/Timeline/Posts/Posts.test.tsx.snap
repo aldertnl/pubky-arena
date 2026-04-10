@@ -42,7 +42,7 @@ exports[`TimelinePosts - Snapshots > should match snapshot with posts 1`] = `
       data-testid="container"
     >
       <div
-        data-testid="virtuoso"
+        data-testid="bidirectional-list"
       >
         <div>
           <div
@@ -87,7 +87,8 @@ exports[`TimelinePosts - Snapshots > should match snapshot with posts 1`] = `
           </div>
         </div>
         <button
-          data-testid="virtuoso-end-reached"
+          data-testid="bil-load-more-down"
+          type="button"
         />
       </div>
     </div>

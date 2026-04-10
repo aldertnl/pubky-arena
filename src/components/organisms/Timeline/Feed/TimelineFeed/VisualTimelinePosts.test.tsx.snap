@@ -9,7 +9,7 @@ exports[`VisualTimelinePosts - Snapshots > matches snapshot for a populated visu
     style="max-width: 1200px;"
   >
     <div
-      data-testid="virtuoso"
+      data-testid="bidirectional-list"
     >
       <div>
         <div
@@ -94,15 +94,15 @@ exports[`VisualTimelinePosts - Snapshots > matches snapshot for a populated visu
           </div>
         </div>
       </div>
-      <div
-        data-testid="timeline-end"
-      >
-        End
-      </div>
       <button
-        data-testid="virtuoso-end-reached"
+        data-testid="bil-load-more-down"
         type="button"
       />
+    </div>
+    <div
+      data-testid="timeline-end"
+    >
+      End
     </div>
   </div>
 </div>
@@ -125,7 +125,7 @@ exports[`VisualTimelinePosts - Snapshots > matches snapshot for touch devices wi
     style="max-width: 1200px;"
   >
     <div
-      data-testid="virtuoso"
+      data-testid="bidirectional-list"
     >
       <div>
         <div
@@ -152,15 +152,15 @@ exports[`VisualTimelinePosts - Snapshots > matches snapshot for touch devices wi
           </div>
         </div>
       </div>
-      <div
-        data-testid="timeline-end"
-      >
-        End
-      </div>
       <button
-        data-testid="virtuoso-end-reached"
+        data-testid="bil-load-more-down"
         type="button"
       />
+    </div>
+    <div
+      data-testid="timeline-end"
+    >
+      End
     </div>
   </div>
 </div>

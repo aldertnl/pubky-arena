@@ -11,26 +11,30 @@ const mockPostHeaderUserInfo = vi.fn(({ timeAgo }: { timeAgo?: string }) => (
   <div data-testid="visual-overlay-header">{timeAgo ? `Header:${timeAgo}` : 'Header'}</div>
 ));
 
-vi.mock('react-virtuoso', () => ({
-  Virtuoso: ({
-    data,
-    context,
-    itemContent,
-    components,
-    endReached,
+vi.mock('broad-infinite-list/react', () => ({
+  default: ({
+    items,
+    renderItem,
+    onLoadMore,
+    disable,
   }: {
-    data: unknown[];
-    context?: Record<string, unknown>;
-    itemContent: (index: number, item: unknown) => React.ReactNode;
-    components?: { Footer?: (props: { context?: Record<string, unknown> }) => React.ReactNode };
-    endReached?: () => void;
+    items: VisualRow[];
+    renderItem: (row: VisualRow) => React.ReactNode;
+    onLoadMore: (direction: 'up' | 'down', refItem: VisualRow) => Promise<VisualRow[]>;
+    disable?: boolean;
   }) => (
-    <div data-testid="virtuoso">
-      {data?.map((item, index) => (
-        <div key={index}>{itemContent(index, item)}</div>
+    <div data-testid="bidirectional-list">
+      {items?.map((row) => (
+        <div key={row.key}>{renderItem(row)}</div>
       ))}
-      {components?.Footer?.({ context })}
-      <button type="button" data-testid="virtuoso-end-reached" onClick={() => endReached?.()} />
+      <button
+        type="button"
+        data-testid="bil-load-more-down"
+        onClick={async () => {
+          if (disable || items.length === 0) return;
+          await onLoadMore('down', items[items.length - 1]);
+        }}
+      />
     </div>
   ),
 }));
@@ -69,8 +73,8 @@ vi.mock('@/atoms', () => ({
   Typography: (props: React.HTMLAttributes<HTMLElement>) => <span {...props} />,
 }));
 
-vi.mock('@/components/molecules/Timeline/TimelineVirtuosoFooter', () => ({
-  TimelineVirtuosoFooter: ({
+vi.mock('@/components/molecules/Timeline/TimelineListFooter', () => ({
+  TimelineListFooter: ({
     context,
   }: {
     context?: { loadingMore: boolean; error: string | null; hasMore: boolean; itemCount: number };
@@ -188,7 +192,7 @@ describe('VisualTimelinePosts', () => {
         loadingMore={false}
         error={null}
         hasMore={false}
-        loadMore={vi.fn()}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 
@@ -205,7 +209,7 @@ describe('VisualTimelinePosts', () => {
         loadingMore={false}
         error={null}
         hasMore={false}
-        loadMore={vi.fn()}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 
@@ -225,7 +229,7 @@ describe('VisualTimelinePosts', () => {
         loadingMore={false}
         error={null}
         hasMore={false}
-        loadMore={vi.fn()}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 
@@ -248,7 +252,7 @@ describe('VisualTimelinePosts', () => {
         loadingMore={false}
         error={null}
         hasMore={false}
-        loadMore={vi.fn()}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 
@@ -296,7 +300,7 @@ describe('VisualTimelinePosts', () => {
         loadingMore={false}
         error={null}
         hasMore={false}
-        loadMore={vi.fn()}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 
@@ -317,7 +321,7 @@ describe('VisualTimelinePosts', () => {
         loadingMore={false}
         error={null}
         hasMore={false}
-        loadMore={vi.fn()}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 
@@ -333,7 +337,7 @@ describe('VisualTimelinePosts', () => {
         loadingMore={false}
         error={null}
         hasMore={false}
-        loadMore={vi.fn()}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 
@@ -356,16 +360,16 @@ describe('VisualTimelinePosts', () => {
         loadingMore={false}
         error={null}
         hasMore={false}
-        loadMore={vi.fn()}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 
     expect(screen.getByTestId('visual-overlay-content-stack')).toHaveClass('flex', 'flex-col', 'gap-4');
   });
 
-  describe('Virtuoso endReached', () => {
+  describe('BidirectionalList load more', () => {
     it('calls loadMore when hasMore and not loadingMore', () => {
-      const mockLoadMore = vi.fn().mockResolvedValue(undefined);
+      const mockLoadMore = vi.fn().mockResolvedValue([]);
       render(
         <VisualTimelinePosts
           postIds={['author:post1']}
@@ -377,12 +381,12 @@ describe('VisualTimelinePosts', () => {
         />,
       );
 
-      fireEvent.click(screen.getByTestId('virtuoso-end-reached'));
+      fireEvent.click(screen.getByTestId('bil-load-more-down'));
       expect(mockLoadMore).toHaveBeenCalledOnce();
     });
 
     it('does not call loadMore when loadingMore is true', () => {
-      const mockLoadMore = vi.fn().mockResolvedValue(undefined);
+      const mockLoadMore = vi.fn().mockResolvedValue([]);
       render(
         <VisualTimelinePosts
           postIds={['author:post1']}
@@ -394,12 +398,12 @@ describe('VisualTimelinePosts', () => {
         />,
       );
 
-      fireEvent.click(screen.getByTestId('virtuoso-end-reached'));
+      fireEvent.click(screen.getByTestId('bil-load-more-down'));
       expect(mockLoadMore).not.toHaveBeenCalled();
     });
 
     it('does not call loadMore when hasMore is false', () => {
-      const mockLoadMore = vi.fn().mockResolvedValue(undefined);
+      const mockLoadMore = vi.fn().mockResolvedValue([]);
       render(
         <VisualTimelinePosts
           postIds={['author:post1']}
@@ -411,7 +415,7 @@ describe('VisualTimelinePosts', () => {
         />,
       );
 
-      fireEvent.click(screen.getByTestId('virtuoso-end-reached'));
+      fireEvent.click(screen.getByTestId('bil-load-more-down'));
       expect(mockLoadMore).not.toHaveBeenCalled();
     });
   });
@@ -437,7 +441,7 @@ describe('VisualTimelinePosts - Snapshots', () => {
         loadingMore={false}
         error={null}
         hasMore={false}
-        loadMore={vi.fn()}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 
@@ -459,7 +463,7 @@ describe('VisualTimelinePosts - Snapshots', () => {
         loadingMore={false}
         error={null}
         hasMore={false}
-        loadMore={vi.fn()}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 
@@ -476,7 +480,7 @@ describe('VisualTimelinePosts - Snapshots', () => {
         loadingMore={false}
         error={null}
         hasMore={false}
-        loadMore={vi.fn()}
+        loadMore={vi.fn().mockResolvedValue([])}
       />,
     );
 

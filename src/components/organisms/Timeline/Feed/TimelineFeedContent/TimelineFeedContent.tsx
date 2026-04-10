@@ -84,7 +84,6 @@ function TimelineFeedContent({ streamId, variant, tagsLayout, layoutResolution, 
     refresh,
     prependPosts,
     removePosts,
-    virtuosoFirstItemIndex,
   } = Hooks.useStreamPagination({
     streamId,
   });
@@ -149,7 +148,6 @@ function TimelineFeedContent({ streamId, variant, tagsLayout, layoutResolution, 
             hasMore={hasMore}
             loadMore={loadMore}
             tagsLayout={tagsLayout}
-            virtuosoFirstItemIndex={virtuosoFirstItemIndex}
           />
         )}
       </Atoms.Container>

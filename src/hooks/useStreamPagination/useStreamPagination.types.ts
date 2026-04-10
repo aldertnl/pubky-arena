@@ -37,9 +37,9 @@ export interface UseStreamPaginationResult {
    */
   hasMore: boolean;
   /**
-   * Function to trigger loading more posts
+   * Function to trigger loading more posts. Resolves with newly appended post IDs (may be empty).
    */
-  loadMore: () => Promise<void>;
+  loadMore: () => Promise<string[]>;
   /**
    * Function to manually trigger a refresh
    */
@@ -55,7 +55,7 @@ export interface UseStreamPaginationResult {
    */
   removePosts: (postIds: string | string[]) => void;
   /**
-   * Virtuoso `firstItemIndex` for the first row in `postIds`. Decremented when posts are prepended so scroll position stays stable.
+   * Snapshot of loaded post IDs (same order as `postIds` state) for bidirectional list sync after async load.
    */
-  virtuosoFirstItemIndex: number;
+  getLoadedPostIdsSnapshot: () => string[];
 }
