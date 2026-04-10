@@ -27,9 +27,9 @@ export const TIMELINE_VIRTUOSO_OVERSCAN_PX = 800;
 
 /**
  * Minimum rows rendered beyond the viewport (`minOverscanItemCount`).
- * Lighter than the previous 10/15 cap while still buffering tall/variable post cards.
+ * High `top` buffers scroll-up / prepend; trades more off-screen mounts for smoother upward scroll.
  */
-export const TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS = { top: 3, bottom: 4 } as const;
+export const TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS = { top: 30, bottom: 4 } as const;
 
 /**
  * Default row height for Virtuoso (`defaultItemHeight`) before/while a row's measured height stabilizes.
