@@ -38,6 +38,14 @@ export const TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS = { top: 3, bottom: 4 } as con
 export const TIMELINE_VIRTUOSO_DEFAULT_ITEM_HEIGHT_PX = 320;
 
 /**
+ * Virtuoso `skipAnimationFrameInResizeObserver`: when true, item size updates from ResizeObserver
+ * apply immediately instead of on the next animation frame — less flicker/jump with variable-height
+ * rows and `firstItemIndex` prepend (see react-virtuoso #1096). May log benign measurement warnings
+ * if row height changes while Virtuoso is measuring (#1049).
+ */
+export const TIMELINE_VIRTUOSO_SKIP_ANIMATION_FRAME_IN_RESIZE_OBSERVER = true;
+
+/**
  * Minimum height for the post card body while details are loading (`PostMain`).
  * Aligns with {@link TIMELINE_VIRTUOSO_DEFAULT_ITEM_HEIGHT_PX} so Virtuoso's estimate matches DOM.
  */

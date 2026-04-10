@@ -5,6 +5,7 @@ import {
   TIMELINE_VIRTUOSO_DEFAULT_ITEM_HEIGHT_PX,
   TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS,
   TIMELINE_VIRTUOSO_OVERSCAN_PX,
+  TIMELINE_VIRTUOSO_SKIP_ANIMATION_FRAME_IN_RESIZE_OBSERVER,
 } from '@/config';
 import * as Atoms from '@/atoms';
 import * as Molecules from '@/molecules';
@@ -86,6 +87,7 @@ export function TimelinePosts({
             defaultItemHeight={TIMELINE_VIRTUOSO_DEFAULT_ITEM_HEIGHT_PX}
             overscan={TIMELINE_VIRTUOSO_OVERSCAN_PX}
             minOverscanItemCount={TIMELINE_VIRTUOSO_MIN_OVERSCAN_ITEMS}
+            skipAnimationFrameInResizeObserver={TIMELINE_VIRTUOSO_SKIP_ANIMATION_FRAME_IN_RESIZE_OBSERVER}
             firstItemIndex={virtuosoFirstItemIndex}
             computeItemKey={(_index, postId) => `main_${postId}`}
             endReached={() => {
