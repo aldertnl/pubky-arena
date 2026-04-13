@@ -117,7 +117,7 @@ describe('useCurrentUserProfile', () => {
       mockState.currentUserPubky = 'test-user-pubky';
       mockGetDetails.mockReturnValue({ id: 'test-user-pubky', name: 'User' });
 
-      renderHook(() => useCurrentUserProfile());
+      renderHook(() => useCurrentUserProfile({ fetchOnMiss: true }));
 
       // Phase 1 optimization: fetchFn is skipped when useLiveQuery returns non-null data
       expect(mockFetchDetails).not.toHaveBeenCalled();
@@ -125,6 +125,15 @@ describe('useCurrentUserProfile', () => {
 
     it('does not call fetchDetails when not logged in', () => {
       mockState.currentUserPubky = null;
+
+      renderHook(() => useCurrentUserProfile({ fetchOnMiss: true }));
+
+      expect(mockFetchDetails).not.toHaveBeenCalled();
+    });
+
+    it('does not call fetchDetails by default (startup-safe)', () => {
+      mockState.currentUserPubky = 'test-user-pubky';
+      mockGetDetails.mockReturnValue(null);
 
       renderHook(() => useCurrentUserProfile());
 

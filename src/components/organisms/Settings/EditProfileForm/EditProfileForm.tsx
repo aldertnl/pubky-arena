@@ -11,7 +11,7 @@ import { useTranslations } from 'next-intl';
 export const EditProfileForm = () => {
   const t = useTranslations('forms.profile');
   const tCommon = useTranslations('common');
-  const { userDetails, currentUserPubky } = Hooks.useCurrentUserProfile();
+  const { userDetails, currentUserPubky } = Hooks.useCurrentUserProfile({ fetchOnMiss: true });
 
   const { state, errors, handlers, cropDialog, fileInputRef, isSubmitDisabled } = Hooks.useProfileForm({
     mode: 'edit',

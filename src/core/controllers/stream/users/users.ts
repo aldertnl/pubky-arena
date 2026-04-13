@@ -12,6 +12,42 @@ export class StreamUserController {
   private constructor() {}
 
   /**
+   * Reads MUTED users from homeserver (source of truth), persists via MuteApplication,
+   * and paginates the refreshed local stream.
+   *
+   * @param viewerId - The ID of the viewer
+   * @param limit - The number of users to return
+   * @param skip - The number of users to skip
+   * @returns The next page of user IDs and pagination offset
+   */
+  private static async getOrFetchMutedStreamSlice({
+    viewerId,
+    limit = Config.NEXUS_USERS_PER_PAGE,
+    skip = 0,
+  }: {
+    viewerId?: Core.Pubky;
+    limit?: number;
+    skip?: number;
+  }): Promise<Core.TReadUserStreamChunkResponse> {
+    if (!viewerId) {
+      return { nextPageIds: [], skip: undefined };
+    }
+
+    const mutedUserIds = await Core.MuteController.fetchMutedUsers(viewerId);
+    const nextPageIds = mutedUserIds.slice(skip, skip + limit);
+    const nextSkip = nextPageIds.length > 0 ? skip + nextPageIds.length : undefined;
+
+    if (nextPageIds.length > 0) {
+      await Core.UserStreamApplication.getOrFetchUsers({
+        userIds: nextPageIds,
+        viewerId,
+      });
+    }
+
+    return { nextPageIds, skip: nextSkip };
+  }
+
+  /**
    * Get or fetch a slice of a user stream (followers, following, friends, etc.)
    *
    * @param streamId - Composite user stream identifier (userId:reach) e.g., 'user123:followers'
@@ -27,6 +63,14 @@ export class StreamUserController {
     // selectCurrentUserPubky() throws an error when user is not authenticated;
     // access currentUserPubky directly to get null instead (unauthenticated users can view profile followers/following)
     const viewerId = Core.useAuthStore.getState().currentUserPubky;
+
+    if (streamId === Core.UserStreamTypes.MUTED) {
+      return await this.getOrFetchMutedStreamSlice({
+        viewerId: viewerId ?? undefined,
+        limit,
+        skip,
+      });
+    }
 
     const {
       nextPageIds,

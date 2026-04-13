@@ -18,6 +18,55 @@ describe('StreamUserController', () => {
   });
 
   describe('getOrFetchStreamSlice', () => {
+    it('should read MUTED stream from homeserver and paginate locally', async () => {
+      const streamId = Core.UserStreamTypes.MUTED;
+      const mutedUsers: Core.Pubky[] = ['muted-1', 'muted-2', 'muted-3'];
+
+      const fetchMutedUsersSpy = vi.spyOn(Core.MuteController, 'fetchMutedUsers').mockResolvedValue(mutedUsers);
+      const getOrFetchUsersSpy = vi.spyOn(Core.UserStreamApplication, 'getOrFetchUsers').mockResolvedValue();
+      const getOrFetchStreamSliceSpy = vi.spyOn(Core.UserStreamApplication, 'getOrFetchStreamSlice');
+
+      const result = await StreamUserController.getOrFetchStreamSlice({
+        streamId,
+        limit: 2,
+        skip: 0,
+      });
+
+      expect(fetchMutedUsersSpy).toHaveBeenCalledWith(viewerId);
+      expect(getOrFetchUsersSpy).toHaveBeenCalledWith({
+        userIds: ['muted-1', 'muted-2'],
+        viewerId,
+      });
+      expect(getOrFetchStreamSliceSpy).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        nextPageIds: ['muted-1', 'muted-2'],
+        skip: 2,
+      });
+    });
+
+    it('should return empty MUTED stream when viewer is unauthenticated', async () => {
+      vi.spyOn(Core.useAuthStore, 'getState').mockReturnValue({
+        ...Core.useAuthStore.getState(),
+        currentUserPubky: null,
+      });
+
+      const fetchMutedUsersSpy = vi.spyOn(Core.MuteController, 'fetchMutedUsers');
+      const getOrFetchUsersSpy = vi.spyOn(Core.UserStreamApplication, 'getOrFetchUsers');
+
+      const result = await StreamUserController.getOrFetchStreamSlice({
+        streamId: Core.UserStreamTypes.MUTED,
+        limit: 10,
+        skip: 0,
+      });
+
+      expect(fetchMutedUsersSpy).not.toHaveBeenCalled();
+      expect(getOrFetchUsersSpy).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        nextPageIds: [],
+        skip: undefined,
+      });
+    });
+
     it('should return users when no cache misses', async () => {
       const streamId = Core.buildUserCompositeId({ userId: targetUserId, reach: 'followers' });
       const nextPageIds: Core.Pubky[] = ['follower-1', 'follower-2', 'follower-3'];
