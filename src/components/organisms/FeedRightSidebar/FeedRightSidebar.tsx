@@ -21,6 +21,7 @@ function HomeFeedContent() {
       <Organisms.WhoToFollow />
       <Organisms.ActiveUsers />
       <Organisms.HotTags />
+      <Organisms.InviteFriend />
       <Organisms.FeedbackCard />
     </>
   );
