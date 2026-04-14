@@ -5,6 +5,7 @@
 export const HOMEGATE_QUERY_KEYS = {
   lnVerificationInfo: ['homegate', 'ln-verification-info'] as const,
   smsVerificationInfo: ['homegate', 'sms-verification-info'] as const,
+  inviteCode: ['homegate', 'invite-code'] as const,
 } as const;
 
 /**

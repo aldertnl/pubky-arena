@@ -54,6 +54,12 @@ export const homegateApi = {
    * @param verificationId - The verification ID (UUID format)
    */
   awaitLnVerification: (verificationId: string) => buildHomegateUrl(`/ln_verification/${verificationId}/await`),
+
+  /**
+   * Requests an invite code for the authenticated user.
+   * Requires proof-of-ownership via a hash preimage written to the user's homeserver.
+   */
+  requestInviteCode: () => buildHomegateUrl('/invite'),
 };
 
 export type HomegateApiEndpoint = keyof typeof homegateApi;

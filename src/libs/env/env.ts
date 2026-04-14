@@ -168,6 +168,9 @@ const envSchema = z.object({
   /** Homegate authentication service URL */
   NEXT_PUBLIC_HOMEGATE_URL: z.url().default('https://homegate.staging.pubky.app'),
 
+  /** Base URL for invite links (e.g., https://pubky.app/invite) */
+  NEXT_PUBLIC_INVITE_BASE_URL: z.url().default('https://pubky.app/invite'),
+
   // Prelude SDK key for collecting client browser signals for SMS fraud prevention.
   // This is a public/publishable key (distinct from the secret Prelude API key used server-side).
   // It is safe to expose in client-side bundles.
@@ -336,6 +339,7 @@ function parseEnv(): z.infer<typeof envSchema> {
     NEXT_PUBLIC_MODERATED_TAGS: process.env.NEXT_PUBLIC_MODERATED_TAGS,
     NEXT_PUBLIC_EXCHANGE_RATE_API: process.env.NEXT_PUBLIC_EXCHANGE_RATE_API,
     NEXT_PUBLIC_HOMEGATE_URL: process.env.NEXT_PUBLIC_HOMEGATE_URL,
+    NEXT_PUBLIC_INVITE_BASE_URL: process.env.NEXT_PUBLIC_INVITE_BASE_URL,
     NEXT_PUBLIC_PRELUDE_SDK_KEY: process.env.NEXT_PUBLIC_PRELUDE_SDK_KEY,
     NEXT_PUBLIC_PRELUDE_SDK_TIMEOUT_MS: process.env.NEXT_PUBLIC_PRELUDE_SDK_TIMEOUT_MS,
     VITEST: process.env.VITEST,

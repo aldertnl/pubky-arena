@@ -9,6 +9,8 @@ import {
   TLnInfoResult,
   TRawApiResponse,
   TAssertValidVerificationIdParams,
+  TInviteCodeParams,
+  TInviteCodeResult,
 } from './homegate.types';
 import { homegateApi } from './homegate.api';
 import { HOMEGATE_QUERY_KEYS, SmsCodeErrorType } from './homegate.constants';
@@ -363,6 +365,40 @@ export class HomegateService {
     return {
       success: true,
       data: parseLnVerificationStatus(json),
+    };
+  }
+
+  /**
+   * Requests an invite code from Homegate.
+   * The caller must first write a SHA-256 hash proof to their homeserver
+   * at /pub/pubky.app/homegate/proof before calling this method.
+   *
+   * @param params.pubky - The user's z32 public key
+   * @param params.hashProofPreimage - The hex-encoded preimage of the hash proof
+   * @returns The invite code result containing the signupCode
+   * @throws AppError on network failure or if the backend rejects the request
+   */
+  static async requestInviteCode({ pubky, hashProofPreimage }: TInviteCodeParams): Promise<TInviteCodeResult> {
+    const url = homegateApi.requestInviteCode();
+    const response = await safeFetch(
+      url,
+      {
+        method: HttpMethod.PUT,
+        body: JSON.stringify({ pubky, hashProofPreimage }),
+        headers: JSON_HEADERS,
+      },
+      ErrorService.Homegate,
+      'requestInviteCode',
+    );
+
+    if (!response.ok) {
+      throw httpResponseToError(response, ErrorService.Homegate, 'requestInviteCode', url);
+    }
+
+    const json = await parseResponseOrThrow<TRawApiResponse>(response, ErrorService.Homegate, 'requestInviteCode', url);
+
+    return {
+      signupCode: json.signupCode as string,
     };
   }
 }

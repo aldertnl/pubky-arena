@@ -1,4 +1,5 @@
 import * as Core from '@/core';
+import { Err, ErrorService, ValidationErrorCode } from '@/libs';
 
 /**
  * Controller for homegate operations.
@@ -90,5 +91,26 @@ export class HomegateController {
    */
   static async getBtcRate(): Promise<Core.BtcRate> {
     return await Core.HomegateApplication.getBtcRate();
+  }
+
+  /**
+   * Fetch an invite code for the current authenticated user.
+   *
+   * Gets the user's pubky from the auth store and delegates to
+   * HomegateApplication to orchestrate the proof-of-ownership flow.
+   *
+   * @returns The invite code result containing the signupCode
+   * @throws AppError if the user is not authenticated or if the invite code generation fails
+   */
+  static async fetchInviteCode(): Promise<Core.THomegateInviteCodeResult> {
+    const pubky = Core.useAuthStore.getState().currentUserPubky;
+    if (!pubky) {
+      throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'User must be authenticated to generate invite codes', {
+        service: ErrorService.Homegate,
+        operation: 'fetchInviteCode',
+      });
+    }
+
+    return await Core.HomegateApplication.generateInviteCode(pubky);
   }
 }

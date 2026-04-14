@@ -128,6 +128,26 @@ export type TAwaitLnVerificationResult =
   | { success: false; notFound: true }
   | { success: false; rateLimited: true; retryAfter?: number };
 
+/**
+ * Parameters for requesting an invite code from Homegate.
+ * Requires proof-of-ownership: the preimage of a SHA-256 hash
+ * that was written to the user's homeserver at /pub/pubky.app/homegate/proof.
+ */
+export type TInviteCodeParams = {
+  /** The user's z32 public key */
+  pubky: string;
+  /** The hex-encoded preimage of the SHA-256 hash proof */
+  hashProofPreimage: string;
+};
+
+/**
+ * Response from a successful invite code request.
+ */
+export type TInviteCodeResult = {
+  /** The generated signup/invite code */
+  signupCode: string;
+};
+
 import { SmsCodeErrorType } from './homegate.constants';
 
 /**

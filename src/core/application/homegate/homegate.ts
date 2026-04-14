@@ -1,4 +1,6 @@
+import { baseUriBuilder } from 'pubky-app-specs';
 import * as Core from '@/core';
+import { HttpMethod } from '@/libs';
 import type * as Types from './homegate.types';
 
 /**
@@ -97,5 +99,64 @@ export class HomegateApplication {
    */
   static async getBtcRate(): Promise<Core.BtcRate> {
     return Core.ExchangerateService.getSatoshiUsdRate();
+  }
+
+  /**
+   * Converts a Uint8Array or ArrayBuffer to a hex string.
+   */
+  private static toHex(buffer: ArrayBuffer | Uint8Array): string {
+    const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+    return Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  /**
+   * Generates a cryptographic proof for Homegate authentication.
+   * Creates a random preimage, hashes it with SHA-256, and writes the hash
+   * to the user's homeserver at /pub/pubky.app/homegate/proof.
+   *
+   * @param pubky - The user's z32 public key
+   * @returns The hex-encoded preimage to send to Homegate
+   */
+  private static async generateAndWriteProof(pubky: string): Promise<string> {
+    // Generate 32 random bytes as the preimage
+    const preimage = new Uint8Array(32);
+    crypto.getRandomValues(preimage);
+
+    // SHA-256 hash the preimage
+    const hashBuffer = await crypto.subtle.digest('SHA-256', preimage);
+    const hashHex = this.toHex(hashBuffer);
+
+    // Write the hash to the user's homeserver
+    const proofUrl = `${baseUriBuilder(pubky)}homegate/proof`;
+    await Core.HomeserverService.request({
+      method: HttpMethod.PUT,
+      url: proofUrl,
+      bodyJson: { hash: hashHex },
+    });
+
+    return this.toHex(preimage);
+  }
+
+  /**
+   * Generate an invite code for the authenticated user.
+   *
+   * Orchestrates the full proof-of-ownership flow:
+   * 1. Generates a random preimage and its SHA-256 hash
+   * 2. Writes the hash proof to the user's homeserver
+   * 3. Sends the preimage to Homegate to request an invite code
+   *
+   * @param pubky - The user's z32 public key
+   * @returns The invite code result containing the signupCode
+   * @throws AppError if proof generation, homeserver write, or API call fails
+   */
+  static async generateInviteCode(pubky: string): Promise<Types.THomegateInviteCodeResult> {
+    const preimageHex = await this.generateAndWriteProof(pubky);
+
+    return Core.HomegateService.requestInviteCode({
+      pubky,
+      hashProofPreimage: preimageHex,
+    });
   }
 }
