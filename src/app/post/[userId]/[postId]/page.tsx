@@ -75,9 +75,12 @@ export async function generateMetadata({ params }: PostPageProps): Promise<NextM
     const title = `${username} on Pubky`;
     const description = postPreviewTruncated;
 
+    const previewImage = user.image ? Core.FileController.getAvatarUrl(user.id) : undefined;
+
     const { openGraph, twitter } = Metadata({
       title,
       description,
+      image: previewImage,
     });
 
     return username && postPreviewTruncated
