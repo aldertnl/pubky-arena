@@ -699,6 +699,18 @@
       "description": "感谢您帮助我们改进 Pubky。"
     }
   },
+  "invite": {
+    "sectionTitle": "邀请好友",
+    "buttonLabel": "邀请好友",
+    "dialogTitle": "邀请好友",
+    "description": "将此邀请码分享给好友，让他们跳过真人验证。每周最多可生成 2 个邀请码。",
+    "copyButton": "复制",
+    "shareButton": "分享",
+    "copySuccess": "邀请链接已复制！",
+    "shareTitle": "来 Pubky 和我一起玩吧",
+    "shareText": "使用我的邀请码加入 Pubky，免去验证步骤！",
+    "fetchError": "生成邀请码失败，请重试。"
+  },
   "report": {
     "title": "举报帖子",
     "description": "举报帖子对话框",

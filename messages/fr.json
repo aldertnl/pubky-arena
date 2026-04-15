@@ -696,8 +696,20 @@
     "defaultName": "Votre nom",
     "success": {
       "title": "Commentaires recus",
-      "description": "Merci de nous aider a améliorer Pubky."
+      "description": "Merci de nous aider à améliorer Pubky."
     }
+  },
+  "invite": {
+    "sectionTitle": "Inviter un ami",
+    "buttonLabel": "Inviter un ami",
+    "dialogTitle": "Inviter un ami",
+    "description": "Partagez ce code d'invitation avec un ami pour lui permettre de passer la vérification humaine. Vous pouvez générer jusqu'à 2 codes d'invitation par semaine.",
+    "copyButton": "Copier",
+    "shareButton": "Partager",
+    "copySuccess": "Lien d'invitation copié !",
+    "shareTitle": "Rejoins-moi sur Pubky",
+    "shareText": "Utilise mon code d'invitation pour rejoindre Pubky et passer la vérification !",
+    "fetchError": "Impossible de générer le code d'invitation. Veuillez réessayer."
   },
   "report": {
     "title": "Signaler la publication",
