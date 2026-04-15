@@ -164,7 +164,55 @@ describe('HomegateService', () => {
       expect(result).toEqual({ signupCode: 'ABC123' });
     });
 
-    it('throws error on non-OK response', async () => {
+    it('throws error with backend message when error response has JSON body with error field', async () => {
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ error: 'Invite code limit reached' }), {
+          status: 403,
+          statusText: 'Forbidden',
+        }),
+      );
+
+      const promise = HomegateService.requestInviteCode({
+        pubky: 'z6Mk_test_pubky',
+        hashProofPreimage: 'abc123hex',
+      });
+
+      await expect(promise).rejects.toThrow('Invite code limit reached');
+    });
+
+    it('throws error with HTTP statusText when error response body has no error field', async () => {
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ message: 'something else' }), {
+          status: 500,
+          statusText: 'Internal Server Error',
+        }),
+      );
+
+      const promise = HomegateService.requestInviteCode({
+        pubky: 'z6Mk_test_pubky',
+        hashProofPreimage: 'abc123hex',
+      });
+
+      await expect(promise).rejects.toThrow('Internal Server Error');
+    });
+
+    it('throws error with plain text body when error response is not valid JSON', async () => {
+      mockFetch.mockResolvedValue(
+        new Response('Proof verification failed: hash does not match', {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+        }),
+      );
+
+      const promise = HomegateService.requestInviteCode({
+        pubky: 'z6Mk_test_pubky',
+        hashProofPreimage: 'abc123hex',
+      });
+
+      await expect(promise).rejects.toThrow('Proof verification failed: hash does not match');
+    });
+
+    it('throws error on non-OK response with null body', async () => {
       mockFetch.mockResolvedValue(new Response(null, { status: 500, statusText: 'Internal Server Error' }));
 
       const promise = HomegateService.requestInviteCode({

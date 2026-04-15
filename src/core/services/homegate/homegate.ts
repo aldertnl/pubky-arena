@@ -392,7 +392,27 @@ export class HomegateService {
     );
 
     if (!response.ok) {
-      throw httpResponseToError(response, ErrorService.Homegate, 'requestInviteCode', url);
+      const error = httpResponseToError(response, ErrorService.Homegate, 'requestInviteCode', url);
+
+      // Try to extract the backend error message from the response body (JSON or plain text)
+      try {
+        const text = await response.clone().text();
+        if (text) {
+          try {
+            const body = JSON.parse(text);
+            if (typeof body?.error === 'string' && body.error) {
+              error.message = body.error;
+            }
+          } catch {
+            // Not JSON — use the plain text body directly
+            error.message = text;
+          }
+        }
+      } catch {
+        // Failed to read body, keep the default HTTP status message
+      }
+
+      throw error;
     }
 
     const json = await parseResponseOrThrow<TRawApiResponse>(response, ErrorService.Homegate, 'requestInviteCode', url);
