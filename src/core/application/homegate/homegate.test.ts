@@ -165,7 +165,7 @@ describe('HomegateApplication', () => {
       expect(Core.HomeserverService.request).toHaveBeenCalledWith({
         method: HttpMethod.PUT,
         url: `pubky://${testData.pubky}/pub/pubky.app/homegate/proof`,
-        bodyJson: { hash: expectedHashHex },
+        bodyJson: { value: expectedHashHex },
       });
     });
 
