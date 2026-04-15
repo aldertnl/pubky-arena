@@ -696,8 +696,20 @@
     "defaultName": "Ihr Name",
     "success": {
       "title": "Feedback erhalten",
-      "description": "Vielen Dank, dass Sie uns helfen, Pubky zu verbessern."
+      "description": "Danke, dass du uns hilfst, Pubky zu verbessern."
     }
+  },
+  "invite": {
+    "sectionTitle": "Freund einladen",
+    "buttonLabel": "Freund einladen",
+    "dialogTitle": "Freund einladen",
+    "description": "Teile diesen Einladungscode mit einem Freund, damit er die Verifizierung überspringen kann. Du kannst bis zu 2 Einladungscodes pro Woche erstellen.",
+    "copyButton": "Kopieren",
+    "shareButton": "Teilen",
+    "copySuccess": "Einladungslink kopiert!",
+    "shareTitle": "Komm zu mir auf Pubky",
+    "shareText": "Nutze meinen Einladungscode, um Pubky beizutreten und die Verifizierung zu überspringen!",
+    "fetchError": "Einladungscode konnte nicht erstellt werden. Bitte versuche es erneut."
   },
   "report": {
     "title": "Beitrag melden",

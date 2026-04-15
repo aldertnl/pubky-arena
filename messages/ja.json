@@ -699,6 +699,18 @@
       "description": "Pubkyの改善にご協力いただきありがとうございます。"
     }
   },
+  "invite": {
+    "sectionTitle": "友達を招待",
+    "buttonLabel": "友達を招待",
+    "dialogTitle": "友達を招待",
+    "description": "この招待コードを友達に共有すると、本人確認をスキップできます。招待コードは週に2つまで発行できます。",
+    "copyButton": "コピー",
+    "shareButton": "共有",
+    "copySuccess": "招待リンクをコピーしました！",
+    "shareTitle": "Pubkyで会おう",
+    "shareText": "この招待コードを使ってPubkyに参加すれば、本人確認をスキップできるよ！",
+    "fetchError": "招待コードの生成に失敗しました。もう一度お試しください。"
+  },
   "report": {
     "title": "投稿を報告",
     "description": "投稿報告ダイアログ",

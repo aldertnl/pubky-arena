@@ -699,6 +699,18 @@
       "description": "Obrigado por nos ajudar a melhorar o Pubky."
     }
   },
+  "invite": {
+    "sectionTitle": "Convidar um Amigo",
+    "buttonLabel": "Convidar um Amigo",
+    "dialogTitle": "Convidar um Amigo",
+    "description": "Compartilhe este código de convite com um amigo para que ele pule a verificação de identidade humana. Você pode gerar até 2 códigos de convite por semana.",
+    "copyButton": "Copiar",
+    "shareButton": "Compartilhar",
+    "copySuccess": "Link de convite copiado!",
+    "shareTitle": "Junte-se a mim no Pubky",
+    "shareText": "Use meu código de convite para entrar no Pubky e pular a verificação!",
+    "fetchError": "Falha ao gerar o código de convite. Tente novamente."
+  },
   "report": {
     "title": "Denúnciar Post",
     "description": "Dialogo de denúncia de post",

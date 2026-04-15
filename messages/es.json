@@ -699,6 +699,18 @@
       "description": "Gracias por ayudarnos a mejorar Pubky."
     }
   },
+  "invite": {
+    "sectionTitle": "Invitar a un amigo",
+    "buttonLabel": "Invitar a un amigo",
+    "dialogTitle": "Invitar a un amigo",
+    "description": "Comparte este código de invitación con un amigo para que pueda omitir la verificación de identidad humana. Puedes generar hasta 2 códigos de invitación por semana.",
+    "copyButton": "Copiar",
+    "shareButton": "Compartir",
+    "copySuccess": "¡Enlace de invitación copiado!",
+    "shareTitle": "Únete a mí en Pubky",
+    "shareText": "¡Usa mi código de invitación para unirte a Pubky y saltarte la verificación!",
+    "fetchError": "No se pudo generar el código de invitación. Inténtalo de nuevo."
+  },
   "report": {
     "title": "Reportar publicación",
     "description": "Dialogo de reporte de publicación",
