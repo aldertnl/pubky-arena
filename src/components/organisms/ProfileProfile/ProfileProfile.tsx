@@ -74,6 +74,8 @@ export function ProfileProfile() {
         pubky={pubky ?? ''}
       />
 
+      <Organisms.MusicLibraryProfileSummary />
+
       {/* Links section */}
       <Molecules.ProfilePageLinks links={profile?.links} isOwnProfile={isOwnProfile} />
     </Atoms.Container>

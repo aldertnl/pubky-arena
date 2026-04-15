@@ -13,6 +13,7 @@ export interface ProfilePageFilterBarItem {
   labelKey: string;
   count: number | undefined;
   pageType: Types.FilterBarPageType;
+  showCount?: boolean;
   /** Whether this item should only be shown for own profile */
   ownProfileOnly?: boolean;
 }
@@ -32,7 +33,8 @@ const FILTER_ITEMS_CONFIG: Array<{
   icon: React.ComponentType<{ className?: string }>;
   labelKey: string;
   pageType: Types.FilterBarPageType;
-  statKey: keyof Hooks.ProfileStats;
+  statKey?: keyof Hooks.ProfileStats;
+  showCount?: boolean;
   /** Whether this item should only be shown for own profile */
   ownProfileOnly?: boolean;
 }> = [
@@ -79,6 +81,13 @@ const FILTER_ITEMS_CONFIG: Array<{
     pageType: Types.PROFILE_PAGE_TYPES.UNIQUE_TAGS,
     statKey: 'uniqueTags',
   },
+  {
+    icon: Libs.FlaskConical,
+    labelKey: 'experiment',
+    pageType: Types.PROFILE_PAGE_TYPES.EXPERIMENTS,
+    ownProfileOnly: true,
+    showCount: false,
+  },
 ];
 
 export const getDefaultItems = (
@@ -97,7 +106,8 @@ export const getDefaultItems = (
     pageType: config.pageType,
     // If stats not provided, count is undefined (loading state)
     // If stats provided, use the value or fallback to 0
-    count: stats ? (stats[config.statKey] ?? 0) : undefined,
+    count: config.statKey ? (stats ? (stats[config.statKey] ?? 0) : undefined) : undefined,
+    showCount: config.showCount ?? Boolean(config.statKey),
     ownProfileOnly: config.ownProfileOnly,
   }));
 };
@@ -151,7 +161,8 @@ export function ProfilePageFilterBar({
         {filterItems.map((item, index) => {
           const Icon = item.icon;
           const isActive = item.pageType === activePage;
-          const isLoading = item.count === undefined;
+          const showCount = item.showCount !== false;
+          const isLoading = showCount && item.count === undefined;
           const label = t(item.labelKey);
 
           return (
@@ -171,7 +182,7 @@ export function ProfilePageFilterBar({
               </Atoms.Container>
               {isLoading ? (
                 <Atoms.Spinner size="sm" className="size-4" />
-              ) : (
+              ) : showCount ? (
                 <Atoms.Typography
                   data-cy={`profile-filter-item-${item.labelKey}-count`}
                   as="span"
@@ -179,7 +190,7 @@ export function ProfilePageFilterBar({
                 >
                   {item.count}
                 </Atoms.Typography>
-              )}
+              ) : null}
             </Atoms.FilterItem>
           );
         })}

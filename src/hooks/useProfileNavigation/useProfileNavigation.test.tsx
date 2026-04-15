@@ -52,6 +52,14 @@ describe('useProfileNavigation', () => {
       expect(result.current.activePage).toBe(PROFILE_PAGE_TYPES.NOTIFICATIONS);
     });
 
+    it('should return EXPERIMENTS for the experiments route on own profile', () => {
+      mockPathname.mockReturnValue(PROFILE_ROUTES.EXPERIMENTS);
+
+      const { result } = renderHook(() => useProfileNavigation());
+
+      expect(result.current.activePage).toBe(PROFILE_PAGE_TYPES.EXPERIMENTS);
+    });
+
     it('should return POSTS for the posts route', () => {
       mockPathname.mockReturnValue(PROFILE_ROUTES.POSTS);
 
@@ -116,6 +124,15 @@ describe('useProfileNavigation', () => {
       expect(result.current.activePage).toBe(PROFILE_PAGE_TYPES.NOTIFICATIONS);
     });
 
+    it('should fall back to POSTS for own-profile-only dynamic routes on other profiles', () => {
+      mockIsOwnProfile.mockReturnValue(false);
+      mockPathname.mockReturnValue('/profile/other-user/experiments');
+
+      const { result } = renderHook(() => useProfileNavigation());
+
+      expect(result.current.activePage).toBe(PROFILE_PAGE_TYPES.POSTS);
+    });
+
     it('should update activePage when pathname changes', () => {
       mockPathname.mockReturnValue(PROFILE_ROUTES.POSTS);
 
@@ -150,6 +167,7 @@ describe('useProfileNavigation', () => {
 
     it('should return the same page as activePage for other pages', () => {
       const pages = [
+        { route: PROFILE_ROUTES.EXPERIMENTS, type: PROFILE_PAGE_TYPES.EXPERIMENTS },
         { route: PROFILE_ROUTES.POSTS, type: PROFILE_PAGE_TYPES.POSTS },
         { route: PROFILE_ROUTES.REPLIES, type: PROFILE_PAGE_TYPES.REPLIES },
         { route: PROFILE_ROUTES.FOLLOWERS, type: PROFILE_PAGE_TYPES.FOLLOWERS },
@@ -165,6 +183,15 @@ describe('useProfileNavigation', () => {
 
         expect(result.current.filterBarActivePage).toBe(type);
       });
+    });
+
+    it('should return POSTS for own-profile-only pages on other profiles', () => {
+      mockIsOwnProfile.mockReturnValue(false);
+      mockPathname.mockReturnValue('/profile/other-user/experiments');
+
+      const { result } = renderHook(() => useProfileNavigation());
+
+      expect(result.current.filterBarActivePage).toBe(PROFILE_PAGE_TYPES.POSTS);
     });
   });
 
@@ -184,6 +211,7 @@ describe('useProfileNavigation', () => {
 
       const navigationTests = [
         { page: PROFILE_PAGE_TYPES.NOTIFICATIONS, route: PROFILE_ROUTES.PROFILE },
+        { page: PROFILE_PAGE_TYPES.EXPERIMENTS, route: PROFILE_ROUTES.EXPERIMENTS },
         { page: PROFILE_PAGE_TYPES.POSTS, route: PROFILE_ROUTES.POSTS },
         { page: PROFILE_PAGE_TYPES.REPLIES, route: PROFILE_ROUTES.REPLIES },
         { page: PROFILE_PAGE_TYPES.FOLLOWERS, route: PROFILE_ROUTES.FOLLOWERS },
@@ -201,6 +229,18 @@ describe('useProfileNavigation', () => {
         expect(mockPush).toHaveBeenCalledWith(route);
         mockPush.mockClear();
       });
+    });
+
+    it('should redirect own-profile-only navigation to posts on other profiles', () => {
+      mockIsOwnProfile.mockReturnValue(false);
+
+      const { result } = renderHook(() => useProfileNavigation());
+
+      act(() => {
+        result.current.navigateToPage(PROFILE_PAGE_TYPES.EXPERIMENTS);
+      });
+
+      expect(mockPush).toHaveBeenCalledWith('/profile/user123/posts');
     });
 
     it('should work correctly across multiple renders', () => {

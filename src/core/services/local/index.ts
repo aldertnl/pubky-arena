@@ -11,3 +11,4 @@ export * from './bookmark';
 export * from './feed';
 export * from './moderation';
 export * from './user';
+export * from './music-library-cache';

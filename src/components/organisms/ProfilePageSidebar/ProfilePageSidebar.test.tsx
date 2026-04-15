@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ProfilePageSidebar } from './ProfilePageSidebar';
 
+const mockUseSettingsStore = vi.fn();
+
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -24,6 +26,7 @@ vi.mock('@/core', async (importOriginal) => {
     useAuthStore: vi.fn(() => ({
       selectCurrentUserPubky: () => 'test-pubky-123',
     })),
+    useSettingsStore: () => mockUseSettingsStore(),
     ProfileController: {
       read: vi.fn().mockResolvedValue({
         links: [
@@ -32,6 +35,15 @@ vi.mock('@/core', async (importOriginal) => {
         ],
       }),
     },
+  };
+});
+
+vi.mock('@/organisms', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/organisms')>();
+  return {
+    ...actual,
+    FeedbackCard: () => <div data-testid="feedback-card" />,
+    MusicLibraryProfileSummary: () => <div data-testid="music-library-profile-summary" />,
   };
 });
 
@@ -69,6 +81,11 @@ vi.mock('@/hooks', async (importOriginal) => {
 describe('ProfilePageSidebar', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseSettingsStore.mockReturnValue({
+      privacy: {
+        showMusicLibraryProfileSummary: true,
+      },
+    });
   });
 
   it('renders ProfilePageTaggedAs component', () => {
@@ -84,6 +101,22 @@ describe('ProfilePageSidebar', () => {
   it('renders FeedbackCard component', () => {
     render(<ProfilePageSidebar />);
     expect(screen.getByTestId('feedback-card')).toBeInTheDocument();
+  });
+
+  it('renders music library profile summary when enabled', () => {
+    render(<ProfilePageSidebar />);
+    expect(screen.getByTestId('music-library-profile-summary')).toBeInTheDocument();
+  });
+
+  it('hides music library profile summary when disabled', () => {
+    mockUseSettingsStore.mockReturnValue({
+      privacy: {
+        showMusicLibraryProfileSummary: false,
+      },
+    });
+
+    render(<ProfilePageSidebar />);
+    expect(screen.queryByTestId('music-library-profile-summary')).not.toBeInTheDocument();
   });
 
   it('has correct structure with sticky positioning', () => {
@@ -118,6 +151,6 @@ describe('ProfilePageSidebar - Snapshots', () => {
     const { container } = render(<ProfilePageSidebar />);
     const rootElement = container.firstChild as HTMLElement;
     expect(rootElement.tagName).toBe('DIV');
-    expect(rootElement.children.length).toBe(3);
+    expect(rootElement.children.length).toBe(4);
   });
 });

@@ -449,6 +449,7 @@
     "title": "الملف الشخصي",
     "tabs": {
       "notifications": "الاشعارات",
+      "experiment": "تجربة",
       "posts": "المنشورات",
       "replies": "الردود",
       "followers": "المتابعون",

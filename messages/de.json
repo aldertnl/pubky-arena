@@ -449,6 +449,7 @@
     "title": "Profil",
     "tabs": {
       "notifications": "Benachrichtigungen",
+      "experiment": "Experiment",
       "posts": "Beiträge",
       "replies": "Antworten",
       "followers": "Follower",

@@ -27,6 +27,7 @@ describe('ProfilePageFilterBar', () => {
     // Check that filter items are rendered with their translated labels
     // The component uses t(item.labelKey) to translate labels
     expect(screen.getByText('Notifications')).toBeInTheDocument();
+    expect(screen.getByText('Experiment')).toBeInTheDocument();
     expect(screen.getByText('Posts')).toBeInTheDocument();
     expect(screen.getByText('Replies')).toBeInTheDocument();
     expect(screen.getByText('Followers')).toBeInTheDocument();
@@ -37,6 +38,21 @@ describe('ProfilePageFilterBar', () => {
     // Check that counts are rendered
     expect(screen.getByText('2')).toBeInTheDocument(); // notifications
     expect(screen.getByText('4')).toBeInTheDocument(); // posts
+  });
+
+  it('hides own-profile-only items when viewing another user profile', () => {
+    render(
+      <ProfilePageFilterBar
+        activePage={PROFILE_PAGE_TYPES.POSTS}
+        onPageChangeAction={() => {}}
+        stats={mockStats}
+        isOwnProfile={false}
+      />,
+    );
+
+    expect(screen.queryByText('Notifications')).not.toBeInTheDocument();
+    expect(screen.queryByText('Experiment')).not.toBeInTheDocument();
+    expect(screen.getByText('Posts')).toBeInTheDocument();
   });
 
   it('has correct structure with sticky positioning', () => {
@@ -71,6 +87,7 @@ describe('ProfilePageFilterBar', () => {
   it('renders with loading spinners when no stats provided', () => {
     render(<ProfilePageFilterBar activePage={PROFILE_PAGE_TYPES.NOTIFICATIONS} onPageChangeAction={() => {}} />);
     expect(screen.getByText('Notifications')).toBeInTheDocument();
+    expect(screen.getByText('Experiment')).toBeInTheDocument();
     // Should show loading spinners when stats are undefined
     const spinners = screen.getAllByTestId('spinner');
     expect(spinners.length).toBe(7); // One for each filter item
@@ -97,6 +114,19 @@ describe('ProfilePageFilterBar', () => {
     // Should show 0 for all counts when stats are provided with zero values
     const counts = screen.getAllByText('0');
     expect(counts.length).toBe(7);
+  });
+
+  it('renders experiment without a count badge', () => {
+    const { container } = render(
+      <ProfilePageFilterBar
+        activePage={PROFILE_PAGE_TYPES.EXPERIMENTS}
+        onPageChangeAction={() => {}}
+        stats={mockStats}
+      />,
+    );
+
+    expect(screen.getByText('Experiment')).toBeInTheDocument();
+    expect(container.querySelector('[data-cy="profile-filter-item-experiment-count"]')).toBeNull();
   });
 
   it('marks active item correctly', () => {

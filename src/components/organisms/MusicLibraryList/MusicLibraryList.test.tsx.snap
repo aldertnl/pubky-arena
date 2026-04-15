@@ -1,0 +1,158 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`MusicLibraryList - Snapshots > matches snapshot with populated items and footer content 1`] = `
+<div
+  class="flex flex-col gap-6 rounded-xl bg-card py-6 text-card-foreground shadow-sm"
+  data-slot="card"
+  data-testid="card"
+>
+  <div
+    class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6 gap-3"
+    data-slot="card-header"
+  >
+    <div
+      class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+      data-testid="container"
+    >
+      <div
+        class="min-w-0 gap-1"
+        data-testid="container"
+      >
+        <div
+          class="leading-none font-semibold"
+          data-slot="card-title"
+        >
+          Saved Music Library
+        </div>
+        <div
+          class="text-sm text-muted-foreground break-words"
+          data-slot="card-description"
+        >
+          This section will eventually hydrate from cache first, then fall back to the homeserver.
+        </div>
+      </div>
+      <button
+        class="inline-flex items-center justify-center whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs hover:text-accent-foreground bg-input/30 border-input hover:bg-input/50 h-8 gap-1.5 px-3 has-[>svg]:px-3.5 w-full shrink-0 sm:w-auto"
+        data-size="sm"
+        data-slot="button"
+        data-variant="outline"
+      >
+        Refresh
+      </button>
+    </div>
+  </div>
+  <div
+    class="px-6"
+    data-slot="card-content"
+  >
+    <div
+      class="mx-auto w-full flex-col flex gap-3"
+      data-testid="container"
+    >
+      <div
+        class="mx-auto w-full flex-col flex gap-3 rounded-xl border bg-muted/20 p-4"
+        data-testid="container"
+      >
+        <div
+          class="flex items-start gap-3 sm:gap-4"
+          data-testid="container"
+        >
+          <div
+            class="relative size-16 shrink-0 overflow-hidden rounded-full"
+          >
+            <div
+              class="flex h-full w-full items-center justify-center px-2 text-center text-[11px] font-medium text-muted-foreground"
+            >
+              No cover
+            </div>
+          </div>
+          <div
+            class="min-w-0 flex-1 gap-3"
+            data-testid="container"
+          >
+            <div
+              class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
+              data-testid="container"
+            >
+              <div
+                class="min-w-0 gap-1"
+                data-testid="container"
+              >
+                <p
+                  class="text-base break-words font-semibold text-foreground sm:truncate"
+                  data-testid="typography"
+                >
+                  Archangel
+                </p>
+                <p
+                  class="font-medium break-words text-sm text-muted-foreground"
+                  data-testid="typography"
+                >
+                  Burial
+                   · Untrue
+                </p>
+              </div>
+              <div
+                class="flex w-full shrink-0 flex-col gap-2 sm:w-auto"
+                data-testid="container"
+              >
+                <button
+                  class="inline-flex items-center justify-center whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs hover:text-accent-foreground hover:bg-accent/50 border-none h-8 gap-1.5 has-[>svg]:px-3.5 w-full px-0 text-muted-foreground sm:w-auto sm:px-3"
+                  data-size="sm"
+                  data-slot="button"
+                  data-variant="ghost"
+                  disabled=""
+                >
+                  Edit
+                </button>
+                <button
+                  class="inline-flex items-center justify-center whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs hover:text-accent-foreground hover:bg-accent/50 border-none h-8 gap-1.5 has-[>svg]:px-3.5 w-full px-0 text-muted-foreground sm:w-auto sm:px-3"
+                  data-size="sm"
+                  data-slot="button"
+                  data-variant="ghost"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+            <div
+              class="flex flex-wrap gap-2 text-xs text-muted-foreground"
+              data-testid="container"
+            >
+              <div
+                class="inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden border-transparent text-foreground bg-background [a&]:hover:bg-accent [a&]:hover:text-accent-foreground"
+                data-slot="badge"
+                data-variant="outline"
+              >
+                UK Garage
+              </div>
+              <div
+                class="inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden border-transparent text-foreground bg-background [a&]:hover:bg-accent [a&]:hover:text-accent-foreground"
+                data-slot="badge"
+                data-variant="outline"
+              >
+                2007
+              </div>
+              <div
+                class="inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden border-transparent text-foreground bg-background [a&]:hover:bg-accent [a&]:hover:text-accent-foreground"
+                data-slot="badge"
+                data-variant="outline"
+              >
+                5/5
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    class="items-center px-6 [.border-t]:pt-6 block border-t pt-6"
+    data-slot="card-footer"
+  >
+    <div>
+      Add Music Form
+    </div>
+  </div>
+</div>
+`;

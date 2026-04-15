@@ -443,6 +443,7 @@
     "title": "Profile",
     "tabs": {
       "notifications": "Notifications",
+      "experiment": "Experiment",
       "posts": "Posts",
       "replies": "Replies",
       "followers": "Followers",

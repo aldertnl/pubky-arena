@@ -146,6 +146,48 @@ export const createSettingsActions = (set: ZustandSet<SettingsStore>): SettingsA
     );
   },
 
+  setShowMusicLibraryProfileSummary: (showMusicLibraryProfileSummary) => {
+    set(
+      (state) =>
+        withTimestamp({
+          privacy: {
+            ...state.privacy,
+            showMusicLibraryProfileSummary,
+          },
+        }),
+      false,
+      SettingsActionTypes.SET_SHOW_MUSIC_LIBRARY_PROFILE_SUMMARY,
+    );
+  },
+
+  setMusicLibraryConsent: (musicLibraryConsent) => {
+    set(
+      (state) =>
+        withTimestamp({
+          privacy: {
+            ...state.privacy,
+            musicLibraryConsent,
+          },
+        }),
+      false,
+      SettingsActionTypes.SET_MUSIC_LIBRARY_CONSENT,
+    );
+  },
+
+  setMusicLibraryBuyerSharingEnabled: (musicLibraryBuyerSharingEnabled) => {
+    set(
+      (state) =>
+        withTimestamp({
+          privacy: {
+            ...state.privacy,
+            musicLibraryBuyerSharingEnabled,
+          },
+        }),
+      false,
+      SettingsActionTypes.SET_MUSIC_LIBRARY_BUYER_SHARING_ENABLED,
+    );
+  },
+
   // Muted users actions
   addMutedUser: (userId) => {
     set(

@@ -166,6 +166,18 @@ describe('SettingsStore', () => {
       expect(state.privacy.hideSearch).toBe(true);
       expect(state.privacy.hideWhoToFollow).toBe(false); // Unchanged
     });
+
+    it('should set music library consent preferences', () => {
+      const store = useSettingsStore.getState();
+
+      store.setShowMusicLibraryProfileSummary(true);
+      store.setMusicLibraryConsent(true);
+      store.setMusicLibraryBuyerSharingEnabled(true);
+
+      expect(useSettingsStore.getState().privacy.showMusicLibraryProfileSummary).toBe(true);
+      expect(useSettingsStore.getState().privacy.musicLibraryConsent).toBe(true);
+      expect(useSettingsStore.getState().privacy.musicLibraryBuyerSharingEnabled).toBe(true);
+    });
   });
 
   describe('Muted Users', () => {

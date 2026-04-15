@@ -62,6 +62,9 @@ export function useSettingsActions(): UseSettingsActionsResult {
   const setNeverShowPosts = (neverShowPosts: boolean) =>
     run(() => SettingsController.setNeverShowPosts(neverShowPosts));
 
+  const setShowMusicLibraryProfileSummary = (showMusicLibraryProfileSummary: boolean) =>
+    run(() => SettingsController.setShowMusicLibraryProfileSummary(showMusicLibraryProfileSummary));
+
   const setLanguage = (language: string) => run(() => SettingsController.setLanguage(language));
 
   return {
@@ -74,6 +77,7 @@ export function useSettingsActions(): UseSettingsActionsResult {
     setHideActiveFriends,
     setHideSearch,
     setNeverShowPosts,
+    setShowMusicLibraryProfileSummary,
     setLanguage,
     error,
   };

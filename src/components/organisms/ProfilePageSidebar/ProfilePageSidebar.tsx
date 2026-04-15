@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import * as Atoms from '@/atoms';
+import * as Core from '@/core';
 import * as Molecules from '@/molecules';
 import * as Organisms from '@/organisms';
 import * as Hooks from '@/hooks';
@@ -13,6 +14,7 @@ import { MAX_SIDEBAR_TAGS } from './ProfilePageSidebar.constants';
 
 export function ProfilePageSidebar() {
   const pathname = usePathname();
+  const { privacy } = Core.useSettingsStore();
   const { isAuthenticated, requireAuth } = Hooks.useRequireAuth();
 
   // Get the profile pubky and isOwnProfile from context
@@ -65,6 +67,7 @@ export function ProfilePageSidebar() {
       )}
       <Molecules.ProfilePageLinks links={profile?.links} isOwnProfile={isOwnProfile} />
       {isAuthenticated && <Organisms.FeedbackCard />}
+      {privacy.showMusicLibraryProfileSummary ? <Organisms.MusicLibraryProfileSummary /> : null}
     </Atoms.Container>
   );
 }

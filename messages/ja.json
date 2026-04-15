@@ -449,6 +449,7 @@
     "title": "プロフィール",
     "tabs": {
       "notifications": "通知",
+      "experiment": "実験",
       "posts": "投稿",
       "replies": "返信",
       "followers": "フォロワー",

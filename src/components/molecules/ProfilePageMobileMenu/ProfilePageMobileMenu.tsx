@@ -32,6 +32,12 @@ export const PROFILE_MENU_ITEMS: ProfileMenuItem[] = [
   { icon: Libs.UsersRound2, label: 'Following', pageType: Types.PROFILE_PAGE_TYPES.FOLLOWING },
   { icon: Libs.HeartHandshake, label: 'Friends', pageType: Types.PROFILE_PAGE_TYPES.FRIENDS },
   { icon: Libs.Tag, label: 'Tagged', pageType: Types.PROFILE_PAGE_TYPES.UNIQUE_TAGS },
+  {
+    icon: Libs.FlaskConical,
+    label: 'Experiment',
+    pageType: Types.PROFILE_PAGE_TYPES.EXPERIMENTS,
+    ownProfileOnly: true,
+  },
 ];
 
 export interface ProfilePageMobileMenuProps {

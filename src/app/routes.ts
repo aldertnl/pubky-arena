@@ -31,6 +31,7 @@ export enum APP_ROUTES {
 export enum PROFILE_ROUTES {
   PROFILE = '/profile',
   NOTIFICATIONS = '/profile/notifications',
+  EXPERIMENTS = '/profile/experiments',
   POSTS = '/profile/posts',
   REPLIES = '/profile/replies',
   FOLLOWERS = '/profile/followers',

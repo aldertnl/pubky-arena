@@ -19,6 +19,9 @@ export interface PrivacyPreferences {
   hideActiveFriends: boolean;
   hideSearch: boolean;
   neverShowPosts: boolean;
+  showMusicLibraryProfileSummary: boolean;
+  musicLibraryConsent: boolean;
+  musicLibraryBuyerSharingEnabled: boolean;
 }
 
 export interface SettingsState {
@@ -43,6 +46,9 @@ export interface SettingsActions {
   setHideActiveFriends: (hideActiveFriends: boolean) => void;
   setHideSearch: (hideSearch: boolean) => void;
   setNeverShowPosts: (neverShowPosts: boolean) => void;
+  setShowMusicLibraryProfileSummary: (showMusicLibraryProfileSummary: boolean) => void;
+  setMusicLibraryConsent: (musicLibraryConsent: boolean) => void;
+  setMusicLibraryBuyerSharingEnabled: (musicLibraryBuyerSharingEnabled: boolean) => void;
   // Muted users actions
   addMutedUser: (userId: string) => void;
   removeMutedUser: (userId: string) => void;
@@ -79,6 +85,9 @@ export const defaultPrivacyPreferences: PrivacyPreferences = {
   hideActiveFriends: false,
   hideSearch: false,
   neverShowPosts: false,
+  showMusicLibraryProfileSummary: false,
+  musicLibraryConsent: false,
+  musicLibraryBuyerSharingEnabled: false,
 };
 
 export const settingsInitialState: SettingsState = {
@@ -101,6 +110,9 @@ export enum SettingsActionTypes {
   SET_HIDE_ACTIVE_FRIENDS = 'SET_HIDE_ACTIVE_FRIENDS',
   SET_HIDE_SEARCH = 'SET_HIDE_SEARCH',
   SET_NEVER_SHOW_POSTS = 'SET_NEVER_SHOW_POSTS',
+  SET_SHOW_MUSIC_LIBRARY_PROFILE_SUMMARY = 'SET_SHOW_MUSIC_LIBRARY_PROFILE_SUMMARY',
+  SET_MUSIC_LIBRARY_CONSENT = 'SET_MUSIC_LIBRARY_CONSENT',
+  SET_MUSIC_LIBRARY_BUYER_SHARING_ENABLED = 'SET_MUSIC_LIBRARY_BUYER_SHARING_ENABLED',
   ADD_MUTED_USER = 'ADD_MUTED_USER',
   REMOVE_MUTED_USER = 'REMOVE_MUTED_USER',
   SET_MUTED_USERS = 'SET_MUTED_USERS',

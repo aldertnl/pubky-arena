@@ -92,6 +92,21 @@ export class SettingsController {
     await this.commitUpdate();
   }
 
+  static async setShowMusicLibraryProfileSummary(showMusicLibraryProfileSummary: boolean): Promise<void> {
+    Core.useSettingsStore.getState().setShowMusicLibraryProfileSummary(showMusicLibraryProfileSummary);
+    await this.commitUpdate();
+  }
+
+  static async setMusicLibraryConsent(musicLibraryConsent: boolean): Promise<void> {
+    Core.useSettingsStore.getState().setMusicLibraryConsent(musicLibraryConsent);
+    await this.commitUpdate();
+  }
+
+  static async setMusicLibraryBuyerSharingEnabled(musicLibraryBuyerSharingEnabled: boolean): Promise<void> {
+    Core.useSettingsStore.getState().setMusicLibraryBuyerSharingEnabled(musicLibraryBuyerSharingEnabled);
+    await this.commitUpdate();
+  }
+
   /**
    * Muted users management (local-only, not synced to homeserver).
    * These methods update the local store directly without triggering

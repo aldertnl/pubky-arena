@@ -449,6 +449,7 @@
     "title": "个人资料",
     "tabs": {
       "notifications": "通知",
+      "experiment": "实验",
       "posts": "帖子",
       "replies": "回复",
       "followers": "粉丝",

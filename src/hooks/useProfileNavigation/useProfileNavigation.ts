@@ -29,6 +29,11 @@ const PROFILE_ROUTES_CONFIG: Record<
     aliases: [PROFILE_ROUTES.NOTIFICATIONS],
     ownProfileOnly: true, // Notifications only for logged-in user
   },
+  [PROFILE_PAGE_TYPES.EXPERIMENTS]: {
+    route: PROFILE_ROUTES.EXPERIMENTS,
+    subPath: '/experiments',
+    ownProfileOnly: true,
+  },
   [PROFILE_PAGE_TYPES.POSTS]: {
     route: PROFILE_ROUTES.POSTS,
     subPath: '/posts',
@@ -57,6 +62,14 @@ const PROFILE_ROUTES_CONFIG: Record<
     route: PROFILE_ROUTES.PROFILE_PAGE,
     subPath: '/profile',
   },
+};
+
+const getAccessiblePageType = (pageType: ProfilePageType, isOwnProfile: boolean): ProfilePageType => {
+  if (!isOwnProfile && PROFILE_ROUTES_CONFIG[pageType].ownProfileOnly) {
+    return PROFILE_PAGE_TYPES.POSTS;
+  }
+
+  return pageType;
 };
 
 /**
@@ -184,15 +197,17 @@ export function useProfileNavigation(): UseProfileNavigationReturn {
    * Handles both static routes (/profile/posts) and dynamic routes (/profile/{pubky}/posts)
    */
   const activePage = useMemo(() => {
+    const staticPageType = PAGE_PATH_MAP[pathname];
+
     // First try exact match in static routes
-    if (PAGE_PATH_MAP[pathname]) {
-      return PAGE_PATH_MAP[pathname];
+    if (staticPageType) {
+      return getAccessiblePageType(staticPageType, isOwnProfile);
     }
 
     // Try to extract page type from dynamic route
     const dynamicPageType = getPageTypeFromDynamicPath(pathname);
     if (dynamicPageType) {
-      return dynamicPageType;
+      return getAccessiblePageType(dynamicPageType, isOwnProfile);
     }
 
     // Default: for own profile show notifications, for others show posts
@@ -206,10 +221,6 @@ export function useProfileNavigation(): UseProfileNavigationReturn {
   const filterBarActivePage = useMemo(() => {
     if (activePage === PROFILE_PAGE_TYPES.PROFILE) {
       return isOwnProfile ? PROFILE_PAGE_TYPES.NOTIFICATIONS : PROFILE_PAGE_TYPES.POSTS;
-    }
-    // For other users without notifications, default to POSTS
-    if (!isOwnProfile && activePage === PROFILE_PAGE_TYPES.NOTIFICATIONS) {
-      return PROFILE_PAGE_TYPES.POSTS;
     }
     return activePage as FilterBarPageType;
   }, [activePage, isOwnProfile]);

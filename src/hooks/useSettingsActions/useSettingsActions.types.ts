@@ -19,6 +19,8 @@ export interface UseSettingsActionsResult {
   setHideSearch: (hideSearch: boolean) => Promise<void>;
   /** Updates never show posts preference and syncs to homeserver */
   setNeverShowPosts: (neverShowPosts: boolean) => Promise<void>;
+  /** Updates music library profile summary visibility and syncs to homeserver */
+  setShowMusicLibraryProfileSummary: (showMusicLibraryProfileSummary: boolean) => Promise<void>;
   /** Updates language preference and syncs to homeserver */
   setLanguage: (language: string) => Promise<void>;
   /** Error message if the action failed */

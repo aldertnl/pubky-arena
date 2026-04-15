@@ -17,6 +17,9 @@ const mockStoreActions = {
   setHideActiveFriends: vi.fn(),
   setHideSearch: vi.fn(),
   setNeverShowPosts: vi.fn(),
+  setShowMusicLibraryProfileSummary: vi.fn(),
+  setMusicLibraryConsent: vi.fn(),
+  setMusicLibraryBuyerSharingEnabled: vi.fn(),
   setLanguage: vi.fn(),
   addMutedUser: vi.fn(),
   removeMutedUser: vi.fn(),
@@ -90,6 +93,29 @@ describe('SettingsController', () => {
       await SettingsController.setBlurCensored(true);
 
       expect(mockStoreActions.setBlurCensored).toHaveBeenCalledWith(true);
+      expect(commitUpdateSpy).toHaveBeenCalledWith(mockSettingsState, TEST_PUBKY);
+    });
+  });
+
+  describe('music library consent settings', () => {
+    it('should update music library profile summary visibility and sync to homeserver', async () => {
+      await SettingsController.setShowMusicLibraryProfileSummary(true);
+
+      expect(mockStoreActions.setShowMusicLibraryProfileSummary).toHaveBeenCalledWith(true);
+      expect(commitUpdateSpy).toHaveBeenCalledWith(mockSettingsState, TEST_PUBKY);
+    });
+
+    it('should update music library consent and sync to homeserver', async () => {
+      await SettingsController.setMusicLibraryConsent(true);
+
+      expect(mockStoreActions.setMusicLibraryConsent).toHaveBeenCalledWith(true);
+      expect(commitUpdateSpy).toHaveBeenCalledWith(mockSettingsState, TEST_PUBKY);
+    });
+
+    it('should update buyer sharing setting and sync to homeserver', async () => {
+      await SettingsController.setMusicLibraryBuyerSharingEnabled(true);
+
+      expect(mockStoreActions.setMusicLibraryBuyerSharingEnabled).toHaveBeenCalledWith(true);
       expect(commitUpdateSpy).toHaveBeenCalledWith(mockSettingsState, TEST_PUBKY);
     });
   });

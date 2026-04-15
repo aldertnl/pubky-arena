@@ -1,6 +1,7 @@
 export const PROFILE_PAGE_TYPES = {
   PROFILE: 'profile',
   NOTIFICATIONS: 'notifications',
+  EXPERIMENTS: 'experiments',
   POSTS: 'posts',
   REPLIES: 'replies',
   FOLLOWERS: 'followers',
@@ -12,6 +13,7 @@ export const PROFILE_PAGE_TYPES = {
 export type ProfilePageType =
   | typeof PROFILE_PAGE_TYPES.PROFILE
   | typeof PROFILE_PAGE_TYPES.NOTIFICATIONS
+  | typeof PROFILE_PAGE_TYPES.EXPERIMENTS
   | typeof PROFILE_PAGE_TYPES.POSTS
   | typeof PROFILE_PAGE_TYPES.REPLIES
   | typeof PROFILE_PAGE_TYPES.FOLLOWERS

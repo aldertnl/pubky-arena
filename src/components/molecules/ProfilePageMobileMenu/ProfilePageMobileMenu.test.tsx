@@ -12,6 +12,20 @@ describe('ProfilePageMobileMenu', () => {
     });
   });
 
+  it('hides own-profile-only items when viewing another user profile', () => {
+    render(
+      <ProfilePageMobileMenu
+        activePage={PROFILE_PAGE_TYPES.POSTS}
+        onPageChangeAction={() => {}}
+        isOwnProfile={false}
+      />,
+    );
+
+    expect(screen.queryByLabelText('Notifications')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Experiment')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Posts')).toBeInTheDocument();
+  });
+
   it('has correct structure with sticky positioning', () => {
     const { container } = render(
       <ProfilePageMobileMenu activePage={PROFILE_PAGE_TYPES.NOTIFICATIONS} onPageChangeAction={() => {}} />,

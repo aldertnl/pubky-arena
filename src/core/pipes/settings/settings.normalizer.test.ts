@@ -153,6 +153,9 @@ describe('SettingsNormalizer', () => {
         privacy: {
           ...Core.defaultPrivacyPreferences,
           blurCensored: false,
+          showMusicLibraryProfileSummary: true,
+          musicLibraryConsent: true,
+          musicLibraryBuyerSharingEnabled: true,
         },
         language: 'de',
         updatedAt: 1700000000000,
@@ -163,6 +166,9 @@ describe('SettingsNormalizer', () => {
 
       expect(result.notifications.follow).toBe(false);
       expect(result.privacy.blurCensored).toBe(false);
+      expect(result.privacy.showMusicLibraryProfileSummary).toBe(true);
+      expect(result.privacy.musicLibraryConsent).toBe(true);
+      expect(result.privacy.musicLibraryBuyerSharingEnabled).toBe(true);
       expect(result.muted).toEqual([]); // Muted is not synced, always empty from homeserver
       expect(result.language).toBe('de');
       expect(result.updatedAt).toBe(1700000000000);
@@ -237,7 +243,13 @@ describe('SettingsNormalizer', () => {
     it('should preserve data through to/from cycle (except muted which is not synced)', () => {
       const original = createMockSettingsState({
         notifications: { ...Core.defaultNotificationPreferences, follow: false },
-        privacy: { ...Core.defaultPrivacyPreferences, showConfirm: false },
+        privacy: {
+          ...Core.defaultPrivacyPreferences,
+          showConfirm: false,
+          showMusicLibraryProfileSummary: true,
+          musicLibraryConsent: true,
+          musicLibraryBuyerSharingEnabled: true,
+        },
         muted: ['user1'], // This won't be preserved - muted is not synced to homeserver
         language: 'ja',
         version: 3,

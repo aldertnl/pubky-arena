@@ -13,6 +13,7 @@ const { mockSettingsController, mockIsAppError } = vi.hoisted(() => ({
     setHideActiveFriends: vi.fn(),
     setHideSearch: vi.fn(),
     setNeverShowPosts: vi.fn(),
+    setShowMusicLibraryProfileSummary: vi.fn(),
     setLanguage: vi.fn(),
   },
   mockIsAppError: vi.fn(),
@@ -70,6 +71,16 @@ describe('useSettingsActions', () => {
     });
 
     expect(mockSettingsController.setLanguage).toHaveBeenCalledWith('es');
+  });
+
+  it('calls SettingsController.setShowMusicLibraryProfileSummary', async () => {
+    const { result } = renderHook(() => useSettingsActions());
+
+    await act(async () => {
+      await result.current.setShowMusicLibraryProfileSummary(true);
+    });
+
+    expect(mockSettingsController.setShowMusicLibraryProfileSummary).toHaveBeenCalledWith(true);
   });
 
   it('sets error on failure with AppError message', async () => {
