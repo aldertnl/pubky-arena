@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { HomegateController } from '@/core';
 import { INVITE_BASE_URL } from '@/config';
 import { Logger } from '@/libs';
+import * as Molecules from '@/molecules';
 import type { UseInviteCodeResult } from './useInviteCode.types';
 
 /**
@@ -20,13 +21,11 @@ import type { UseInviteCodeResult } from './useInviteCode.types';
 export function useInviteCode(): UseInviteCodeResult {
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const inviteUrl = inviteCode ? `${INVITE_BASE_URL}/${inviteCode}` : null;
 
   const fetchInviteCode = async (): Promise<boolean> => {
     setIsLoading(true);
-    setError(null);
 
     try {
       const result = await HomegateController.fetchInviteCode();
@@ -35,7 +34,7 @@ export function useInviteCode(): UseInviteCodeResult {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to generate invite code';
       Logger.error('[useInviteCode] Failed to fetch invite code', { error: err });
-      setError(message);
+      Molecules.showErrorToast({ description: message });
       return false;
     } finally {
       setIsLoading(false);
@@ -43,10 +42,8 @@ export function useInviteCode(): UseInviteCodeResult {
   };
 
   return {
-    inviteCode,
     inviteUrl,
     isLoading,
-    error,
     fetchInviteCode,
   };
 }

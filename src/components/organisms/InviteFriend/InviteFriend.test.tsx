@@ -8,9 +8,8 @@ vi.mock('next-intl', () => ({
 }));
 
 // Use vi.hoisted to define mock functions before vi.mock calls
-const { mockFetchInviteCode, mockShowErrorToast, mockUseCurrentUserProfile, mockUseInviteCode } = vi.hoisted(() => ({
+const { mockFetchInviteCode, mockUseCurrentUserProfile, mockUseInviteCode } = vi.hoisted(() => ({
   mockFetchInviteCode: vi.fn(),
-  mockShowErrorToast: vi.fn(),
   mockUseCurrentUserProfile: vi.fn(),
   mockUseInviteCode: vi.fn(),
 }));
@@ -39,7 +38,6 @@ vi.mock('@/molecules', () => ({
       {children}
     </div>
   ),
-  showErrorToast: mockShowErrorToast,
 }));
 
 // Mock @/organisms
@@ -96,7 +94,6 @@ describe('InviteFriend', () => {
     mockUseInviteCode.mockReturnValue({
       inviteUrl: null,
       isLoading: false,
-      error: null,
       fetchInviteCode: mockFetchInviteCode,
     });
     mockFetchInviteCode.mockResolvedValue(false);
@@ -133,7 +130,6 @@ describe('InviteFriend', () => {
     mockUseInviteCode.mockReturnValue({
       inviteUrl: 'https://invite.example.com/code123',
       isLoading: false,
-      error: null,
       fetchInviteCode: mockFetchInviteCode,
     });
 
@@ -159,7 +155,6 @@ describe('InviteFriend', () => {
     mockUseInviteCode.mockReturnValue({
       inviteUrl: 'https://invite.example.com/code123',
       isLoading: false,
-      error: null,
       fetchInviteCode: mockFetchInviteCode,
     });
 
@@ -174,24 +169,10 @@ describe('InviteFriend', () => {
     expect(screen.queryByTestId('dialog-invite-friend')).not.toBeInTheDocument();
   });
 
-  it('shows error toast when error state changes', () => {
-    mockUseInviteCode.mockReturnValue({
-      inviteUrl: null,
-      isLoading: false,
-      error: 'Failed to generate invite code',
-      fetchInviteCode: mockFetchInviteCode,
-    });
-
-    render(<InviteFriend />);
-
-    expect(mockShowErrorToast).toHaveBeenCalledWith({ description: 'Failed to generate invite code' });
-  });
-
   it('button is disabled while loading', () => {
     mockUseInviteCode.mockReturnValue({
       inviteUrl: null,
       isLoading: true,
-      error: null,
       fetchInviteCode: mockFetchInviteCode,
     });
 
@@ -211,7 +192,6 @@ describe('InviteFriend - Snapshots', () => {
     mockUseInviteCode.mockReturnValue({
       inviteUrl: null,
       isLoading: false,
-      error: null,
       fetchInviteCode: mockFetchInviteCode,
     });
   });

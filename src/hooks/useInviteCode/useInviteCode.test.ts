@@ -2,9 +2,10 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useInviteCode } from './useInviteCode';
 
-const { mockFetchInviteCode, mockLoggerError } = vi.hoisted(() => ({
+const { mockFetchInviteCode, mockLoggerError, mockShowErrorToast } = vi.hoisted(() => ({
   mockFetchInviteCode: vi.fn(),
   mockLoggerError: vi.fn(),
+  mockShowErrorToast: vi.fn(),
 }));
 
 vi.mock('@/core', () => ({
@@ -19,6 +20,10 @@ vi.mock('@/libs', () => ({
   Logger: { error: mockLoggerError },
 }));
 
+vi.mock('@/molecules', () => ({
+  showErrorToast: mockShowErrorToast,
+}));
+
 describe('useInviteCode', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -27,10 +32,8 @@ describe('useInviteCode', () => {
   it('has correct initial state', () => {
     const { result } = renderHook(() => useInviteCode());
 
-    expect(result.current.inviteCode).toBeNull();
     expect(result.current.inviteUrl).toBeNull();
     expect(result.current.isLoading).toBe(false);
-    expect(result.current.error).toBeNull();
   });
 
   it('sets inviteCode and derives inviteUrl on successful fetch', async () => {
@@ -44,10 +47,8 @@ describe('useInviteCode', () => {
     });
 
     expect(success).toBe(true);
-    expect(result.current.inviteCode).toBe('ABC-123');
     expect(result.current.inviteUrl).toBe('https://test.pubky.app/invite/ABC-123');
     expect(result.current.isLoading).toBe(false);
-    expect(result.current.error).toBeNull();
   });
 
   it('sets error message from Error instance and returns false on failure', async () => {
@@ -61,9 +62,7 @@ describe('useInviteCode', () => {
     });
 
     expect(success).toBe(false);
-    expect(result.current.error).toBe('Network failure');
-    expect(result.current.inviteCode).toBeNull();
-    expect(result.current.inviteUrl).toBeNull();
+    expect(mockShowErrorToast).toHaveBeenCalledWith({ description: 'Network failure' });
     expect(mockLoggerError).toHaveBeenCalledWith('[useInviteCode] Failed to fetch invite code', {
       error: expect.any(Error),
     });
@@ -80,13 +79,13 @@ describe('useInviteCode', () => {
     });
 
     expect(success).toBe(false);
-    expect(result.current.error).toBe('Failed to generate invite code');
+    expect(mockShowErrorToast).toHaveBeenCalledWith({ description: 'Failed to generate invite code' });
     expect(mockLoggerError).toHaveBeenCalledWith('[useInviteCode] Failed to fetch invite code', {
       error: 'something unexpected',
     });
   });
 
-  it('clears previous error on a new fetch call', async () => {
+  it('recovers from error on subsequent successful fetch', async () => {
     mockFetchInviteCode.mockRejectedValueOnce(new Error('first error'));
 
     const { result } = renderHook(() => useInviteCode());
@@ -95,7 +94,7 @@ describe('useInviteCode', () => {
       await result.current.fetchInviteCode();
     });
 
-    expect(result.current.error).toBe('first error');
+    expect(mockShowErrorToast).toHaveBeenCalledTimes(1);
 
     mockFetchInviteCode.mockResolvedValueOnce({ signupCode: 'NEW-CODE' });
 
@@ -103,8 +102,8 @@ describe('useInviteCode', () => {
       await result.current.fetchInviteCode();
     });
 
-    expect(result.current.error).toBeNull();
-    expect(result.current.inviteCode).toBe('NEW-CODE');
+    expect(result.current.inviteUrl).toBe('https://test.pubky.app/invite/NEW-CODE');
+    expect(result.current.isLoading).toBe(false);
   });
 
   it('sets isLoading to true during fetch and false after', async () => {
@@ -145,7 +144,6 @@ describe('useInviteCode', () => {
       await result.current.fetchInviteCode();
     });
 
-    expect(result.current.inviteCode).toBe('FIRST-CODE');
     expect(result.current.inviteUrl).toBe('https://test.pubky.app/invite/FIRST-CODE');
 
     mockFetchInviteCode.mockResolvedValueOnce({ signupCode: 'SECOND-CODE' });
@@ -154,7 +152,6 @@ describe('useInviteCode', () => {
       await result.current.fetchInviteCode();
     });
 
-    expect(result.current.inviteCode).toBe('SECOND-CODE');
     expect(result.current.inviteUrl).toBe('https://test.pubky.app/invite/SECOND-CODE');
 
     mockFetchInviteCode.mockResolvedValueOnce({ signupCode: 'THIRD-CODE' });
@@ -163,7 +160,6 @@ describe('useInviteCode', () => {
       await result.current.fetchInviteCode();
     });
 
-    expect(result.current.inviteCode).toBe('THIRD-CODE');
     expect(result.current.inviteUrl).toBe('https://test.pubky.app/invite/THIRD-CODE');
     expect(mockFetchInviteCode).toHaveBeenCalledTimes(3);
   });
