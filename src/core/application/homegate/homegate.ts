@@ -133,7 +133,7 @@ export class HomegateApplication {
     await Core.HomeserverService.request({
       method: HttpMethod.PUT,
       url: proofUrl,
-      bodyJson: { hash: hashHex },
+      bodyJson: { value: hashHex },
     });
 
     return this.toHex(preimage);
