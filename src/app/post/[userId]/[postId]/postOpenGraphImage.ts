@@ -44,21 +44,22 @@ export function pickOpenGraphUrlFromFile(file: Core.NexusFileDetails): string | 
   const pubky = file.owner_id;
   const file_id = file.id;
 
-  if (ct.startsWith('image/')) {
-    if (urls.main) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.MAIN });
-    if (urls.feed) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.FEED });
-    if (urls.small) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.SMALL });
-    return null;
+  switch (true) {
+    case ct.startsWith('image/'): {
+      if (urls.main) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.MAIN });
+      if (urls.feed) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.FEED });
+      if (urls.small) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.SMALL });
+      return null;
+    }
+    case ct.startsWith('video/'): {
+      if (urls.feed) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.FEED });
+      if (urls.main) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.MAIN });
+      if (urls.small) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.SMALL });
+      return null;
+    }
+    default:
+      return null;
   }
-
-  if (ct.startsWith('video/')) {
-    if (urls.feed) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.FEED });
-    if (urls.main) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.MAIN });
-    if (urls.small) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.SMALL });
-    return null;
-  }
-
-  return null;
 }
 
 /**
