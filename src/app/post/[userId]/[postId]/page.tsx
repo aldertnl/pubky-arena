@@ -5,6 +5,8 @@ import * as Core from '@/core';
 import { Metadata } from '@/molecules/Metadata/Metadata';
 import { httpResponseToError, ErrorService, isPostDeleted } from '@/libs';
 
+import { resolvePostOpenGraphImage } from './postOpenGraphImage';
+
 export interface PostPageProps {
   params: Promise<{
     userId: string;
@@ -73,14 +75,17 @@ export async function generateMetadata({ params }: PostPageProps): Promise<NextM
         : postPreview;
 
     const title = `${username} on Pubky`;
-    const description = postPreviewTruncated;
+    const description = postPreviewTruncated || title;
+
+    const ogImage = await resolvePostOpenGraphImage(user, post);
 
     const { openGraph, twitter } = Metadata({
       title,
       description,
+      image: ogImage,
     });
 
-    return username && postPreviewTruncated
+    return username
       ? {
           title,
           description,
