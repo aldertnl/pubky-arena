@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import * as Config from '@/config';
 import * as Core from '@/core';
 import { parseNexusFileUrlsField } from '@/core/services/nexus/file/nexusFileUrls';
 
@@ -7,6 +8,10 @@ import { findFileForAttachmentUri, pickOpenGraphUrlFromFile, resolvePostOpenGrap
 
 const testPubky = 'operrr8wsbpr3ue9d4qj41ge1kcc6r7fdiy6o3ugjrrhi4y77rd0';
 const fileId = '0034YYSQGEJH0';
+
+function cdnFileUrl(pubky: string, id: string, variant: 'main' | 'feed' | 'small'): string {
+  return `${Config.CDN_URL}/files/${encodeURIComponent(pubky)}/${encodeURIComponent(id)}/${variant}`;
+}
 
 const baseFile = (overrides: Partial<Core.NexusFileDetails>): Core.NexusFileDetails => ({
   id: fileId,
@@ -82,14 +87,14 @@ describe('findFileForAttachmentUri', () => {
 describe('pickOpenGraphUrlFromFile', () => {
   it('picks main for images', () => {
     const f = baseFile({ content_type: 'image/jpeg' });
-    expect(pickOpenGraphUrlFromFile(f)).toBe('https://cdn.example/main.png');
+    expect(pickOpenGraphUrlFromFile(f)).toBe(cdnFileUrl(testPubky, fileId, 'main'));
   });
 
   it('prefers feed for video thumbnails', () => {
     const f = baseFile({
       content_type: 'video/mp4',
     });
-    expect(pickOpenGraphUrlFromFile(f)).toBe('https://cdn.example/feed.png');
+    expect(pickOpenGraphUrlFromFile(f)).toBe(cdnFileUrl(testPubky, fileId, 'feed'));
   });
 
   it('returns null for non-image non-video', () => {
@@ -116,7 +121,7 @@ describe('resolvePostOpenGraphImage', () => {
     const uri = img.uri;
     const url = await resolvePostOpenGraphImage(baseUser(), basePost({ attachments: [uri] }));
 
-    expect(url).toBe('https://cdn.example/main.png');
+    expect(url).toBe(cdnFileUrl(testPubky, fileId, 'main'));
     expect(Core.NexusFileService.fetchFiles).toHaveBeenCalledWith([uri]);
   });
 
@@ -135,7 +140,7 @@ describe('resolvePostOpenGraphImage', () => {
 
     const url = await resolvePostOpenGraphImage(baseUser(), basePost({ attachments: [pdf.uri, img.uri] }));
 
-    expect(url).toBe('https://cdn.example/main.png');
+    expect(url).toBe(cdnFileUrl(testPubky, 'img2', 'main'));
   });
 
   it('returns avatar when fetchFiles throws', async () => {

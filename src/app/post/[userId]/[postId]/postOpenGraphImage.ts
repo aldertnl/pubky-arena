@@ -1,4 +1,5 @@
 import * as Core from '@/core';
+import { FileVariant } from '@/core/services/nexus/file/file.types';
 import { parseNexusFileUrlsField } from '@/core/services/nexus/file/nexusFileUrls';
 
 /**
@@ -34,19 +35,27 @@ export function findFileForAttachmentUri(
 /**
  * Picks a single HTTPS URL for Open Graph from file metadata.
  * Images prefer `main` (quality); video uses `feed` / thumbnails first.
+ * Builds canonical CDN URLs via `filesApi.getFileUrl` so Next.js `metadataBase`
+ * does not rewrite relative Nexus paths onto the wrong host.
  */
 export function pickOpenGraphUrlFromFile(file: Core.NexusFileDetails): string | null {
   const urls = parseNexusFileUrlsField(file.urls);
   const ct = file.content_type.toLowerCase();
+  const pubky = file.owner_id;
+  const file_id = file.id;
 
   if (ct.startsWith('image/')) {
-    const u = urls.main || urls.feed || urls.small;
-    return u || null;
+    if (urls.main) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.MAIN });
+    if (urls.feed) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.FEED });
+    if (urls.small) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.SMALL });
+    return null;
   }
 
   if (ct.startsWith('video/')) {
-    const u = urls.feed || urls.main || urls.small;
-    return u || null;
+    if (urls.feed) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.FEED });
+    if (urls.main) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.MAIN });
+    if (urls.small) return Core.filesApi.getFileUrl({ pubky, file_id, variant: FileVariant.SMALL });
+    return null;
   }
 
   return null;
