@@ -1,0 +1,24 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`InviteFriend - Snapshots > matches snapshot for authenticated user default state 1`] = `
+<div
+  class="test-class"
+  data-testid="invite-friend"
+  data-title="sectionTitle"
+>
+  <span>
+    sectionTitle
+  </span>
+  <button
+    class="w-full"
+    data-testid="invite-friend-button"
+    data-variant="brand"
+  >
+    <span
+      class="size-4"
+      data-testid="gift-icon"
+    />
+    buttonLabel
+  </button>
+</div>
+`;

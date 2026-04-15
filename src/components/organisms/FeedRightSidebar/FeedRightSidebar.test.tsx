@@ -18,6 +18,7 @@ vi.mock('@/organisms', () => ({
   WhoToFollow: () => <div data-testid="who-to-follow">WhoToFollow</div>,
   ActiveUsers: () => <div data-testid="active-users">ActiveUsers</div>,
   HotTags: () => <div data-testid="hot-tags">HotTags</div>,
+  InviteFriend: () => <div data-testid="invite-friend">InviteFriend</div>,
   FeedbackCard: () => <div data-testid="feedback-card">FeedbackCard</div>,
 }));
 
@@ -38,6 +39,7 @@ describe('HomeFeedRightSidebar', () => {
     expect(screen.getByTestId('who-to-follow')).toBeInTheDocument();
     expect(screen.getByTestId('active-users')).toBeInTheDocument();
     expect(screen.getByTestId('hot-tags')).toBeInTheDocument();
+    expect(screen.getByTestId('invite-friend')).toBeInTheDocument();
     expect(screen.getByTestId('feedback-card')).toBeInTheDocument();
   });
 
@@ -54,6 +56,7 @@ describe('HomeFeedRightDrawer', () => {
     expect(screen.getByTestId('who-to-follow')).toBeInTheDocument();
     expect(screen.getByTestId('active-users')).toBeInTheDocument();
     expect(screen.getByTestId('hot-tags')).toBeInTheDocument();
+    expect(screen.getByTestId('invite-friend')).toBeInTheDocument();
     expect(screen.getByTestId('feedback-card')).toBeInTheDocument();
   });
 

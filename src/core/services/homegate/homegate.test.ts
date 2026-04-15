@@ -136,4 +136,43 @@ describe('HomegateService', () => {
       expect(result).toEqual({ success: false, errorType: 'rate_limited_yearly' });
     });
   });
+
+  describe('requestInviteCode', () => {
+    it('sends PUT request with correct body', async () => {
+      mockFetch.mockResolvedValue(new Response(JSON.stringify({ signupCode: 'test-code' }), { status: 200 }));
+
+      const params = { pubky: 'z6Mk_test_pubky', hashProofPreimage: 'abc123hex' };
+      await HomegateService.requestInviteCode(params);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/invite'),
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify({ pubky: 'z6Mk_test_pubky', hashProofPreimage: 'abc123hex' }),
+        }),
+      );
+    });
+
+    it('returns signupCode on success', async () => {
+      mockFetch.mockResolvedValue(new Response(JSON.stringify({ signupCode: 'ABC123' }), { status: 200 }));
+
+      const result = await HomegateService.requestInviteCode({
+        pubky: 'z6Mk_test_pubky',
+        hashProofPreimage: 'abc123hex',
+      });
+
+      expect(result).toEqual({ signupCode: 'ABC123' });
+    });
+
+    it('throws error on non-OK response', async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 500, statusText: 'Internal Server Error' }));
+
+      const promise = HomegateService.requestInviteCode({
+        pubky: 'z6Mk_test_pubky',
+        hashProofPreimage: 'abc123hex',
+      });
+
+      await expect(promise).rejects.toThrow();
+    });
+  });
 });
