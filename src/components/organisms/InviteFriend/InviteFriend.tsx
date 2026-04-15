@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import * as Atoms from '@/atoms';
@@ -24,7 +24,7 @@ export function InviteFriend({ className }: InviteFriendProps) {
   const t = useTranslations('invite');
   const { currentUserPubky } = Hooks.useCurrentUserProfile();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { inviteUrl, isLoading, error, fetchInviteCode } = Hooks.useInviteCode();
+  const { inviteUrl, isLoading, fetchInviteCode } = Hooks.useInviteCode();
 
   const handleInviteClick = async () => {
     const success = await fetchInviteCode();
@@ -32,13 +32,6 @@ export function InviteFriend({ className }: InviteFriendProps) {
       setIsDialogOpen(true);
     }
   };
-
-  // Show error toast on fetch failure
-  useEffect(() => {
-    if (error) {
-      Molecules.showErrorToast({ description: error });
-    }
-  }, [error]);
 
   // Only show for authenticated users
   if (!currentUserPubky) {
