@@ -1,0 +1,84 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`DialogInviteFriend - Snapshots > matches snapshot for open dialog 1`] = `
+<div
+  data-open="true"
+  data-testid="dialog"
+>
+  <div
+    class="sm:max-w-md"
+    data-hidden-title="dialogTitle"
+    data-testid="dialog-content"
+  >
+    <div
+      class="flex flex-col items-center gap-6 p-6"
+      data-testid="container"
+    >
+      <h2
+        class="text-center font-semibold"
+        data-size="md"
+        data-testid="heading-2"
+      >
+        dialogTitle
+      </h2>
+      <p
+        class="text-center text-sm text-muted-foreground"
+        data-testid="typography"
+      >
+        description
+      </p>
+      <div
+        class="relative flex h-52 w-52 items-center justify-center rounded-lg bg-white p-2.25"
+        data-testid="container"
+      >
+        <div
+          data-size="190"
+          data-testid="qr-code"
+          data-value="https://invite.example.com/abc123"
+        />
+        <img
+          alt="Pubky"
+          class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+          data-testid="next-image"
+          height="42"
+          src="/images/ring-logo.svg"
+          width="42"
+        />
+      </div>
+      <p
+        class="w-full text-center text-sm font-medium break-all text-brand"
+        data-testid="invite-url"
+      >
+        https://invite.example.com/abc123
+      </p>
+      <div
+        class="flex w-full gap-3"
+        data-testid="container"
+      >
+        <button
+          class="flex-1"
+          data-testid="invite-copy-button"
+          data-variant="outline"
+        >
+          <span
+            class="size-4"
+            data-testid="copy-icon"
+          />
+          copyButton
+        </button>
+        <button
+          class="flex-1"
+          data-testid="invite-share-button"
+          data-variant="brand"
+        >
+          <span
+            class="size-4"
+            data-testid="share-icon"
+          />
+          shareButton
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+`;

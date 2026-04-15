@@ -1,12 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as Core from '@/core';
+import { HttpMethod } from '@/libs';
 
 const testData = {
   inviteCode: 'test-invite-code-123',
   verificationId: '550e8400-e29b-41d4-a716-446655440000',
   phoneNumber: '+1234567890',
   smsCode: '123456',
+  pubky: 'pk1testpubky1234567890',
 };
+
+const mockPreimage = new Uint8Array(32).fill(0xab);
+const mockHashBuffer = new ArrayBuffer(32);
+new Uint8Array(mockHashBuffer).fill(0xcd);
+const expectedPreimageHex = 'ab'.repeat(32);
+const expectedHashHex = 'cd'.repeat(32);
 
 describe('HomegateApplication', () => {
   let HomegateApplication: typeof import('./homegate').HomegateApplication;
@@ -55,6 +63,18 @@ describe('HomegateApplication', () => {
       btcUsd: 50000,
       lastUpdatedAt: new Date(),
     });
+
+    vi.spyOn(Core.HomeserverService, 'request').mockResolvedValue(undefined as never);
+
+    vi.spyOn(Core.HomegateService, 'requestInviteCode').mockResolvedValue({
+      signupCode: 'invite-code-123',
+    });
+
+    vi.spyOn(crypto, 'getRandomValues').mockImplementation((array) => {
+      new Uint8Array((array as Uint8Array).buffer).set(mockPreimage);
+      return array;
+    });
+    vi.spyOn(crypto.subtle, 'digest').mockResolvedValue(mockHashBuffer);
 
     const homegateModule = await import('./homegate');
     HomegateApplication = homegateModule.HomegateApplication;
@@ -135,6 +155,47 @@ describe('HomegateApplication', () => {
         satUsd: 0.0005,
         btcUsd: 50000,
       });
+    });
+  });
+
+  describe('generateInviteCode', () => {
+    it('should write hash proof to homeserver at the correct URL', async () => {
+      await HomegateApplication.generateInviteCode(testData.pubky);
+
+      expect(Core.HomeserverService.request).toHaveBeenCalledWith({
+        method: HttpMethod.PUT,
+        url: `pubky://${testData.pubky}/pub/pubky.app/homegate/proof`,
+        bodyJson: { hash: expectedHashHex },
+      });
+    });
+
+    it('should call requestInviteCode with pubky and preimage hex', async () => {
+      await HomegateApplication.generateInviteCode(testData.pubky);
+
+      expect(Core.HomegateService.requestInviteCode).toHaveBeenCalledWith({
+        pubky: testData.pubky,
+        hashProofPreimage: expectedPreimageHex,
+      });
+    });
+
+    it('should return the signupCode from service', async () => {
+      const result = await HomegateApplication.generateInviteCode(testData.pubky);
+
+      expect(result).toEqual({ signupCode: 'invite-code-123' });
+    });
+
+    it('should throw if homeserver write fails', async () => {
+      vi.spyOn(Core.HomeserverService, 'request').mockRejectedValue(new Error('homeserver write failed'));
+
+      await expect(HomegateApplication.generateInviteCode(testData.pubky)).rejects.toThrow('homeserver write failed');
+    });
+
+    it('should throw if requestInviteCode fails', async () => {
+      vi.spyOn(Core.HomegateService, 'requestInviteCode').mockRejectedValue(new Error('invite code request failed'));
+
+      await expect(HomegateApplication.generateInviteCode(testData.pubky)).rejects.toThrow(
+        'invite code request failed',
+      );
     });
   });
 });
