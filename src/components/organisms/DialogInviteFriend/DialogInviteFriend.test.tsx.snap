@@ -16,7 +16,7 @@ exports[`DialogInviteFriend - Snapshots > matches snapshot for open dialog 1`] =
     >
       <h2
         class="text-center font-semibold"
-        data-size="md"
+        data-size="lg"
         data-testid="heading-2"
       >
         dialogTitle
