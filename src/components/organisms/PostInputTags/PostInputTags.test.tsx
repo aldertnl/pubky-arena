@@ -3,6 +3,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PostInputTags } from './PostInputTags';
 import { POST_MAX_TAGS, TAG_MAX_LENGTH } from '@/config';
 
+vi.mock('motion/react', () => ({
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  motion: {
+    div: ({
+      children,
+      initial: _initial,
+      animate: _animate,
+      exit: _exit,
+      transition: _transition,
+      ...props
+    }: {
+      children: React.ReactNode;
+      initial?: unknown;
+      animate?: unknown;
+      exit?: unknown;
+      transition?: unknown;
+      [key: string]: unknown;
+    }) => <div {...props}>{children}</div>,
+  },
+}));
+
 // Mock state for TagInput simulation
 let mockTagInputValue = '';
 let mockShowEmojiPicker = false;
