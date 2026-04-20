@@ -164,7 +164,7 @@ export const TagInput = forwardRef<TagInputHandle, TagInputProps>(function TagIn
               'relative flex h-8 w-full items-center gap-1 rounded-md border border-dashed border-input pr-1 pl-3 shadow-sm transition-all duration-300',
               onClick && 'cursor-pointer',
               className,
-              isAtLimit ? 'w-40' : '',
+              isAtLimit && 'w-40',
             )}
             onClick={onClick}
           >
