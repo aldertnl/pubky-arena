@@ -16,7 +16,10 @@ export function MusicLibraryProfileSummary() {
   return (
     <Atoms.Card className="gap-4 p-4">
       <Atoms.Container overrideDefaults={true} className="flex min-w-0 items-start gap-3">
-        <Atoms.Container overrideDefaults={true} className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand/12">
+        <Atoms.Container
+          overrideDefaults={true}
+          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand/12"
+        >
           <Libs.Music className="size-5 text-brand" />
         </Atoms.Container>
         <Atoms.Container overrideDefaults={true} className="flex min-w-0 flex-col gap-1">
@@ -58,7 +61,7 @@ function MusicLibraryProfileSummaryItem({
 
   return (
     <Atoms.Container overrideDefaults={true} className="flex flex-col gap-3 p-3">
-      <div className="relative aspect-square w-full max-w-28 overflow-hidden rounded-full mx-auto">
+      <div className="relative mx-auto aspect-square w-full max-w-28 overflow-hidden rounded-full">
         {imageUrl ? (
           <Atoms.Image
             fill

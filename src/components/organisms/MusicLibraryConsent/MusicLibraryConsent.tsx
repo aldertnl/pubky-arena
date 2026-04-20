@@ -11,11 +11,7 @@ interface MusicLibraryConsentProps {
   onConsentChangeAction: (field: keyof MusicLibraryConsentState, value: boolean) => Promise<void> | void;
 }
 
-export function MusicLibraryConsent({
-  consent,
-  isSaving = false,
-  onConsentChangeAction,
-}: MusicLibraryConsentProps) {
+export function MusicLibraryConsent({ consent, isSaving = false, onConsentChangeAction }: MusicLibraryConsentProps) {
   return (
     <Atoms.Card>
       <Atoms.CardHeader>
@@ -31,13 +27,16 @@ export function MusicLibraryConsent({
             <Atoms.Container overrideDefaults={true} className="flex min-w-0 items-start gap-3">
               <Libs.Lightbulb className="mt-1 size-4 shrink-0 text-brand" />
               <Atoms.Container overrideDefaults={true} className="min-w-0 gap-1">
-                <Atoms.Badge variant="outline" className="w-fit text-[11px] tracking-[0.2em] text-muted-foreground uppercase">
+                <Atoms.Badge
+                  variant="outline"
+                  className="w-fit text-[11px] tracking-[0.2em] text-muted-foreground uppercase"
+                >
                   How it works
                 </Atoms.Badge>
                 <Atoms.Typography as="p" className="text-sm font-semibold text-foreground">
                   Your music data can create real revenue
                 </Atoms.Typography>
-                <Atoms.Typography as="p" className="break-words text-sm leading-6 text-muted-foreground">
+                <Atoms.Typography as="p" className="text-sm leading-6 break-words text-muted-foreground">
                   This experiment is not just about yes or no permission. It is about enabling buyer access and
                   recommendation use in ways that can generate value and return benefits to the user who contributed the
                   music information.
@@ -99,7 +98,7 @@ function ConsentRow({
             <Atoms.Typography as="p" className="font-semibold text-foreground">
               {title}
             </Atoms.Typography>
-            <Atoms.Typography as="p" className="break-words text-sm leading-6 text-muted-foreground">
+            <Atoms.Typography as="p" className="text-sm leading-6 break-words text-muted-foreground">
               {description}
             </Atoms.Typography>
           </Atoms.Container>

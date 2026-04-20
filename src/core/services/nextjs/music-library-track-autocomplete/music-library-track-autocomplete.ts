@@ -88,7 +88,7 @@ export class NextJsMusicLibraryTrackAutocompleteService {
 
 function getSearchScore(recording: MusicBrainzRecording): number {
   const rawScore = recording.score;
-  const score = typeof rawScore === 'string' ? Number(rawScore) : rawScore;
+  const score = typeof rawScore === 'string' ? Number(rawScore) : (rawScore ?? 0);
   return Number.isFinite(score) ? score : 0;
 }
 

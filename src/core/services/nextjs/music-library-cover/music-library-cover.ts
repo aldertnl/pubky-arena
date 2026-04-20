@@ -9,7 +9,10 @@ import {
   httpResponseToError,
   parseResponseOrThrow,
 } from '@/libs';
-import type { TMusicLibraryAlbumCoverParams, TMusicLibraryAlbumCoverResult } from '@/core/application/music-library-cover/music-library-cover.types';
+import type {
+  TMusicLibraryAlbumCoverParams,
+  TMusicLibraryAlbumCoverResult,
+} from '@/core/application/music-library-cover/music-library-cover.types';
 
 const MUSICBRAINZ_BASE_URL = 'https://musicbrainz.org/ws/2/release-group';
 const COVER_ART_ARCHIVE_BASE_URL = 'https://coverartarchive.org/release-group';
@@ -75,7 +78,12 @@ export class NextJsMusicLibraryAlbumCoverService {
     });
     const url = `${MUSICBRAINZ_BASE_URL}?${searchParams.toString()}`;
 
-    const response = await safeFetch(url, { method: HttpMethod.GET, headers: REQUEST_HEADERS }, ErrorService.NextJsServer, 'searchMusicReleaseGroup');
+    const response = await safeFetch(
+      url,
+      { method: HttpMethod.GET, headers: REQUEST_HEADERS },
+      ErrorService.NextJsServer,
+      'searchMusicReleaseGroup',
+    );
 
     if (!response.ok) {
       throw httpResponseToError(response, ErrorService.NextJsServer, 'searchMusicReleaseGroup', url);
@@ -116,7 +124,12 @@ export class NextJsMusicLibraryAlbumCoverService {
 
   private static async fetchCoverArtUrl(releaseGroupId: string): Promise<string | null> {
     const url = `${COVER_ART_ARCHIVE_BASE_URL}/${releaseGroupId}`;
-    const response = await safeFetch(url, { method: HttpMethod.GET, headers: REQUEST_HEADERS }, ErrorService.NextJsServer, 'fetchMusicAlbumCover');
+    const response = await safeFetch(
+      url,
+      { method: HttpMethod.GET, headers: REQUEST_HEADERS },
+      ErrorService.NextJsServer,
+      'fetchMusicAlbumCover',
+    );
 
     if (response.status === HttpStatusCode.NOT_FOUND) {
       return null;

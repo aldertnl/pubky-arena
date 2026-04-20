@@ -8,6 +8,7 @@
     "dev:https": "next dev --experimental-https --webpack",
     "build": "next build --webpack",
     "start": "next start",
+    "preview": "npm run build && npm run start",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "clean": "rm -rf .next node_modules && npm install",

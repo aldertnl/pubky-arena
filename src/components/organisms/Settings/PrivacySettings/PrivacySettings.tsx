@@ -5,14 +5,14 @@ import * as Molecules from '@/molecules';
 import { useSettingsStore } from '@/core';
 import { useSettingsActions } from '@/hooks/useSettingsActions';
 import { PRIVACY_SETTINGS } from './PrivacySettings.constants';
-import type { PrivacyType } from './PrivacySettings.types';
+import type { ConfiguredPrivacyType } from './PrivacySettings.constants';
 
 export function PrivacySettings() {
   const t = useTranslations('privacy');
   const { privacy } = useSettingsStore();
   const actions = useSettingsActions();
 
-  const privacyTypes = Object.keys(PRIVACY_SETTINGS) as PrivacyType[];
+  const privacyTypes = Object.keys(PRIVACY_SETTINGS) as ConfiguredPrivacyType[];
 
   return (
     <Molecules.SettingsSwitchGroup>

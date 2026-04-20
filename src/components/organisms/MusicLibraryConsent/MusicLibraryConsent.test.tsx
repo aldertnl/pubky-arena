@@ -12,7 +12,9 @@ describe('MusicLibraryConsent', () => {
     );
 
     expect(screen.getByText('Music Library Consent')).toBeInTheDocument();
-    expect(screen.getByText(/External recommendation, advertising, or buyer access is blocked until you opt in\./)).toBeInTheDocument();
+    expect(
+      screen.getByText(/External recommendation, advertising, or buyer access is blocked until you opt in\./),
+    ).toBeInTheDocument();
     expect(screen.getByText('Consent can be revoked anytime')).toBeInTheDocument();
     expect(screen.getByText('How it works')).toBeInTheDocument();
     expect(screen.getAllByRole('switch')).toHaveLength(2);

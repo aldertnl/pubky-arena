@@ -1,5 +1,10 @@
 import type { PrivacyType } from './PrivacySettings.types';
 
+export type ConfiguredPrivacyType = Exclude<
+  PrivacyType,
+  'showMusicLibraryProfileSummary' | 'musicLibraryConsent' | 'musicLibraryBuyerSharingEnabled'
+>;
+
 type BooleanSettingsAction =
   | 'setShowConfirm'
   | 'setBlurCensored'
@@ -20,7 +25,7 @@ interface PrivacySettingConfig {
  * Configuration for privacy settings switches.
  * Maps each privacy preference key to its translation key, action, and disabled state.
  */
-export const PRIVACY_SETTINGS: Record<PrivacyType, PrivacySettingConfig> = {
+export const PRIVACY_SETTINGS: Record<ConfiguredPrivacyType, PrivacySettingConfig> = {
   showConfirm: { labelKey: 'showConfirmation', action: 'setShowConfirm' },
   blurCensored: { labelKey: 'blurCensored', action: 'setBlurCensored' },
   signOutInactive: { labelKey: 'signOutInactive', action: 'setSignOutInactive', disabled: true },

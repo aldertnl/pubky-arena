@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { debounce } from 'lodash-es';
-import type { UseMusicTrackAutocompleteParams, UseMusicTrackAutocompleteResult, MusicTrackSuggestion } from './useMusicTrackAutocomplete.types';
+import type {
+  UseMusicTrackAutocompleteParams,
+  UseMusicTrackAutocompleteResult,
+  MusicTrackSuggestion,
+} from './useMusicTrackAutocomplete.types';
 import {
   MUSIC_TRACK_AUTOCOMPLETE_CACHE_TTL_MS,
   MUSIC_TRACK_AUTOCOMPLETE_DEBOUNCE_MS,

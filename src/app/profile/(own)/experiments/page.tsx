@@ -28,7 +28,7 @@ export default function ProfileExperimentsPage() {
   return (
     <Atoms.Container className="mt-6 gap-4 lg:mt-0">
       <Atoms.Card className="gap-4">
-        <Atoms.CardHeader className="gap-3">
+        <Atoms.CardHeader>
           <Atoms.Container overrideDefaults={true} className="flex min-w-0 items-start gap-3 sm:items-center">
             <Atoms.Container
               overrideDefaults={true}
@@ -37,10 +37,13 @@ export default function ProfileExperimentsPage() {
               <Libs.FlaskConical className="size-6 text-brand" />
             </Atoms.Container>
             <Atoms.Container overrideDefaults={true} className="min-w-0 gap-1">
-              <Atoms.Typography as="h1" size="2xl" className="break-words">
+              <Atoms.Typography as="h1" size="xl" className="break-words">
+                Music Vault
+              </Atoms.Typography>
+              <Atoms.Typography as="p" className="text-sm font-medium break-words text-brand">
                 Experiments
               </Atoms.Typography>
-              <Atoms.Typography as="p" className="break-words text-sm text-muted-foreground">
+              <Atoms.Typography as="p" className="text-sm break-words text-muted-foreground">
                 Hackathon features live here first so the main profile navigation stays stable.
               </Atoms.Typography>
             </Atoms.Container>
@@ -49,7 +52,7 @@ export default function ProfileExperimentsPage() {
       </Atoms.Card>
 
       <Atoms.Card>
-        <Atoms.CardHeader className="gap-3">
+        <Atoms.CardHeader>
           <Atoms.Container
             overrideDefaults={true}
             className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
@@ -68,11 +71,6 @@ export default function ProfileExperimentsPage() {
             />
           </Atoms.Container>
         </Atoms.CardHeader>
-        <Atoms.CardContent className="pt-0">
-          <Atoms.Typography as="p" className="break-words text-sm text-muted-foreground">
-            Turn this on to show the music snapshot in the desktop profile sidebar, or off to hide it.
-          </Atoms.Typography>
-        </Atoms.CardContent>
       </Atoms.Card>
 
       {error ? (

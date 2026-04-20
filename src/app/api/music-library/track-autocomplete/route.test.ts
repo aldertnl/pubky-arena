@@ -12,9 +12,12 @@ const createRequest = ({ query }: { query?: string }) => {
   }
 
   const encodedQuery = searchParams.toString();
-  return new NextRequest(`http://localhost:3000/api/music-library/track-autocomplete${encodedQuery ? `?${encodedQuery}` : ''}`, {
-    method: 'GET',
-  });
+  return new NextRequest(
+    `http://localhost:3000/api/music-library/track-autocomplete${encodedQuery ? `?${encodedQuery}` : ''}`,
+    {
+      method: 'GET',
+    },
+  );
 };
 
 describe('API Route: /api/music-library/track-autocomplete', () => {

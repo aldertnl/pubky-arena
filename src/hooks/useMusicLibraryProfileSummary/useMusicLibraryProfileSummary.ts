@@ -8,7 +8,9 @@ interface UseMusicLibraryProfileSummaryResult {
   isLoading: boolean;
 }
 
-export function useMusicLibraryProfileSummary(pubky: Core.Pubky | null | undefined): UseMusicLibraryProfileSummaryResult {
+export function useMusicLibraryProfileSummary(
+  pubky: Core.Pubky | null | undefined,
+): UseMusicLibraryProfileSummaryResult {
   const [summary, setSummary] = useState<Core.MusicLibraryProfileSummary | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(pubky));
 

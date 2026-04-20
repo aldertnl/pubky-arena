@@ -67,8 +67,10 @@ describe('ProfileExperimentsPage', () => {
   it('toggles the right sidebar music summary setting with the switch', () => {
     render(<ProfileExperimentsPage />);
 
+    expect(screen.getByText('Music Vault')).toBeInTheDocument();
+    expect(screen.getByText('Experiments')).toBeInTheDocument();
     expect(screen.getByText('Music Snapshot Sidebar')).toBeInTheDocument();
-    expect(screen.getByText(/desktop profile sidebar/i)).toBeInTheDocument();
+    expect(screen.queryByText(/desktop profile sidebar/i)).not.toBeInTheDocument();
 
     const toggle = screen.getByRole('switch', { name: 'Show music snapshot in right sidebar' });
 

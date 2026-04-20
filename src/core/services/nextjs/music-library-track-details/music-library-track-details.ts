@@ -1,10 +1,4 @@
-import {
-  ErrorService,
-  HttpMethod,
-  httpResponseToError,
-  parseResponseOrThrow,
-  safeFetch,
-} from '@/libs';
+import { ErrorService, HttpMethod, httpResponseToError, parseResponseOrThrow, safeFetch } from '@/libs';
 import type {
   TMusicLibraryTrackDetailsParams,
   TMusicLibraryTrackDetailsResult,

@@ -105,10 +105,10 @@ function MusicLibraryListItem({
             className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
           >
             <Atoms.Container overrideDefaults={true} className="min-w-0 gap-1">
-              <Atoms.Typography as="p" className="break-words font-semibold text-foreground sm:truncate">
+              <Atoms.Typography as="p" className="font-semibold break-words text-foreground sm:truncate">
                 {item.track}
               </Atoms.Typography>
-              <Atoms.Typography as="p" className="break-words text-sm text-muted-foreground">
+              <Atoms.Typography as="p" className="text-sm break-words text-muted-foreground">
                 {item.artist}
                 {item.album ? ` · ${item.album}` : ''}
               </Atoms.Typography>

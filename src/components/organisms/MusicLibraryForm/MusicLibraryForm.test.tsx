@@ -1,8 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockUseMusicTrackAutocomplete } = vi.hoisted(() => ({
+const { mockUseMusicTrackAutocomplete, mockUseMusicAlbumCover } = vi.hoisted(() => ({
   mockUseMusicTrackAutocomplete: vi.fn(),
+  mockUseMusicAlbumCover: vi.fn(),
 }));
 
 vi.mock('@/hooks', async () => {
@@ -11,6 +12,7 @@ vi.mock('@/hooks', async () => {
   return {
     ...actual,
     useMusicTrackAutocomplete: (...args: unknown[]) => mockUseMusicTrackAutocomplete(...args),
+    useMusicAlbumCover: (...args: unknown[]) => mockUseMusicAlbumCover(...args),
   };
 });
 
@@ -32,7 +34,25 @@ describe('MusicLibraryForm', () => {
       suggestions: [],
       isLoading: false,
     });
-    global.fetch = vi.fn().mockResolvedValue(new Response('', { status: 404 }));
+    mockUseMusicAlbumCover.mockReturnValue({
+      imageUrl: null,
+      isLoading: false,
+      error: null,
+    });
+    global.fetch = vi.fn().mockImplementation((input: string | URL | Request) => {
+      const requestUrl = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+
+      if (requestUrl.includes('/api/music-library/album-cover')) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ imageUrl: null }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        );
+      }
+
+      return Promise.resolve(new Response('', { status: 404 }));
+    });
   });
 
   it('renders fields and actions', () => {
@@ -83,6 +103,25 @@ describe('MusicLibraryForm', () => {
 
     expect(onResetAction).toHaveBeenCalledTimes(1);
     expect(onSubmitAction).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders the selected result cover image when available', () => {
+    mockUseMusicAlbumCover.mockReturnValue({
+      imageUrl: 'https://coverartarchive.org/release-group/test/front-500.jpg',
+      isLoading: false,
+      error: null,
+    });
+
+    render(
+      <MusicLibraryForm
+        draft={defaultDraft}
+        onDraftFieldChange={() => {}}
+        onSubmitAction={() => {}}
+        onResetAction={() => {}}
+      />,
+    );
+
+    expect(screen.getByAltText('Modal Soul album cover')).toBeInTheDocument();
   });
 
   it('shows track suggestions and selects one on click', () => {

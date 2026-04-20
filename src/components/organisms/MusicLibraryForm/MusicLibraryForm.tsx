@@ -43,6 +43,14 @@ export function MusicLibraryForm({
 }: MusicLibraryFormProps) {
   const [searchValue, setSearchValue] = useState(() => getSearchInputValue(draft));
   const isEditingQueryRef = useRef(false);
+  const { imageUrl, isLoading: isCoverLoading } = Hooks.useMusicAlbumCover(
+    draft.artist
+      ? {
+          artist: draft.artist,
+          album: draft.album || undefined,
+        }
+      : null,
+  );
 
   useEffect(() => {
     if (draft.recordingId) {
@@ -78,14 +86,20 @@ export function MusicLibraryForm({
     onDraftFieldChange('genre', '');
 
     const details = await fetchTrackDetails(suggestion.id);
-    if (!details) {
-      return;
+    const resolvedArtist = details?.artist || suggestion.artist;
+    const resolvedAlbum = details?.album ?? suggestion.album ?? '';
+
+    if (details) {
+      onDraftFieldChange('artist', resolvedArtist);
+      onDraftFieldChange('album', resolvedAlbum);
+      onDraftFieldChange('year', details.year ?? suggestion.year ?? '');
+      onDraftFieldChange('genre', details.genre ?? '');
     }
 
-    onDraftFieldChange('artist', details.artist || suggestion.artist);
-    onDraftFieldChange('album', details.album ?? suggestion.album ?? '');
-    onDraftFieldChange('year', details.year ?? suggestion.year ?? '');
-    onDraftFieldChange('genre', details.genre ?? '');
+    void Hooks.prefetchMusicAlbumCover({
+      artist: resolvedArtist,
+      album: resolvedAlbum || undefined,
+    });
   };
 
   const metadata = [
@@ -104,7 +118,7 @@ export function MusicLibraryForm({
   };
 
   return (
-    <section className="min-w-0 w-full space-y-4">
+    <section className="w-full min-w-0 space-y-4">
       <Atoms.Container overrideDefaults={true} className="gap-1">
         <Atoms.Typography as="h2" className="text-base font-semibold text-foreground">
           Add Music
@@ -134,26 +148,49 @@ export function MusicLibraryForm({
         {metadata.length > 0 ? (
           <div className="rounded-lg border bg-muted/30 p-4">
             <Atoms.Container overrideDefaults={true} className="gap-3">
-              <Atoms.Container overrideDefaults={true} className="gap-1">
-                <Atoms.Typography as="p" className="text-sm font-medium text-foreground">
-                  Selected result
-                </Atoms.Typography>
-                <Atoms.Typography as="p" className="text-xs text-muted-foreground">
-                  Metadata comes from the search result and track details lookup.
-                </Atoms.Typography>
-              </Atoms.Container>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {metadata.map((entry) => (
-                  <Atoms.Container key={entry.label} overrideDefaults={true} className="gap-1">
-                    <Atoms.Typography as="span" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      {entry.label}
+              <Atoms.Container overrideDefaults={true} className="flex items-start gap-3">
+                <div className="relative size-16 shrink-0 overflow-hidden rounded-full border bg-background">
+                  {imageUrl ? (
+                    <Atoms.Image
+                      fill
+                      src={imageUrl}
+                      alt={`${draft.album || draft.track} album cover`}
+                      className="object-cover"
+                      sizes="64px"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center px-2 text-center text-[11px] font-medium text-muted-foreground">
+                      {isCoverLoading ? 'Loading cover...' : 'No cover'}
+                    </div>
+                  )}
+                </div>
+
+                <Atoms.Container overrideDefaults={true} className="min-w-0 flex-1 gap-3">
+                  <Atoms.Container overrideDefaults={true} className="gap-1">
+                    <Atoms.Typography as="p" className="text-sm font-medium text-foreground">
+                      Selected result
                     </Atoms.Typography>
-                    <Atoms.Typography as="p" className="break-words text-sm text-foreground">
-                      {entry.value}
+                    <Atoms.Typography as="p" className="text-xs text-muted-foreground">
+                      Metadata comes from the search result and track details lookup.
                     </Atoms.Typography>
                   </Atoms.Container>
-                ))}
-              </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {metadata.map((entry) => (
+                      <Atoms.Container key={entry.label} overrideDefaults={true} className="gap-1">
+                        <Atoms.Typography
+                          as="span"
+                          className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                        >
+                          {entry.label}
+                        </Atoms.Typography>
+                        <Atoms.Typography as="p" className="text-sm break-words text-foreground">
+                          {entry.value}
+                        </Atoms.Typography>
+                      </Atoms.Container>
+                    ))}
+                  </div>
+                </Atoms.Container>
+              </Atoms.Container>
             </Atoms.Container>
           </div>
         ) : null}
@@ -205,7 +242,13 @@ export function MusicLibraryForm({
   );
 }
 
-function TrackAutocompleteInput({ value, placeholder, disabled, onChange, onSuggestionSelect }: TrackAutocompleteInputProps) {
+function TrackAutocompleteInput({
+  value,
+  placeholder,
+  disabled,
+  onChange,
+  onSuggestionSelect,
+}: TrackAutocompleteInputProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -325,8 +368,8 @@ function TrackAutocompleteInput({ value, placeholder, disabled, onChange, onSugg
                     onMouseEnter={() => setSelectedIndex(index)}
                     onClick={() => selectSuggestion(suggestion)}
                   >
-                    <span className="break-words text-sm font-medium text-foreground">{suggestion.track}</span>
-                    {meta ? <span className="break-words text-xs text-muted-foreground">{meta}</span> : null}
+                    <span className="text-sm font-medium break-words text-foreground">{suggestion.track}</span>
+                    {meta ? <span className="text-xs break-words text-muted-foreground">{meta}</span> : null}
                   </button>
                 );
               })}

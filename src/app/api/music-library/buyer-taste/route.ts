@@ -51,10 +51,7 @@ export async function GET() {
       }),
     );
 
-    return NextResponse.json(
-      { records: records.filter(Boolean) },
-      { headers: CORS_HEADERS },
-    );
+    return NextResponse.json({ records: records.filter(Boolean) }, { headers: CORS_HEADERS });
   } catch (error) {
     return Libs.handleApiError(error, 'api.music-library.buyer-taste.GET', {
       unknownErrorMessage: 'Failed to fetch buyer taste records',

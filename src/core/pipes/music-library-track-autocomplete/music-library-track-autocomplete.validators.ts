@@ -7,7 +7,9 @@ export const MUSIC_LIBRARY_TRACK_AUTOCOMPLETE_MIN_QUERY_LENGTH = 3;
 export class MusicLibraryTrackAutocompleteValidators {
   private constructor() {}
 
-  static validate(params: Partial<Core.TMusicLibraryTrackAutocompleteParams>): Core.TMusicLibraryTrackAutocompleteParams {
+  static validate(
+    params: Partial<Core.TMusicLibraryTrackAutocompleteParams>,
+  ): Core.TMusicLibraryTrackAutocompleteParams {
     const query = params.query?.trim();
 
     if (!query) {

@@ -5,7 +5,7 @@ import * as Atoms from '@/atoms';
 import * as Molecules from '@/molecules';
 import * as Hooks from '@/hooks';
 import * as Providers from '@/providers';
-import { ProfilePageHeader } from '@/organisms';
+import { MusicLibraryProfileSummary, ProfilePageHeader } from '@/organisms';
 import { MAX_SIDEBAR_TAGS } from '../ProfilePageSidebar/ProfilePageSidebar.constants';
 
 /**
@@ -74,7 +74,7 @@ export function ProfileProfile() {
         pubky={pubky ?? ''}
       />
 
-      <Organisms.MusicLibraryProfileSummary />
+      <MusicLibraryProfileSummary />
 
       {/* Links section */}
       <Molecules.ProfilePageLinks links={profile?.links} isOwnProfile={isOwnProfile} />

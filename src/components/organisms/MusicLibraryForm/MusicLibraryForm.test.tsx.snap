@@ -61,109 +61,128 @@ exports[`MusicLibraryForm - Snapshots > matches snapshot with saved draft availa
         data-testid="container"
       >
         <div
-          class="gap-1"
+          class="flex items-start gap-3"
           data-testid="container"
         >
-          <p
-            class="text-sm font-medium text-foreground"
-            data-testid="typography"
-          >
-            Selected result
-          </p>
-          <p
-            class="font-medium text-xs text-muted-foreground"
-            data-testid="typography"
-          >
-            Metadata comes from the search result and track details lookup.
-          </p>
-        </div>
-        <div
-          class="grid gap-3 sm:grid-cols-2"
-        >
           <div
-            class="gap-1"
-            data-testid="container"
+            class="relative size-16 shrink-0 overflow-hidden rounded-full border bg-background"
           >
-            <span
-              class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-              data-testid="typography"
+            <div
+              class="flex h-full w-full items-center justify-center px-2 text-center text-[11px] font-medium text-muted-foreground"
             >
-              Artist
-            </span>
-            <p
-              class="font-medium break-words text-sm text-foreground"
-              data-testid="typography"
-            >
-              Nujabes
-            </p>
+              No cover
+            </div>
           </div>
           <div
-            class="gap-1"
+            class="min-w-0 flex-1 gap-3"
             data-testid="container"
           >
-            <span
-              class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-              data-testid="typography"
+            <div
+              class="gap-1"
+              data-testid="container"
             >
-              Track
-            </span>
-            <p
-              class="font-medium break-words text-sm text-foreground"
-              data-testid="typography"
+              <p
+                class="text-sm font-medium text-foreground"
+                data-testid="typography"
+              >
+                Selected result
+              </p>
+              <p
+                class="font-medium text-xs text-muted-foreground"
+                data-testid="typography"
+              >
+                Metadata comes from the search result and track details lookup.
+              </p>
+            </div>
+            <div
+              class="grid gap-3 sm:grid-cols-2"
             >
-              Feather
-            </p>
-          </div>
-          <div
-            class="gap-1"
-            data-testid="container"
-          >
-            <span
-              class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-              data-testid="typography"
-            >
-              Album
-            </span>
-            <p
-              class="font-medium break-words text-sm text-foreground"
-              data-testid="typography"
-            >
-              Modal Soul
-            </p>
-          </div>
-          <div
-            class="gap-1"
-            data-testid="container"
-          >
-            <span
-              class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-              data-testid="typography"
-            >
-              Year
-            </span>
-            <p
-              class="font-medium break-words text-sm text-foreground"
-              data-testid="typography"
-            >
-              2005
-            </p>
-          </div>
-          <div
-            class="gap-1"
-            data-testid="container"
-          >
-            <span
-              class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-              data-testid="typography"
-            >
-              Genre
-            </span>
-            <p
-              class="font-medium break-words text-sm text-foreground"
-              data-testid="typography"
-            >
-              Hip-hop
-            </p>
+              <div
+                class="gap-1"
+                data-testid="container"
+              >
+                <span
+                  class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                  data-testid="typography"
+                >
+                  Artist
+                </span>
+                <p
+                  class="font-medium break-words text-sm text-foreground"
+                  data-testid="typography"
+                >
+                  Nujabes
+                </p>
+              </div>
+              <div
+                class="gap-1"
+                data-testid="container"
+              >
+                <span
+                  class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                  data-testid="typography"
+                >
+                  Track
+                </span>
+                <p
+                  class="font-medium break-words text-sm text-foreground"
+                  data-testid="typography"
+                >
+                  Feather
+                </p>
+              </div>
+              <div
+                class="gap-1"
+                data-testid="container"
+              >
+                <span
+                  class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                  data-testid="typography"
+                >
+                  Album
+                </span>
+                <p
+                  class="font-medium break-words text-sm text-foreground"
+                  data-testid="typography"
+                >
+                  Modal Soul
+                </p>
+              </div>
+              <div
+                class="gap-1"
+                data-testid="container"
+              >
+                <span
+                  class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                  data-testid="typography"
+                >
+                  Year
+                </span>
+                <p
+                  class="font-medium break-words text-sm text-foreground"
+                  data-testid="typography"
+                >
+                  2005
+                </p>
+              </div>
+              <div
+                class="gap-1"
+                data-testid="container"
+              >
+                <span
+                  class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                  data-testid="typography"
+                >
+                  Genre
+                </span>
+                <p
+                  class="font-medium break-words text-sm text-foreground"
+                  data-testid="typography"
+                >
+                  Hip-hop
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
