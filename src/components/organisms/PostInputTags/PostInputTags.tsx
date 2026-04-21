@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
 
 import * as Atoms from '@/atoms';
 import * as Molecules from '@/molecules';
@@ -13,6 +12,7 @@ export function PostInputTags({ tags, onTagsChange, maxTags = POST_MAX_TAGS, dis
 
   const isAtLimit = tags.length >= maxTags;
   const isDisabled = disabled || isAtLimit;
+  const inputWidth = isAtLimit ? 162 : 130;
 
   const handleTagAdd = (tag: string) => {
     // Duplicate check is handled by useTagInput internally
@@ -31,43 +31,39 @@ export function PostInputTags({ tags, onTagsChange, maxTags = POST_MAX_TAGS, dis
   return (
     <Atoms.Container overrideDefaults className="flex flex-col gap-1">
       <Atoms.Container overrideDefaults className="flex flex-wrap items-center gap-2">
-        <AnimatePresence mode="wait" initial={false}>
-          {/* Add tag input - keep visible but disabled during loading */}
-          {isAddingTag ? (
-            <motion.div
-              key="tag-input"
-              initial={{ opacity: 0.5 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0.5 }}
-              className="shrink-0"
-            >
-              <Molecules.TagInput
-                onTagAdd={handleTagAdd}
-                existingTags={tags.map((tag) => ({ label: tag }))}
-                showCloseButton={!disabled}
-                onClose={handleCloseInput}
-                disabled={disabled}
-                maxTags={maxTags}
-                currentTagsCount={tags.length}
-                onBlur={disabled ? undefined : handleInputBlur}
-                enableApiSuggestions
-                excludeFromApiSuggestions={tags}
-                addOnSuggestionClick
-                className="w-42 shrink-0"
-              />
-            </motion.div>
-          ) : (
-            /* Add button - disabled when at limit or disabled */
-            <motion.div key="add-button" initial={{ opacity: 0.5 }} animate={{ opacity: 1 }} exit={{ opacity: 0.5 }}>
-              <Molecules.PostTagAddButton
-                onClick={() => {
-                  setIsAddingTag(true);
-                }}
-                disabled={isDisabled}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <Molecules.TagInputToggle
+          showInput={isAddingTag}
+          widthByState={{ input: inputWidth, addButton: 34 }}
+          containerClassName="h-8"
+          inputWrapperClassName="w-full"
+          addButtonWrapperClassName="inline-flex h-full w-full items-center justify-center"
+          inputContent={
+            <Molecules.TagInput
+              onTagAdd={handleTagAdd}
+              existingTags={tags.map((tag) => ({ label: tag }))}
+              showCloseButton={!disabled}
+              onClose={handleCloseInput}
+              disabled={disabled}
+              maxTags={maxTags}
+              currentTagsCount={tags.length}
+              onBlur={disabled ? undefined : handleInputBlur}
+              enableApiSuggestions
+              excludeFromApiSuggestions={tags}
+              addOnSuggestionClick
+              containerVariant="plain"
+              className="w-full shrink-0"
+            />
+          }
+          addButtonContent={
+            <Molecules.PostTagAddButton
+              onClick={() => {
+                setIsAddingTag(true);
+              }}
+              disabled={isDisabled}
+              variant="plain"
+            />
+          }
+        />
       </Atoms.Container>
     </Atoms.Container>
   );

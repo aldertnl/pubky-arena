@@ -8,6 +8,38 @@ import type { TagWithAvatars } from '@/molecules/TaggedItem/TaggedItem.types';
 const mockHandleTagToggle = vi.fn();
 const mockHandleTagAdd = vi.fn().mockResolvedValue({ success: true });
 const mockIsViewerTagger = vi.fn((tag: TagWithAvatars) => tag.relationship ?? false);
+const { mockTagInputToggle, mockTagInput, mockPostTagAddButton } = vi.hoisted(() => ({
+  mockTagInputToggle: vi.fn(
+    ({
+      showInput,
+      inputContent,
+      addButtonContent,
+    }: {
+      showInput: boolean;
+      inputContent: React.ReactNode;
+      addButtonContent: React.ReactNode;
+    }) => <div data-testid="tag-input-toggle">{showInput ? inputContent : addButtonContent}</div>,
+  ),
+  mockTagInput: vi.fn(({ onTagAdd }: { onTagAdd: (tag: string) => void }) => (
+    <input
+      data-testid="tag-input"
+      onChange={(e) => e.target.value && onTagAdd(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          const target = e.target as HTMLInputElement;
+          if (target.value) onTagAdd(target.value);
+        }
+      }}
+    />
+  )),
+  mockPostTagAddButton: vi.fn(
+    ({ onClick, variant, disabled }: { onClick: () => void; variant?: string; disabled?: boolean }) => (
+      <button data-testid="post-tag-add-button" data-variant={variant} onClick={onClick} disabled={disabled}>
+        Add
+      </button>
+    ),
+  ),
+}));
 
 vi.mock('@/hooks', () => ({
   useEntityTags: vi.fn((_entityId, _taggedKind, options) => ({
@@ -70,23 +102,9 @@ vi.mock('@/molecules', () => ({
       )}
     </button>
   ),
-  TagInput: ({ onTagAdd }: { onTagAdd: (tag: string) => void }) => (
-    <input
-      data-testid="tag-input"
-      onChange={(e) => e.target.value && onTagAdd(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          const target = e.target as HTMLInputElement;
-          if (target.value) onTagAdd(target.value);
-        }
-      }}
-    />
-  ),
-  PostTagAddButton: ({ onClick }: { onClick: () => void }) => (
-    <button data-testid="post-tag-add-button" onClick={onClick}>
-      Add
-    </button>
-  ),
+  TagInput: mockTagInput,
+  PostTagAddButton: mockPostTagAddButton,
+  TagInputToggle: mockTagInputToggle,
   PostTagPopoverWrapper: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
@@ -212,6 +230,118 @@ describe('ClickableTagsList', () => {
 
       expect(screen.queryByTestId('post-tag-add-button')).not.toBeInTheDocument();
     });
+
+    it('switches between input and add button when parent props change', () => {
+      const { rerender } = render(
+        <ClickableTagsList
+          taggedId="post-123"
+          taggedKind={Core.TagKind.POST}
+          tags={mockTags}
+          showInput={true}
+          showAddButton={false}
+        />,
+      );
+
+      expect(screen.getByTestId('tag-input')).toBeInTheDocument();
+      expect(screen.queryByTestId('post-tag-add-button')).not.toBeInTheDocument();
+
+      rerender(
+        <ClickableTagsList
+          taggedId="post-123"
+          taggedKind={Core.TagKind.POST}
+          tags={mockTags}
+          showInput={false}
+          showAddButton={true}
+        />,
+      );
+
+      expect(screen.queryByTestId('tag-input')).not.toBeInTheDocument();
+      expect(screen.getByTestId('post-tag-add-button')).toBeInTheDocument();
+    });
+
+    it('uses shared width animation config in toggle', () => {
+      render(
+        <ClickableTagsList
+          taggedId="post-123"
+          taggedKind={Core.TagKind.POST}
+          tags={mockTags}
+          maxTags={10}
+          showInput={true}
+          showAddButton={false}
+        />,
+      );
+
+      expect(mockTagInputToggle).toHaveBeenCalled();
+      expect(mockTagInputToggle.mock.calls[0]?.[0]).toEqual(
+        expect.objectContaining({
+          widthByState: { input: 130, addButton: 34 },
+          addButtonWrapperClassName: 'inline-flex h-full w-full items-center justify-center',
+        }),
+      );
+    });
+
+    it('uses expanded input width when limit is reached', () => {
+      render(
+        <ClickableTagsList
+          taggedId="post-123"
+          taggedKind={Core.TagKind.POST}
+          tags={mockTags}
+          maxTags={3}
+          showInput={true}
+          showAddButton={false}
+        />,
+      );
+
+      expect(mockTagInputToggle).toHaveBeenCalled();
+      expect(mockTagInputToggle.mock.calls[0]?.[0]).toEqual(
+        expect.objectContaining({
+          widthByState: { input: 162, addButton: 34 },
+        }),
+      );
+    });
+
+    it('passes plain TagInput variant and max-tag metadata', () => {
+      render(
+        <ClickableTagsList
+          taggedId="post-123"
+          taggedKind={Core.TagKind.POST}
+          tags={mockTags}
+          maxTags={3}
+          showInput={true}
+        />,
+      );
+
+      expect(mockTagInput).toHaveBeenCalledWith(
+        expect.objectContaining({
+          containerVariant: 'plain',
+          maxTags: 3,
+          currentTagsCount: 3,
+          disabled: true,
+        }),
+        undefined,
+      );
+    });
+
+    it('disables add button at max tags for authenticated users', () => {
+      render(
+        <ClickableTagsList
+          taggedId="post-123"
+          taggedKind={Core.TagKind.POST}
+          tags={mockTags}
+          maxTags={3}
+          showAddButton={true}
+        />,
+      );
+
+      expect(screen.getByTestId('post-tag-add-button')).toBeDisabled();
+      expect(mockPostTagAddButton).toHaveBeenCalledWith(
+        expect.objectContaining({
+          variant: 'plain',
+          disabled: true,
+        }),
+        undefined,
+      );
+    });
   });
 
   describe('Interactions', () => {
@@ -265,6 +395,7 @@ describe('ClickableTagsList', () => {
           taggedKind={Core.TagKind.POST}
           tags={mockTags}
           showAddButton={true}
+          maxTags={10}
           onAddButtonClick={addButtonHandler}
         />,
       );
@@ -283,6 +414,7 @@ describe('ClickableTagsList', () => {
           taggedKind={Core.TagKind.POST}
           tags={mockTags}
           showAddButton={true}
+          maxTags={10}
           addMode={true}
         />,
       );
@@ -328,7 +460,13 @@ describe('ClickableTagsList', () => {
 
     it('matches snapshot with add button', () => {
       const { container } = render(
-        <ClickableTagsList taggedId="post-123" taggedKind={Core.TagKind.POST} tags={mockTags} showAddButton={true} />,
+        <ClickableTagsList
+          taggedId="post-123"
+          taggedKind={Core.TagKind.POST}
+          tags={mockTags}
+          maxTags={10}
+          showAddButton={true}
+        />,
       );
 
       expect(container).toMatchSnapshot();

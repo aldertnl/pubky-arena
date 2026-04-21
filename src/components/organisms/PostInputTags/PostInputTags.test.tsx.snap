@@ -11,9 +11,12 @@ exports[`PostInputTags - Snapshots > matches snapshot with empty tags 1`] = `
     data-override-defaults="true"
     data-testid="container"
   >
-    <div>
+    <div
+      data-testid="tag-input-toggle"
+    >
       <button
         data-testid="add-tag-button"
+        data-variant="plain"
       >
         +
       </button>
@@ -34,9 +37,10 @@ exports[`PostInputTags - Snapshots > matches snapshot with input open 1`] = `
     data-testid="container"
   >
     <div
-      class="shrink-0"
+      data-testid="tag-input-toggle"
     >
       <div
+        data-container-variant="plain"
         data-testid="tag-input-wrapper"
       >
         <input
@@ -72,9 +76,12 @@ exports[`PostInputTags - Snapshots > matches snapshot with tags 1`] = `
     data-override-defaults="true"
     data-testid="container"
   >
-    <div>
+    <div
+      data-testid="tag-input-toggle"
+    >
       <button
         data-testid="add-tag-button"
+        data-variant="plain"
       >
         +
       </button>

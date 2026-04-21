@@ -30,6 +30,7 @@ export const TagInput = forwardRef<TagInputHandle, TagInputProps>(function TagIn
     excludeFromApiSuggestions = [],
     addOnSuggestionClick = false,
     autoFocus = false,
+    containerVariant = 'dashed',
     className,
   },
   ref,
@@ -45,6 +46,7 @@ export const TagInput = forwardRef<TagInputHandle, TagInputProps>(function TagIn
 
   const isAtLimit = maxTags !== undefined && currentTagsCount >= maxTags;
   const isDisabled = disabled || isAtLimit;
+  const isDashedVariant = containerVariant === 'dashed';
 
   // Use viewerTags for duplicate checking, fallback to existingTags
   const tagsForDuplicateCheck = viewerTags ?? existingTags;
@@ -161,7 +163,8 @@ export const TagInput = forwardRef<TagInputHandle, TagInputProps>(function TagIn
             ref={containerRef}
             overrideDefaults={true}
             className={Libs.cn(
-              'relative flex h-8 w-full items-center gap-1 rounded-md border border-dashed border-input pr-1 pl-3 shadow-sm transition-all duration-300',
+              'relative flex h-8 w-full items-center gap-1 rounded-md pr-1 pl-3',
+              isDashedVariant && 'border border-dashed border-input shadow-sm transition-all duration-300',
               onClick && 'cursor-pointer',
               className,
               isAtLimit && 'w-40',
@@ -197,7 +200,8 @@ export const TagInput = forwardRef<TagInputHandle, TagInputProps>(function TagIn
               onMouseDown={preventBlur}
               onClick={() => setShowEmojiPicker(true)}
               className={Libs.cn(
-                'shadow-xs-dark hover:shadow-xs-dark inline-flex size-5 cursor-pointer items-center justify-center rounded-full p-1',
+                'inline-flex size-5 cursor-pointer items-center justify-center rounded-full p-1',
+                isDashedVariant && 'shadow-xs-dark hover:shadow-xs-dark',
                 isDisabled && onClick && 'pointer-events-none',
               )}
               aria-label="Open emoji picker"

@@ -3,27 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PostInputTags } from './PostInputTags';
 import { POST_MAX_TAGS, TAG_MAX_LENGTH } from '@/config';
 
-vi.mock('motion/react', () => ({
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  motion: {
-    div: ({
-      children,
-      initial: _initial,
-      animate: _animate,
-      exit: _exit,
-      transition: _transition,
-      ...props
-    }: {
-      children: React.ReactNode;
-      initial?: unknown;
-      animate?: unknown;
-      exit?: unknown;
-      transition?: unknown;
-      [key: string]: unknown;
-    }) => <div {...props}>{children}</div>,
-  },
-}));
-
 // Mock state for TagInput simulation
 let mockTagInputValue = '';
 let mockShowEmojiPicker = false;
@@ -62,11 +41,13 @@ vi.mock('@/atoms', () => ({
 }));
 
 vi.mock('@/molecules', () => ({
-  PostTagAddButton: vi.fn(({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) => (
-    <button data-testid="add-tag-button" onClick={onClick} disabled={disabled}>
-      +
-    </button>
-  )),
+  PostTagAddButton: vi.fn(
+    ({ onClick, disabled, variant }: { onClick: () => void; disabled?: boolean; variant?: string }) => (
+      <button data-testid="add-tag-button" data-variant={variant} onClick={onClick} disabled={disabled}>
+        +
+      </button>
+    ),
+  ),
   TagInput: vi.fn(
     ({
       onTagAdd,
@@ -78,6 +59,7 @@ vi.mock('@/molecules', () => ({
       maxTags,
       currentTagsCount,
       onBlur,
+      containerVariant,
     }: {
       onTagAdd: (tag: string) => void;
       placeholder?: string;
@@ -89,10 +71,11 @@ vi.mock('@/molecules', () => ({
       currentTagsCount?: number;
       limitReachedPlaceholder?: string;
       onBlur?: () => void;
+      containerVariant?: string;
     }) => {
       const isAtLimit = maxTags !== undefined && (currentTagsCount ?? 0) >= maxTags;
       return (
-        <div data-testid="tag-input-wrapper">
+        <div data-testid="tag-input-wrapper" data-container-variant={containerVariant}>
           <input
             data-testid="tag-input"
             value={mockTagInputValue}
@@ -150,6 +133,15 @@ vi.mock('@/molecules', () => ({
       );
     },
   ),
+  TagInputToggle: ({
+    showInput,
+    inputContent,
+    addButtonContent,
+  }: {
+    showInput: boolean;
+    inputContent: React.ReactNode;
+    addButtonContent: React.ReactNode;
+  }) => <div data-testid="tag-input-toggle">{showInput ? inputContent : addButtonContent}</div>,
 }));
 
 vi.mock('@/libs', async () => {
@@ -249,6 +241,15 @@ describe('PostInputTags', () => {
     render(<PostInputTags tags={[]} onTagsChange={mockOnTagsChange} disabled={true} />);
     const addButton = screen.getByTestId('add-tag-button');
     expect(addButton).toBeDisabled();
+  });
+
+  it('uses plain variants for both states', () => {
+    render(<PostInputTags tags={[]} onTagsChange={mockOnTagsChange} />);
+
+    expect(screen.getByTestId('add-tag-button')).toHaveAttribute('data-variant', 'plain');
+
+    fireEvent.click(screen.getByTestId('add-tag-button'));
+    expect(screen.getByTestId('tag-input-wrapper')).toHaveAttribute('data-container-variant', 'plain');
   });
 
   // todo: enable once tag input has max length implemented, see https://github.com/pubky/franky/issues/519
