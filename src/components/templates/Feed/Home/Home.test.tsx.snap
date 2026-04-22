@@ -59,10 +59,19 @@ exports[`Home - Snapshots > matches snapshot 1`] = `
       data-testid="right-drawer-mobile"
     >
       <div
-        data-classname="lg:hidden"
-        data-testid="feed-navigation"
+        class="mx-auto w-full flex-col flex gap-6 lg:hidden"
+        data-testid="container"
       >
-        FeedNavigation
+        <div
+          data-testid="feed-navigation"
+        >
+          FeedNavigation
+        </div>
+        <div
+          data-testid="invite-friend"
+        >
+          InviteFriend
+        </div>
       </div>
     </div>
     <div

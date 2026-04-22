@@ -1,3 +1,4 @@
+import * as Atoms from '@/atoms';
 import * as Organisms from '@/organisms';
 import { TIMELINE_FEED_VARIANT } from '@/config';
 import { POST_INPUT_VARIANT } from '@/organisms/PostInput/PostInput.constants';
@@ -15,7 +16,12 @@ export function Home() {
         leftDrawerContentMobile={
           <Organisms.HomeFeedDrawerMobile allowVisualLayout feedVariant={TIMELINE_FEED_VARIANT.HOME} />
         }
-        rightDrawerContentMobile={<Organisms.FeedNavigation className="lg:hidden" />}
+        rightDrawerContentMobile={
+          <Atoms.Container className="gap-6 lg:hidden">
+            <Organisms.FeedNavigation />
+            <Organisms.InviteFriend />
+          </Atoms.Container>
+        }
       >
         <Organisms.AlertBackup />
         <Organisms.FeedNavigation className="hidden lg:flex" />
