@@ -9,6 +9,15 @@ vi.mock('@/molecules', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
+const mockLoggerWarn = vi.fn();
+const mockLoggerError = vi.fn();
+vi.mock('@/libs', () => ({
+  Logger: {
+    warn: (...args: unknown[]) => mockLoggerWarn(...args),
+    error: (...args: unknown[]) => mockLoggerError(...args),
+  },
+}));
+
 // Mock core
 vi.mock('@/core', () => ({
   FileController: {
@@ -20,6 +29,14 @@ vi.mock('@/core', () => ({
     FEED: 'feed',
     SMALL: 'small',
   },
+  CompositeIdDomain: {
+    FILES: 'files',
+  },
+  buildCompositeIdFromPubkyUri: vi.fn(({ uri }: { uri: string }) => {
+    const match = uri.match(/^pubky:\/\/([^/]+)\/pub\/pubky\.app\/files\/([^/]+)$/);
+    if (!match) return null;
+    return `${match[1]}:${match[2]}`;
+  }),
 }));
 
 const mockGetMetadata = vi.mocked(Core.FileController.getMetadata);
@@ -66,6 +83,8 @@ describe('usePostArticle', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetFileUrl.mockImplementation(({ fileId, variant }) => `https://cdn.example.com/${fileId}/${variant}`);
+    mockLoggerWarn.mockReset();
+    mockLoggerError.mockReset();
   });
 
   describe('Content Parsing', () => {
@@ -243,10 +262,17 @@ describe('usePostArticle', () => {
       );
 
       await waitFor(() => {
-        expect(mockGetMetadata).toHaveBeenCalled();
+        expect(result.current.coverImage).toEqual({
+          src: 'https://cdn.example.com/user123:file456/feed',
+          alt: 'Article cover image',
+        });
       });
-
-      expect(result.current.coverImage).toBeNull();
+      expect(mockLoggerWarn).toHaveBeenCalledWith(
+        '[usePostArticle] Cover image metadata unavailable, using URI fallback',
+        expect.objectContaining({
+          attachmentUri: 'pubky://user123/pub/pubky.app/files/file456',
+        }),
+      );
     });
 
     it('uses first attachment when multiple attachments provided', async () => {
@@ -292,7 +318,7 @@ describe('usePostArticle', () => {
       expect(result.current.body).toBe('');
     });
 
-    it('shows toast on metadata fetch error', async () => {
+    it('uses URI fallback on metadata fetch error when attachment URI is valid', async () => {
       const content = JSON.stringify({ title: 'Test', body: 'Content' });
       const attachments = ['pubky://user123/pub/pubky.app/files/file456'];
 
@@ -307,14 +333,50 @@ describe('usePostArticle', () => {
       );
 
       await waitFor(() => {
-        expect(mockToast).toHaveBeenCalled();
+        expect(result.current.coverImage).toEqual({
+          src: 'https://cdn.example.com/user123:file456/feed',
+          alt: 'Article cover image',
+        });
       });
 
-      expect(mockToast).toHaveBeenCalledWith({
+      expect(mockToast).not.toHaveBeenCalledWith({
         title: 'Error',
         description: 'Failed to load article cover image',
       });
+      expect(mockLoggerWarn).toHaveBeenCalledWith(
+        '[usePostArticle] Failed to read cover metadata, using URI fallback',
+        expect.objectContaining({
+          attachmentUri: 'pubky://user123/pub/pubky.app/files/file456',
+        }),
+      );
+    });
+
+    it('shows toast on metadata fetch error when URI fallback is invalid', async () => {
+      const content = JSON.stringify({ title: 'Test', body: 'Content' });
+      const attachments = ['invalid-file-uri'];
+
+      mockGetMetadata.mockRejectedValue(new Error('Network error'));
+
+      const { result } = renderHook(() =>
+        usePostArticle({
+          content,
+          attachments,
+          coverImageVariant: Core.FileVariant.FEED,
+        }),
+      );
+
+      await waitFor(() => {
+        expect(mockToast).toHaveBeenCalledWith({
+          title: 'Error',
+          description: 'Failed to load article cover image',
+        });
+      });
+
       expect(result.current.coverImage).toBeNull();
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        '[usePostArticle] Failed to parse cover image URI',
+        expect.objectContaining({ attachmentUri: 'invalid-file-uri' }),
+      );
     });
   });
 
@@ -385,6 +447,34 @@ describe('usePostArticle', () => {
           fileId: 'user123:file1',
           variant: Core.FileVariant.MAIN,
         });
+      });
+    });
+
+    it('clears cover image when attachments become empty', async () => {
+      const content = JSON.stringify({ title: 'Test', body: 'Content' });
+      const initialAttachments = ['pubky://user123/pub/pubky.app/files/file1'];
+      const mockMetadata = createMockImageMetadata('user123:file1', 'image.jpg');
+
+      mockGetMetadata.mockResolvedValue([mockMetadata]);
+
+      const { result, rerender } = renderHook(
+        ({ attachments }) =>
+          usePostArticle({
+            content,
+            attachments,
+            coverImageVariant: Core.FileVariant.FEED,
+          }),
+        { initialProps: { attachments: initialAttachments as string[] | null } },
+      );
+
+      await waitFor(() => {
+        expect(result.current.coverImage).not.toBeNull();
+      });
+
+      rerender({ attachments: [] });
+
+      await waitFor(() => {
+        expect(result.current.coverImage).toBeNull();
       });
     });
   });

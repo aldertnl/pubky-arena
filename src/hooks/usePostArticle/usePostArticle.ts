@@ -4,6 +4,7 @@ import type { PostDetailsModel } from '@/core';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import * as Core from '@/core';
+import * as Libs from '@/libs';
 import * as Molecules from '@/molecules';
 import type { ArticleJSON } from './usePostArticle.types';
 
@@ -71,25 +72,94 @@ export function usePostArticle({
   useEffect(() => {
     let cancelled = false;
 
+    const resolveCoverImageFromUri = (attachmentUri: string): CoverImage | null => {
+      const compositeId = Core.buildCompositeIdFromPubkyUri({
+        uri: attachmentUri,
+        domain: Core.CompositeIdDomain.FILES,
+      });
+
+      if (!compositeId) {
+        Libs.Logger.error('[usePostArticle] Failed to parse cover image URI', { attachmentUri });
+        return null;
+      }
+
+      try {
+        const src = Core.FileController.getFileUrl({ fileId: compositeId, variant: coverImageVariant });
+        return { src, alt: 'Article cover image' };
+      } catch (error) {
+        Libs.Logger.error('[usePostArticle] Failed to build cover image URL', {
+          attachmentUri,
+          coverImageVariant,
+          error,
+        });
+        return null;
+      }
+    };
+
     const extractCoverImage = async () => {
+      setCoverImage(null);
+
       if (!attachments?.length) return;
 
       try {
-        const attachment = (await Core.FileController.getMetadata({ fileAttachments: attachments }))[0];
+        const attachmentMetadata = await Core.FileController.getMetadata({ fileAttachments: attachments });
 
         if (cancelled) return;
 
-        if (attachment && attachment.content_type.startsWith('image')) {
-          const src = Core.FileController.getFileUrl({ fileId: attachment.id, variant: coverImageVariant });
-          const coverImage = { src, alt: attachment.name };
-          setCoverImage(coverImage);
+        const metadataByUri = new Map(attachmentMetadata.map((metadata) => [metadata.uri, metadata]));
+        const firstImageAttachment = attachments
+          .map((uri) => metadataByUri.get(uri))
+          .find((metadata) => metadata?.content_type.startsWith('image'));
+
+        if (firstImageAttachment) {
+          const src = Core.FileController.getFileUrl({ fileId: firstImageAttachment.id, variant: coverImageVariant });
+          setCoverImage({ src, alt: firstImageAttachment.name });
+          return;
         }
-      } catch {
-        if (cancelled) return;
+
+        if (attachmentMetadata.length > 0) {
+          Libs.Logger.warn('[usePostArticle] Cover image metadata is present but not an image', {
+            attachments,
+          });
+          return;
+        }
+
+        const fallbackCoverImage = resolveCoverImageFromUri(attachments[0]);
+        if (fallbackCoverImage) {
+          Libs.Logger.warn('[usePostArticle] Cover image metadata unavailable, using URI fallback', {
+            attachmentUri: attachments[0],
+          });
+          setCoverImage(fallbackCoverImage);
+          return;
+        }
 
         toast({
           title: tToast('error'),
           description: tPost('coverImageError'),
+        });
+        Libs.Logger.error('[usePostArticle] Failed to resolve cover image from metadata and URI fallback', {
+          attachments,
+        });
+      } catch (error) {
+        if (cancelled) return;
+
+        const fallbackCoverImage = resolveCoverImageFromUri(attachments[0]);
+        if (fallbackCoverImage) {
+          Libs.Logger.warn('[usePostArticle] Failed to read cover metadata, using URI fallback', {
+            attachmentUri: attachments[0],
+            error,
+          });
+          setCoverImage(fallbackCoverImage);
+          return;
+        }
+
+        toast({
+          title: tToast('error'),
+          description: tPost('coverImageError'),
+        });
+        Libs.Logger.error('[usePostArticle] Failed to load article cover image', {
+          attachments,
+          error,
         });
       }
     };
