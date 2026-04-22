@@ -55,7 +55,7 @@ export function DialogInviteFriend({ open, onOpenChange, inviteUrl }: DialogInvi
   return (
     <Atoms.Dialog open={open} onOpenChange={onOpenChange}>
       <Atoms.DialogContent className="sm:max-w-md" hiddenTitle={t('dialogTitle')}>
-        <Atoms.Container overrideDefaults className="flex flex-col items-center gap-6 p-6">
+        <Atoms.Container overrideDefaults className="flex flex-col items-center gap-6">
           {/* Title */}
           <Atoms.Heading level={2} size="lg" className="text-center font-semibold">
             {t('dialogTitle')}

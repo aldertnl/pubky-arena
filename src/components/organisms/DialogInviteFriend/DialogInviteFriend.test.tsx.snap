@@ -11,7 +11,7 @@ exports[`DialogInviteFriend - Snapshots > matches snapshot for open dialog 1`] =
     data-testid="dialog-content"
   >
     <div
-      class="flex flex-col items-center gap-6 p-6"
+      class="flex flex-col items-center gap-6"
       data-testid="container"
     >
       <h2
