@@ -147,18 +147,22 @@ export function PostInput({
   };
 
   const isEdit = variant === POST_INPUT_VARIANT.EDIT;
+  const isArticleEdit = isEdit && Boolean(editIsArticle);
 
   const { toast } = Molecules.useToast();
 
   const hasRequiredMediaForEdit = React.useCallback(
     (nextExistingAttachments: Hooks.ExistingAttachmentMeta[], nextAttachments: File[]): boolean => {
       if (!editHadMediaAttachments) return true;
+      // Article edits can only have one banner attachment; allow temporary removal so users can replace it.
+      // Submit validation still prevents saving while no media is present.
+      if (isArticleEdit) return true;
 
       const hasExistingMedia = nextExistingAttachments.some(isMediaExistingAttachment);
       const hasNewMedia = nextAttachments.some(isMediaFile);
       return hasExistingMedia || hasNewMedia;
     },
-    [editHadMediaAttachments],
+    [editHadMediaAttachments, isArticleEdit],
   );
 
   React.useEffect(() => {

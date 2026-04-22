@@ -775,6 +775,33 @@ describe('PostInput', () => {
     expect(props.isRemoveExistingDisabled?.(0)).toBe(true);
   });
 
+  it('allows removing the last remaining existing media attachment in article edit mode', () => {
+    mockUsePostReturn.attachments = [];
+    mockEditHadMediaAttachments = true;
+    mockExistingAttachments = [
+      {
+        uri: 'pubky://test/pub/pubky.app/files/ABC',
+        name: 'existing-image.jpg',
+        type: 'image/jpeg',
+        previewUrl: 'https://cdn.test/test-user:ABC',
+      },
+    ];
+
+    render(
+      <PostInput
+        variant={POST_INPUT_VARIANT.EDIT}
+        editPostId="test-post-123"
+        editContent="Edit content"
+        editIsArticle={true}
+        editAttachments={['pubky://test/pub/pubky.app/files/ABC']}
+      />,
+    );
+
+    const latestCall = mockPostInputAttachmentsComponent.mock.calls.at(-1);
+    const props = latestCall?.[0] as MockedPostInputAttachmentsProps;
+    expect(props.isRemoveExistingDisabled?.(0)).toBe(false);
+  });
+
   it('disables remove for the last remaining new media attachment in edit mode', () => {
     mockUsePostReturn.attachments = [new File(['test'], 'replacement.png', { type: 'image/png' })];
     mockEditHadMediaAttachments = true;
@@ -813,6 +840,25 @@ describe('PostInput', () => {
         variant={POST_INPUT_VARIANT.EDIT}
         editPostId="test-post-123"
         editContent="Updated content"
+        editAttachments={['pubky://test/pub/pubky.app/files/ABC']}
+      />,
+    );
+
+    expect(screen.getByLabelText('Post')).toBeDisabled();
+  });
+
+  it('keeps submit disabled in article edit mode when no media remains', () => {
+    mockUsePostReturn.content = 'Updated article body';
+    mockUsePostReturn.attachments = [];
+    mockEditHadMediaAttachments = true;
+    mockExistingAttachments = [];
+
+    render(
+      <PostInput
+        editIsArticle={true}
+        variant={POST_INPUT_VARIANT.EDIT}
+        editPostId="test-post-123"
+        editContent="Updated article body"
         editAttachments={['pubky://test/pub/pubky.app/files/ABC']}
       />,
     );
