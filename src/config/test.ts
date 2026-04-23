@@ -34,6 +34,7 @@ process.env.NEXT_PUBLIC_EXCHANGE_RATE_API = 'https://api1.blocktank.to/api/fx/ra
 process.env.NEXT_PUBLIC_HOMEGATE_URL = 'https://localhost:5000/';
 process.env.NEXT_PUBLIC_INVITE_BASE_URL = 'https://pubky.app/invite';
 process.env.NEXT_PUBLIC_DEFAULT_HTTP_RELAY = 'http://localhost:15412/link/';
+process.env.NEXT_PUBLIC_APP_VERSION = '0.0.0-test';
 
 // Chatwoot configuration (required for feedback feature)
 process.env.BASE_URL_SUPPORT = 'https://chatwoot.example.com';
