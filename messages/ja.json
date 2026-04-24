@@ -700,15 +700,15 @@
     }
   },
   "invite": {
-    "sectionTitle": "友達を招待",
+    "sectionTitle": "招待",
     "buttonLabel": "友達を招待",
     "dialogTitle": "友達を招待",
-    "description": "この招待コードを友達に共有すると、本人確認をスキップできます。招待コードは週に2つまで発行できます。",
+    "description": "この招待リンクを友達に共有すれば、簡単かつ素早くPubkyに参加できます。",
     "copyButton": "コピー",
     "shareButton": "共有",
     "copySuccess": "招待リンクをコピーしました！",
     "shareTitle": "Pubkyで会おう",
-    "shareText": "この招待コードを使ってPubkyに参加すれば、本人確認をスキップできるよ！",
+    "shareText": "この招待コードを使えば、簡単かつ素早くPubkyに参加できるよ！",
     "fetchError": "招待コードの生成に失敗しました。もう一度お試しください。"
   },
   "report": {

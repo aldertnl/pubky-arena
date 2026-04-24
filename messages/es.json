@@ -700,15 +700,15 @@
     }
   },
   "invite": {
-    "sectionTitle": "Invitar a un amigo",
+    "sectionTitle": "Invitar",
     "buttonLabel": "Invitar a un amigo",
     "dialogTitle": "Invitar a un amigo",
-    "description": "Comparte este código de invitación con un amigo para que pueda omitir la verificación de identidad humana. Puedes generar hasta 2 códigos de invitación por semana.",
+    "description": "Comparte este enlace de invitación con un amigo para que pueda unirse a Pubky de forma rápida y sencilla.",
     "copyButton": "Copiar",
     "shareButton": "Compartir",
     "copySuccess": "¡Enlace de invitación copiado!",
     "shareTitle": "Únete a mí en Pubky",
-    "shareText": "¡Usa mi código de invitación para unirte a Pubky y saltarte la verificación!",
+    "shareText": "¡Usa mi código de invitación para unirte a Pubky de forma rápida y sencilla!",
     "fetchError": "No se pudo generar el código de invitación. Inténtalo de nuevo."
   },
   "report": {

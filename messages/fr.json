@@ -700,15 +700,15 @@
     }
   },
   "invite": {
-    "sectionTitle": "Inviter un ami",
+    "sectionTitle": "Inviter",
     "buttonLabel": "Inviter un ami",
     "dialogTitle": "Inviter un ami",
-    "description": "Partagez ce code d'invitation avec un ami pour lui permettre de passer la vérification humaine. Vous pouvez générer jusqu'à 2 codes d'invitation par semaine.",
+    "description": "Partagez ce lien d'invitation avec un ami pour qu'il puisse rejoindre Pubky rapidement et facilement.",
     "copyButton": "Copier",
     "shareButton": "Partager",
     "copySuccess": "Lien d'invitation copié !",
     "shareTitle": "Rejoins-moi sur Pubky",
-    "shareText": "Utilise mon code d'invitation pour rejoindre Pubky et passer la vérification !",
+    "shareText": "Utilise mon code d'invitation pour rejoindre Pubky rapidement et facilement !",
     "fetchError": "Impossible de générer le code d'invitation. Veuillez réessayer."
   },
   "report": {

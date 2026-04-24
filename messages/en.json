@@ -694,15 +694,15 @@
     }
   },
   "invite": {
-    "sectionTitle": "Invite a Friend",
+    "sectionTitle": "Invite",
     "buttonLabel": "Invite a Friend",
     "dialogTitle": "Invite a Friend",
-    "description": "Share this invite code with a friend to let them skip the proof-of-human verification. You can generate up to 2 invite codes per week.",
+    "description": "Share this invite link with a friend so they can join Pubky quickly and easily.",
     "copyButton": "Copy",
     "shareButton": "Share",
     "copySuccess": "Invite link copied!",
     "shareTitle": "Join me on Pubky",
-    "shareText": "Use my invite code to join Pubky and skip the verification!",
+    "shareText": "Use my invite code to join Pubky quickly and easily!",
     "fetchError": "Failed to generate invite code. Please try again."
   },
   "report": {

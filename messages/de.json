@@ -700,15 +700,15 @@
     }
   },
   "invite": {
-    "sectionTitle": "Freund einladen",
+    "sectionTitle": "Einladen",
     "buttonLabel": "Freund einladen",
     "dialogTitle": "Freund einladen",
-    "description": "Teile diesen Einladungscode mit einem Freund, damit er die Verifizierung überspringen kann. Du kannst bis zu 2 Einladungscodes pro Woche erstellen.",
+    "description": "Teile diesen Einladungslink mit einem Freund, damit er Pubky schnell und einfach beitreten kann.",
     "copyButton": "Kopieren",
     "shareButton": "Teilen",
     "copySuccess": "Einladungslink kopiert!",
     "shareTitle": "Komm zu mir auf Pubky",
-    "shareText": "Nutze meinen Einladungscode, um Pubky beizutreten und die Verifizierung zu überspringen!",
+    "shareText": "Nutze meinen Einladungscode, um Pubky schnell und einfach beizutreten!",
     "fetchError": "Einladungscode konnte nicht erstellt werden. Bitte versuche es erneut."
   },
   "report": {
