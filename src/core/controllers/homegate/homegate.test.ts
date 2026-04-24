@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as Core from '@/core';
+import { asOpaque } from '@/test-utils';
 
 describe('HomegateController', () => {
   let HomegateController: typeof import('./homegate').HomegateController;
@@ -13,9 +14,11 @@ describe('HomegateController', () => {
     });
 
     // Mock auth store to return an authenticated user by default
-    vi.spyOn(Core.useAuthStore, 'getState').mockReturnValue({
-      currentUserPubky: 'test-pubky-123',
-    } as unknown as Core.AuthStore);
+    vi.spyOn(Core.useAuthStore, 'getState').mockReturnValue(
+      asOpaque<Core.AuthStore>({
+        currentUserPubky: 'test-pubky-123',
+      }),
+    );
 
     // Import HomegateController
     const homegateModule = await import('./homegate');
@@ -42,9 +45,11 @@ describe('HomegateController', () => {
     });
 
     it('should throw validation error when user is not authenticated (pubky is null)', async () => {
-      vi.spyOn(Core.useAuthStore, 'getState').mockReturnValue({
-        currentUserPubky: null,
-      } as unknown as Core.AuthStore);
+      vi.spyOn(Core.useAuthStore, 'getState').mockReturnValue(
+        asOpaque<Core.AuthStore>({
+          currentUserPubky: null,
+        }),
+      );
 
       await expect(HomegateController.fetchInviteCode()).rejects.toThrow(
         'User must be authenticated to generate invite codes',
@@ -52,9 +57,11 @@ describe('HomegateController', () => {
     });
 
     it('should throw validation error when user is not authenticated (pubky is undefined)', async () => {
-      vi.spyOn(Core.useAuthStore, 'getState').mockReturnValue({
-        currentUserPubky: undefined,
-      } as unknown as Core.AuthStore);
+      vi.spyOn(Core.useAuthStore, 'getState').mockReturnValue(
+        asOpaque<Core.AuthStore>({
+          currentUserPubky: undefined,
+        }),
+      );
 
       await expect(HomegateController.fetchInviteCode()).rejects.toThrow(
         'User must be authenticated to generate invite codes',
