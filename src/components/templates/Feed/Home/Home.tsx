@@ -19,7 +19,8 @@ export function Home() {
         rightDrawerContentMobile={
           <Atoms.Container className="gap-6 lg:hidden">
             <Organisms.FeedNavigation />
-            <Organisms.InviteFriend />
+            {/* TODO(invite-friend): Re-enable once homegate PR is merged & deployed. Do not remove. */}
+            {/* <Organisms.InviteFriend /> */}
           </Atoms.Container>
         }
       >

@@ -39,7 +39,8 @@ vi.mock('@/organisms', () => ({
   HomeFeedRightSidebar: () => <div data-testid="home-feed-right-sidebar">HomeFeedRightSidebar</div>,
   HomeFeedRightDrawer: () => <div data-testid="home-feed-right-drawer">HomeFeedRightDrawer</div>,
   AlertBackup: () => <div data-testid="alert-backup">AlertBackup</div>,
-  InviteFriend: () => <div data-testid="invite-friend">InviteFriend</div>,
+  // TODO(invite-friend): Re-enable once homegate PR is merged & deployed. Do not remove.
+  // InviteFriend: () => <div data-testid="invite-friend">InviteFriend</div>,
   FeedNavigation: ({ className }: { className?: string }) => (
     <div data-testid="feed-navigation" data-classname={className}>
       FeedNavigation
@@ -122,11 +123,12 @@ describe('Custom', () => {
     expect(filters).toHaveAttribute('data-variant', 'drawer');
   });
 
-  it('renders FeedNavigation and InviteFriend in right drawer mobile', () => {
+  it('renders FeedNavigation in right drawer mobile', () => {
     render(<Custom />);
     const rightDrawerMobile = screen.getByTestId('right-drawer-mobile');
     expect(rightDrawerMobile.querySelector('[data-testid="feed-navigation"]')).toBeInTheDocument();
-    expect(rightDrawerMobile.querySelector('[data-testid="invite-friend"]')).toBeInTheDocument();
+    // TODO(invite-friend): Re-enable once homegate PR is merged & deployed. Do not remove.
+    // expect(rightDrawerMobile.querySelector('[data-testid="invite-friend"]')).toBeInTheDocument();
   });
 
   it('renders AlertBackup', () => {

@@ -65,11 +65,6 @@ exports[`Custom - Snapshots > matches snapshot 1`] = `
         >
           FeedNavigation
         </div>
-        <div
-          data-testid="invite-friend"
-        >
-          InviteFriend
-        </div>
       </div>
     </div>
     <div

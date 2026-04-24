@@ -21,7 +21,8 @@ function HomeFeedContent() {
       <Organisms.WhoToFollow />
       <Organisms.ActiveUsers />
       <Organisms.HotTags />
-      <Organisms.InviteFriend />
+      {/* TODO(invite-friend): Re-enable once homegate PR is merged & deployed. Do not remove. */}
+      {/* <Organisms.InviteFriend /> */}
       <Organisms.FeedbackCard />
     </>
   );
