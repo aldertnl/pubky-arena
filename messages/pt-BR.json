@@ -701,8 +701,8 @@
   },
   "invite": {
     "sectionTitle": "Convidar",
-    "buttonLabel": "Convidar um Amigo",
-    "dialogTitle": "Convidar um Amigo",
+    "buttonLabel": "Convidar um amigo",
+    "dialogTitle": "Convidar um amigo",
     "description": "Compartilhe este link de convite com um amigo para que ele possa entrar no Pubky de forma rápida e fácil.",
     "copyButton": "Copiar",
     "shareButton": "Compartilhar",

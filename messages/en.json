@@ -695,8 +695,8 @@
   },
   "invite": {
     "sectionTitle": "Invite",
-    "buttonLabel": "Invite a Friend",
-    "dialogTitle": "Invite a Friend",
+    "buttonLabel": "Invite a friend",
+    "dialogTitle": "Invite a friend",
     "description": "Share this invite link with a friend so they can join Pubky quickly and easily.",
     "copyButton": "Copy",
     "shareButton": "Share",
