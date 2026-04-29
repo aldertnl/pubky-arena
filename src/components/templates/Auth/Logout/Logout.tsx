@@ -64,7 +64,7 @@ export function Logout() {
   };
 
   const renderLoadingState = () => (
-    <Atoms.Container size="container" className="mb-6">
+    <Atoms.Container size="container">
       <Atoms.PageHeader>
         <Molecules.PageTitle size="large">{t('loadingTitle')}</Molecules.PageTitle>
         <Atoms.PageSubtitle>{t('loadingSubtitle')}</Atoms.PageSubtitle>
@@ -79,7 +79,7 @@ export function Logout() {
 
   const renderErrorState = () => (
     <>
-      <Atoms.Container size="container" className="mb-6">
+      <Atoms.Container size="container">
         <Atoms.PageHeader>
           <Molecules.PageTitle size="large">{t('errorTitle')}</Molecules.PageTitle>
           <Atoms.PageSubtitle>{t('errorSubtitle')}</Atoms.PageSubtitle>
