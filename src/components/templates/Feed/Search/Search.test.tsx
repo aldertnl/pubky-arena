@@ -5,6 +5,15 @@ import { Search } from './Search';
 const mockUseIsMobile = vi.fn(() => false);
 const mockUseSearchTags = vi.fn(() => ['pubky']);
 
+const { mockHomeFeedRightSidebar, mockHomeFeedRightDrawer } = vi.hoisted(() => ({
+  mockHomeFeedRightSidebar: vi.fn((_props?: { guestPublicExplore?: boolean }) => (
+    <div data-testid="home-feed-right-sidebar">HomeFeedRightSidebar</div>
+  )),
+  mockHomeFeedRightDrawer: vi.fn((_props?: { guestPublicExplore?: boolean }) => (
+    <div data-testid="home-feed-right-drawer">HomeFeedRightDrawer</div>
+  )),
+}));
+
 vi.mock('@/hooks/useIsMobile/useIsMobile', () => ({
   useIsMobile: () => mockUseIsMobile(),
 }));
@@ -15,8 +24,20 @@ vi.mock('@/hooks/useSearchStreamId/useSearchStreamId', () => ({
 
 vi.mock('@/organisms/ContentLayout/ContentLayout', () => {
   return {
-    ContentLayout: ({ children, feedVariant }: { children: React.ReactNode; feedVariant?: string }) => (
+    ContentLayout: ({
+      children,
+      feedVariant,
+      rightSidebarContent,
+      rightDrawerContent,
+    }: {
+      children: React.ReactNode;
+      feedVariant?: string;
+      rightSidebarContent?: React.ReactNode;
+      rightDrawerContent?: React.ReactNode;
+    }) => (
       <div data-testid="content-layout" data-feed-variant={feedVariant}>
+        {rightSidebarContent}
+        {rightDrawerContent}
         {children}
       </div>
     ),
@@ -29,12 +50,10 @@ vi.mock('@/organisms/DialogWelcome/DialogWelcome', () => {
   };
 });
 
-vi.mock('@/organisms/FeedRightSidebar/FeedRightSidebar', () => {
-  return {
-    HomeFeedRightSidebar: () => <div data-testid="home-feed-right-sidebar">HomeFeedRightSidebar</div>,
-    HomeFeedRightDrawer: () => <div data-testid="home-feed-right-drawer">HomeFeedRightDrawer</div>,
-  };
-});
+vi.mock('@/organisms/FeedRightSidebar/FeedRightSidebar', () => ({
+  HomeFeedRightSidebar: (props: { guestPublicExplore?: boolean }) => mockHomeFeedRightSidebar(props),
+  HomeFeedRightDrawer: (props: { guestPublicExplore?: boolean }) => mockHomeFeedRightDrawer(props),
+}));
 
 vi.mock('@/organisms/HomeFeedSidebar/HomeFeedSidebar', () => {
   return {
@@ -97,6 +116,13 @@ describe('Search', () => {
     render(<Search />);
 
     expect(screen.getByTestId('content-layout')).toHaveAttribute('data-feed-variant', 'search');
+  });
+
+  it('requests guest explore chrome on home right panels so anonymous users skip signup-heavy blocks', () => {
+    render(<Search />);
+
+    expect(mockHomeFeedRightSidebar).toHaveBeenCalledWith(expect.objectContaining({ guestPublicExplore: true }));
+    expect(mockHomeFeedRightDrawer).toHaveBeenCalledWith(expect.objectContaining({ guestPublicExplore: true }));
   });
 
   it('renders search results when tags are present', () => {
