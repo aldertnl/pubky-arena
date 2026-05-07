@@ -1,13 +1,5 @@
 'use client';
-// ============================================================================
-// Shared Components
-// ============================================================================
-/**
- * HomeFeedContent
- *
- * Shared content for Home feed sidebars - WhoToFollow, ActiveUsers, HotTags, FeedbackCard.
- * Used by both HomeFeedRightSidebar (desktop) and HomeFeedRightDrawer (tablet).
- */
+
 import { Pencil, UsersRound } from 'lucide-react';
 import { Container } from '@/atoms/Container/Container';
 import { FeedSection } from '@/molecules/FeedSection/FeedSection';
@@ -17,16 +9,36 @@ import { FeedbackCard } from '../FeedbackCard/FeedbackCard';
 import { HotTags } from '../HotTags/HotTags';
 import { WhoToFollowSidebar } from '../WhoToFollowSidebar/WhoToFollowSidebar';
 
-function HomeFeedContent() {
+// ============================================================================
+// Shared Components
+// ============================================================================
+/**
+ * Shared content for Home feed sidebars - WhoToFollow, ActiveUsers, HotTags, FeedbackCard.
+ * Used by both HomeFeedRightSidebar (desktop) and HomeFeedRightDrawer (tablet).
+ *
+ * With `guestPublicExplore`: logged-out viewers skip WhoToFollow and FeedbackCard
+ * (same policy as Hot), but still see ActiveUsers and HotTags.
+ */
+function HomeFeedContent({ guestPublicExplore = false }: { guestPublicExplore?: boolean }) {
+  const isAuthenticated = useAuthStore((state) => Boolean(state.currentUserPubky));
+  const hideSignupSidebarBlocks = guestPublicExplore && !isAuthenticated;
+
   return (
     <>
-      <WhoToFollowSidebar />
+      {!hideSignupSidebarBlocks && <WhoToFollowSidebar />}
       <ActiveUsers />
       <HotTags />
-      <FeedbackCard />
+      {!hideSignupSidebarBlocks && <FeedbackCard />}
     </>
   );
 }
+
+export type HomeFeedRightPanelProps = {
+  /**
+   * When true, anonymous users on this surface (e.g. /search) do not see WhoToFollow or FeedbackCard.
+   */
+  guestPublicExplore?: boolean;
+};
 
 // ============================================================================
 // Home Feed Right Sidebar Components
@@ -38,8 +50,8 @@ function HomeFeedContent() {
  * Right sidebar for Home feed - displays WhoToFollow, ActiveUsers, HotTags, FeedbackCard.
  * Desktop version.
  */
-export function HomeFeedRightSidebar() {
-  return <HomeFeedContent />;
+export function HomeFeedRightSidebar({ guestPublicExplore = false }: HomeFeedRightPanelProps) {
+  return <HomeFeedContent guestPublicExplore={guestPublicExplore} />;
 }
 
 /**
@@ -47,10 +59,10 @@ export function HomeFeedRightSidebar() {
  *
  * Right drawer for Home feed (tablet) - displays WhoToFollow, ActiveUsers, HotTags, FeedbackCard.
  */
-export function HomeFeedRightDrawer() {
+export function HomeFeedRightDrawer({ guestPublicExplore = false }: HomeFeedRightPanelProps) {
   return (
     <Container overrideDefaults className="flex flex-col gap-6">
-      <HomeFeedContent />
+      <HomeFeedContent guestPublicExplore={guestPublicExplore} />
     </Container>
   );
 }

@@ -62,6 +62,26 @@ describe('HomeFeedRightSidebar', () => {
     expect(screen.getByTestId('feedback-card')).toBeInTheDocument();
   });
 
+  it('hides WhoToFollow and FeedbackCard for guests when guestPublicExplore', () => {
+    authState.currentUserPubky = null;
+    render(<HomeFeedRightSidebar guestPublicExplore />);
+
+    expect(screen.queryByTestId('who-to-follow')).not.toBeInTheDocument();
+    expect(screen.getByTestId('active-users')).toBeInTheDocument();
+    expect(screen.getByTestId('hot-tags')).toBeInTheDocument();
+    expect(screen.queryByTestId('feedback-card')).not.toBeInTheDocument();
+  });
+
+  it('shows all blocks for signed-in user when guestPublicExplore', () => {
+    authState.currentUserPubky = 'gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo';
+    render(<HomeFeedRightSidebar guestPublicExplore />);
+
+    expect(screen.getByTestId('who-to-follow')).toBeInTheDocument();
+    expect(screen.getByTestId('active-users')).toBeInTheDocument();
+    expect(screen.getByTestId('hot-tags')).toBeInTheDocument();
+    expect(screen.getByTestId('feedback-card')).toBeInTheDocument();
+  });
+
   it('matches snapshot', () => {
     const { container } = render(<HomeFeedRightSidebar />);
     expect(container).toMatchSnapshot();
@@ -76,6 +96,16 @@ describe('HomeFeedRightDrawer', () => {
     expect(screen.getByTestId('active-users')).toBeInTheDocument();
     expect(screen.getByTestId('hot-tags')).toBeInTheDocument();
     expect(screen.getByTestId('feedback-card')).toBeInTheDocument();
+  });
+
+  it('hides WhoToFollow and FeedbackCard for guests when guestPublicExplore', () => {
+    authState.currentUserPubky = null;
+    render(<HomeFeedRightDrawer guestPublicExplore />);
+
+    expect(screen.queryByTestId('who-to-follow')).not.toBeInTheDocument();
+    expect(screen.getByTestId('active-users')).toBeInTheDocument();
+    expect(screen.getByTestId('hot-tags')).toBeInTheDocument();
+    expect(screen.queryByTestId('feedback-card')).not.toBeInTheDocument();
   });
 
   it('matches snapshot', () => {

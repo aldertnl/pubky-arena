@@ -23,6 +23,7 @@ import { TimelineFeed } from '@/organisms/Timeline/Feed/TimelineFeed/TimelineFee
  * - Displays search results when tags are provided
  * - Shows empty state when no tags in URL
  * - Reuses HomeFeedSidebar for sort/content filters
+ * - Right panel omits Who to follow / feedback for anonymous users (guestPublicExplore)
  * - Uses TimelineFeed with SEARCH variant for infinite scroll
  * - Shows SearchInput on mobile (hidden on desktop where it's in the header)
  */
@@ -41,11 +42,11 @@ export function Search() {
         leftSidebarContent={
           <HomeFeedSidebar hideReachFilter allowVisualLayout feedVariant={TIMELINE_FEED_VARIANT.SEARCH} />
         }
-        rightSidebarContent={<HomeFeedRightSidebar />}
+        rightSidebarContent={<HomeFeedRightSidebar guestPublicExplore />}
         leftDrawerContent={
           <HomeFeedDrawer hideReachFilter allowVisualLayout feedVariant={TIMELINE_FEED_VARIANT.SEARCH} />
         }
-        rightDrawerContent={<HomeFeedRightDrawer />}
+        rightDrawerContent={<HomeFeedRightDrawer guestPublicExplore />}
         leftDrawerContentMobile={
           <HomeFeedDrawerMobile hideReachFilter allowVisualLayout feedVariant={TIMELINE_FEED_VARIANT.SEARCH} />
         }

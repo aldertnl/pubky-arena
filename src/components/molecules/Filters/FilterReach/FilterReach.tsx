@@ -24,9 +24,8 @@ export function FilterReach({
   disabledReachKeys,
 }: FilterReachProps) {
   const t = useTranslations('filters.reach');
-  const disabledReachSet = React.useMemo(() => new Set(disabledReachKeys ?? []), [disabledReachKeys]);
-
   const items = React.useMemo(() => {
+    const disabledReachSet = new Set(disabledReachKeys ?? []);
     const itemDisabled = (key: ReachType) => Boolean(disabled) || disabledReachSet.has(key);
     return [
       {
@@ -48,7 +47,7 @@ export function FilterReach({
         ...(itemDisabled(REACH.FRIENDS) ? { disabled: true as const } : {}),
       },
     ];
-  }, [t, disabled, disabledReachSet]);
+  }, [t, disabled, disabledReachKeys]);
   return (
     <FilterRadioGroup
       title={t('title')}
