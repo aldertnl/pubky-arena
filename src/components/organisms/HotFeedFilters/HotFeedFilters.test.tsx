@@ -1,16 +1,57 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { REACH } from '@/stores/home/home.types';
 import { TIMEFRAME } from '@/stores/hot/hot.types';
 import { FilterTimeframe, HotFeedDrawer, HotFeedSidebar } from './HotFeedFilters';
 
-// Mock store
-vi.mock('@/stores/hot/hot.store', () => ({
-  useHotStore: vi.fn(() => ({
-    reach: 'all',
-    setReach: vi.fn(),
+const { authPubkyRef, filterReachLastProps, hotStoreMock } = vi.hoisted(() => {
+  const authPubkyRef = { current: null as string | null };
+  const filterReachLastProps = { current: null as Record<string, unknown> | null };
+  let reach = 'all';
+  const setReach = vi.fn((r: string) => {
+    reach = r;
+  });
+  const hotStoreMock = {
+    get reach() {
+      return reach;
+    },
+    setReach,
     timeframe: 'today',
     setTimeframe: vi.fn(),
+    resetReach(r = 'all') {
+      reach = r;
+    },
+    resetMocks() {
+      reach = REACH.ALL;
+      setReach.mockClear();
+      hotStoreMock.setTimeframe.mockClear();
+    },
+  };
+  return { authPubkyRef, filterReachLastProps, hotStoreMock };
+});
+
+vi.mock('@/stores/auth/auth.store', () => ({
+  useAuthStore: vi.fn((selector: (s: { currentUserPubky: string | null }) => unknown) =>
+    selector({ currentUserPubky: authPubkyRef.current }),
+  ),
+}));
+
+vi.mock('@/stores/hot/hot.store', () => ({
+  useHotStore: vi.fn(() => ({
+    get reach() {
+      return hotStoreMock.reach;
+    },
+    setReach: hotStoreMock.setReach,
+    timeframe: hotStoreMock.timeframe,
+    setTimeframe: hotStoreMock.setTimeframe,
   })),
+}));
+
+vi.mock('@/molecules/Filters/FilterReach/FilterReach', () => ({
+  FilterReach: (props: Record<string, unknown>) => {
+    filterReachLastProps.current = props;
+    return <div data-testid="filter-reach">FilterReach</div>;
+  },
 }));
 
 // Mock Atoms
@@ -43,13 +84,6 @@ vi.mock('@/atoms/Filter/Filter', () => {
   };
 });
 
-// Mock Molecules
-vi.mock('@/molecules/Filters/FilterReach/FilterReach', () => {
-  return {
-    FilterReach: () => <div data-testid="filter-reach">FilterReach</div>,
-  };
-});
-
 describe('FilterTimeframe', () => {
   it('renders all timeframe options', () => {
     render(<FilterTimeframe />);
@@ -75,11 +109,42 @@ describe('FilterTimeframe', () => {
 });
 
 describe('HotFeedSidebar', () => {
+  beforeEach(() => {
+    authPubkyRef.current = null;
+    hotStoreMock.resetMocks();
+    filterReachLastProps.current = null;
+  });
+
   it('renders FilterReach and FilterTimeframe', () => {
     render(<HotFeedSidebar />);
 
     expect(screen.getByTestId('filter-reach')).toBeInTheDocument();
     expect(screen.getByText('Today')).toBeInTheDocument();
+  });
+
+  it('passes disabledReachKeys when logged out', () => {
+    authPubkyRef.current = null;
+    render(<HotFeedSidebar />);
+
+    expect(filterReachLastProps.current?.disabledReachKeys).toEqual([REACH.FOLLOWING, REACH.FRIENDS]);
+  });
+
+  it('does not pass disabledReachKeys when logged in', () => {
+    authPubkyRef.current = 'gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo';
+    render(<HotFeedSidebar />);
+
+    expect(filterReachLastProps.current?.disabledReachKeys).toBeUndefined();
+  });
+
+  it('resets reach to all when logged out and reach was following', async () => {
+    authPubkyRef.current = null;
+    hotStoreMock.resetReach(REACH.FOLLOWING);
+
+    render(<HotFeedSidebar />);
+
+    await waitFor(() => {
+      expect(hotStoreMock.setReach).toHaveBeenCalledWith(REACH.ALL);
+    });
   });
 
   it('matches snapshot', () => {
@@ -89,11 +154,24 @@ describe('HotFeedSidebar', () => {
 });
 
 describe('HotFeedDrawer', () => {
+  beforeEach(() => {
+    authPubkyRef.current = null;
+    hotStoreMock.resetMocks();
+    filterReachLastProps.current = null;
+  });
+
   it('renders FilterReach and FilterTimeframe', () => {
     render(<HotFeedDrawer />);
 
     expect(screen.getByTestId('filter-reach')).toBeInTheDocument();
     expect(screen.getByText('Today')).toBeInTheDocument();
+  });
+
+  it('passes disabledReachKeys when logged out', () => {
+    authPubkyRef.current = null;
+    render(<HotFeedDrawer />);
+
+    expect(filterReachLastProps.current?.disabledReachKeys).toEqual([REACH.FOLLOWING, REACH.FRIENDS]);
   });
 
   it('matches snapshot', () => {

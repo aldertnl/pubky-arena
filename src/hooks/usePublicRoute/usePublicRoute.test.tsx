@@ -40,6 +40,22 @@ describe('usePublicRoute', () => {
 
       expect(result.current.isPublicRoute).toBe(true);
     });
+
+    it('returns isPublicRoute: true for /hot', () => {
+      mockPathname.mockReturnValue('/hot');
+
+      const { result } = renderHook(() => usePublicRoute());
+
+      expect(result.current.isPublicRoute).toBe(true);
+    });
+
+    it('returns isPublicRoute: true for /search', () => {
+      mockPathname.mockReturnValue('/search');
+
+      const { result } = renderHook(() => usePublicRoute());
+
+      expect(result.current.isPublicRoute).toBe(true);
+    });
   });
 
   describe('non-public routes', () => {

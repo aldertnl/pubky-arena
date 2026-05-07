@@ -1,7 +1,7 @@
 export interface UsePublicRouteResult {
   /**
-   * Whether the current route is a dynamic public route.
-   * True for routes like /post/[userId]/[postId] and /profile/[pubky].
+   * Whether the current route uses public browse chrome (logged-out explorers).
+   * True for dynamic public routes (e.g. /post/..., /profile/<pubky>) plus /hot and /search.
    */
   isPublicRoute: boolean;
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Calendar, CalendarRange, Clock, Star } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -11,6 +12,8 @@ import {
   FilterRoot,
 } from '@/atoms/Filter/Filter';
 import { FilterReach } from '@/molecules/Filters/FilterReach/FilterReach';
+import { useAuthStore } from '@/stores/auth/auth.store';
+import { REACH } from '@/stores/home/home.types';
 import { useHotStore } from '@/stores/hot/hot.store';
 import { TIMEFRAME, type TimeframeType } from '@/stores/hot/hot.types';
 
@@ -82,6 +85,39 @@ export function FilterTimeframe({ selectedTab = TIMEFRAME.THIS_MONTH, onTabChang
 // Sidebar & Drawer Components
 // ============================================================================
 
+function HotReachAndTimeframeFilters({ variant }: { variant: 'sidebar' | 'drawer' }) {
+  const { reach, setReach, timeframe, setTimeframe } = useHotStore();
+  const currentUserPubky = useAuthStore((state) => state.currentUserPubky);
+
+  useEffect(() => {
+    if (currentUserPubky) return;
+    if (reach === REACH.FOLLOWING || reach === REACH.FRIENDS) {
+      setReach(REACH.ALL);
+    }
+  }, [currentUserPubky, reach, setReach]);
+
+  const disabledReachKeys = currentUserPubky ? undefined : ([REACH.FOLLOWING, REACH.FRIENDS] as const);
+
+  const reachFilter = <FilterReach selectedTab={reach} onTabChange={setReach} disabledReachKeys={disabledReachKeys} />;
+  const timeframeFilter = <FilterTimeframe selectedTab={timeframe} onTabChange={setTimeframe} />;
+
+  if (variant === 'sidebar') {
+    return (
+      <>
+        {reachFilter}
+        <div className="sticky top-[100px] w-full self-start">{timeframeFilter}</div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {reachFilter}
+      {timeframeFilter}
+    </>
+  );
+}
+
 /**
  * HotFeedSidebar
  *
@@ -90,15 +126,7 @@ export function FilterTimeframe({ selectedTab = TIMEFRAME.THIS_MONTH, onTabChang
  * Desktop version with sticky positioning.
  */
 export function HotFeedSidebar() {
-  const { reach, setReach, timeframe, setTimeframe } = useHotStore();
-  return (
-    <>
-      <FilterReach selectedTab={reach} onTabChange={setReach} />
-      <div className="sticky top-[100px] w-full self-start">
-        <FilterTimeframe selectedTab={timeframe} onTabChange={setTimeframe} />
-      </div>
-    </>
-  );
+  return <HotReachAndTimeframeFilters variant="sidebar" />;
 }
 
 /**
@@ -108,11 +136,9 @@ export function HotFeedSidebar() {
  * Uses the hot store for state management.
  */
 export function HotFeedDrawer() {
-  const { reach, setReach, timeframe, setTimeframe } = useHotStore();
   return (
     <div className="flex flex-col gap-6">
-      <FilterReach selectedTab={reach} onTabChange={setReach} />
-      <FilterTimeframe selectedTab={timeframe} onTabChange={setTimeframe} />
+      <HotReachAndTimeframeFilters variant="drawer" />
     </div>
   );
 }

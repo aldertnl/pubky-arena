@@ -11,6 +11,7 @@
 import { Pencil, UsersRound } from 'lucide-react';
 import { Container } from '@/atoms/Container/Container';
 import { FeedSection } from '@/molecules/FeedSection/FeedSection';
+import { useAuthStore } from '@/stores/auth/auth.store';
 import { ActiveUsers } from '../ActiveUsers/ActiveUsers';
 import { FeedbackCard } from '../FeedbackCard/FeedbackCard';
 import { HotTags } from '../HotTags/HotTags';
@@ -85,33 +86,44 @@ export function HomeFeedRightDrawerMobile() {
 // Hot Feed Right Sidebar Components
 // ============================================================================
 
-/**
- * HotFeedRightSidebar
- *
- * Right sidebar for Hot feed - displays WhoToFollow, FeedbackCard.
- * Desktop version with sticky positioning.
- */
-export function HotFeedRightSidebar() {
-  return (
-    <>
-      <WhoToFollowSidebar />
-      <Container overrideDefaults className="sticky top-[100px] self-start">
-        <FeedbackCard />
-      </Container>
-    </>
-  );
-}
-
-/**
- * HotFeedRightDrawer
- *
- * Right drawer for Hot feed (tablet/mobile) - displays WhoToFollow, FeedbackCard.
- */
-export function HotFeedRightDrawer() {
+function AuthenticatedHotRightContent({ layout }: { layout: 'sidebar' | 'drawer' }) {
+  if (layout === 'sidebar') {
+    return (
+      <>
+        <WhoToFollowSidebar />
+        <Container overrideDefaults className="sticky top-[100px] self-start">
+          <FeedbackCard />
+        </Container>
+      </>
+    );
+  }
   return (
     <Container overrideDefaults className="flex flex-col gap-6">
       <WhoToFollowSidebar />
       <FeedbackCard />
     </Container>
   );
+}
+
+/**
+ * HotFeedRightSidebar
+ *
+ * Right sidebar for Hot feed — WhoToFollow and FeedbackCard when signed in only.
+ * Logged-out /hot avoids login-centric sidebar blocks (public explore).
+ */
+export function HotFeedRightSidebar() {
+  const isAuthenticated = useAuthStore((state) => Boolean(state.currentUserPubky));
+  if (!isAuthenticated) return null;
+  return <AuthenticatedHotRightContent layout="sidebar" />;
+}
+
+/**
+ * HotFeedRightDrawer
+ *
+ * Right drawer for Hot feed (tablet/mobile) — same content policy as sidebar.
+ */
+export function HotFeedRightDrawer() {
+  const isAuthenticated = useAuthStore((state) => Boolean(state.currentUserPubky));
+  if (!isAuthenticated) return null;
+  return <AuthenticatedHotRightContent layout="drawer" />;
 }

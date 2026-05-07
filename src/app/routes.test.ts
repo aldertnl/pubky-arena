@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isDynamicPublicRoute } from './routes';
+import { isDynamicPublicRoute, isExplorePublicRoute } from './routes';
 
 describe('isDynamicPublicRoute', () => {
   describe('invite routes', () => {
@@ -121,5 +121,30 @@ describe('isDynamicPublicRoute', () => {
       expect(isDynamicPublicRoute('/onboarding')).toBe(false);
       expect(isDynamicPublicRoute('/onboarding/profile')).toBe(false);
     });
+  });
+});
+
+describe('isExplorePublicRoute', () => {
+  it('returns true for /hot and /search', () => {
+    expect(isExplorePublicRoute('/hot')).toBe(true);
+    expect(isExplorePublicRoute('/search')).toBe(true);
+  });
+
+  it('returns true for dynamic public routes', () => {
+    const longPubky = 'gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo';
+    expect(isExplorePublicRoute(`/profile/${longPubky}`)).toBe(true);
+    expect(isExplorePublicRoute(`/post/${longPubky}/0034BBBDFK83G`)).toBe(true);
+  });
+
+  it('returns false for authenticated-app routes', () => {
+    expect(isExplorePublicRoute('/home')).toBe(false);
+    expect(isExplorePublicRoute('/feed')).toBe(false);
+    expect(isExplorePublicRoute('/bookmarks')).toBe(false);
+    expect(isExplorePublicRoute('/settings')).toBe(false);
+    expect(isExplorePublicRoute('/')).toBe(false);
+  });
+
+  it('returns false for /profile without pubky (isDynamicPublicRoute is false)', () => {
+    expect(isExplorePublicRoute('/profile')).toBe(false);
   });
 });

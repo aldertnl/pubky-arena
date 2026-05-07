@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   HomeFeedRightDrawer,
   HomeFeedRightDrawerMobile,
@@ -7,6 +7,14 @@ import {
   HotFeedRightDrawer,
   HotFeedRightSidebar,
 } from './FeedRightSidebar';
+
+const { authState } = vi.hoisted(() => ({
+  authState: { currentUserPubky: null as string | null },
+}));
+
+vi.mock('@/stores/auth/auth.store', () => ({
+  useAuthStore: (selector: (s: typeof authState) => unknown) => selector(authState),
+}));
 
 // Mock Molecules
 vi.mock('@/molecules/FeedSection/FeedSection', () => {
@@ -38,6 +46,10 @@ vi.mock('@/organisms/WhoToFollowSidebar/WhoToFollowSidebar', () => {
   return {
     WhoToFollowSidebar: () => <div data-testid="who-to-follow">WhoToFollowSidebar</div>,
   };
+});
+
+beforeEach(() => {
+  authState.currentUserPubky = null;
 });
 
 describe('HomeFeedRightSidebar', () => {
@@ -86,28 +98,60 @@ describe('HomeFeedRightDrawerMobile', () => {
 });
 
 describe('HotFeedRightSidebar', () => {
-  it('renders WhoToFollow and FeedbackCard', () => {
+  it('hides WhoToFollow and FeedbackCard when logged out', () => {
+    authState.currentUserPubky = null;
+    render(<HotFeedRightSidebar />);
+
+    expect(screen.queryByTestId('who-to-follow')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('feedback-card')).not.toBeInTheDocument();
+  });
+
+  it('shows WhoToFollow and FeedbackCard when authenticated', () => {
+    authState.currentUserPubky = 'gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo';
     render(<HotFeedRightSidebar />);
 
     expect(screen.getByTestId('who-to-follow')).toBeInTheDocument();
     expect(screen.getByTestId('feedback-card')).toBeInTheDocument();
   });
 
-  it('matches snapshot', () => {
+  it('matches snapshot when logged out', () => {
+    authState.currentUserPubky = null;
+    const { container } = render(<HotFeedRightSidebar />);
+    expect(container).toMatchSnapshot();
+  });
+
+  it('matches snapshot when authenticated', () => {
+    authState.currentUserPubky = 'gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo';
     const { container } = render(<HotFeedRightSidebar />);
     expect(container).toMatchSnapshot();
   });
 });
 
 describe('HotFeedRightDrawer', () => {
-  it('renders WhoToFollow and FeedbackCard', () => {
+  it('hides WhoToFollow and FeedbackCard when logged out', () => {
+    authState.currentUserPubky = null;
+    render(<HotFeedRightDrawer />);
+
+    expect(screen.queryByTestId('who-to-follow')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('feedback-card')).not.toBeInTheDocument();
+  });
+
+  it('shows WhoToFollow and FeedbackCard when authenticated', () => {
+    authState.currentUserPubky = 'gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo';
     render(<HotFeedRightDrawer />);
 
     expect(screen.getByTestId('who-to-follow')).toBeInTheDocument();
     expect(screen.getByTestId('feedback-card')).toBeInTheDocument();
   });
 
-  it('matches snapshot', () => {
+  it('matches snapshot when logged out', () => {
+    authState.currentUserPubky = null;
+    const { container } = render(<HotFeedRightDrawer />);
+    expect(container).toMatchSnapshot();
+  });
+
+  it('matches snapshot when authenticated', () => {
+    authState.currentUserPubky = 'gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo';
     const { container } = render(<HotFeedRightDrawer />);
     expect(container).toMatchSnapshot();
   });

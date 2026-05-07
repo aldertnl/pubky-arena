@@ -79,6 +79,25 @@ describe('FilterReach', () => {
     expect(mockOnTabChange).not.toHaveBeenCalled();
   });
 
+  it('disables only keys in disabledReachKeys and blocks their clicks', () => {
+    const mockOnTabChange = vi.fn();
+    render(
+      <FilterReach
+        selectedTab={REACH.ALL}
+        onTabChange={mockOnTabChange}
+        disabledReachKeys={[REACH.FOLLOWING, REACH.FRIENDS]}
+      />,
+    );
+
+    expect(screen.getByLabelText('Following')).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByLabelText('Friends')).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByLabelText('All')).not.toHaveAttribute('aria-disabled', 'true');
+
+    fireEvent.click(screen.getByLabelText('Following'));
+    fireEvent.click(screen.getByLabelText('Friends'));
+    expect(mockOnTabChange).not.toHaveBeenCalled();
+  });
+
   it('items are not disabled by default', () => {
     render(<FilterReach />);
 

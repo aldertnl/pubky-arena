@@ -62,6 +62,8 @@ export enum COPYRIGHT_ROUTES {
 // This includes routes that need to be accessible during auth transitions (like logout).
 // Note: Dynamic public routes like /profile/[pubky] and /post/[userId]/[postId]
 // are handled by isDynamicPublicRoute() in RouteGuardProvider.
+// Explore surfaces /hot and /search are listed here for the route guard; usePublicRoute
+// uses isExplorePublicRoute() so header/footer match other browse-only public pages.
 export const PUBLIC_ROUTES: string[] = [
   AUTH_ROUTES.LOGOUT,
   // Profile is public to prevent RouteGuard redirect during logout.
@@ -71,6 +73,8 @@ export const PUBLIC_ROUTES: string[] = [
   COPYRIGHT_ROUTES.COPYRIGHT,
   // Language settings page is public to allow language changes without auth issues
   SETTINGS_ROUTES.LANGUAGE,
+  APP_ROUTES.HOT,
+  APP_ROUTES.SEARCH,
 ];
 
 export const ALLOWED_ROUTES = [
@@ -146,6 +150,15 @@ export function isDynamicPublicRoute(pathname: string): boolean {
     default:
       return false;
   }
+}
+
+/**
+ * Routes that should use "public browse" UI (e.g. HeaderJoin, hide mobile app footer)
+ * for unauthenticated users. Narrower than PUBLIC_ROUTES — do not include /profile,
+ * /copyright, or /settings/language, which keep their own chrome.
+ */
+export function isExplorePublicRoute(pathname: string): boolean {
+  return isDynamicPublicRoute(pathname) || pathname === APP_ROUTES.HOT || pathname === APP_ROUTES.SEARCH;
 }
 
 // ============================================================================
