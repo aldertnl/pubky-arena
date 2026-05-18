@@ -212,11 +212,6 @@ export class PostApplication {
     const hasNewFiles = newFileAttachments != null && newFileAttachments.length > 0;
     const newFileUris = hasNewFiles ? newFileAttachments.map((f) => f.fileResult.meta.url) : [];
 
-    // Upload new file attachments if any
-    if (hasNewFiles) {
-      await FileApplication.commitCreate({ fileAttachments: newFileAttachments });
-    }
-
     // Update local database (content + attachments)
     // Note: post.attachments is undefined when internal value is null, but we need to pass null explicitly
     const attachments = post.attachments === undefined ? null : post.attachments;
@@ -224,6 +219,11 @@ export class PostApplication {
 
     let localEditApplied = false;
     try {
+      // Upload new file attachments inside try so failed partial uploads are cleaned up below.
+      if (hasNewFiles) {
+        await FileApplication.commitCreate({ fileAttachments: newFileAttachments });
+      }
+
       const originalAttachments = originalPost?.attachments ?? [];
       const nextAttachments = attachments ?? [];
       removedOriginalAttachmentUris = originalAttachments.filter((uri) => !nextAttachments.includes(uri));

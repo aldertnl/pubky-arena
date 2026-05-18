@@ -1188,6 +1188,27 @@ describe('Post Application', () => {
       expect(fileDeleteSpy).toHaveBeenCalledWith(uploadedFiles.map((f) => f.fileResult.meta.url));
     });
 
+    it('should rollback newly uploaded files when file upload fails', async () => {
+      const uploadedFiles = [createMockFileAttachment('edit-file-upload-failure')];
+      const mockData: TEditPostInput = {
+        ...createMockEditInput(),
+        newFileAttachments: uploadedFiles,
+      };
+
+      const { editSpy, requestSpy } = setupEditSpies();
+      const fileCreateSpy = vi
+        .spyOn(FileApplication, 'commitCreate')
+        .mockRejectedValue(new Error('File upload failed'));
+      const fileDeleteSpy = vi.spyOn(FileApplication, 'commitDelete').mockResolvedValue(undefined);
+
+      await expect(PostApplication.commitEdit(mockData)).rejects.toThrow('File upload failed');
+
+      expect(fileCreateSpy).toHaveBeenCalledWith({ fileAttachments: uploadedFiles });
+      expect(fileDeleteSpy).toHaveBeenCalledWith(uploadedFiles.map((f) => f.fileResult.meta.url));
+      expect(editSpy).not.toHaveBeenCalled();
+      expect(requestSpy).not.toHaveBeenCalled();
+    });
+
     it('should rollback newly uploaded files when local edit fails', async () => {
       const uploadedFiles = [createMockFileAttachment('edit-file-local-failure')];
       const mockData: TEditPostInput = {
