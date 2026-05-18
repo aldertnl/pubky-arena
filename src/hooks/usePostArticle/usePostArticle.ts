@@ -1,11 +1,14 @@
 'use client';
 
-import type { PostDetailsModel } from '@/core';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import * as Core from '@/core';
-import * as Libs from '@/libs';
-import * as Molecules from '@/molecules';
+import { FileController } from '@/controllers/file/file';
+import { Logger } from '@/libs/logger/logger';
+import { CompositeIdDomain } from '@/models/models.types';
+import { buildCompositeIdFromPubkyUri } from '@/models/models.utils';
+import type { PostDetailsModel } from '@/models/post/details/postDetails';
+import { useToast } from '@/molecules/Toaster/use-toast';
+import { FileVariant } from '@/services/nexus/file/file.types';
 import type { ArticleJSON } from './usePostArticle.types';
 
 interface CoverImage {
@@ -16,7 +19,7 @@ interface CoverImage {
 interface UsePostArticleParams {
   content: string;
   attachments: PostDetailsModel['attachments'];
-  coverImageVariant: Core.FileVariant;
+  coverImageVariant: FileVariant;
 }
 
 interface UsePostArticleResult {
@@ -38,7 +41,7 @@ interface UsePostArticleResult {
  * const { title, body, coverImage } = usePostArticle({
  *   content: '{"title":"My Article","body":"Article content..."}',
  *   attachments: ['pubky://user/pub/pubky.app/files/file-123'],
- *   coverImageVariant: Core.FileVariant.FEED,
+ *   coverImageVariant: FileVariant.FEED,
  * });
  * ```
  */
@@ -47,7 +50,7 @@ export function usePostArticle({
   attachments,
   coverImageVariant,
 }: UsePostArticleParams): UsePostArticleResult {
-  const { toast } = Molecules.useToast();
+  const { toast } = useToast();
   const tToast = useTranslations('toast');
   const tPost = useTranslations('toast.post');
 
@@ -73,21 +76,21 @@ export function usePostArticle({
     let cancelled = false;
 
     const resolveCoverImageFromUri = (attachmentUri: string): CoverImage | null => {
-      const compositeId = Core.buildCompositeIdFromPubkyUri({
+      const compositeId = buildCompositeIdFromPubkyUri({
         uri: attachmentUri,
-        domain: Core.CompositeIdDomain.FILES,
+        domain: CompositeIdDomain.FILES,
       });
 
       if (!compositeId) {
-        Libs.Logger.error('[usePostArticle] Failed to parse cover image URI', { attachmentUri });
+        Logger.error('[usePostArticle] Failed to parse cover image URI', { attachmentUri });
         return null;
       }
 
       try {
-        const src = Core.FileController.getFileUrl({ fileId: compositeId, variant: coverImageVariant });
+        const src = FileController.getFileUrl({ fileId: compositeId, variant: coverImageVariant });
         return { src, alt: 'Article cover image' };
       } catch (error) {
-        Libs.Logger.error('[usePostArticle] Failed to build cover image URL', {
+        Logger.error('[usePostArticle] Failed to build cover image URL', {
           attachmentUri,
           coverImageVariant,
           error,
@@ -102,7 +105,7 @@ export function usePostArticle({
       if (!attachments?.length) return;
 
       try {
-        const attachmentMetadata = await Core.FileController.getMetadata({ fileAttachments: attachments });
+        const attachmentMetadata = await FileController.getMetadata({ fileAttachments: attachments });
 
         if (cancelled) return;
 
@@ -112,13 +115,13 @@ export function usePostArticle({
           .find((metadata) => metadata?.content_type.startsWith('image'));
 
         if (firstImageAttachment) {
-          const src = Core.FileController.getFileUrl({ fileId: firstImageAttachment.id, variant: coverImageVariant });
+          const src = FileController.getFileUrl({ fileId: firstImageAttachment.id, variant: coverImageVariant });
           setCoverImage({ src, alt: firstImageAttachment.name });
           return;
         }
 
         if (attachmentMetadata.length > 0) {
-          Libs.Logger.warn('[usePostArticle] Cover image metadata is present but not an image', {
+          Logger.warn('[usePostArticle] Cover image metadata is present but not an image', {
             attachments,
           });
           return;
@@ -126,7 +129,7 @@ export function usePostArticle({
 
         const fallbackCoverImage = resolveCoverImageFromUri(attachments[0]);
         if (fallbackCoverImage) {
-          Libs.Logger.warn('[usePostArticle] Cover image metadata unavailable, using URI fallback', {
+          Logger.warn('[usePostArticle] Cover image metadata unavailable, using URI fallback', {
             attachmentUri: attachments[0],
           });
           setCoverImage(fallbackCoverImage);
@@ -137,7 +140,7 @@ export function usePostArticle({
           title: tToast('error'),
           description: tPost('coverImageError'),
         });
-        Libs.Logger.error('[usePostArticle] Failed to resolve cover image from metadata and URI fallback', {
+        Logger.error('[usePostArticle] Failed to resolve cover image from metadata and URI fallback', {
           attachments,
         });
       } catch (error) {
@@ -145,7 +148,7 @@ export function usePostArticle({
 
         const fallbackCoverImage = resolveCoverImageFromUri(attachments[0]);
         if (fallbackCoverImage) {
-          Libs.Logger.warn('[usePostArticle] Failed to read cover metadata, using URI fallback', {
+          Logger.warn('[usePostArticle] Failed to read cover metadata, using URI fallback', {
             attachmentUri: attachments[0],
             error,
           });
@@ -157,7 +160,7 @@ export function usePostArticle({
           title: tToast('error'),
           description: tPost('coverImageError'),
         });
-        Libs.Logger.error('[usePostArticle] Failed to load article cover image', {
+        Logger.error('[usePostArticle] Failed to load article cover image', {
           attachments,
           error,
         });

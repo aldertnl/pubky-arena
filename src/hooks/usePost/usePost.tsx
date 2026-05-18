@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import * as Atoms from '@/atoms';
-import * as Core from '@/core';
-import * as Libs from '@/libs';
-import * as Molecules from '@/molecules';
+import { ToastAction } from '@/atoms/Toast/Toast';
+import { PostController } from '@/controllers/post/post';
+import { Logger } from '@/libs/logger/logger';
+import { useToast } from '@/molecules/Toaster/use-toast';
+import { useAuthStore } from '@/stores/auth/auth.store';
+import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
 import type {
-  UsePostReplyOptions,
-  UsePostPostOptions,
-  UsePostRepostOptions,
   UsePostEditOptions,
+  UsePostPostOptions,
+  UsePostReplyOptions,
+  UsePostRepostOptions,
   UsePostReturn,
 } from './usePost.types';
 
@@ -45,8 +47,8 @@ export function usePost(): UsePostReturn {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // selectCurrentUserPubky() throws an error when user is not authenticated;
   // access currentUserPubky directly to get null instead (post actions return early if null)
-  const currentUserId = Core.useAuthStore((state) => state.currentUserPubky);
-  const { toast } = Molecules.useToast();
+  const currentUserId = useAuthStore((state) => state.currentUserPubky);
+  const { toast } = useToast();
   const tToast = useTranslations('toast');
   const tPost = useTranslations('toast.post');
 
@@ -72,7 +74,7 @@ export function usePost(): UsePostReturn {
     setIsSubmitting(true);
 
     try {
-      const createdPostId = await Core.PostController.commitCreate({
+      const createdPostId = await PostController.commitCreate({
         parentPostId: postId,
         content: content.trim(),
         authorId: currentUserId,
@@ -89,7 +91,7 @@ export function usePost(): UsePostReturn {
       });
       onSuccess?.(createdPostId);
     } catch (err) {
-      Libs.Logger.error('[usePost] Failed to submit reply:', err);
+      Logger.error('[usePost] Failed to submit reply:', err);
       showErrorToast(tPost('replyFailed'));
     } finally {
       setIsSubmitting(false);
@@ -108,7 +110,7 @@ export function usePost(): UsePostReturn {
     setIsSubmitting(true);
 
     try {
-      const createdPostId = await Core.PostController.commitCreate({
+      const createdPostId = await PostController.commitCreate({
         content: isArticle ? JSON.stringify({ title: articleTitle.trim(), body: content.trim() }) : content.trim(),
         authorId: currentUserId,
         tags: tags.length > 0 ? tags : undefined,
@@ -127,7 +129,7 @@ export function usePost(): UsePostReturn {
       });
       onSuccess?.(createdPostId);
     } catch (err) {
-      Libs.Logger.error('[usePost] Failed to create post:', err);
+      Logger.error('[usePost] Failed to create post:', err);
       showErrorToast(tPost('postFailed'));
     } finally {
       setIsSubmitting(false);
@@ -140,7 +142,7 @@ export function usePost(): UsePostReturn {
     setIsSubmitting(true);
 
     try {
-      const createdPostId = await Core.PostController.commitCreate({
+      const createdPostId = await PostController.commitCreate({
         originalPostId,
         content: content.trim(),
         authorId: currentUserId,
@@ -157,7 +159,7 @@ export function usePost(): UsePostReturn {
           ? tPost('repostSuccessDesc', { author: originalAuthorName })
           : tPost('repostSuccessDescFallback'),
         action: (
-          <Atoms.ToastAction
+          <ToastAction
             altText={tPost('repostUndo')}
             onClick={() => {
               toastInstance.dismiss();
@@ -165,13 +167,13 @@ export function usePost(): UsePostReturn {
             }}
           >
             {tPost('repostUndo')}
-          </Atoms.ToastAction>
+          </ToastAction>
         ),
       });
 
       onSuccess?.(createdPostId);
     } catch (err) {
-      Libs.Logger.error('[usePost] Failed to repost:', err);
+      Logger.error('[usePost] Failed to repost:', err);
       showErrorToast(tPost('repostFailed'));
     } finally {
       setIsSubmitting(false);
@@ -191,7 +193,7 @@ export function usePost(): UsePostReturn {
     setIsSubmitting(true);
 
     try {
-      await Core.PostController.commitEdit({
+      await PostController.commitEdit({
         compositePostId: editPostId,
         content: isArticle ? JSON.stringify({ title: articleTitle.trim(), body: content.trim() }) : content.trim(),
         newAttachments,
@@ -199,7 +201,7 @@ export function usePost(): UsePostReturn {
       });
 
       // Clear local blob URLs for the edited post to force re-fetch from CDN
-      Core.useLocalFilesStore.getState().setPostAttachments(editPostId, []);
+      useLocalFilesStore.getState().setPostAttachments(editPostId, []);
 
       setContent('');
       setAttachments([]);
@@ -208,7 +210,7 @@ export function usePost(): UsePostReturn {
       showSuccessToast(tPost('postEdited'), tPost('postEditedDesc'));
       onSuccess?.(editPostId);
     } catch (err) {
-      Libs.Logger.error('[usePost] Failed to edit post:', err);
+      Logger.error('[usePost] Failed to edit post:', err);
       showErrorToast(tPost('editFailed'));
     } finally {
       setIsSubmitting(false);

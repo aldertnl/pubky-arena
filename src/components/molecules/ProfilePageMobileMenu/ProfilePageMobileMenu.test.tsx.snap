@@ -2,15 +2,15 @@
 
 exports[`ProfilePageMobileMenu - Snapshots > matches snapshot with default props 1`] = `
 <div
-  class="mobile-menu-gradient-fade sticky top-(--header-height-mobile) z-(--z-mobile-menu) bg-background lg:hidden"
+  class="mobile-menu-gradient-fade z-(--z-mobile-menu) bg-background lg:hidden sticky top-(--header-height-mobile)"
   data-testid="profile-page-mobile-menu"
 >
   <div
     class="flex w-full"
-    data-testid="profile-page-mobile-menu-items"
+    data-testid="container"
   >
     <div
-      class="flex flex-1 justify-center border-b px-0 py-1.5 data-testid=\\"profile-page-mobile-menu-item\\" border-border"
+      class="flex flex-1 justify-center border-b px-0 py-1.5 border-border"
       data-testid="container"
     >
       <button
@@ -48,7 +48,7 @@ exports[`ProfilePageMobileMenu - Snapshots > matches snapshot with default props
       </button>
     </div>
     <div
-      class="flex flex-1 justify-center border-b px-0 py-1.5 data-testid=\\"profile-page-mobile-menu-item\\" border-foreground"
+      class="flex flex-1 justify-center border-b px-0 py-1.5 border-foreground"
       data-testid="container"
     >
       <button
@@ -80,35 +80,7 @@ exports[`ProfilePageMobileMenu - Snapshots > matches snapshot with default props
       </button>
     </div>
     <div
-      class="flex flex-1 justify-center border-b px-0 py-1.5 data-testid=\\"profile-page-mobile-menu-item\\" border-border"
-      data-testid="container"
-    >
-      <button
-        aria-label="Replies"
-        class="px-2.5 py-2"
-        data-slot="button"
-      >
-        <svg
-          aria-hidden="true"
-          class="lucide lucide-message-circle text-muted-foreground"
-          fill="none"
-          height="20"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="20"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"
-          />
-        </svg>
-      </button>
-    </div>
-    <div
-      class="flex flex-1 justify-center border-b px-0 py-1.5 data-testid=\\"profile-page-mobile-menu-item\\" border-border"
+      class="flex flex-1 justify-center border-b px-0 py-1.5 border-border"
       data-testid="container"
     >
       <button
@@ -139,7 +111,35 @@ exports[`ProfilePageMobileMenu - Snapshots > matches snapshot with default props
       </button>
     </div>
     <div
-      class="flex flex-1 justify-center border-b px-0 py-1.5 data-testid=\\"profile-page-mobile-menu-item\\" border-border"
+      class="flex flex-1 justify-center border-b px-0 py-1.5 border-border"
+      data-testid="container"
+    >
+      <button
+        aria-label="Replies"
+        class="px-2.5 py-2"
+        data-slot="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-message-circle text-muted-foreground"
+          fill="none"
+          height="20"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="20"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"
+          />
+        </svg>
+      </button>
+    </div>
+    <div
+      class="flex flex-1 justify-center border-b px-0 py-1.5 border-border"
       data-testid="container"
     >
       <button
@@ -175,7 +175,7 @@ exports[`ProfilePageMobileMenu - Snapshots > matches snapshot with default props
       </button>
     </div>
     <div
-      class="flex flex-1 justify-center border-b px-0 py-1.5 data-testid=\\"profile-page-mobile-menu-item\\" border-border"
+      class="flex flex-1 justify-center border-b px-0 py-1.5 border-border"
       data-testid="container"
     >
       <button
@@ -202,7 +202,7 @@ exports[`ProfilePageMobileMenu - Snapshots > matches snapshot with default props
       </button>
     </div>
     <div
-      class="flex flex-1 justify-center border-b px-0 py-1.5 data-testid=\\"profile-page-mobile-menu-item\\" border-border"
+      class="flex flex-1 justify-center border-b px-0 py-1.5 border-border"
       data-testid="container"
     >
       <button
@@ -230,7 +230,7 @@ exports[`ProfilePageMobileMenu - Snapshots > matches snapshot with default props
       </button>
     </div>
     <div
-      class="flex flex-1 justify-center border-b px-0 py-1.5 data-testid=\\"profile-page-mobile-menu-item\\" border-border"
+      class="flex flex-1 justify-center border-b px-0 py-1.5 border-border"
       data-testid="container"
     >
       <button

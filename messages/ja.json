@@ -383,7 +383,7 @@
       "neverShareMobile": "このファイルとパスワードを誰とも共有しないでください。",
       "password": "パスワード",
       "passwordPlaceholder": "強力なパスワードを入力",
-      "passwordHint": "大文字、小文字、数字、記号を含む8文字以上を推奨します。",
+      "passwordHint": "より高い安全性のため、<minLen>16文字を超える</minLen>長い<passphraseLink>パスフレーズ</passphraseLink>の使用を推奨します。",
       "repeatPassword": "パスワードを再入力",
       "repeatPasswordPlaceholder": "パスワードを再入力",
       "passwordsDoNotMatch": "パスワードが一致しません",
@@ -444,7 +444,8 @@
     "viewOriginal": "元の投稿を見る",
     "youReposted": "リポストしました",
     "newPostsSingular": "{count}件の新しい投稿を見る",
-    "newPostsPlural": "{count}件の新しい投稿を見る"
+    "newPostsPlural": "{count}件の新しい投稿を見る",
+    "replies": "返信"
   },
   "profile": {
     "title": "プロフィール",
@@ -466,8 +467,9 @@
     },
     "actions": {
       "title": "プロフィールアクション",
-      "edit": "編集",
+      "editProfile": "プロフィールを編集",
       "link": "リンク",
+      "profileLink": "プロフィールリンク",
       "loggingOut": "ログアウト中...",
       "signOut": "ログアウト",
       "unfollowing": "フォロー解除中...",
@@ -1011,10 +1013,11 @@
     "couldNotFind": "リクエストされたリソースが見つかりませんでした"
   },
   "password": {
-    "weak": "弱いパスワード",
-    "fair": "普通のパスワード",
-    "good": "良いパスワード",
-    "strong": "強いパスワード！"
+    "veryWeak": "非常に弱い",
+    "weak": "弱い",
+    "moderate": "普通",
+    "strong": "強い",
+    "veryStrong": "非常に強い"
   },
   "quickReply": {
     "prompts": [
@@ -1083,7 +1086,10 @@
     "failedToLoadUsers": "ユーザーの読み込みに失敗しました",
     "failedToLoadTags": "タグの読み込みに失敗しました",
     "noUsersToShow": "表示するユーザーがいません",
-    "noTagsToShow": "表示するタグがありません"
+    "noTagsToShow": "表示するタグがありません",
+    "tags": "タグ",
+    "users": "ユーザー",
+    "posts": "投稿"
   },
   "privacy": {
     "showConfirmation": "リダイレクト前に確認を表示",
@@ -1125,8 +1131,7 @@
       }
     },
     "version": {
-      "title": "バージョン",
-      "text": "Pubky v0.12 © Synonym Software Ltd"
+      "title": "バージョン"
     }
   },
   "logout": {

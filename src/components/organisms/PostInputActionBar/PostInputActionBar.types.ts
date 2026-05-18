@@ -1,5 +1,4 @@
 import type * as React from 'react';
-
 import type { PostInputVariant } from '../PostInput/PostInput.types';
 
 export type PostInputActionSubmitMode = PostInputVariant;
@@ -19,7 +18,7 @@ export interface PostInputActionBarProps {
   postButtonLabel?: string;
   postButtonAriaLabel?: string;
   postButtonIcon?: React.ComponentType<{ className?: string; strokeWidth?: number }>;
-  hideArticleButton: boolean;
+  hideArticleButton?: boolean;
   isArticle?: boolean;
   isEdit?: boolean;
   characterLimit?: CharacterLimit;

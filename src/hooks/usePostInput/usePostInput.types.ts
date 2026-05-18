@@ -1,7 +1,7 @@
+import { type MDXEditorMethods, type MDXEditorProps } from '@mdxeditor/editor';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
-import { type MDXEditorProps, type MDXEditorMethods } from '@mdxeditor/editor';
+import type { AutocompleteUserData } from '@/hooks/useUserDetailsFromIds/useUserDetailsFromIds.types';
 import type { PostInputVariant } from '@/organisms/PostInput/PostInput.types';
-import type { AutocompleteUserData } from '@/hooks/useUserDetailsFromIds';
 
 export type ExistingAttachmentMeta = {
   uri: string;

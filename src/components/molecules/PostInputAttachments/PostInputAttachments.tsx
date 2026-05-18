@@ -1,11 +1,18 @@
 'use client';
 
-import { ChangeEvent, Dispatch, SetStateAction, forwardRef, useEffect, useMemo } from 'react';
-import * as Atoms from '@/atoms';
-import * as Icons from '@/libs/icons';
-import * as Utils from '@/libs/utils';
-import { ARTICLE_ATTACHMENT_ACCEPT_STRING, POST_ATTACHMENT_ACCEPT_STRING } from '@/config';
+import { ChangeEvent, Dispatch, forwardRef, SetStateAction, useEffect, useMemo } from 'react';
+import { FileText, ImagePlus, Plus, Trash2 } from 'lucide-react';
+import { Audio } from '@/atoms/Audio/Audio';
+import { Button } from '@/atoms/Button/Button';
+import { Card, CardContent } from '@/atoms/Card/Card';
+import { Container } from '@/atoms/Container/Container';
+import { Image } from '@/atoms/Image/Image';
+import { Input } from '@/atoms/Input/Input';
+import { Typography } from '@/atoms/Typography/Typography';
+import { Video } from '@/atoms/Video/Video';
+import { ARTICLE_ATTACHMENT_ACCEPT_STRING, POST_ATTACHMENT_ACCEPT_STRING } from '@/config/posts';
 import type { ExistingAttachmentMeta } from '@/hooks/usePostInput/usePostInput.types';
+import { cn } from '@/libs/utils/utils';
 
 type PostInputAttachmentsProps = {
   attachments: File[];
@@ -20,15 +27,12 @@ type PostInputAttachmentsProps = {
   isRemoveExistingDisabled?: (index: number) => boolean;
   isRemoveAttachmentDisabled?: (index: number) => boolean;
 };
-
 type AttachmentType = 'image' | 'video' | 'audio' | 'pdf';
-
 type AttachmentWithPreview = {
   file: File;
   type: AttachmentType;
   previewUrl: string;
 };
-
 const getAttachmentType = (file: File) => {
   if (file.type.startsWith('image/')) return 'image';
   if (file.type.startsWith('video/')) return 'video';
@@ -64,7 +68,6 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
       () =>
         attachments.map((file) => {
           const type = getAttachmentType(file) as AttachmentType;
-
           return {
             file,
             type,
@@ -82,7 +85,6 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
         });
       };
     }, [attachmentsWithPreviews]);
-
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || []);
       handleFilesAdded(files);
@@ -96,7 +98,7 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
 
     return (
       <>
-        <Atoms.Input
+        <Input
           ref={ref}
           type="file"
           accept={isArticle ? ARTICLE_ATTACHMENT_ACCEPT_STRING : POST_ATTACHMENT_ACCEPT_STRING}
@@ -106,74 +108,71 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
         />
 
         {isArticle && !attachmentsWithPreviews.length && !hasExisting ? (
-          <Atoms.Card className="h-39 w-full cursor-auto items-center justify-center rounded-md">
-            <Atoms.CardContent className="flex flex-col items-center justify-center gap-3">
-              <Atoms.Container
-                overrideDefaults
-                className="flex size-16 items-center justify-center rounded-full bg-brand/15"
-              >
-                <Icons.ImagePlus className="size-8 text-brand" />
-              </Atoms.Container>
+          <Card className="h-39 w-full cursor-auto items-center justify-center rounded-md">
+            <CardContent className="flex flex-col items-center justify-center gap-3">
+              <Container overrideDefaults className="flex size-16 items-center justify-center rounded-full bg-brand/15">
+                <ImagePlus className="size-8 text-brand" />
+              </Container>
 
-              <Atoms.Button variant="secondary" size="sm" onClick={handleFileClick} disabled={isSubmitting}>
-                <Icons.Plus className="size-4" /> Add image
-              </Atoms.Button>
-            </Atoms.CardContent>
-          </Atoms.Card>
+              <Button variant="secondary" size="sm" onClick={handleFileClick} disabled={isSubmitting}>
+                <Plus className="size-4" /> Add image
+              </Button>
+            </CardContent>
+          </Card>
         ) : null}
 
         {hasExisting || hasNew ? (
-          <Atoms.Container className="gap-4">
+          <Container className="gap-4">
             {/* Existing attachments (from server) */}
             {existingAttachments?.map((a, i) => {
               const type = getAttachmentTypeFromMime(a.type);
               return (
-                <Atoms.Container key={a.uri} className="relative">
-                  <Atoms.Button
+                <Container key={a.uri} className="relative">
+                  <Button
                     variant="dark"
                     size="icon"
                     data-cy={`post-input-attachment-remove-existing-${i}`}
                     onClick={() => onRemoveExisting?.(i)}
                     disabled={isSubmitting || isRemoveExistingDisabled?.(i)}
-                    className={Utils.cn(
+                    className={cn(
                       'absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100',
                       type === 'image' || type === 'video' ? 'top-4 size-12' : 'top-1/2 -translate-y-1/2',
                       type === 'audio' && 'size-6',
                       type === 'pdf' && 'size-8',
                     )}
                   >
-                    <Icons.Trash2 className={Utils.cn(type === 'audio' ? 'size-3' : 'size-4')} />
-                  </Atoms.Button>
+                    <Trash2 className={cn(type === 'audio' ? 'size-3' : 'size-4')} />
+                  </Button>
 
                   {type === 'image' && (
-                    <Atoms.Image
+                    <Image
                       src={a.previewUrl}
                       alt="Image preview"
                       className="h-48 w-full cursor-auto rounded-md bg-black object-contain"
                     />
                   )}
 
-                  {type === 'video' && <Atoms.Video src={a.previewUrl} className="h-48 w-full cursor-auto" />}
+                  {type === 'video' && <Video src={a.previewUrl} className="h-48 w-full cursor-auto" />}
 
-                  {type === 'audio' && <Atoms.Audio src={a.previewUrl} className="w-full cursor-auto" />}
+                  {type === 'audio' && <Audio src={a.previewUrl} className="w-full cursor-auto" />}
 
                   {type === 'pdf' && (
-                    <Atoms.Container className="cursor-auto flex-row items-center gap-x-2 rounded-md bg-muted p-4 pr-14">
-                      <Icons.FileText className="size-6 shrink-0" />
+                    <Container className="cursor-auto flex-row items-center gap-x-2 rounded-md bg-muted p-4 pr-14">
+                      <FileText className="size-6 shrink-0" />
 
-                      <Atoms.Typography size="sm" className="font-bold break-all">
+                      <Typography size="sm" className="font-bold break-all">
                         {a.name}
-                      </Atoms.Typography>
-                    </Atoms.Container>
+                      </Typography>
+                    </Container>
                   )}
-                </Atoms.Container>
+                </Container>
               );
             })}
 
             {/* New file attachments */}
             {attachmentsWithPreviews.map((a, i) => (
-              <Atoms.Container key={a.previewUrl} className="relative">
-                <Atoms.Button
+              <Container key={a.previewUrl} className="relative">
+                <Button
                   variant="dark"
                   size="icon"
                   data-cy={`post-input-attachment-remove-new-${i}`}
@@ -185,44 +184,43 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
                     setAttachments((prev) => prev.filter((_, index) => index !== i));
                   }}
                   disabled={isSubmitting || isRemoveAttachmentDisabled?.(i)}
-                  className={Utils.cn(
+                  className={cn(
                     'absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100',
                     a.type === 'image' || a.type === 'video' ? 'top-4 size-12' : 'top-1/2 -translate-y-1/2',
                     a.type === 'audio' && 'size-6',
                     a.type === 'pdf' && 'size-8',
                   )}
                 >
-                  <Icons.Trash2 className={Utils.cn(a.type === 'audio' ? 'size-3' : 'size-4')} />
-                </Atoms.Button>
+                  <Trash2 className={cn(a.type === 'audio' ? 'size-3' : 'size-4')} />
+                </Button>
 
                 {a.type === 'image' && (
-                  <Atoms.Image
+                  <Image
                     src={a.previewUrl}
                     alt="Image preview"
                     className="h-48 w-full cursor-auto rounded-md bg-black object-contain"
                   />
                 )}
 
-                {a.type === 'video' && <Atoms.Video src={a.previewUrl} className="h-48 w-full cursor-auto" />}
+                {a.type === 'video' && <Video src={a.previewUrl} className="h-48 w-full cursor-auto" />}
 
-                {a.type === 'audio' && <Atoms.Audio src={a.previewUrl} className="w-full cursor-auto" />}
+                {a.type === 'audio' && <Audio src={a.previewUrl} className="w-full cursor-auto" />}
 
                 {a.type === 'pdf' && (
-                  <Atoms.Container className="cursor-auto flex-row items-center gap-x-2 rounded-md bg-muted p-4 pr-14">
-                    <Icons.FileText className="size-6 shrink-0" />
+                  <Container className="cursor-auto flex-row items-center gap-x-2 rounded-md bg-muted p-4 pr-14">
+                    <FileText className="size-6 shrink-0" />
 
-                    <Atoms.Typography size="sm" className="font-bold break-all">
+                    <Typography size="sm" className="font-bold break-all">
                       {a.file.name}
-                    </Atoms.Typography>
-                  </Atoms.Container>
+                    </Typography>
+                  </Container>
                 )}
-              </Atoms.Container>
+              </Container>
             ))}
-          </Atoms.Container>
+          </Container>
         ) : null}
       </>
     );
   },
 );
-
 PostInputAttachments.displayName = 'PostInputAttachments';

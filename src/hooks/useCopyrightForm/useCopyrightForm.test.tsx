@@ -1,16 +1,20 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { asInvalid } from '@/test-utils/type-assertions';
 import { useCopyrightForm } from './useCopyrightForm';
 import { COPYRIGHT_ROLES } from './useCopyrightForm.constants';
 
 const mockToast = vi.fn();
 const mockShowErrorToast = vi.fn();
-vi.mock('@/molecules', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/molecules')>();
+vi.mock('@/molecules/Toaster/showErrorToast', () => {
   return {
-    ...actual,
-    toast: (...args: unknown[]) => mockToast(...args),
     showErrorToast: (params: { title?: string; description: string }) => mockShowErrorToast(params),
+  };
+});
+
+vi.mock('@/molecules/Toaster/use-toast', () => {
+  return {
+    toast: (...args: unknown[]) => mockToast(...args),
   };
 });
 
@@ -76,7 +80,7 @@ describe('useCopyrightForm', () => {
         // Cast undefined to bypass enum-typing — we're explicitly testing the unset case
         result.current.form.setValue(
           'role',
-          undefined as unknown as (typeof COPYRIGHT_ROLES)[keyof typeof COPYRIGHT_ROLES],
+          asInvalid<(typeof COPYRIGHT_ROLES)[keyof typeof COPYRIGHT_ROLES]>(undefined),
         );
       });
 

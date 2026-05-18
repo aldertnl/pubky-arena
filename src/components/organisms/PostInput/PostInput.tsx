@@ -2,23 +2,34 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-
-import * as Atoms from '@/atoms';
-import * as Hooks from '@/hooks';
-import * as Molecules from '@/molecules';
-import * as Organisms from '@/organisms';
-import * as Libs from '@/libs';
-import { ARTICLE_TITLE_MAX_CHARACTER_LENGTH, POST_MAX_CHARACTER_LENGTH } from '@/config';
-import { POST_THREAD_CONNECTOR_VARIANTS } from '@/atoms';
+import { Container } from '@/atoms/Container/Container';
+import { Input } from '@/atoms/Input/Input';
+import { PostThreadConnector } from '@/atoms/PostThreadConnector/PostThreadConnector';
+import { POST_THREAD_CONNECTOR_VARIANTS } from '@/atoms/PostThreadConnector/PostThreadConnector.constants';
+import { Textarea } from '@/atoms/Textarea/Textarea';
+import { Typography } from '@/atoms/Typography/Typography';
+import { ARTICLE_TITLE_MAX_CHARACTER_LENGTH, POST_MAX_CHARACTER_LENGTH } from '@/config/posts';
+import { useEnterSubmit } from '@/hooks/useEnterSubmit/useEnterSubmit';
+import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
+import type { ArticleJSON } from '@/hooks/usePostArticle/usePostArticle.types';
+import { usePostInput } from '@/hooks/usePostInput/usePostInput';
+import type { ExistingAttachmentMeta } from '@/hooks/usePostInput/usePostInput.types';
+import { canSubmitPost, cn, getCharacterCount } from '@/libs/utils/utils';
+import { sanitizeCodeBlockLanguages } from '@/molecules/MarkdownEditor/InitializedMDXEditor.utils';
+import { MarkdownEditor } from '@/molecules/MarkdownEditor/MarkdownEditor';
+import { MentionPopover } from '@/molecules/MentionPopover/MentionPopover';
+import { PostInputAttachments } from '@/molecules/PostInputAttachments/PostInputAttachments';
+import { PostPreviewCard } from '@/molecules/PostPreviewCard/PostPreviewCard';
+import { useToast } from '@/molecules/Toaster/use-toast';
+import { usePostMainLayout } from '@/organisms/PostMain/PostMainLayoutContext';
+import { WIDE_POST_BODY_TEXT_CLASS } from '@/organisms/PostMain/PostMainTypography';
+import { PostHeader } from '../PostHeader/PostHeader';
+import { PostInputExpandableSection } from '../PostInputExpandableSection/PostInputExpandableSection';
 import { POST_INPUT_VARIANT } from './PostInput.constants';
 import type { PostInputProps } from './PostInput.types';
-import { PostInputExpandableSection } from '../PostInputExpandableSection';
-import { PostInputAttachments } from '@/molecules/PostInputAttachments/PostInputAttachments';
-import type { ArticleJSON } from '@/hooks';
-import { sanitizeCodeBlockLanguages } from '@/molecules/MarkdownEditor/InitializedMDXEditor.utils';
 
 const isMediaFile = (file: File): boolean => file.type.startsWith('image/') || file.type.startsWith('video/');
-const isMediaExistingAttachment = (attachment: Hooks.ExistingAttachmentMeta): boolean =>
+const isMediaExistingAttachment = (attachment: ExistingAttachmentMeta): boolean =>
   attachment.type.length === 0 || attachment.type.startsWith('image/') || attachment.type.startsWith('video/');
 const EXPANDABLE_SECTION_PARENT_GAP_PX = 16;
 
@@ -92,7 +103,7 @@ export function PostInput({
     setExistingAttachments,
     isLoadingExistingAttachments,
     editHadMediaAttachments,
-  } = Hooks.usePostInput({
+  } = usePostInput({
     variant,
     postId,
     originalPostId,
@@ -115,7 +126,7 @@ export function PostInput({
     const baseValid =
       variant === POST_INPUT_VARIANT.EDIT && !isArticle
         ? !isSubmitting && (hasTrimmedContent || hasAnyAttachments)
-        : Libs.canSubmitPost(variant, content, attachments, isSubmitting, isArticle, articleTitle);
+        : canSubmitPost(variant, content, attachments, isSubmitting, isArticle, articleTitle);
     const hasExistingMedia = existingAttachments.some(isMediaExistingAttachment);
     const hasNewMedia = attachments.some(isMediaFile);
 
@@ -136,7 +147,7 @@ export function PostInput({
     existingAttachments,
   ]);
 
-  const enterSubmitHandler = Hooks.useEnterSubmit(isValid, handleSubmit, {
+  const enterSubmitHandler = useEnterSubmit(isValid, handleSubmit, {
     requireModifier: true,
   });
 
@@ -149,10 +160,10 @@ export function PostInput({
   const isEdit = variant === POST_INPUT_VARIANT.EDIT;
   const isArticleEdit = isEdit && Boolean(editIsArticle);
 
-  const { toast } = Molecules.useToast();
+  const { toast } = useToast();
 
   const hasRequiredMediaForEdit = React.useCallback(
-    (nextExistingAttachments: Hooks.ExistingAttachmentMeta[], nextAttachments: File[]): boolean => {
+    (nextExistingAttachments: ExistingAttachmentMeta[], nextAttachments: File[]): boolean => {
       if (!editHadMediaAttachments) return true;
       // Article edits can only have one banner attachment; allow temporary removal so users can replace it.
       // Submit validation still prevents saving while no media is present.
@@ -266,17 +277,20 @@ export function PostInput({
     },
     [isEdit, attachments, existingAttachments, hasRequiredMediaForEdit],
   );
-  const characterLimit = isArticle
-    ? undefined
-    : { count: Libs.getCharacterCount(content), max: POST_MAX_CHARACTER_LENGTH };
+  const characterLimit = isArticle ? undefined : { count: getCharacterCount(content), max: POST_MAX_CHARACTER_LENGTH };
+
+  const isMobile = useIsMobile();
+  const inheritedTagsLayout = usePostMainLayout() ?? 'inline';
+  const isWideLayout = !isMobile && inheritedTagsLayout === 'side';
 
   return (
-    <Atoms.Container
+    <Container
       data-cy={dataCy}
       id={id}
       ref={containerRef}
-      className={Libs.cn(
-        'relative cursor-pointer rounded-md border border-dashed p-4 transition-colors duration-200',
+      className={cn(
+        'relative cursor-pointer rounded-md border border-dashed transition-colors duration-200',
+        isWideLayout ? 'p-12' : 'p-4',
         isDragging ? 'border-brand' : 'border-input',
       )}
       onClick={handleExpand}
@@ -287,18 +301,18 @@ export function PostInput({
     >
       {/* Drag overlay */}
       {isDragging && (
-        <Atoms.Container
+        <Container
           className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-brand/10"
           overrideDefaults
         >
-          <Atoms.Typography className="text-brand">{t('dropFiles')}</Atoms.Typography>
-        </Atoms.Container>
+          <Typography className="text-brand">{t('dropFiles')}</Typography>
+        </Container>
       )}
 
-      {showThreadConnector && <Atoms.PostThreadConnector variant={POST_THREAD_CONNECTOR_VARIANTS.DIALOG_REPLY} />}
-      <Atoms.Container className="gap-4 contain-inline-size">
+      {showThreadConnector && <PostThreadConnector variant={POST_THREAD_CONNECTOR_VARIANTS.DIALOG_REPLY} />}
+      <Container className="gap-4 contain-inline-size">
         {isArticle && (
-          <Atoms.Input
+          <Input
             placeholder={t('articleTitle')}
             defaultValue={articleTitle}
             onChange={handleArticleTitleChange}
@@ -309,20 +323,22 @@ export function PostInput({
         )}
 
         {currentUserPubky && (
-          <Organisms.PostHeader
+          <PostHeader
             postId={currentUserPubky}
             isReplyInput={true}
             characterLimit={characterLimit}
             showPopover={false}
+            size={isWideLayout ? 'large' : 'normal'}
           />
         )}
 
         {!isArticle && (
-          <Atoms.Container overrideDefaults className="relative">
-            <Atoms.Textarea
+          <Container overrideDefaults className="relative">
+            <Textarea
               ref={textareaRef}
               placeholder={displayPlaceholder}
               variant="inline"
+              className={isWideLayout ? WIDE_POST_BODY_TEXT_CLASS : undefined}
               value={content}
               onChange={handleChange}
               onFocus={handleExpand}
@@ -337,14 +353,14 @@ export function PostInput({
 
             {/* Mention autocomplete popover */}
             {mentionIsOpen && (
-              <Molecules.MentionPopover
+              <MentionPopover
                 users={mentionUsers}
                 selectedIndex={mentionSelectedIndex}
                 onSelect={handleMentionSelect}
                 onHover={setMentionSelectedIndex}
               />
             )}
-          </Atoms.Container>
+          </Container>
         )}
 
         <PostInputAttachments
@@ -363,7 +379,7 @@ export function PostInput({
         />
 
         {isArticle && (
-          <Molecules.MarkdownEditor
+          <MarkdownEditor
             ref={markdownEditorRef}
             autoFocus
             markdown={sanitizeCodeBlockLanguages(content)}
@@ -374,7 +390,7 @@ export function PostInput({
 
         {/* Show original post preview for reposts */}
         {variant === POST_INPUT_VARIANT.REPOST && originalPostId && (
-          <Molecules.PostPreviewCard postId={originalPostId} className="bg-card" />
+          <PostPreviewCard postId={originalPostId} className="bg-card" />
         )}
 
         <PostInputExpandableSection
@@ -395,7 +411,7 @@ export function PostInput({
           parentGapPx={EXPANDABLE_SECTION_PARENT_GAP_PX}
           characterLimit={characterLimit}
         />
-      </Atoms.Container>
-    </Atoms.Container>
+      </Container>
+    </Container>
   );
 }

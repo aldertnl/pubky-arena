@@ -1,31 +1,37 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { TIMELINE_FEED_VARIANT } from '@/config';
-import * as Core from '@/core';
-import * as Atoms from '@/atoms';
-import * as Molecules from '@/molecules';
-import * as Organisms from '@/organisms';
-import * as Hooks from '@/hooks';
-import type { TagsLayout } from '../../../PostMain/PostMain.types';
-import type { TimelineFeedProps, TimelineFeedContextValue } from '../TimelineFeed/TimelineFeed.types';
+import { MuteFilter } from '@/application/stream/posts/muting/mute-filter';
+import { Container } from '@/atoms/Container/Container';
+import { TIMELINE_FEED_VARIANT } from '@/config/feed';
+import type { FeedLayoutResolution } from '@/hooks/useFeedLayoutResolution/useFeedLayoutResolution';
+import { useMutedUsers } from '@/hooks/useMutedUsers/useMutedUsers';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh/usePullToRefresh';
+import { useStreamPagination } from '@/hooks/useStreamPagination/useStreamPagination';
+import type { PostStreamId } from '@/models/stream/post/postStream.types';
+import { PullToRefreshIndicator } from '@/molecules/PullToRefreshIndicator/PullToRefreshIndicator';
+import { TimelineLoading } from '@/molecules/Timeline/TimelineLoading';
+import type { TagsLayout } from '@/organisms/PostMain/PostMain.types';
+import { PostMainLayoutProvider } from '@/organisms/PostMain/PostMainLayoutContext';
+import { TimelinePosts } from '../../Posts/Posts';
+import { NewPostsSection } from '../NewPostsSection/NewPostsSection';
+import type { TimelineFeedContextValue, TimelineFeedProps } from '../TimelineFeed/TimelineFeed.types';
 import { TimelineFeedContext } from '../TimelineFeed/TimelineFeedContext';
-import { NewPostsSection } from '../NewPostsSection';
 import { VisualTimelinePosts } from '../TimelineFeed/VisualTimelinePosts';
 
 interface TimelineFeedContentProps {
-  streamId: Core.PostStreamId;
+  streamId: PostStreamId;
   variant: TimelineFeedProps['variant'];
   tagsLayout: TagsLayout;
-  layoutResolution?: Hooks.FeedLayoutResolution;
+  layoutResolution?: FeedLayoutResolution;
   children?: TimelineFeedProps['children'];
 }
 
 interface TimelineFeedWithStreamProps {
-  streamId: Core.PostStreamId | undefined;
+  streamId: PostStreamId | undefined;
   variant: TimelineFeedProps['variant'];
   tagsLayout: TagsLayout;
-  layoutResolution?: Hooks.FeedLayoutResolution;
+  layoutResolution?: FeedLayoutResolution;
   children?: TimelineFeedProps['children'];
 }
 
@@ -43,7 +49,7 @@ export function TimelineFeedWithStream({
   children,
 }: TimelineFeedWithStreamProps) {
   if (!streamId) {
-    return <Molecules.TimelineLoading />;
+    return <TimelineLoading />;
   }
 
   return (
@@ -61,7 +67,7 @@ export function TimelineFeedWithStream({
 /**
  * TimelineFeedContent
  *
- * Core component that manages stream pagination, muting, pull-to-refresh,
+ * Primary component that manages stream pagination, muting, pull-to-refresh,
  * and provides the TimelineFeedContext to children.
  *
  * The outermost Atoms.Container carries the containerRef so that pull-to-refresh
@@ -72,6 +78,7 @@ export function TimelineFeedWithStream({
  */
 function TimelineFeedContent({ streamId, variant, tagsLayout, layoutResolution, children }: TimelineFeedContentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const previousMutedUserIdSetRef = useRef<Set<string> | null>(null);
 
   const isVisualActive = layoutResolution?.isVisualActive ?? false;
   const {
@@ -84,34 +91,51 @@ function TimelineFeedContent({ streamId, variant, tagsLayout, layoutResolution, 
     refresh,
     prependPosts,
     removePosts,
-  } = Hooks.useStreamPagination({
+  } = useStreamPagination({
     streamId,
   });
 
   const postIds = [...new Set(rawPostIds)];
 
-  const { mutedUserIdSet } = Hooks.useMutedUsers();
+  const { mutedUserIdSet } = useMutedUsers();
 
   const enablePullToRefresh =
     variant === TIMELINE_FEED_VARIANT.HOME ||
     variant === TIMELINE_FEED_VARIANT.CUSTOM ||
     variant === TIMELINE_FEED_VARIANT.HOT;
-  const { state: pullState, pullDistance } = Hooks.usePullToRefresh({
+  const { state: pullState, pullDistance } = usePullToRefresh({
     containerRef,
     onRefresh: refresh,
     disabled: !enablePullToRefresh,
   });
 
   useEffect(() => {
-    if (variant === TIMELINE_FEED_VARIANT.PROFILE) return;
-    if (mutedUserIdSet.size === 0) return;
+    const previousMutedUserIdSet = previousMutedUserIdSetRef.current;
+    const currentMutedUserIdSet = new Set(mutedUserIdSet);
+    // Store the latest set before early returns so Strict Mode reruns do not retrigger the same transition.
+    previousMutedUserIdSetRef.current = currentMutedUserIdSet;
 
-    const postIdsToRemove = rawPostIds.filter((id) => Core.MuteFilter.isPostMuted(id, mutedUserIdSet));
+    if (variant === TIMELINE_FEED_VARIANT.PROFILE) return;
+
+    const hasUnmutedUser = previousMutedUserIdSet
+      ? [...previousMutedUserIdSet].some((userId) => !currentMutedUserIdSet.has(userId))
+      : false;
+
+    if (hasUnmutedUser) {
+      // Unmute can make posts that were removed from pagination state visible again; rebuild from the stream.
+      void refresh();
+      return;
+    }
+
+    if (currentMutedUserIdSet.size === 0) return;
+
+    // Muting only needs to remove currently visible posts, so keep this path cheaper than a full refresh.
+    const postIdsToRemove = rawPostIds.filter((id) => MuteFilter.isPostMuted(id, currentMutedUserIdSet));
 
     if (postIdsToRemove.length > 0) {
       removePosts(postIdsToRemove);
     }
-  }, [mutedUserIdSet, rawPostIds, removePosts, variant]);
+  }, [mutedUserIdSet, rawPostIds, refresh, removePosts, variant]);
 
   const contextValue: TimelineFeedContextValue = {
     prependPosts,
@@ -120,37 +144,38 @@ function TimelineFeedContent({ streamId, variant, tagsLayout, layoutResolution, 
 
   return (
     <TimelineFeedContext.Provider value={contextValue}>
-      <Atoms.Container ref={containerRef} className="min-w-0 flex-1 gap-6 lg:overflow-hidden">
-        {enablePullToRefresh && <Molecules.PullToRefreshIndicator state={pullState} pullDistance={pullDistance} />}
-        {!isVisualActive ? children : null}
-        <NewPostsSection
-          streamId={streamId}
-          postIds={postIds}
-          mutedUserIdSet={mutedUserIdSet}
-          loading={loading}
-          prependPosts={prependPosts}
-        />
-        {isVisualActive ? (
-          <VisualTimelinePosts
+      <PostMainLayoutProvider tagsLayout={tagsLayout}>
+        <Container ref={containerRef} className="min-w-0 flex-1 gap-6 lg:overflow-hidden">
+          {enablePullToRefresh && <PullToRefreshIndicator state={pullState} pullDistance={pullDistance} />}
+          {!isVisualActive ? children : null}
+          <NewPostsSection
+            streamId={streamId}
             postIds={postIds}
+            mutedUserIdSet={mutedUserIdSet}
             loading={loading}
-            loadingMore={loadingMore}
-            error={error}
-            hasMore={hasMore}
-            loadMore={loadMore}
+            prependPosts={prependPosts}
           />
-        ) : (
-          <Organisms.TimelinePosts
-            postIds={postIds}
-            loading={loading}
-            loadingMore={loadingMore}
-            error={error}
-            hasMore={hasMore}
-            loadMore={loadMore}
-            tagsLayout={tagsLayout}
-          />
-        )}
-      </Atoms.Container>
+          {isVisualActive ? (
+            <VisualTimelinePosts
+              postIds={postIds}
+              loading={loading}
+              loadingMore={loadingMore}
+              error={error}
+              hasMore={hasMore}
+              loadMore={loadMore}
+            />
+          ) : (
+            <TimelinePosts
+              postIds={postIds}
+              loading={loading}
+              loadingMore={loadingMore}
+              error={error}
+              hasMore={hasMore}
+              loadMore={loadMore}
+            />
+          )}
+        </Container>
+      </PostMainLayoutProvider>
     </TimelineFeedContext.Provider>
   );
 }

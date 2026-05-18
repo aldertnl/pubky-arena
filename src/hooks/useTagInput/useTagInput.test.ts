@@ -1,19 +1,21 @@
-import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
 import type { RefObject } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TAG_MAX_LENGTH } from '@/config/posts';
+import { mockClipboardEvent } from '@/test-utils/react-events';
+import { asOpaque } from '@/test-utils/type-assertions';
 import { useTagInput } from './useTagInput';
-import { TAG_MAX_LENGTH } from '@/config';
 
 // Mock useEmojiInsert
-vi.mock('../useEmojiInsert', () => ({
+vi.mock('../useEmojiInsert/useEmojiInsert', () => ({
   useEmojiInsert: vi.fn(() => vi.fn()),
 }));
 
 function createPasteEvent(text: string): React.ClipboardEvent {
-  return {
+  return mockClipboardEvent({
     preventDefault: vi.fn(),
-    clipboardData: { getData: vi.fn(() => text) },
-  } as unknown as React.ClipboardEvent;
+    clipboardData: asOpaque<DataTransfer>({ getData: vi.fn(() => text) }),
+  });
 }
 
 function mockInputSelection(ref: RefObject<HTMLInputElement | null>, start: number, end: number) {

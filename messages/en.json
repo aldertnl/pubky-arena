@@ -377,7 +377,7 @@
       "neverShareMobile": "Never share this file and password with anyone.",
       "password": "PASSWORD",
       "passwordPlaceholder": "Enter a strong password",
-      "passwordHint": "We recommend to use 8 characters or more with uppercase, lowercase, numbers, and symbols.",
+      "passwordHint": "We recommend using a long <passphraseLink>passphrase</passphraseLink> <minLen>over 16 characters</minLen> for better security.",
       "repeatPassword": "REPEAT PASSWORD",
       "repeatPasswordPlaceholder": "Repeat your password",
       "passwordsDoNotMatch": "Passwords do not match",
@@ -438,7 +438,8 @@
     "viewOriginal": "View original post",
     "youReposted": "You reposted",
     "newPostsSingular": "See {count} new post",
-    "newPostsPlural": "See {count} new posts"
+    "newPostsPlural": "See {count} new posts",
+    "replies": "Replies"
   },
   "profile": {
     "title": "Profile",
@@ -460,8 +461,9 @@
     },
     "actions": {
       "title": "Profile Actions",
-      "edit": "Edit",
+      "editProfile": "Edit profile",
       "link": "Link",
+      "profileLink": "Profile link",
       "loggingOut": "Logging out...",
       "signOut": "Sign out",
       "unfollowing": "Unfollowing...",
@@ -1005,10 +1007,11 @@
     "couldNotFind": "Could not find requested resource"
   },
   "password": {
-    "weak": "Weak password",
-    "fair": "Fair password",
-    "good": "Good password",
-    "strong": "Strong password!"
+    "veryWeak": "Very weak",
+    "weak": "Weak",
+    "moderate": "Moderate",
+    "strong": "Strong",
+    "veryStrong": "Very strong"
   },
   "quickReply": {
     "prompts": [
@@ -1077,7 +1080,10 @@
     "failedToLoadUsers": "Failed to load users",
     "failedToLoadTags": "Failed to load tags",
     "noUsersToShow": "No users to show",
-    "noTagsToShow": "No tags to show"
+    "noTagsToShow": "No tags to show",
+    "tags": "Tags",
+    "users": "Users",
+    "posts": "Posts"
   },
   "privacy": {
     "showConfirmation": "Show confirmation before redirecting",
@@ -1119,8 +1125,7 @@
       }
     },
     "version": {
-      "title": "Version",
-      "text": "Pubky v0.12 © Synonym Software Ltd"
+      "title": "Version"
     }
   },
   "logout": {

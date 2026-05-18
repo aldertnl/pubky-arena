@@ -1,28 +1,37 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
-import { type MDXEditorProps, type MDXEditorMethods } from '@mdxeditor/editor';
-import { useDebounceCallback } from 'usehooks-ts';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { type MDXEditorMethods, type MDXEditorProps } from '@mdxeditor/editor';
 import { useTranslations } from 'next-intl';
-import * as Hooks from '@/hooks';
-import * as Molecules from '@/molecules';
-import * as Core from '@/core';
+import { useDebounceCallback } from 'usehooks-ts';
 import {
-  POST_MAX_CHARACTER_LENGTH,
+  ARTICLE_ATTACHMENT_MAX_FILES,
+  ARTICLE_SUPPORTED_ATTACHMENT_MIME_TYPES,
+  ARTICLE_SUPPORTED_FILE_TYPES,
+  ARTICLE_TITLE_MAX_CHARACTER_LENGTH,
   ATTACHMENT_MAX_IMAGE_SIZE,
   ATTACHMENT_MAX_OTHER_SIZE,
-  ARTICLE_ATTACHMENT_MAX_FILES,
   POST_ATTACHMENT_MAX_FILES,
-  ARTICLE_SUPPORTED_FILE_TYPES,
-  POST_SUPPORTED_FILE_TYPES,
+  POST_MAX_CHARACTER_LENGTH,
   POST_SUPPORTED_ATTACHMENT_MIME_TYPES,
-  ARTICLE_SUPPORTED_ATTACHMENT_MIME_TYPES,
-  ARTICLE_TITLE_MAX_CHARACTER_LENGTH,
-} from '@/config';
-import { useTimelineFeedContext } from '@/organisms/Timeline/Feed/TimelineFeed';
+  POST_SUPPORTED_FILE_TYPES,
+} from '@/config/posts';
+import { FileController } from '@/controllers/file/file';
+import { useCurrentUserProfile } from '@/hooks/useCurrentUserProfile/useCurrentUserProfile';
+import { useDeletePost } from '@/hooks/useDeletePost/useDeletePost';
+import { useEmojiInsert } from '@/hooks/useEmojiInsert/useEmojiInsert';
+import { useMentionAutocomplete } from '@/hooks/useMentionAutocomplete/useMentionAutocomplete';
+import { getContentWithMention } from '@/hooks/useMentionAutocomplete/useMentionAutocomplete.utils';
+import { usePost } from '@/hooks/usePost/usePost';
+import { useUserDetails } from '@/hooks/useUserDetails/useUserDetails';
+import { CompositeIdDomain } from '@/models/models.types';
+import { buildCompositeIdFromPubkyUri } from '@/models/models.utils';
+import { useToast } from '@/molecules/Toaster/use-toast';
 import { POST_INPUT_VARIANT } from '@/organisms/PostInput/PostInput.constants';
-import { useMentionAutocomplete, getContentWithMention } from '@/hooks/useMentionAutocomplete';
-import type { UsePostInputOptions, UsePostInputReturn, ExistingAttachmentMeta } from './usePostInput.types';
+import { useTimelineFeedContext } from '@/organisms/Timeline/Feed/TimelineFeed/TimelineFeedContext';
+import { FileVariant } from '@/services/nexus/file/file.types';
+import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
+import type { ExistingAttachmentMeta, UsePostInputOptions, UsePostInputReturn } from './usePostInput.types';
 
 /**
  * Hook that encapsulates all PostInput logic.
@@ -54,9 +63,7 @@ export function usePostInput({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isExpanded, setIsExpanded] = useState(expanded);
   const [isDragging, setIsDragging] = useState(false);
-  const [existingAttachments, setExistingAttachments] = useState<
-    Array<{ uri: string; name: string; type: string; previewUrl: string }>
-  >([]);
+  const [existingAttachments, setExistingAttachments] = useState<ExistingAttachmentMeta[]>([]);
   const [isLoadingExistingAttachments, setIsLoadingExistingAttachments] = useState(false);
   const [editHadMediaAttachments, setEditHadMediaAttachments] = useState(false);
 
@@ -72,7 +79,7 @@ export function usePostInput({
   const t = useTranslations('post.placeholder');
   const tToast = useTranslations('toast');
   const tFile = useTranslations('toast.file');
-  const { currentUserPubky } = Hooks.useCurrentUserProfile();
+  const { currentUserPubky } = useCurrentUserProfile();
   const {
     content,
     setContent,
@@ -89,14 +96,14 @@ export function usePostInput({
     repost,
     edit,
     isSubmitting,
-  } = Hooks.usePost();
+  } = usePost();
   const timelineFeed = useTimelineFeedContext();
-  const { toast } = Molecules.useToast();
-  const { deletePost } = Hooks.useDeletePost();
+  const { toast } = useToast();
+  const { deletePost } = useDeletePost();
 
   // Get original post author's name for repost toast message
   const originalPostAuthorId = originalPostId ? originalPostId.split(':')[0] : null;
-  const { userDetails: originalPostAuthor } = Hooks.useUserDetails(originalPostAuthorId);
+  const { userDetails: originalPostAuthor } = useUserDetails(originalPostAuthorId);
 
   // Handle mention selection - inserts pubky{userId} into content
   const handleMentionSelect = useCallback(
@@ -141,7 +148,7 @@ export function usePostInput({
 
     const resolve = async () => {
       try {
-        const metadata = await Core.FileController.getMetadata({ fileAttachments: editAttachments });
+        const metadata = await FileController.getMetadata({ fileAttachments: editAttachments });
         if (cancelled) return;
 
         // Build lookup by URI for matching metadata to original URIs
@@ -157,19 +164,19 @@ export function usePostInput({
               uri,
               name: m.name,
               type: m.content_type,
-              previewUrl: Core.FileController.getFileUrl({
+              previewUrl: FileController.getFileUrl({
                 fileId: m.id,
-                variant: isImage ? Core.FileVariant.FEED : Core.FileVariant.MAIN,
+                variant: isImage ? FileVariant.FEED : FileVariant.MAIN,
               }),
             };
           }
           // Fallback: generate preview URL directly from URI without local DB
-          const compositeId = Core.buildCompositeIdFromPubkyUri({
+          const compositeId = buildCompositeIdFromPubkyUri({
             uri,
-            domain: Core.CompositeIdDomain.FILES,
+            domain: CompositeIdDomain.FILES,
           });
           const previewUrl = compositeId
-            ? Core.FileController.getFileUrl({ fileId: compositeId, variant: Core.FileVariant.MAIN })
+            ? FileController.getFileUrl({ fileId: compositeId, variant: FileVariant.MAIN })
             : '';
           return { uri, name: '', type: '', previewUrl };
         });
@@ -181,12 +188,12 @@ export function usePostInput({
         // If metadata resolution fails entirely, fall back to raw URIs so submit still preserves them
         if (!cancelled) {
           const fallback = editAttachments.map((uri) => {
-            const compositeId = Core.buildCompositeIdFromPubkyUri({
+            const compositeId = buildCompositeIdFromPubkyUri({
               uri,
-              domain: Core.CompositeIdDomain.FILES,
+              domain: CompositeIdDomain.FILES,
             });
             const previewUrl = compositeId
-              ? Core.FileController.getFileUrl({ fileId: compositeId, variant: Core.FileVariant.MAIN })
+              ? FileController.getFileUrl({ fileId: compositeId, variant: FileVariant.MAIN })
               : '';
             return { uri, name: '', type: '', previewUrl };
           });
@@ -320,11 +327,11 @@ export function usePostInput({
 
       if (variant === POST_INPUT_VARIANT.EDIT) {
         const localAttachmentsFromExistingFiles = existingAttachments.map(getLocalAttachmentFromExisting);
-        Core.useLocalFilesStore
+        useLocalFilesStore
           .getState()
           .setPostAttachments(createdPostId, [...localAttachmentsFromExistingFiles, ...localAttachmentsFromNewFiles]);
       } else if (localAttachmentsFromNewFiles.length > 0) {
-        Core.useLocalFilesStore.getState().setPostAttachments(createdPostId, localAttachmentsFromNewFiles);
+        useLocalFilesStore.getState().setPostAttachments(createdPostId, localAttachmentsFromNewFiles);
       }
 
       // Only prepend to timeline for posts and reposts, not replies or edits
@@ -426,7 +433,7 @@ export function usePostInput({
   );
 
   // Emoji insert handler
-  const handleEmojiSelect = Hooks.useEmojiInsert({
+  const handleEmojiSelect = useEmojiInsert({
     inputRef: textareaRef,
     value: content,
     onChange: handleEmojiChange,

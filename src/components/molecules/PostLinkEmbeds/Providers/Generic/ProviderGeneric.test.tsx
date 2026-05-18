@@ -1,16 +1,17 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { Generic } from './ProviderGeneric';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useOgMetadata } from '@/hooks/useOgMetadata/useOgMetadata';
+import { asInvalid } from '@/test-utils/type-assertions';
+import type { EmbedData } from '../../Providers/Provider.types';
 import { GenericPreview } from './GenericPreview';
+import { Generic } from './ProviderGeneric';
 
 // Mock the hooks module
-vi.mock('@/hooks', () => ({
+vi.mock('@/hooks/useOgMetadata/useOgMetadata', () => ({
   useOgMetadata: vi.fn(),
 }));
 
 // Import the mocked hook
-import * as Hooks from '@/hooks';
-
 describe('ProviderGeneric', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -131,7 +132,7 @@ describe('ProviderGeneric', () => {
         },
       };
 
-      const result = Generic.renderEmbed(embedData);
+      const result = Generic.renderEmbed(asInvalid<EmbedData>(embedData));
 
       expect(result).toBeNull();
     });
@@ -152,7 +153,7 @@ describe('ProviderGeneric', () => {
 });
 
 describe('GenericPreview', () => {
-  const mockUseOgMetadata = vi.mocked(Hooks.useOgMetadata);
+  const mockUseOgMetadata = vi.mocked(useOgMetadata);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -341,7 +342,7 @@ describe('GenericPreview', () => {
 });
 
 describe('GenericPreview - Snapshots', () => {
-  const mockUseOgMetadata = vi.mocked(Hooks.useOgMetadata);
+  const mockUseOgMetadata = vi.mocked(useOgMetadata);
 
   beforeEach(() => {
     vi.clearAllMocks();

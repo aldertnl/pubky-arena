@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePublicRoute } from './usePublicRoute';
 
 // Mock next/navigation
@@ -32,7 +32,7 @@ describe('usePublicRoute', () => {
       expect(result.current.isPublicRoute).toBe(true);
     });
 
-    it('returns isPublicRoute: true for other user profile sub-routes', () => {
+    it('returns isPublicRoute: true for the legacy other user posts route', () => {
       const pubky = 'gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo';
       mockPathname.mockReturnValue(`/profile/${pubky}/posts`);
 

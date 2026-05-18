@@ -383,7 +383,7 @@
       "neverShareMobile": "Nunca compartilhe este arquivo e senha com ninguem.",
       "password": "SENHA",
       "passwordPlaceholder": "Digite uma senha forte",
-      "passwordHint": "Recomendamos usar 8 caracteres ou mais com maiusculas, minusculas, números e simbolos.",
+      "passwordHint": "Recomendamos usar uma <passphraseLink>frase-senha</passphraseLink> longa com <minLen>mais de 16 caracteres</minLen> para melhor segurança.",
       "repeatPassword": "REPETIR SENHA",
       "repeatPasswordPlaceholder": "Repita sua senha",
       "passwordsDoNotMatch": "As senhas não coincidem",
@@ -444,7 +444,8 @@
     "viewOriginal": "Ver post original",
     "youReposted": "Você repostou",
     "newPostsSingular": "Ver {count} novo post",
-    "newPostsPlural": "Ver {count} novos posts"
+    "newPostsPlural": "Ver {count} novos posts",
+    "replies": "Respostas"
   },
   "profile": {
     "title": "Perfil",
@@ -466,8 +467,9 @@
     },
     "actions": {
       "title": "Acoes do Perfil",
-      "edit": "Editar",
+      "editProfile": "Editar perfil",
       "link": "Link",
+      "profileLink": "Link do perfil",
       "loggingOut": "Saindo...",
       "signOut": "Sair",
       "unfollowing": "Deixando de seguir...",
@@ -1011,10 +1013,11 @@
     "couldNotFind": "Nao foi possivel encontrar o recurso solicitado"
   },
   "password": {
+    "veryWeak": "Senha muito fraca",
     "weak": "Senha fraca",
-    "fair": "Senha razoavel",
-    "good": "Boa senha",
-    "strong": "Senha forte!"
+    "moderate": "Senha moderada",
+    "strong": "Senha forte",
+    "veryStrong": "Senha muito forte"
   },
   "quickReply": {
     "prompts": [
@@ -1083,7 +1086,10 @@
     "failedToLoadUsers": "Falha ao carregar usuarios",
     "failedToLoadTags": "Falha ao carregar tags",
     "noUsersToShow": "Nenhum usuario para mostrar",
-    "noTagsToShow": "Nenhuma tag para mostrar"
+    "noTagsToShow": "Nenhuma tag para mostrar",
+    "tags": "Tags",
+    "users": "Usuários",
+    "posts": "Publicações"
   },
   "privacy": {
     "showConfirmation": "Mostrar confirmação antes de redirecionar",
@@ -1125,8 +1131,7 @@
       }
     },
     "version": {
-      "title": "Versão",
-      "text": "Pubky v0.12 © Synonym Software Ltd"
+      "title": "Versão"
     }
   },
   "logout": {

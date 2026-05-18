@@ -1,7 +1,21 @@
-import { describe, it, expect } from 'vitest';
-import { isDynamicPublicRoute } from './routes';
+import { describe, expect, it } from 'vitest';
+import { getProfileRoute, isDynamicPublicRoute, PROFILE_ROUTES } from './routes';
 
 describe('isDynamicPublicRoute', () => {
+  describe('invite routes', () => {
+    it('returns true for invite code route', () => {
+      expect(isDynamicPublicRoute('/invite/abcdefghijkl')).toBe(true);
+    });
+
+    it('returns false for base invite route', () => {
+      expect(isDynamicPublicRoute('/invite')).toBe(false);
+    });
+
+    it('returns false for invite route with extra segments', () => {
+      expect(isDynamicPublicRoute('/invite/abcdefghijkl/extra')).toBe(false);
+    });
+  });
+
   describe('post routes', () => {
     it('returns true for valid single post route', () => {
       expect(isDynamicPublicRoute('/post/abc123/xyz789')).toBe(true);
@@ -31,7 +45,7 @@ describe('isDynamicPublicRoute', () => {
       expect(isDynamicPublicRoute(`/profile/${longPubky}`)).toBe(true);
     });
 
-    it('returns true for profile with pubky and posts sub-route', () => {
+    it('returns true for profile with pubky and legacy posts sub-route', () => {
       const longPubky = 'gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo';
       expect(isDynamicPublicRoute(`/profile/${longPubky}/posts`)).toBe(true);
     });
@@ -107,5 +121,24 @@ describe('isDynamicPublicRoute', () => {
       expect(isDynamicPublicRoute('/onboarding')).toBe(false);
       expect(isDynamicPublicRoute('/onboarding/profile')).toBe(false);
     });
+  });
+});
+
+describe('getProfileRoute', () => {
+  it('returns unchanged own-profile routes when no pubky is provided', () => {
+    expect(getProfileRoute(PROFILE_ROUTES.POSTS)).toBe(PROFILE_ROUTES.POSTS);
+  });
+
+  it('uses /profile/[pubky] as the canonical posts route for other users', () => {
+    const pubky = 'gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo';
+
+    expect(getProfileRoute(PROFILE_ROUTES.POSTS, pubky)).toBe(`/profile/${pubky}`);
+  });
+
+  it('routes own-only profile defaults to the other-user canonical profile route', () => {
+    const pubky = 'gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo';
+
+    expect(getProfileRoute(PROFILE_ROUTES.PROFILE, pubky)).toBe(`/profile/${pubky}`);
+    expect(getProfileRoute(PROFILE_ROUTES.NOTIFICATIONS, pubky)).toBe(`/profile/${pubky}`);
   });
 });

@@ -1,37 +1,47 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FileController } from '@/controllers/file/file';
+import { FileVariant } from '@/services/nexus/file/file.types';
+import type { NexusFileDetails } from '@/services/nexus/nexus.types';
 import { usePostArticle } from './usePostArticle';
-import * as Core from '@/core';
 
 // Mock useToast
 const mockToast = vi.fn();
-vi.mock('@/molecules', () => ({
-  useToast: () => ({ toast: mockToast }),
-}));
+vi.mock('@/molecules/Toaster/use-toast', () => {
+  return {
+    useToast: () => ({ toast: mockToast }),
+  };
+});
 
 const mockLoggerWarn = vi.fn();
 const mockLoggerError = vi.fn();
-vi.mock('@/libs', () => ({
+vi.mock('@/libs/logger/logger', () => ({
   Logger: {
     warn: (...args: unknown[]) => mockLoggerWarn(...args),
     error: (...args: unknown[]) => mockLoggerError(...args),
   },
 }));
 
-// Mock core
-vi.mock('@/core', () => ({
+// Mock dependencies
+vi.mock('@/controllers/file/file', () => ({
   FileController: {
     getMetadata: vi.fn(),
     getFileUrl: vi.fn(),
   },
+}));
+vi.mock('@/services/nexus/file/file.types', () => ({
   FileVariant: {
     MAIN: 'main',
     FEED: 'feed',
     SMALL: 'small',
   },
+}));
+vi.mock('@/models/models.types', () => ({
   CompositeIdDomain: {
     FILES: 'files',
   },
+}));
+vi.mock('@/models/models.utils', () => ({
   buildCompositeIdFromPubkyUri: vi.fn(({ uri }: { uri: string }) => {
     const match = uri.match(/^pubky:\/\/([^/]+)\/pub\/pubky\.app\/files\/([^/]+)$/);
     if (!match) return null;
@@ -39,11 +49,11 @@ vi.mock('@/core', () => ({
   }),
 }));
 
-const mockGetMetadata = vi.mocked(Core.FileController.getMetadata);
-const mockGetFileUrl = vi.mocked(Core.FileController.getFileUrl);
+const mockGetMetadata = vi.mocked(FileController.getMetadata);
+const mockGetFileUrl = vi.mocked(FileController.getFileUrl);
 
 // Helper to create mock file metadata
-const createMockImageMetadata = (id: string, name = 'cover.jpg'): Core.NexusFileDetails => ({
+const createMockImageMetadata = (id: string, name = 'cover.jpg'): NexusFileDetails => ({
   id,
   name,
   content_type: 'image/jpeg',
@@ -61,7 +71,7 @@ const createMockImageMetadata = (id: string, name = 'cover.jpg'): Core.NexusFile
   },
 });
 
-const createMockPdfMetadata = (id: string, name = 'document.pdf'): Core.NexusFileDetails => ({
+const createMockPdfMetadata = (id: string, name = 'document.pdf'): NexusFileDetails => ({
   id,
   name,
   content_type: 'application/pdf',
@@ -95,7 +105,7 @@ describe('usePostArticle', () => {
         usePostArticle({
           content,
           attachments: null,
-          coverImageVariant: Core.FileVariant.FEED,
+          coverImageVariant: FileVariant.FEED,
         }),
       );
 
@@ -110,7 +120,7 @@ describe('usePostArticle', () => {
         usePostArticle({
           content,
           attachments: null,
-          coverImageVariant: Core.FileVariant.FEED,
+          coverImageVariant: FileVariant.FEED,
         }),
       );
 
@@ -128,7 +138,7 @@ describe('usePostArticle', () => {
         usePostArticle({
           content,
           attachments: null,
-          coverImageVariant: Core.FileVariant.FEED,
+          coverImageVariant: FileVariant.FEED,
         }),
       );
 
@@ -145,7 +155,7 @@ describe('usePostArticle', () => {
         usePostArticle({
           content,
           attachments: null,
-          coverImageVariant: Core.FileVariant.FEED,
+          coverImageVariant: FileVariant.FEED,
         }),
       );
 
@@ -160,7 +170,7 @@ describe('usePostArticle', () => {
         usePostArticle({
           content,
           attachments: [],
-          coverImageVariant: Core.FileVariant.FEED,
+          coverImageVariant: FileVariant.FEED,
         }),
       );
 
@@ -179,7 +189,7 @@ describe('usePostArticle', () => {
         usePostArticle({
           content,
           attachments,
-          coverImageVariant: Core.FileVariant.FEED,
+          coverImageVariant: FileVariant.FEED,
         }),
       );
 
@@ -190,7 +200,7 @@ describe('usePostArticle', () => {
       expect(mockGetMetadata).toHaveBeenCalledWith({ fileAttachments: attachments });
       expect(mockGetFileUrl).toHaveBeenCalledWith({
         fileId: 'user123:file456',
-        variant: Core.FileVariant.FEED,
+        variant: FileVariant.FEED,
       });
       expect(result.current.coverImage).toEqual({
         src: 'https://cdn.example.com/user123:file456/feed',
@@ -209,7 +219,7 @@ describe('usePostArticle', () => {
         usePostArticle({
           content,
           attachments,
-          coverImageVariant: Core.FileVariant.MAIN,
+          coverImageVariant: FileVariant.MAIN,
         }),
       );
 
@@ -219,7 +229,7 @@ describe('usePostArticle', () => {
 
       expect(mockGetFileUrl).toHaveBeenCalledWith({
         fileId: 'user123:file456',
-        variant: Core.FileVariant.MAIN,
+        variant: FileVariant.MAIN,
       });
     });
 
@@ -234,7 +244,7 @@ describe('usePostArticle', () => {
         usePostArticle({
           content,
           attachments,
-          coverImageVariant: Core.FileVariant.FEED,
+          coverImageVariant: FileVariant.FEED,
         }),
       );
 
@@ -257,7 +267,7 @@ describe('usePostArticle', () => {
         usePostArticle({
           content,
           attachments,
-          coverImageVariant: Core.FileVariant.FEED,
+          coverImageVariant: FileVariant.FEED,
         }),
       );
 
@@ -286,7 +296,7 @@ describe('usePostArticle', () => {
         usePostArticle({
           content,
           attachments,
-          coverImageVariant: Core.FileVariant.FEED,
+          coverImageVariant: FileVariant.FEED,
         }),
       );
 
@@ -306,7 +316,7 @@ describe('usePostArticle', () => {
         usePostArticle({
           content: malformedContent,
           attachments: null,
-          coverImageVariant: Core.FileVariant.FEED,
+          coverImageVariant: FileVariant.FEED,
         }),
       );
 
@@ -328,7 +338,7 @@ describe('usePostArticle', () => {
         usePostArticle({
           content,
           attachments,
-          coverImageVariant: Core.FileVariant.FEED,
+          coverImageVariant: FileVariant.FEED,
         }),
       );
 
@@ -361,7 +371,7 @@ describe('usePostArticle', () => {
         usePostArticle({
           content,
           attachments,
-          coverImageVariant: Core.FileVariant.FEED,
+          coverImageVariant: FileVariant.FEED,
         }),
       );
 
@@ -396,7 +406,7 @@ describe('usePostArticle', () => {
           usePostArticle({
             content,
             attachments,
-            coverImageVariant: Core.FileVariant.FEED,
+            coverImageVariant: FileVariant.FEED,
           }),
         { initialProps: { attachments: initialAttachments } },
       );
@@ -428,7 +438,7 @@ describe('usePostArticle', () => {
             attachments,
             coverImageVariant: variant,
           }),
-        { initialProps: { variant: Core.FileVariant.FEED } },
+        { initialProps: { variant: FileVariant.FEED } },
       );
 
       await waitFor(() => {
@@ -437,15 +447,15 @@ describe('usePostArticle', () => {
 
       expect(mockGetFileUrl).toHaveBeenLastCalledWith({
         fileId: 'user123:file1',
-        variant: Core.FileVariant.FEED,
+        variant: FileVariant.FEED,
       });
 
-      rerender({ variant: Core.FileVariant.MAIN });
+      rerender({ variant: FileVariant.MAIN });
 
       await waitFor(() => {
         expect(mockGetFileUrl).toHaveBeenLastCalledWith({
           fileId: 'user123:file1',
-          variant: Core.FileVariant.MAIN,
+          variant: FileVariant.MAIN,
         });
       });
     });
@@ -462,7 +472,7 @@ describe('usePostArticle', () => {
           usePostArticle({
             content,
             attachments,
-            coverImageVariant: Core.FileVariant.FEED,
+            coverImageVariant: FileVariant.FEED,
           }),
         { initialProps: { attachments: initialAttachments as string[] | null } },
       );
