@@ -1,8 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ElementType } from 'react';
-import { describe, expect, it, vi } from 'vitest';
-import { AUTH_ROUTES, ONBOARDING_ROUTES } from '@/app/routes';
-import { HomeActions, HomeFooter, HomePageHeading, HomeSectionTitle } from './Home';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ONBOARDING_ROUTES } from '@/app/routes';
+import { asOpaque } from '@/test-utils/type-assertions';
+import { HomeActions, HomeBrandFooter, HomeFooter, HomePageHeading, HomeSectionTitle } from './Home';
 
 // Mock Next.js router
 const mockPush = vi.fn();
@@ -15,10 +16,10 @@ vi.mock('next/navigation', () => ({
 // Mock molecules
 vi.mock('@/molecules/ActionButtons/ActionButtons', () => {
   return {
-    ActionButtons: ({ onSignIn, onCreateAccount }: { onSignIn: () => void; onCreateAccount: () => void }) => (
+    ActionButtons: ({ onLearn, onCreateAccount }: { onLearn: () => void; onCreateAccount: () => void }) => (
       <div data-testid="action-buttons">
-        <button data-testid="sign-in-button" onClick={onSignIn}>
-          Sign In
+        <button data-testid="learn-button" onClick={onLearn}>
+          Learn
         </button>
         <button data-testid="create-account-button" onClick={onCreateAccount}>
           Create Account
@@ -135,12 +136,33 @@ describe('HomeActions', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('renders action buttons', () => {
     render(<HomeActions />);
 
     expect(screen.getByTestId('action-buttons')).toBeInTheDocument();
-    expect(screen.getByTestId('sign-in-button')).toBeInTheDocument();
+    expect(screen.getByTestId('learn-button')).toBeInTheDocument();
     expect(screen.getByTestId('create-account-button')).toBeInTheDocument();
+  });
+
+  it('handles learn button click', () => {
+    const scrollIntoView = vi.fn();
+    vi.spyOn(document, 'getElementById').mockReturnValue(
+      asOpaque<HTMLElement>({
+        scrollIntoView,
+      }),
+    );
+
+    render(<HomeActions />);
+
+    const learnButton = screen.getByTestId('learn-button');
+    fireEvent.click(learnButton);
+
+    expect(document.getElementById).toHaveBeenCalledWith('landing-next-section');
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
   });
 
   it('handles create account button click', () => {
@@ -151,29 +173,12 @@ describe('HomeActions', () => {
 
     expect(mockPush).toHaveBeenCalledWith(ONBOARDING_ROUTES.HUMAN);
   });
-
-  it('handles sign in button click', () => {
-    render(<HomeActions />);
-
-    const signInButton = screen.getByTestId('sign-in-button');
-    fireEvent.click(signInButton);
-
-    expect(mockPush).toHaveBeenCalledWith(AUTH_ROUTES.SIGN_IN);
-  });
 });
 
 describe('HomeFooter', () => {
-  it('renders footer with Synonym and Tether branding images', () => {
+  it('renders copyright', () => {
     render(<HomeFooter />);
 
-    expect(screen.getByAltText('Synonym')).toBeInTheDocument();
-    expect(screen.getByAltText('tether.')).toBeInTheDocument();
-  });
-
-  it('renders branding text and copyright', () => {
-    render(<HomeFooter />);
-
-    expect(screen.getByText(/company/)).toBeInTheDocument();
     expect(screen.getByText(/Synonym Software, S\.A\. DE C\.V\./)).toBeInTheDocument();
   });
 
@@ -185,11 +190,42 @@ describe('HomeFooter', () => {
     expect(screen.getByTestId('dialog-age')).toBeInTheDocument();
   });
 
-  it('renders Synonym logo as a link', () => {
+  it('does not render Synonym and Tether branding images', () => {
     render(<HomeFooter />);
+
+    expect(screen.queryByAltText('Synonym')).not.toBeInTheDocument();
+    expect(screen.queryByAltText('tether.')).not.toBeInTheDocument();
+  });
+});
+
+describe('HomeBrandFooter', () => {
+  it('renders footer with Synonym and Tether branding images', () => {
+    render(<HomeBrandFooter />);
+
+    expect(screen.getByAltText('Synonym')).toBeInTheDocument();
+    expect(screen.getByAltText('a tether. company')).toBeInTheDocument();
+  });
+
+  it('renders Synonym logo as a link', () => {
+    render(<HomeBrandFooter />);
 
     const synonymLink = screen.getByAltText('Synonym').closest('a');
     expect(synonymLink).toHaveAttribute('href', 'https://synonym.to');
+  });
+
+  it('renders Tether company graphic as a link', () => {
+    render(<HomeBrandFooter />);
+
+    const tetherLink = screen.getByAltText('a tether. company').closest('a');
+    expect(tetherLink).toHaveAttribute('href', 'https://tether.io/');
+  });
+
+  it('keeps layout classes when positioned with a custom className', () => {
+    const { container } = render(<HomeBrandFooter className="fixed bottom-8 left-6 z-20" />);
+
+    expect(container.firstChild).toHaveClass('inline-flex');
+    expect(container.firstChild).toHaveClass('whitespace-nowrap');
+    expect(container.firstChild).toHaveClass('fixed');
   });
 });
 
@@ -218,6 +254,11 @@ describe('Home - Snapshots', () => {
 
   it('matches snapshot for HomeFooter with default props', () => {
     const { container } = render(<HomeFooter />);
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('matches snapshot for HomeBrandFooter with default props', () => {
+    const { container } = render(<HomeBrandFooter />);
     expect(container.firstChild).toMatchSnapshot();
   });
 

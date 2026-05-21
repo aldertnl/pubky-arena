@@ -8,9 +8,83 @@
     "title": "<highlight>Unlock</highlight> the web.",
     "subtitle": "Your keys, your content, your rules.",
     "signIn": "Sign in",
-    "createAccount": "Create account",
+    "learn": "Learn more",
+    "join": "Join",
+    "createAccount": "Join now",
+    "videoLabel": "Pubky video",
+    "scrollToNext": "Scroll to next section",
+    "scrollToTop": "Scroll to top",
     "aTetherCompany": "a <tether>tether.</tether> company",
-    "copyright": "Synonym Software, S.A. DE C.V. ©2026. All rights reserved."
+    "copyright": "Synonym Software, S.A. DE C.V. ©2026. All rights reserved.",
+    "broken": {
+      "eyebrow": "The problem",
+      "title": "The web is <highlight>broken</highlight>.",
+      "description": "Centralized platforms control your identity, your data, and your reach.",
+      "features": {
+        "identity": {
+          "title": "They own you",
+          "description": "Your account lives on company servers, where access can be revoked without your consent."
+        },
+        "data": {
+          "title": "They trap your data",
+          "description": "Posts, profiles, and relationships are locked inside silos that make it difficult to leave."
+        },
+        "reach": {
+          "title": "They limit reach",
+          "description": "Feeds and algorithms decide who hears you, what spreads, and what disappears."
+        }
+      }
+    },
+    "howItWorks": {
+      "eyebrow": "The solution",
+      "title": "<highlight>Pubky</highlight> is different.",
+      "description": "It puts you back in control of your digital life.",
+      "features": {
+        "core": {
+          "title": "You are your keys",
+          "description": "Accounts are powered by cryptographic keys, and discovery works through a public-key alternative to DNS. No blockchain, no central server, no gatekeepers."
+        },
+        "taggable": {
+          "title": "The taggable web",
+          "description": "Posts, links, media, and profiles can all be tagged. Tags add shared meaning to the open web and help build your social graph around content, people, topics, and trust."
+        },
+        "social": {
+          "title": "Social, but personal",
+          "description": "Share posts, follow people, and join conversations like you would anywhere else. But your content, connections, and identity stay under your control, and you decide what you see."
+        },
+        "portable": {
+          "title": "A portable identity",
+          "description": "Move between apps without starting over. Your identity, content, and social graph stay with you because they are not locked to one platform."
+        }
+      }
+    },
+    "freedom": {
+      "eyebrow": "Built for freedom",
+      "title": "Experience the <highlight>next web</highlight>.",
+      "description": "Create, shape, filter, share, and live the web on your own terms.",
+      "features": {
+        "creation": {
+          "title": "Create without limits",
+          "description": "Post anything you create or imagine: short thoughts, long-form articles, photos, videos, links, and media. Your content starts with you, and stays with you."
+        },
+        "browsing": {
+          "title": "Browse your way",
+          "description": "Switch between columns, wide, visual, list, and grid views. Set your reach from friends to broader networks, filter out the noise, and focus on what matters."
+        },
+        "feeds": {
+          "title": "Shape and share perspectives",
+          "description": "Build dynamic feeds from tags, reach, content types, people, and timeframes. Feeds update in real time and can be shared with others as reusable perspectives."
+        },
+        "tagging": {
+          "title": "Tag everything",
+          "description": "Tag posts, links, media, and profiles to add context, find better content, discover people, and react quickly. Tags turn the open web into something you can navigate."
+        }
+      }
+    },
+    "final": {
+      "title": "Enter the <line><highlight>freedom web</highlight>.</line>",
+      "joinNow": "Join now"
+    }
   },
   "status": {
     "available": "Available",

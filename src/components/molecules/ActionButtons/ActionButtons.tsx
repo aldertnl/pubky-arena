@@ -1,30 +1,30 @@
-import { LogIn, UserRoundPlus } from 'lucide-react';
+import { BookOpen, UserRoundPlus } from 'lucide-react';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { cn } from '@/libs/utils/utils';
 
 interface ActionButtonsProps {
   className?: React.HTMLAttributes<HTMLDivElement>['className'];
-  onSignIn?: () => void;
+  onLearn?: () => void;
   onCreateAccount?: () => void;
-  signInText?: string;
+  learnText?: string;
   createAccountText?: string;
 }
 export function ActionButtons({
   className,
-  onSignIn,
+  onLearn,
   onCreateAccount,
-  signInText = 'Sign in',
-  createAccountText = 'Create account',
+  learnText = 'Learn more',
+  createAccountText = 'Join now',
   ...props
 }: ActionButtonsProps) {
   return (
-    <Container className={cn('flex-row gap-3 sm:items-center', className)} {...props}>
-      <Button id="sign-in-btn" variant="secondary" className="w-[158px] sm:w-auto" size="lg" onClick={onSignIn}>
-        <LogIn className="mr-2 h-4 w-4" />
-        {signInText}
+    <Container className={cn('gap-3 sm:flex-row sm:items-center', className)} {...props}>
+      <Button id="learn-btn" variant="secondary" className="w-full sm:w-auto" size="lg" onClick={onLearn}>
+        <BookOpen className="mr-2 h-4 w-4" />
+        {learnText}
       </Button>
-      <Button id="create-account-btn" className="w-[158px] sm:w-auto" size="lg" onClick={onCreateAccount}>
+      <Button id="create-account-btn" variant="brand" className="w-full sm:w-auto" size="lg" onClick={onCreateAccount}>
         <UserRoundPlus className="mr-2 h-4 w-4" />
         {createAccountText}
       </Button>

@@ -8,9 +8,83 @@
     "title": "<highlight>Entsperre</highlight> das Web.",
     "subtitle": "Deine Schlüssel, deine Inhalte, deine Regeln.",
     "signIn": "Anmelden",
-    "createAccount": "Konto erstellen",
+    "learn": "Mehr erfahren",
+    "join": "Beitreten",
+    "createAccount": "Jetzt beitreten",
+    "videoLabel": "Pubky-Video",
+    "scrollToNext": "Zum nächsten Abschnitt scrollen",
+    "scrollToTop": "Nach oben scrollen",
     "aTetherCompany": "ein <tether>tether.</tether> Unternehmen",
-    "copyright": "Synonym Software, S.A. DE C.V. ©2026. Alle Rechte vorbehalten."
+    "copyright": "Synonym Software, S.A. DE C.V. ©2026. Alle Rechte vorbehalten.",
+    "broken": {
+      "eyebrow": "Das Problem",
+      "title": "Das Web ist <highlight>kaputt</highlight>.",
+      "description": "Zentralisierte Plattformen kontrollieren deine Identität, deine Daten und deine Reichweite.",
+      "features": {
+        "identity": {
+          "title": "Sie besitzen dich",
+          "description": "Dein Konto liegt auf Firmenservern, wo der Zugriff ohne deine Zustimmung entzogen werden kann."
+        },
+        "data": {
+          "title": "Sie sperren deine Daten ein",
+          "description": "Beiträge, Profile und Beziehungen stecken in Silos fest, die den Wechsel erschweren."
+        },
+        "reach": {
+          "title": "Sie begrenzen Reichweite",
+          "description": "Feeds und Algorithmen entscheiden, wer dich hört, was sich verbreitet und was verschwindet."
+        }
+      }
+    },
+    "howItWorks": {
+      "eyebrow": "Die Lösung",
+      "title": "<highlight>Pubky</highlight> ist anders.",
+      "description": "Es gibt dir die Kontrolle über dein digitales Leben zurück.",
+      "features": {
+        "core": {
+          "title": "Du bist deine Schlüssel",
+          "description": "Konten werden von kryptografischen Schlüsseln angetrieben und Discovery funktioniert über eine Public-Key-Alternative zu DNS. Keine Blockchain, kein zentraler Server, keine Gatekeeper."
+        },
+        "taggable": {
+          "title": "Das taggbare Web",
+          "description": "Beiträge, Links, Medien und Profile können alle getaggt werden. Tags fügen dem offenen Web gemeinsame Bedeutung hinzu und helfen, deinen Social Graph rund um Inhalte, Menschen, Themen und Vertrauen aufzubauen."
+        },
+        "social": {
+          "title": "Sozial, aber persönlich",
+          "description": "Teile Beiträge, folge Menschen und nimm an Gesprächen teil wie überall sonst. Aber deine Inhalte, Verbindungen und Identität bleiben unter deiner Kontrolle, und du entscheidest, was du siehst."
+        },
+        "portable": {
+          "title": "Eine portable Identität",
+          "description": "Wechsle zwischen Apps, ohne von vorne anzufangen. Deine Identität, Inhalte und dein Social Graph bleiben bei dir, weil sie nicht an eine einzelne Plattform gebunden sind."
+        }
+      }
+    },
+    "freedom": {
+      "eyebrow": "Für Freiheit gebaut",
+      "title": "Erlebe das <highlight>nächste Web</highlight>.",
+      "description": "Erstelle, forme, filtere, teile und lebe das Web nach deinen eigenen Regeln.",
+      "features": {
+        "creation": {
+          "title": "Ohne Grenzen erstellen",
+          "description": "Poste alles, was du erstellst oder dir vorstellst: kurze Gedanken, lange Artikel, Fotos, Videos, Links und Medien. Deine Inhalte beginnen bei dir und bleiben bei dir."
+        },
+        "browsing": {
+          "title": "Browsen auf deine Art",
+          "description": "Wechsle zwischen Spalten-, Breit-, visueller, Listen- und Rasteransicht. Setze deine Reichweite von Freunden bis zu breiteren Netzwerken, filtere den Lärm heraus und konzentriere dich auf das Wichtige."
+        },
+        "feeds": {
+          "title": "Perspektiven formen und teilen",
+          "description": "Erstelle dynamische Feeds aus Tags, Reichweite, Inhaltstypen, Menschen und Zeiträumen. Feeds aktualisieren sich in Echtzeit und können als wiederverwendbare Perspektiven geteilt werden."
+        },
+        "tagging": {
+          "title": "Alles taggen",
+          "description": "Tagge Beiträge, Links, Medien und Profile, um Kontext hinzuzufügen, bessere Inhalte zu finden, Menschen zu entdecken und schnell zu reagieren. Tags machen das offene Web navigierbar."
+        }
+      }
+    },
+    "final": {
+      "title": "Betritt das <line><highlight>freie Web</highlight>.</line>",
+      "joinNow": "Jetzt beitreten"
+    }
   },
   "status": {
     "available": "Verfügbar",

@@ -8,9 +8,83 @@
     "title": "<highlight>Sblocca</highlight> il web.",
     "subtitle": "Le tue chiavi, i tuoi contenuti, le tue regole.",
     "signIn": "Accedi",
-    "createAccount": "Crea account",
+    "learn": "Scopri di più",
+    "join": "Unisciti",
+    "createAccount": "Unisciti ora",
+    "videoLabel": "Video di Pubky",
+    "scrollToNext": "Scorri alla sezione successiva",
+    "scrollToTop": "Torna in alto",
     "aTetherCompany": "un'azienda <tether>tether.</tether>",
-    "copyright": "Synonym Software, S.A. DE C.V. ©2026. Tutti i diritti riservati."
+    "copyright": "Synonym Software, S.A. DE C.V. ©2026. Tutti i diritti riservati.",
+    "broken": {
+      "eyebrow": "Il problema",
+      "title": "Il web è <highlight>rotto</highlight>.",
+      "description": "Le piattaforme centralizzate controllano la tua identità, i tuoi dati e la tua portata.",
+      "features": {
+        "identity": {
+          "title": "Ti possiedono",
+          "description": "Il tuo account vive sui server aziendali, dove l’accesso può essere revocato senza il tuo consenso."
+        },
+        "data": {
+          "title": "Intrappolano i tuoi dati",
+          "description": "Post, profili e relazioni restano chiusi in silos che rendono difficile andarsene."
+        },
+        "reach": {
+          "title": "Limitano la portata",
+          "description": "Feed e algoritmi decidono chi ti ascolta, cosa si diffonde e cosa scompare."
+        }
+      }
+    },
+    "howItWorks": {
+      "eyebrow": "La soluzione",
+      "title": "<highlight>Pubky</highlight> è diverso.",
+      "description": "Ti rimette al controllo della tua vita digitale.",
+      "features": {
+        "core": {
+          "title": "Tu sei le tue chiavi",
+          "description": "Gli account sono alimentati da chiavi crittografiche e la discovery avviene tramite un'alternativa a DNS basata su chiavi pubbliche. Nessuna blockchain, nessun server centrale, nessun gatekeeper."
+        },
+        "taggable": {
+          "title": "Il web taggabile",
+          "description": "Post, link, media e profili possono essere tutti taggati. I tag aggiungono significato condiviso al web aperto e aiutano a costruire il tuo grafo sociale attorno a contenuti, persone, argomenti e fiducia."
+        },
+        "social": {
+          "title": "Social, ma personale",
+          "description": "Condividi post, segui persone e partecipa alle conversazioni come faresti ovunque. Ma i tuoi contenuti, le tue connessioni e la tua identità restano sotto il tuo controllo, e decidi tu cosa vedere."
+        },
+        "portable": {
+          "title": "Un'identità portatile",
+          "description": "Passa da un'app all'altra senza ricominciare da zero. La tua identità, i tuoi contenuti e il tuo grafo sociale restano con te perché non sono bloccati su un'unica piattaforma."
+        }
+      }
+    },
+    "freedom": {
+      "eyebrow": "Costruito per la libertà",
+      "title": "Vivi il <highlight>prossimo web</highlight>.",
+      "description": "Crea, modella, filtra, condividi e vivi il web alle tue condizioni.",
+      "features": {
+        "creation": {
+          "title": "Crea senza limiti",
+          "description": "Pubblica qualsiasi cosa tu crei o immagini: pensieri brevi, articoli lunghi, foto, video, link e media. I tuoi contenuti partono da te e restano con te."
+        },
+        "browsing": {
+          "title": "Naviga a modo tuo",
+          "description": "Passa tra colonne, viste ampie, visuali, liste e griglie. Imposta la tua portata dagli amici a reti più ampie, filtra il rumore e concentrati su ciò che conta."
+        },
+        "feeds": {
+          "title": "Dai forma e condividi prospettive",
+          "description": "Costruisci feed dinamici da tag, portata, tipi di contenuto, persone e intervalli di tempo. I feed si aggiornano in tempo reale e possono essere condivisi come prospettive riutilizzabili."
+        },
+        "tagging": {
+          "title": "Tagga tutto",
+          "description": "Tagga post, link, media e profili per aggiungere contesto, trovare contenuti migliori, scoprire persone e reagire rapidamente. I tag rendono navigabile il web aperto."
+        }
+      }
+    },
+    "final": {
+      "title": "Entra nel <line><highlight>web libero</highlight>.</line>",
+      "joinNow": "Unisciti ora"
+    }
   },
   "status": {
     "available": "Disponibile",

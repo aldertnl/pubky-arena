@@ -8,9 +8,83 @@
     "title": "<highlight>Desbloqueie</highlight> a web.",
     "subtitle": "Suas chaves, seu conteúdo, suas regras.",
     "signIn": "Entrar",
-    "createAccount": "Criar conta",
+    "learn": "Saiba mais",
+    "join": "Entrar",
+    "createAccount": "Entrar agora",
+    "videoLabel": "Vídeo da Pubky",
+    "scrollToNext": "Rolar para a próxima seção",
+    "scrollToTop": "Voltar ao topo",
     "aTetherCompany": "uma empresa <tether>tether.</tether>",
-    "copyright": "Synonym Software, S.A. DE C.V. ©2026. Todos os direitos reservados."
+    "copyright": "Synonym Software, S.A. DE C.V. ©2026. Todos os direitos reservados.",
+    "broken": {
+      "eyebrow": "O problema",
+      "title": "A web está <highlight>quebrada</highlight>.",
+      "description": "Plataformas centralizadas controlam sua identidade, seus dados e seu alcance.",
+      "features": {
+        "identity": {
+          "title": "Elas possuem você",
+          "description": "Sua conta vive em servidores de empresas, onde o acesso pode ser revogado sem seu consentimento."
+        },
+        "data": {
+          "title": "Elas prendem seus dados",
+          "description": "Posts, perfis e relações ficam presos em silos que dificultam sair."
+        },
+        "reach": {
+          "title": "Elas limitam o alcance",
+          "description": "Feeds e algoritmos decidem quem escuta você, o que se espalha e o que desaparece."
+        }
+      }
+    },
+    "howItWorks": {
+      "eyebrow": "A solução",
+      "title": "O <highlight>Pubky</highlight> é diferente.",
+      "description": "Ele coloca você de volta no controle da sua vida digital.",
+      "features": {
+        "core": {
+          "title": "Você é suas chaves",
+          "description": "As contas são movidas por chaves criptográficas e a descoberta funciona por meio de uma alternativa ao DNS baseada em chaves públicas. Sem blockchain, sem servidor central, sem gatekeepers."
+        },
+        "taggable": {
+          "title": "A web etiquetável",
+          "description": "Posts, links, mídia e perfis podem ser todos etiquetados. As tags adicionam significado compartilhado à web aberta e ajudam a construir seu grafo social em torno de conteúdo, pessoas, tópicos e confiança."
+        },
+        "social": {
+          "title": "Social, mas pessoal",
+          "description": "Compartilhe posts, siga pessoas e participe de conversas como faria em qualquer outro lugar. Mas seu conteúdo, suas conexões e sua identidade permanecem sob seu controle, e você decide o que vê."
+        },
+        "portable": {
+          "title": "Uma identidade portátil",
+          "description": "Mude de app sem começar do zero. Sua identidade, seu conteúdo e seu grafo social ficam com você porque não estão presos a uma única plataforma."
+        }
+      }
+    },
+    "freedom": {
+      "eyebrow": "Criado para a liberdade",
+      "title": "Experimente a <highlight>próxima web</highlight>.",
+      "description": "Crie, molde, filtre, compartilhe e viva a web nos seus próprios termos.",
+      "features": {
+        "creation": {
+          "title": "Crie sem limites",
+          "description": "Publique qualquer coisa que você crie ou imagine: pensamentos curtos, artigos longos, fotos, vídeos, links e mídia. Seu conteúdo começa com você e fica com você."
+        },
+        "browsing": {
+          "title": "Navegue do seu jeito",
+          "description": "Alterne entre colunas, visual amplo, visual, lista e grade. Defina seu alcance de amigos a redes mais amplas, filtre o ruído e foque no que importa."
+        },
+        "feeds": {
+          "title": "Molde e compartilhe perspectivas",
+          "description": "Construa feeds dinâmicos com tags, alcance, tipos de conteúdo, pessoas e períodos. Os feeds são atualizados em tempo real e podem ser compartilhados como perspectivas reutilizáveis."
+        },
+        "tagging": {
+          "title": "Etiquete tudo",
+          "description": "Etiquete posts, links, mídia e perfis para adicionar contexto, encontrar conteúdo melhor, descobrir pessoas e reagir rapidamente. Tags tornam a web aberta navegável."
+        }
+      }
+    },
+    "final": {
+      "title": "Entre na <line><highlight>web livre</highlight>.</line>",
+      "joinNow": "Entrar agora"
+    }
   },
   "status": {
     "available": "Disponível",

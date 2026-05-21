@@ -8,9 +8,83 @@
     "title": "<highlight>解锁</highlight>网络。",
     "subtitle": "你的密钥，你的内容，你的规则。",
     "signIn": "登录",
-    "createAccount": "创建账户",
+    "learn": "了解更多",
+    "join": "加入",
+    "createAccount": "立即加入",
+    "videoLabel": "Pubky 视频",
+    "scrollToNext": "滚动到下一部分",
+    "scrollToTop": "滚动到顶部",
     "aTetherCompany": "<tether>tether.</tether> 旗下公司",
-    "copyright": "Synonym Software, S.A. DE C.V. ©2026。保留所有权利。"
+    "copyright": "Synonym Software, S.A. DE C.V. ©2026。保留所有权利。",
+    "broken": {
+      "eyebrow": "问题",
+      "title": "网络已经<highlight>坏了</highlight>。",
+      "description": "中心化平台控制你的身份、数据和触达范围。",
+      "features": {
+        "identity": {
+          "title": "它们拥有你",
+          "description": "你的账号存在于公司的服务器上，访问权限可能在未经你同意的情况下被撤销。"
+        },
+        "data": {
+          "title": "它们困住你的数据",
+          "description": "帖子、资料和关系被锁在孤岛中，让离开变得困难。"
+        },
+        "reach": {
+          "title": "它们限制触达",
+          "description": "信息流和算法决定谁能听见你、什么会传播、什么会消失。"
+        }
+      }
+    },
+    "howItWorks": {
+      "eyebrow": "解决方案",
+      "title": "<highlight>Pubky</highlight> 与众不同。",
+      "description": "它让你重新掌控自己的数字生活。",
+      "features": {
+        "core": {
+          "title": "你就是你的密钥",
+          "description": "账户由加密密钥驱动，发现机制通过一种基于公钥的 DNS 替代方案工作。没有区块链，没有中心服务器，没有守门人。"
+        },
+        "taggable": {
+          "title": "可标记的网络",
+          "description": "帖子、链接、媒体和资料都可以被标记。标签为开放网络添加共享意义，并帮助围绕内容、人物、主题和信任构建你的社交图谱。"
+        },
+        "social": {
+          "title": "社交，但属于你",
+          "description": "像在其他地方一样分享帖子、关注他人并参与对话。但你的内容、连接和身份始终由你控制，你也决定自己看到什么。"
+        },
+        "portable": {
+          "title": "可携带的身份",
+          "description": "在应用之间移动，无需从头开始。你的身份、内容和社交图谱会留在你身边，因为它们没有被锁定在单一平台里。"
+        }
+      }
+    },
+    "freedom": {
+      "eyebrow": "为自由而构建",
+      "title": "体验<highlight>下一代网络</highlight>。",
+      "description": "按你的方式创建、塑造、过滤、分享并生活在网络中。",
+      "features": {
+        "creation": {
+          "title": "无限制创作",
+          "description": "发布你创造或想象的任何内容：短想法、长文章、照片、视频、链接和媒体。你的内容从你开始，也会留在你身边。"
+        },
+        "browsing": {
+          "title": "按你的方式浏览",
+          "description": "在分栏、宽版、视觉、列表和网格视图之间切换。将触达范围从朋友扩展到更广网络，过滤噪音，专注重要内容。"
+        },
+        "feeds": {
+          "title": "塑造并分享视角",
+          "description": "用标签、触达范围、内容类型、人物和时间范围构建动态信息流。信息流会实时更新，也可以作为可复用的视角分享给他人。"
+        },
+        "tagging": {
+          "title": "标记一切",
+          "description": "标记帖子、链接、媒体和资料，用来添加上下文、找到更相关的内容、发现人物并快速回应。标签让开放网络变得可导航。"
+        }
+      }
+    },
+    "final": {
+      "title": "进入<line><highlight>自由网络</highlight>。</line>",
+      "joinNow": "立即加入"
+    }
   },
   "status": {
     "available": "有空",

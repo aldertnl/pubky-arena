@@ -8,9 +8,83 @@
     "title": "<highlight>Desbloquea</highlight> la web.",
     "subtitle": "Tus claves, tu contenido, tus reglas.",
     "signIn": "Iniciar sesión",
-    "createAccount": "Crear cuenta",
+    "learn": "Más información",
+    "join": "Unirse",
+    "createAccount": "Únete ahora",
+    "videoLabel": "Video de Pubky",
+    "scrollToNext": "Desplazarse a la siguiente sección",
+    "scrollToTop": "Volver arriba",
     "aTetherCompany": "una empresa de <tether>tether.</tether>",
-    "copyright": "Synonym Software, S.A. DE C.V. ©2026. Todos los derechos reservados."
+    "copyright": "Synonym Software, S.A. DE C.V. ©2026. Todos los derechos reservados.",
+    "broken": {
+      "eyebrow": "El problema",
+      "title": "La web está <highlight>rota</highlight>.",
+      "description": "Las plataformas centralizadas controlan tu identidad, tus datos y tu alcance.",
+      "features": {
+        "identity": {
+          "title": "Son dueños de ti",
+          "description": "Tu cuenta vive en servidores de empresas, donde el acceso puede revocarse sin tu consentimiento."
+        },
+        "data": {
+          "title": "Atrapan tus datos",
+          "description": "Publicaciones, perfiles y relaciones quedan encerrados en silos que hacen difícil marcharse."
+        },
+        "reach": {
+          "title": "Limitan el alcance",
+          "description": "Los feeds y algoritmos deciden quién te escucha, qué se difunde y qué desaparece."
+        }
+      }
+    },
+    "howItWorks": {
+      "eyebrow": "La solución",
+      "title": "<highlight>Pubky</highlight> es diferente.",
+      "description": "Te devuelve el control de tu vida digital.",
+      "features": {
+        "core": {
+          "title": "Tú eres tus claves",
+          "description": "Las cuentas funcionan con claves criptográficas y el descubrimiento funciona mediante una alternativa a DNS basada en claves públicas. Sin blockchain, sin servidor central, sin guardianes."
+        },
+        "taggable": {
+          "title": "La web etiquetable",
+          "description": "Publicaciones, enlaces, medios y perfiles se pueden etiquetar. Las etiquetas añaden significado compartido a la web abierta y ayudan a construir tu grafo social alrededor del contenido, las personas, los temas y la confianza."
+        },
+        "social": {
+          "title": "Social, pero personal",
+          "description": "Comparte publicaciones, sigue personas y únete a conversaciones como lo harías en cualquier otro lugar. Pero tu contenido, tus conexiones y tu identidad permanecen bajo tu control, y tú decides qué ves."
+        },
+        "portable": {
+          "title": "Una identidad portable",
+          "description": "Muévete entre apps sin empezar de nuevo. Tu identidad, tu contenido y tu grafo social se quedan contigo porque no están encerrados en una sola plataforma."
+        }
+      }
+    },
+    "freedom": {
+      "eyebrow": "Creado para la libertad",
+      "title": "Experimenta la <highlight>próxima web</highlight>.",
+      "description": "Crea, da forma, filtra, comparte y vive la web en tus propios términos.",
+      "features": {
+        "creation": {
+          "title": "Crea sin límites",
+          "description": "Publica cualquier cosa que crees o imagines: ideas breves, artículos largos, fotos, videos, enlaces y medios. Tu contenido empieza contigo y se queda contigo."
+        },
+        "browsing": {
+          "title": "Navega a tu manera",
+          "description": "Cambia entre columnas, vista amplia, visual, lista y cuadrícula. Ajusta tu alcance desde amigos hasta redes más amplias, filtra el ruido y concéntrate en lo importante."
+        },
+        "feeds": {
+          "title": "Da forma y comparte perspectivas",
+          "description": "Construye feeds dinámicos a partir de etiquetas, alcance, tipos de contenido, personas y periodos. Los feeds se actualizan en tiempo real y se pueden compartir como perspectivas reutilizables."
+        },
+        "tagging": {
+          "title": "Etiqueta todo",
+          "description": "Etiqueta publicaciones, enlaces, medios y perfiles para añadir contexto, encontrar mejor contenido, descubrir personas y reaccionar rápido. Las etiquetas convierten la web abierta en algo navegable."
+        }
+      }
+    },
+    "final": {
+      "title": "Entra en la <line><highlight>web libre</highlight>.</line>",
+      "joinNow": "Únete ahora"
+    }
   },
   "status": {
     "available": "Disponible",

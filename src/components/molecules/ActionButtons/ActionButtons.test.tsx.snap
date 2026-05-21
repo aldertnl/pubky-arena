@@ -1,20 +1,20 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`ActionButtons - Snapshots > matches snapshot with both callbacks 1`] = `
+exports[`ActionButtons - Snapshots > matches snapshot with all callbacks 1`] = `
 <div
-  class="mx-auto w-full flex flex-row gap-3 sm:items-center"
+  class="mx-auto w-full flex-col flex gap-3 sm:flex-row sm:items-center"
   data-testid="container"
 >
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-[158px] sm:w-auto"
+    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-full sm:w-auto"
     data-size="lg"
     data-slot="button"
     data-variant="secondary"
-    id="sign-in-btn"
+    id="learn-btn"
   >
     <svg
       aria-hidden="true"
-      class="lucide lucide-log-in mr-2 h-4 w-4"
+      class="lucide lucide-book-open mr-2 h-4 w-4"
       fill="none"
       height="24"
       stroke="currentColor"
@@ -26,21 +26,19 @@ exports[`ActionButtons - Snapshots > matches snapshot with both callbacks 1`] = 
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="m10 17 5-5-5-5"
+        d="M12 7v14"
       />
       <path
-        d="M15 12H3"
-      />
-      <path
-        d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"
+        d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
       />
     </svg>
-    Sign in
+    Learn more
   </button>
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-brand/16 text-brand hover:!bg-brand/30 border-brand h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-[158px] sm:w-auto"
+    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-brand text-background border-brand hover:bg-brand/90 h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-full sm:w-auto"
     data-size="lg"
     data-slot="button"
+    data-variant="brand"
     id="create-account-btn"
   >
     <svg
@@ -71,26 +69,26 @@ exports[`ActionButtons - Snapshots > matches snapshot with both callbacks 1`] = 
         d="M22 19h-6"
       />
     </svg>
-    Create account
+    Join now
   </button>
 </div>
 `;
 
 exports[`ActionButtons - Snapshots > matches snapshot with create account callback only 1`] = `
 <div
-  class="mx-auto w-full flex flex-row gap-3 sm:items-center"
+  class="mx-auto w-full flex-col flex gap-3 sm:flex-row sm:items-center"
   data-testid="container"
 >
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-[158px] sm:w-auto"
+    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-full sm:w-auto"
     data-size="lg"
     data-slot="button"
     data-variant="secondary"
-    id="sign-in-btn"
+    id="learn-btn"
   >
     <svg
       aria-hidden="true"
-      class="lucide lucide-log-in mr-2 h-4 w-4"
+      class="lucide lucide-book-open mr-2 h-4 w-4"
       fill="none"
       height="24"
       stroke="currentColor"
@@ -102,21 +100,19 @@ exports[`ActionButtons - Snapshots > matches snapshot with create account callba
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="m10 17 5-5-5-5"
+        d="M12 7v14"
       />
       <path
-        d="M15 12H3"
-      />
-      <path
-        d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"
+        d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
       />
     </svg>
-    Sign in
+    Learn more
   </button>
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-brand/16 text-brand hover:!bg-brand/30 border-brand h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-[158px] sm:w-auto"
+    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-brand text-background border-brand hover:bg-brand/90 h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-full sm:w-auto"
     data-size="lg"
     data-slot="button"
+    data-variant="brand"
     id="create-account-btn"
   >
     <svg
@@ -147,26 +143,26 @@ exports[`ActionButtons - Snapshots > matches snapshot with create account callba
         d="M22 19h-6"
       />
     </svg>
-    Create account
+    Join now
   </button>
 </div>
 `;
 
 exports[`ActionButtons - Snapshots > matches snapshot with custom className 1`] = `
 <div
-  class="mx-auto w-full flex flex-row gap-3 sm:items-center custom-action-buttons"
+  class="mx-auto w-full flex-col flex gap-3 sm:flex-row sm:items-center custom-action-buttons"
   data-testid="container"
 >
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-[158px] sm:w-auto"
+    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-full sm:w-auto"
     data-size="lg"
     data-slot="button"
     data-variant="secondary"
-    id="sign-in-btn"
+    id="learn-btn"
   >
     <svg
       aria-hidden="true"
-      class="lucide lucide-log-in mr-2 h-4 w-4"
+      class="lucide lucide-book-open mr-2 h-4 w-4"
       fill="none"
       height="24"
       stroke="currentColor"
@@ -178,21 +174,19 @@ exports[`ActionButtons - Snapshots > matches snapshot with custom className 1`] 
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="m10 17 5-5-5-5"
+        d="M12 7v14"
       />
       <path
-        d="M15 12H3"
-      />
-      <path
-        d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"
+        d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
       />
     </svg>
-    Sign in
+    Learn more
   </button>
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-brand/16 text-brand hover:!bg-brand/30 border-brand h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-[158px] sm:w-auto"
+    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-brand text-background border-brand hover:bg-brand/90 h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-full sm:w-auto"
     data-size="lg"
     data-slot="button"
+    data-variant="brand"
     id="create-account-btn"
   >
     <svg
@@ -223,26 +217,26 @@ exports[`ActionButtons - Snapshots > matches snapshot with custom className 1`] 
         d="M22 19h-6"
       />
     </svg>
-    Create account
+    Join now
   </button>
 </div>
 `;
 
 exports[`ActionButtons - Snapshots > matches snapshot with custom text 1`] = `
 <div
-  class="mx-auto w-full flex flex-row gap-3 sm:items-center"
+  class="mx-auto w-full flex-col flex gap-3 sm:flex-row sm:items-center"
   data-testid="container"
 >
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-[158px] sm:w-auto"
+    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-full sm:w-auto"
     data-size="lg"
     data-slot="button"
     data-variant="secondary"
-    id="sign-in-btn"
+    id="learn-btn"
   >
     <svg
       aria-hidden="true"
-      class="lucide lucide-log-in mr-2 h-4 w-4"
+      class="lucide lucide-book-open mr-2 h-4 w-4"
       fill="none"
       height="24"
       stroke="currentColor"
@@ -254,21 +248,19 @@ exports[`ActionButtons - Snapshots > matches snapshot with custom text 1`] = `
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="m10 17 5-5-5-5"
+        d="M12 7v14"
       />
       <path
-        d="M15 12H3"
-      />
-      <path
-        d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"
+        d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
       />
     </svg>
-    Log In
+    Read
   </button>
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-brand/16 text-brand hover:!bg-brand/30 border-brand h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-[158px] sm:w-auto"
+    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-brand text-background border-brand hover:bg-brand/90 h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-full sm:w-auto"
     data-size="lg"
     data-slot="button"
+    data-variant="brand"
     id="create-account-btn"
   >
     <svg
@@ -306,19 +298,19 @@ exports[`ActionButtons - Snapshots > matches snapshot with custom text 1`] = `
 
 exports[`ActionButtons - Snapshots > matches snapshot with default props 1`] = `
 <div
-  class="mx-auto w-full flex flex-row gap-3 sm:items-center"
+  class="mx-auto w-full flex-col flex gap-3 sm:flex-row sm:items-center"
   data-testid="container"
 >
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-[158px] sm:w-auto"
+    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-full sm:w-auto"
     data-size="lg"
     data-slot="button"
     data-variant="secondary"
-    id="sign-in-btn"
+    id="learn-btn"
   >
     <svg
       aria-hidden="true"
-      class="lucide lucide-log-in mr-2 h-4 w-4"
+      class="lucide lucide-book-open mr-2 h-4 w-4"
       fill="none"
       height="24"
       stroke="currentColor"
@@ -330,21 +322,19 @@ exports[`ActionButtons - Snapshots > matches snapshot with default props 1`] = `
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="m10 17 5-5-5-5"
+        d="M12 7v14"
       />
       <path
-        d="M15 12H3"
-      />
-      <path
-        d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"
+        d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
       />
     </svg>
-    Sign in
+    Learn more
   </button>
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-brand/16 text-brand hover:!bg-brand/30 border-brand h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-[158px] sm:w-auto"
+    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-brand text-background border-brand hover:bg-brand/90 h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-full sm:w-auto"
     data-size="lg"
     data-slot="button"
+    data-variant="brand"
     id="create-account-btn"
   >
     <svg
@@ -375,26 +365,26 @@ exports[`ActionButtons - Snapshots > matches snapshot with default props 1`] = `
         d="M22 19h-6"
       />
     </svg>
-    Create account
+    Join now
   </button>
 </div>
 `;
 
-exports[`ActionButtons - Snapshots > matches snapshot with sign in callback only 1`] = `
+exports[`ActionButtons - Snapshots > matches snapshot with learn callback only 1`] = `
 <div
-  class="mx-auto w-full flex flex-row gap-3 sm:items-center"
+  class="mx-auto w-full flex-col flex gap-3 sm:flex-row sm:items-center"
   data-testid="container"
 >
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-[158px] sm:w-auto"
+    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-full sm:w-auto"
     data-size="lg"
     data-slot="button"
     data-variant="secondary"
-    id="sign-in-btn"
+    id="learn-btn"
   >
     <svg
       aria-hidden="true"
-      class="lucide lucide-log-in mr-2 h-4 w-4"
+      class="lucide lucide-book-open mr-2 h-4 w-4"
       fill="none"
       height="24"
       stroke="currentColor"
@@ -406,21 +396,19 @@ exports[`ActionButtons - Snapshots > matches snapshot with sign in callback only
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="m10 17 5-5-5-5"
+        d="M12 7v14"
       />
       <path
-        d="M15 12H3"
-      />
-      <path
-        d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"
+        d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
       />
     </svg>
-    Sign in
+    Learn more
   </button>
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-brand/16 text-brand hover:!bg-brand/30 border-brand h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-[158px] sm:w-auto"
+    class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer rounded-full border shadow-xs bg-brand text-background border-brand hover:bg-brand/90 h-auto gap-2 px-8 py-5 text-sm font-bold leading-normal w-full sm:w-auto"
     data-size="lg"
     data-slot="button"
+    data-variant="brand"
     id="create-account-btn"
   >
     <svg
@@ -451,7 +439,7 @@ exports[`ActionButtons - Snapshots > matches snapshot with sign in callback only
         d="M22 19h-6"
       />
     </svg>
-    Create account
+    Join now
   </button>
 </div>
 `;
