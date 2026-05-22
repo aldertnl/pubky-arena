@@ -1,18 +1,14 @@
 'use client';
 
 import { ChangeEvent, Dispatch, forwardRef, SetStateAction, useEffect, useMemo } from 'react';
-import { FileText, ImagePlus, Plus, Trash2 } from 'lucide-react';
-import { Audio } from '@/atoms/Audio/Audio';
+import { ImagePlus, Plus } from 'lucide-react';
 import { Button } from '@/atoms/Button/Button';
 import { Card, CardContent } from '@/atoms/Card/Card';
 import { Container } from '@/atoms/Container/Container';
-import { Image } from '@/atoms/Image/Image';
 import { Input } from '@/atoms/Input/Input';
-import { Typography } from '@/atoms/Typography/Typography';
-import { Video } from '@/atoms/Video/Video';
 import { ARTICLE_ATTACHMENT_ACCEPT_STRING, POST_ATTACHMENT_ACCEPT_STRING } from '@/config/posts';
 import type { ExistingAttachmentMeta } from '@/hooks/usePostInput/usePostInput.types';
-import { cn } from '@/libs/utils/utils';
+import { AttachmentPreviewItem, type AttachmentPreviewType } from './AttachmentPreviewItem';
 
 type PostInputAttachmentsProps = {
   attachments: File[];
@@ -27,10 +23,9 @@ type PostInputAttachmentsProps = {
   isRemoveExistingDisabled?: (index: number) => boolean;
   isRemoveAttachmentDisabled?: (index: number) => boolean;
 };
-type AttachmentType = 'image' | 'video' | 'audio' | 'pdf';
 type AttachmentWithPreview = {
   file: File;
-  type: AttachmentType;
+  type: AttachmentPreviewType;
   previewUrl: string;
 };
 const getAttachmentType = (file: File) => {
@@ -40,7 +35,7 @@ const getAttachmentType = (file: File) => {
   if (file.type === 'application/pdf') return 'pdf';
 };
 
-const getAttachmentTypeFromMime = (mimeType: string): AttachmentType => {
+const getAttachmentTypeFromMime = (mimeType: string): AttachmentPreviewType => {
   if (mimeType.startsWith('image/')) return 'image';
   if (mimeType.startsWith('video/')) return 'video';
   if (mimeType.startsWith('audio/')) return 'audio';
@@ -67,7 +62,7 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
     const attachmentsWithPreviews: AttachmentWithPreview[] = useMemo(
       () =>
         attachments.map((file) => {
-          const type = getAttachmentType(file) as AttachmentType;
+          const type = getAttachmentType(file) as AttachmentPreviewType;
           return {
             file,
             type,
@@ -123,99 +118,34 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
 
         {hasExisting || hasNew ? (
           <Container className="gap-4">
-            {/* Existing attachments (from server) */}
-            {existingAttachments?.map((a, i) => {
-              const type = getAttachmentTypeFromMime(a.type);
-              return (
-                <Container key={a.uri} className="relative">
-                  <Button
-                    variant="dark"
-                    size="icon"
-                    data-cy={`post-input-attachment-remove-existing-${i}`}
-                    onClick={() => onRemoveExisting?.(i)}
-                    disabled={isSubmitting || isRemoveExistingDisabled?.(i)}
-                    className={cn(
-                      'absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100',
-                      type === 'image' || type === 'video' ? 'top-4 size-12' : 'top-1/2 -translate-y-1/2',
-                      type === 'audio' && 'size-6',
-                      type === 'pdf' && 'size-8',
-                    )}
-                  >
-                    <Trash2 className={cn(type === 'audio' ? 'size-3' : 'size-4')} />
-                  </Button>
+            {existingAttachments?.map((a, i) => (
+              <AttachmentPreviewItem
+                key={a.uri}
+                type={getAttachmentTypeFromMime(a.type)}
+                previewUrl={a.previewUrl}
+                label={a.name}
+                removeDataCy={`post-input-attachment-remove-existing-${i}`}
+                onRemove={() => onRemoveExisting?.(i)}
+                disabled={isSubmitting || !!isRemoveExistingDisabled?.(i)}
+              />
+            ))}
 
-                  {type === 'image' && (
-                    <Image
-                      src={a.previewUrl}
-                      alt="Image preview"
-                      className="h-48 w-full cursor-auto rounded-md bg-black object-contain"
-                    />
-                  )}
-
-                  {type === 'video' && <Video src={a.previewUrl} className="h-48 w-full cursor-auto" />}
-
-                  {type === 'audio' && <Audio src={a.previewUrl} className="w-full cursor-auto" />}
-
-                  {type === 'pdf' && (
-                    <Container className="cursor-auto flex-row items-center gap-x-2 rounded-md bg-muted p-4 pr-14">
-                      <FileText className="size-6 shrink-0" />
-
-                      <Typography size="sm" className="font-bold break-all">
-                        {a.name}
-                      </Typography>
-                    </Container>
-                  )}
-                </Container>
-              );
-            })}
-
-            {/* New file attachments */}
             {attachmentsWithPreviews.map((a, i) => (
-              <Container key={a.previewUrl} className="relative">
-                <Button
-                  variant="dark"
-                  size="icon"
-                  data-cy={`post-input-attachment-remove-new-${i}`}
-                  onClick={() => {
-                    if (onRemoveAttachment) {
-                      onRemoveAttachment(i);
-                      return;
-                    }
-                    setAttachments((prev) => prev.filter((_, index) => index !== i));
-                  }}
-                  disabled={isSubmitting || isRemoveAttachmentDisabled?.(i)}
-                  className={cn(
-                    'absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100',
-                    a.type === 'image' || a.type === 'video' ? 'top-4 size-12' : 'top-1/2 -translate-y-1/2',
-                    a.type === 'audio' && 'size-6',
-                    a.type === 'pdf' && 'size-8',
-                  )}
-                >
-                  <Trash2 className={cn(a.type === 'audio' ? 'size-3' : 'size-4')} />
-                </Button>
-
-                {a.type === 'image' && (
-                  <Image
-                    src={a.previewUrl}
-                    alt="Image preview"
-                    className="h-48 w-full cursor-auto rounded-md bg-black object-contain"
-                  />
-                )}
-
-                {a.type === 'video' && <Video src={a.previewUrl} className="h-48 w-full cursor-auto" />}
-
-                {a.type === 'audio' && <Audio src={a.previewUrl} className="w-full cursor-auto" />}
-
-                {a.type === 'pdf' && (
-                  <Container className="cursor-auto flex-row items-center gap-x-2 rounded-md bg-muted p-4 pr-14">
-                    <FileText className="size-6 shrink-0" />
-
-                    <Typography size="sm" className="font-bold break-all">
-                      {a.file.name}
-                    </Typography>
-                  </Container>
-                )}
-              </Container>
+              <AttachmentPreviewItem
+                key={a.previewUrl}
+                type={a.type}
+                previewUrl={a.previewUrl}
+                label={a.file.name}
+                removeDataCy={`post-input-attachment-remove-new-${i}`}
+                onRemove={() => {
+                  if (onRemoveAttachment) {
+                    onRemoveAttachment(i);
+                    return;
+                  }
+                  setAttachments((prev) => prev.filter((_, index) => index !== i));
+                }}
+                disabled={isSubmitting || !!isRemoveAttachmentDisabled?.(i)}
+              />
             ))}
           </Container>
         ) : null}
