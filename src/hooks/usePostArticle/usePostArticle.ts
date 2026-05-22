@@ -99,6 +99,39 @@ export function usePostArticle({
       }
     };
 
+    const tryUriFallbackOrToast = (
+      attachmentUri: string,
+      {
+        warnMessage,
+        errorMessage,
+        error,
+      }: {
+        warnMessage: string;
+        errorMessage: string;
+        error?: unknown;
+      },
+    ): boolean => {
+      const fallbackCoverImage = resolveCoverImageFromUri(attachmentUri);
+      if (fallbackCoverImage) {
+        Logger.warn(warnMessage, {
+          attachmentUri,
+          ...(error !== undefined && { error }),
+        });
+        setCoverImage(fallbackCoverImage);
+        return true;
+      }
+
+      toast({
+        title: tToast('error'),
+        description: tPost('coverImageError'),
+      });
+      Logger.error(errorMessage, {
+        attachments,
+        ...(error !== undefined && { error }),
+      });
+      return false;
+    };
+
     const extractCoverImage = async () => {
       setCoverImage(null);
 
@@ -127,41 +160,20 @@ export function usePostArticle({
           return;
         }
 
-        const fallbackCoverImage = resolveCoverImageFromUri(attachments[0]);
-        if (fallbackCoverImage) {
-          Logger.warn('[usePostArticle] Cover image metadata unavailable, using URI fallback', {
-            attachmentUri: attachments[0],
-          });
-          setCoverImage(fallbackCoverImage);
+        if (
+          tryUriFallbackOrToast(attachments[0], {
+            warnMessage: '[usePostArticle] Cover image metadata unavailable, using URI fallback',
+            errorMessage: '[usePostArticle] Failed to resolve cover image from metadata and URI fallback',
+          })
+        ) {
           return;
         }
-
-        toast({
-          title: tToast('error'),
-          description: tPost('coverImageError'),
-        });
-        Logger.error('[usePostArticle] Failed to resolve cover image from metadata and URI fallback', {
-          attachments,
-        });
       } catch (error) {
         if (cancelled) return;
 
-        const fallbackCoverImage = resolveCoverImageFromUri(attachments[0]);
-        if (fallbackCoverImage) {
-          Logger.warn('[usePostArticle] Failed to read cover metadata, using URI fallback', {
-            attachmentUri: attachments[0],
-            error,
-          });
-          setCoverImage(fallbackCoverImage);
-          return;
-        }
-
-        toast({
-          title: tToast('error'),
-          description: tPost('coverImageError'),
-        });
-        Logger.error('[usePostArticle] Failed to load article cover image', {
-          attachments,
+        tryUriFallbackOrToast(attachments[0], {
+          warnMessage: '[usePostArticle] Failed to read cover metadata, using URI fallback',
+          errorMessage: '[usePostArticle] Failed to load article cover image',
           error,
         });
       }

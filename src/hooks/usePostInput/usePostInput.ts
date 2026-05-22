@@ -629,7 +629,6 @@ export function usePostInput({
     existingAttachments,
     setExistingAttachments,
     isLoadingExistingAttachments,
-    editHadAttachments: (editAttachments?.length ?? 0) > 0,
     editHadMediaAttachments,
     isArticle,
     setIsArticle,

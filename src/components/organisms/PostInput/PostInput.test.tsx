@@ -416,7 +416,6 @@ function createUsePostInputReturn(options: UsePostInputOptions, overrides: Recor
     existingAttachments: mockExistingAttachments,
     setExistingAttachments: vi.fn(),
     isLoadingExistingAttachments: mockIsLoadingExistingAttachments,
-    editHadAttachments: (options.editAttachments?.length ?? 0) > 0,
     editHadMediaAttachments: mockEditHadMediaAttachments || (options.editAttachments?.length ?? 0) > 0,
     mentionUsers: [],
     mentionIsOpen: false,

@@ -57,8 +57,6 @@ export interface UsePostInputReturn {
   existingAttachments: ExistingAttachmentMeta[];
   setExistingAttachments: Dispatch<SetStateAction<ExistingAttachmentMeta[]>>;
   isLoadingExistingAttachments: boolean;
-  /** Whether the original post (before edit) had attachments */
-  editHadAttachments: boolean;
   /** Whether the original post (before edit) had at least one media attachment */
   editHadMediaAttachments: boolean;
   isDragging: boolean;
