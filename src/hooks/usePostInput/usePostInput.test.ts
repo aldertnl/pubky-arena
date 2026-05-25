@@ -880,6 +880,140 @@ describe('usePostInput', () => {
       expect(mockCreateObjectURL).toHaveBeenCalledTimes(2);
     });
 
+    it('replaces existing article banner attachment when a new image is added', () => {
+      mockIsArticle = true;
+      mockAttachments = [];
+
+      const { result } = renderHook(() =>
+        usePostInput({
+          variant: 'edit',
+          editPostId: 'post-to-edit-id',
+          editIsArticle: true,
+        }),
+      );
+
+      act(() => {
+        result.current.setExistingAttachments([
+          {
+            uri: 'pubky://test/pub/pubky.app/files/existing-image',
+            name: 'existing-image.jpg',
+            type: 'image/jpeg',
+            previewUrl: 'https://cdn.example.com/existing-image-feed.jpg',
+          },
+        ]);
+      });
+
+      const replacement = new File(['image content'], 'replacement.png', { type: 'image/png' });
+
+      act(() => {
+        result.current.handleFilesAdded([replacement]);
+      });
+
+      expect(result.current.existingAttachments).toEqual([]);
+      expect(mockSetAttachments).toHaveBeenCalledWith([replacement]);
+      expect(mockToast).not.toHaveBeenCalledWith({
+        title: 'Error',
+        description: `Maximum of ${ARTICLE_ATTACHMENT_MAX_FILES} files allowed`,
+      });
+    });
+
+    it('does not rehydrate old article banner when post details refresh after replacement starts', () => {
+      mockIsArticle = true;
+      mockAttachments = [];
+
+      const { result, rerender } = renderHook(
+        ({ editAttachments }) =>
+          usePostInput({
+            variant: 'edit',
+            editPostId: 'post-to-edit-id',
+            editIsArticle: true,
+            editAttachments,
+          }),
+        {
+          initialProps: {
+            editAttachments: undefined as string[] | undefined,
+          },
+        },
+      );
+
+      act(() => {
+        result.current.setExistingAttachments([
+          {
+            uri: 'pubky://test/pub/pubky.app/files/existing-image',
+            name: 'existing-image.jpg',
+            type: 'image/jpeg',
+            previewUrl: 'https://cdn.example.com/existing-image-feed.jpg',
+          },
+        ]);
+      });
+
+      const replacement = new File(['image content'], 'replacement.png', { type: 'image/png' });
+
+      act(() => {
+        result.current.handleFilesAdded([replacement]);
+      });
+
+      act(() => {
+        rerender({
+          editAttachments: ['pubky://test/pub/pubky.app/files/existing-image'],
+        });
+      });
+
+      expect(result.current.existingAttachments).toEqual([]);
+    });
+
+    it('drops existing article banner URLs when saving a replacement image', async () => {
+      mockContent = 'Updated article body';
+      mockArticleTitle = 'Updated article title';
+      mockIsArticle = true;
+      const replacement = new File(['image content'], 'replacement.png', { type: 'image/png' });
+      mockAttachments = [replacement];
+
+      mockEdit.mockImplementation(async ({ onSuccess }) => {
+        onSuccess('edited-post-id');
+      });
+
+      const { result } = renderHook(() =>
+        usePostInput({
+          variant: 'edit',
+          editPostId: 'post-to-edit-id',
+          editIsArticle: true,
+        }),
+      );
+
+      act(() => {
+        result.current.setExistingAttachments([
+          {
+            uri: 'pubky://test/pub/pubky.app/files/existing-image',
+            name: 'existing-image.jpg',
+            type: 'image/jpeg',
+            previewUrl: 'https://cdn.example.com/existing-image-feed.jpg',
+          },
+        ]);
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(mockEdit).toHaveBeenCalledWith({
+        editPostId: 'post-to-edit-id',
+        newAttachments: [replacement],
+        existingAttachmentUrls: [],
+        onSuccess: expect.any(Function),
+      });
+      expect(mockSetPostAttachments).toHaveBeenCalledWith('edited-post-id', [
+        {
+          type: 'image/png',
+          name: 'replacement.png',
+          urls: {
+            main: 'blob:replacement.png',
+            feed: 'blob:replacement.png',
+          },
+        },
+      ]);
+    });
+
     it('does not rehydrate existing attachments from props while edit save is in flight', async () => {
       mockContent = 'Updated post content';
 

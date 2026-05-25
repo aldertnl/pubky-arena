@@ -81,6 +81,8 @@ export function usePostInput({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
   const isSavingEditRef = useRef(false);
+  const lastResolvedEditAttachmentsKeyRef = useRef<string | null>(null);
+  const isReplacingArticleAttachmentRef = useRef(false);
 
   // Hooks
   const t = useTranslations('post.placeholder');
@@ -113,6 +115,8 @@ export function usePostInput({
   // Get original post author's name for repost toast message
   const originalPostAuthorId = originalPostId ? originalPostId.split(':')[0] : null;
   const { userDetails: originalPostAuthor } = useUserDetails(originalPostAuthorId);
+  const isEdit = variant === POST_INPUT_VARIANT.EDIT;
+  const isArticleEdit = isEdit && Boolean(editIsArticle);
 
   // Handle mention selection - inserts pubky{userId} into content
   const handleMentionSelect = useCallback(
@@ -136,11 +140,22 @@ export function usePostInput({
     handleKeyDown: mentionHandleKeyDown,
   } = useMentionAutocomplete({ content, onSelect: handleMentionSelect });
 
+  useEffect(() => {
+    isSavingEditRef.current = false;
+    lastResolvedEditAttachmentsKeyRef.current = null;
+    isReplacingArticleAttachmentRef.current = false;
+  }, [variant, editPostId]);
+
   // Resolve existing attachment URIs to metadata for edit mode
   useEffect(() => {
     // During edit save, post details may update and temporarily mutate editAttachments.
     // Ignore those transient updates to prevent flickering ghost attachments in the dialog.
     if (isSavingEditRef.current) return;
+    if (isReplacingArticleAttachmentRef.current) return;
+
+    const editAttachmentsKey = editAttachments?.join('\n') ?? '';
+    if (lastResolvedEditAttachmentsKeyRef.current === editAttachmentsKey) return;
+    lastResolvedEditAttachmentsKeyRef.current = editAttachmentsKey;
 
     const isMediaOrUnknownAttachment = isMediaExistingAttachment;
 
@@ -157,7 +172,7 @@ export function usePostInput({
     const resolve = async () => {
       try {
         const metadata = await FileController.getMetadata({ fileAttachments: editAttachments });
-        if (cancelled) return;
+        if (cancelled || isReplacingArticleAttachmentRef.current) return;
 
         // Build lookup by URI for matching metadata to original URIs
         const metadataByUri = new Map(metadata.map((m) => [m.uri, m]));
@@ -194,7 +209,7 @@ export function usePostInput({
         setEditHadMediaAttachments(resolved.some(isMediaOrUnknownAttachment));
       } catch {
         // If metadata resolution fails entirely, fall back to raw URIs so submit still preserves them
-        if (!cancelled) {
+        if (!cancelled && !isReplacingArticleAttachmentRef.current) {
           const fallback = editAttachments.map((uri) => {
             const compositeId = buildCompositeIdFromPubkyUri({
               uri,
@@ -220,10 +235,6 @@ export function usePostInput({
       cancelled = true;
     };
   }, [editAttachments]);
-
-  useEffect(() => {
-    isSavingEditRef.current = false;
-  }, [variant, editPostId]);
 
   // Notify parent of content changes
   useEffect(() => {
@@ -334,7 +345,10 @@ export function usePostInput({
       const localAttachmentsFromNewFiles = attachments.map(getLocalAttachmentFromFile);
 
       if (variant === POST_INPUT_VARIANT.EDIT) {
-        const localAttachmentsFromExistingFiles = existingAttachments.map(getLocalAttachmentFromExisting);
+        const localAttachmentsFromExistingFiles =
+          isArticleEdit && localAttachmentsFromNewFiles.length > 0
+            ? []
+            : existingAttachments.map(getLocalAttachmentFromExisting);
         useLocalFilesStore
           .getState()
           .setPostAttachments(createdPostId, [...localAttachmentsFromExistingFiles, ...localAttachmentsFromNewFiles]);
@@ -368,7 +382,7 @@ export function usePostInput({
         await edit({
           editPostId: editPostId!,
           newAttachments: attachments.length > 0 ? attachments : undefined,
-          existingAttachmentUrls: existingAttachments.map((a) => a.uri),
+          existingAttachmentUrls: isArticleEdit && attachments.length > 0 ? [] : existingAttachments.map((a) => a.uri),
           onSuccess: handleSuccess,
         });
 
@@ -388,6 +402,7 @@ export function usePostInput({
     attachments,
     existingAttachments,
     isArticle,
+    isArticleEdit,
     articleTitle,
     variant,
     postId,
@@ -458,8 +473,13 @@ export function usePostInput({
         : POST_SUPPORTED_ATTACHMENT_MIME_TYPES;
       const SUPPORTED_FILE_TYPES = isArticle ? ARTICLE_SUPPORTED_FILE_TYPES : POST_SUPPORTED_FILE_TYPES;
 
-      const existingCount = isLoadingExistingAttachments ? (editAttachments?.length ?? 0) : existingAttachments.length;
-      const currentCount = attachments.length + existingCount;
+      const isCurrentArticleEdit = variant === POST_INPUT_VARIANT.EDIT && isArticle;
+      const existingCount = isCurrentArticleEdit
+        ? 0
+        : isLoadingExistingAttachments
+          ? (editAttachments?.length ?? 0)
+          : existingAttachments.length;
+      const currentCount = isCurrentArticleEdit ? 0 : attachments.length + existingCount;
       const availableSlots = ATTACHMENT_MAX_FILES - currentCount;
 
       if (availableSlots <= 0) {
@@ -507,10 +527,22 @@ export function usePostInput({
       }
 
       if (validFiles.length > 0) {
+        if (isArticle) {
+          // Article posts have one banner attachment. In edit mode, adding a
+          // new image replaces the old banner instead of preserving both.
+          if (variant === POST_INPUT_VARIANT.EDIT) {
+            isReplacingArticleAttachmentRef.current = true;
+            setExistingAttachments([]);
+          }
+          setAttachments(validFiles.slice(0, 1));
+          return;
+        }
+
         setAttachments((prev) => [...prev, ...validFiles]);
       }
     },
     [
+      variant,
       isArticle,
       isSubmitting,
       isLoadingExistingAttachments,
@@ -615,9 +647,6 @@ export function usePostInput({
   };
 
   const handleArticleClick = () => setIsArticle(true);
-
-  const isEdit = variant === POST_INPUT_VARIANT.EDIT;
-  const isArticleEdit = isEdit && Boolean(editIsArticle);
 
   const editAttachmentControls: EditAttachmentControls | undefined = isEdit
     ? {
