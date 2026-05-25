@@ -11,12 +11,37 @@ interface LogoProps {
   noLink?: boolean;
 }
 
+const DEFAULT_LOGO_WIDTH = 109;
+/** Rendered logo height in px (matches `h-[36px]` / SVG aspect ratio). */
+const DEFAULT_LOGO_HEIGHT = 36;
+
 const FORCE_HOME_SCROLL_TOP_KEY = 'pubky:force-home-scroll-top';
 
+const logoLinkClassName = (width: number, height: number, className?: string) =>
+  cn(
+    'flex items-center',
+    width === DEFAULT_LOGO_WIDTH && height === DEFAULT_LOGO_HEIGHT && 'min-h-[36px] min-w-[109px]',
+    className,
+  );
+
+const logoImageClassName = (width: number, height: number, className?: string) =>
+  cn('-mt-1', width === DEFAULT_LOGO_WIDTH && height === DEFAULT_LOGO_HEIGHT && 'h-[36px] w-[109px]', className);
+
+const logoSizeStyle = (width: number, height: number) =>
+  width === DEFAULT_LOGO_WIDTH && height === DEFAULT_LOGO_HEIGHT
+    ? undefined
+    : ({ minWidth: width, minHeight: height } as const);
+
+const logoImageStyle = (width: number, height: number) =>
+  width === DEFAULT_LOGO_WIDTH && height === DEFAULT_LOGO_HEIGHT ? undefined : ({ width, height } as const);
+
 export function Logo({
-  width = 109,
-  height = 36,
+  width = DEFAULT_LOGO_WIDTH,
+  height = DEFAULT_LOGO_HEIGHT,
   noLink = false,
+  className,
+  style,
+  onClick,
   ...props
 }: LogoProps & React.HTMLAttributes<HTMLAnchorElement>) {
   const pathname = usePathname();
@@ -27,7 +52,7 @@ export function Logo({
       href="/home"
       data-cy="header-logo"
       onClick={(event) => {
-        props.onClick?.(event);
+        onClick?.(event);
         if (event.defaultPrevented) return;
 
         // Don't hijack modified clicks (new tab/window, etc.)
@@ -46,12 +71,14 @@ export function Logo({
           // Ignore storage errors and keep default navigation behavior.
         }
       }}
-      className={cn(`flex items-center min-w-[${width}px] min-h-[${height}px]`, props.className)}
+      className={logoLinkClassName(width, height, className)}
+      style={{ ...logoSizeStyle(width, height), ...style }}
+      {...props}
     >
       <LogoImage width={width} height={height} />
     </Link>
   ) : (
-    <LogoImage width={width} height={height} />
+    <LogoImage width={width} height={height} className={className} />
   );
 }
 
@@ -60,7 +87,8 @@ const LogoImage = ({ width, height, className }: { width: number; height: number
     <Image
       src="/pubky-logo.svg"
       alt="Pubky"
-      className={cn(`w-[${width}px] h-[${height}px] -mt-1`, className)}
+      className={logoImageClassName(width, height, className)}
+      style={logoImageStyle(width, height)}
       width={width}
       height={height}
     />

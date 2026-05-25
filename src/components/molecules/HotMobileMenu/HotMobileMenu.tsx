@@ -40,7 +40,8 @@ export function HotMobileMenu({ activeSection, onSectionChange }: HotMobileMenuP
       items={items}
       showLabels
       position="sticky"
-      className="-mx-6 -mt-6 mb-6"
+      headerTop="compact"
+      className="-mx-6 -mt-6"
       data-testid="hot-mobile-menu"
     />
   );
