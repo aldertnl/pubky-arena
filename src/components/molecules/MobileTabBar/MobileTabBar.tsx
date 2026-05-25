@@ -4,7 +4,7 @@ import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { Typography } from '@/atoms/Typography/Typography';
 import { cn } from '@/libs/utils/utils';
-import type { MobileTabBarProps } from './MobileTabBar.types';
+import type { MobileTabBarHeaderTop, MobileTabBarProps } from './MobileTabBar.types';
 
 /**
  * Shared mobile tab bar molecule used by Hot, Profile, and Settings pages.
@@ -19,7 +19,7 @@ import type { MobileTabBarProps } from './MobileTabBar.types';
  * attach a ref to read the root element (e.g. to measure its position when
  * the bar is sticky).
  */
-const HEADER_TOP_CLASS: Record<MobileTabBarProps['headerTop'] & string, string> = {
+const HEADER_TOP_CLASS: Record<MobileTabBarHeaderTop, string> = {
   mobile: 'top-(--header-height-mobile)',
   compact: 'top-(--header-height-settings)',
 };
