@@ -21,11 +21,15 @@ export enum APP_ROUTES {
   FEED = '/feed',
   SEARCH = '/search',
   HOT = '/hot',
-  BOOKMARKS = '/bookmarks',
+  COLLECTIONS = '/collections',
   SETTINGS = '/settings',
   PROFILE = '/profile',
   WHO_TO_FOLLOW = '/who-to-follow',
   SHARE = '/share',
+}
+
+export enum COLLECTION_ROUTES {
+  BOOKMARKS = '/collections/bookmarks',
 }
 
 export enum PROFILE_ROUTES {
@@ -79,7 +83,7 @@ export const ALLOWED_ROUTES = [
   APP_ROUTES.FEED,
   APP_ROUTES.SEARCH,
   APP_ROUTES.HOT,
-  APP_ROUTES.BOOKMARKS,
+  APP_ROUTES.COLLECTIONS,
   APP_ROUTES.SETTINGS,
   APP_ROUTES.PROFILE,
   APP_ROUTES.WHO_TO_FOLLOW,
@@ -179,4 +183,24 @@ export function getProfileRoute(route: PROFILE_ROUTES, pubky?: string): string {
   }
 
   return `/profile/${pubky}${subPath}`;
+}
+
+// ============================================================================
+// Navigation Active State
+// ============================================================================
+
+type NavItemActiveConfig = {
+  href: string;
+  activePrefix?: string;
+};
+
+/**
+ * Returns whether a pathname should highlight a primary nav item.
+ *
+ * Uses `activePrefix` when set (e.g. Settings → any `/settings/*` route),
+ * otherwise falls back to exact href match and sub-routes under `href`.
+ */
+export function isNavItemActive(pathname: string, item: NavItemActiveConfig): boolean {
+  const activePath = item.activePrefix ?? item.href;
+  return pathname === activePath || pathname.startsWith(`${activePath}/`);
 }

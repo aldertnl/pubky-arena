@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bookmark, Flame, Home, Search, Settings } from 'lucide-react';
+import { Flame, Home, Library, Search, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { APP_ROUTES, SETTINGS_ROUTES } from '@/app/routes';
+import { APP_ROUTES, isNavItemActive, SETTINGS_ROUTES } from '@/app/routes';
 import { Badge } from '@/atoms/Badge/Badge';
 import { Container } from '@/atoms/Container/Container';
 import { Typography } from '@/atoms/Typography/Typography';
@@ -31,6 +31,7 @@ const FORCE_HOME_SCROLL_TOP_KEY = 'pubky:force-home-scroll-top';
  */
 export function MobileFooter({ className }: MobileFooterProps) {
   const pathname = usePathname();
+  const tHeader = useTranslations('header');
   const tCommon = useTranslations('common');
   const isAuthenticated = useAuthStore((state) => Boolean(state.currentUserPubky));
   const { isPublicRoute } = usePublicRoute();
@@ -38,7 +39,6 @@ export function MobileFooter({ className }: MobileFooterProps) {
   const unreadNotifications = useNotificationStore((state) => state.selectUnread());
   const localAvatarUrl = useLocalFilesStore((state) => state.profile);
   const { isKeyboardVisible, keyboardOffset } = useKeyboardOffset();
-  const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
 
   // Hide footer for unauthenticated users on public routes
   if (!isAuthenticated && isPublicRoute) {
@@ -56,28 +56,29 @@ export function MobileFooter({ className }: MobileFooterProps) {
     {
       href: APP_ROUTES.HOME,
       icon: Home,
-      label: 'Home',
+      label: tHeader('home'),
     },
     {
       href: APP_ROUTES.SEARCH,
       icon: Search,
-      label: 'Search',
+      label: tHeader('search'),
     },
     {
       href: APP_ROUTES.HOT,
       icon: Flame,
-      label: 'Hot',
+      label: tHeader('hot'),
     },
     {
-      href: APP_ROUTES.BOOKMARKS,
-      icon: Bookmark,
-      label: 'Bookmarks',
+      href: APP_ROUTES.COLLECTIONS,
+      activePrefix: APP_ROUTES.COLLECTIONS,
+      icon: Library,
+      label: tHeader('collections'),
     },
     {
       href: SETTINGS_ROUTES.ACCOUNT,
       activePrefix: APP_ROUTES.SETTINGS,
       icon: Settings,
-      label: 'Settings',
+      label: tHeader('settings'),
     },
   ];
   return (
@@ -101,9 +102,9 @@ export function MobileFooter({ className }: MobileFooterProps) {
       >
         {navItems.map((item) => {
           const Icon = item.icon;
-          const activePath = item.activePrefix ?? item.href;
           const isHome = item.href === APP_ROUTES.HOME;
-          const isHomeActive = isHome && isActive(item.href);
+          const itemIsActive = isNavItemActive(pathname, item);
+          const isHomeActive = isHome && itemIsActive;
           return (
             <Link
               key={item.href}
@@ -131,9 +132,7 @@ export function MobileFooter({ className }: MobileFooterProps) {
               }}
               className={cn(
                 'rounded-full p-3 transition-all',
-                isActive(activePath)
-                  ? 'bg-secondary'
-                  : 'border border-border bg-white/5 backdrop-blur-sm hover:bg-white/10',
+                itemIsActive ? 'bg-secondary' : 'border border-border bg-white/5 backdrop-blur-sm hover:bg-white/10',
               )}
             >
               <Icon className="h-6 w-6" />
