@@ -13,7 +13,6 @@ import { asOpaque } from '@/test-utils/type-assertions';
 import { usePostInput } from './usePostInput';
 
 // next-intl is mocked globally in src/config/test.ts
-// Real placeholders from messages/en.json for test assertions
 const REAL_PLACEHOLDERS = {
   reply: 'Write a reply...',
   post: "What's on your mind?",

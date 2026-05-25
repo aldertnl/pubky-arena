@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/atoms/Card/Card';
 import { Container } from '@/atoms/Container/Container';
 import { Input } from '@/atoms/Input/Input';
 import { ARTICLE_ATTACHMENT_ACCEPT_STRING, POST_ATTACHMENT_ACCEPT_STRING } from '@/config/posts';
-import type { ExistingAttachmentMeta } from '@/hooks/usePostInput/usePostInput.types';
+import type { EditAttachmentControls } from '@/hooks/usePostInput/usePostInput.types';
 import { AttachmentPreviewItem, type AttachmentPreviewType } from './AttachmentPreviewItem';
 
 type PostInputAttachmentsProps = {
@@ -17,11 +17,7 @@ type PostInputAttachmentsProps = {
   isSubmitting: boolean;
   isArticle?: boolean;
   handleFileClick?: () => void;
-  existingAttachments?: ExistingAttachmentMeta[];
-  onRemoveExisting?: (index: number) => void;
-  onRemoveAttachment?: (index: number) => void;
-  isRemoveExistingDisabled?: (index: number) => boolean;
-  isRemoveAttachmentDisabled?: (index: number) => boolean;
+  editAttachmentControls?: EditAttachmentControls;
 };
 type AttachmentWithPreview = {
   file: File;
@@ -44,19 +40,7 @@ const getAttachmentTypeFromMime = (mimeType: string): AttachmentPreviewType => {
 
 export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttachmentsProps>(
   (
-    {
-      attachments,
-      setAttachments,
-      handleFilesAdded,
-      isSubmitting,
-      isArticle,
-      handleFileClick,
-      existingAttachments,
-      onRemoveExisting,
-      onRemoveAttachment,
-      isRemoveExistingDisabled,
-      isRemoveAttachmentDisabled,
-    },
+    { attachments, setAttachments, handleFilesAdded, isSubmitting, isArticle, handleFileClick, editAttachmentControls },
     ref,
   ) => {
     const attachmentsWithPreviews: AttachmentWithPreview[] = useMemo(
@@ -88,6 +72,7 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
       e.target.value = '';
     };
 
+    const existingAttachments = editAttachmentControls?.existingAttachments;
     const hasExisting = existingAttachments && existingAttachments.length > 0;
     const hasNew = attachmentsWithPreviews.length > 0;
 
@@ -125,8 +110,8 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
                 previewUrl={a.previewUrl}
                 label={a.name}
                 removeDataCy={`post-input-attachment-remove-existing-${i}`}
-                onRemove={() => onRemoveExisting?.(i)}
-                disabled={isSubmitting || !!isRemoveExistingDisabled?.(i)}
+                onRemove={() => editAttachmentControls?.onRemoveExisting(i)}
+                disabled={isSubmitting || !!editAttachmentControls?.isRemoveExistingDisabled(i)}
               />
             ))}
 
@@ -138,13 +123,13 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
                 label={a.file.name}
                 removeDataCy={`post-input-attachment-remove-new-${i}`}
                 onRemove={() => {
-                  if (onRemoveAttachment) {
-                    onRemoveAttachment(i);
+                  if (editAttachmentControls?.onRemoveAttachment) {
+                    editAttachmentControls.onRemoveAttachment(i);
                     return;
                   }
                   setAttachments((prev) => prev.filter((_, index) => index !== i));
                 }}
-                disabled={isSubmitting || !!isRemoveAttachmentDisabled?.(i)}
+                disabled={isSubmitting || !!editAttachmentControls?.isRemoveAttachmentDisabled(i)}
               />
             ))}
           </Container>

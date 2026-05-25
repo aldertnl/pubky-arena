@@ -31,7 +31,13 @@ import { POST_INPUT_VARIANT } from '@/organisms/PostInput/PostInput.constants';
 import { useTimelineFeedContext } from '@/organisms/Timeline/Feed/TimelineFeed/TimelineFeedContext';
 import { FileVariant } from '@/services/nexus/file/file.types';
 import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
-import type { ExistingAttachmentMeta, UsePostInputOptions, UsePostInputReturn } from './usePostInput.types';
+import type {
+  EditAttachmentControls,
+  ExistingAttachmentMeta,
+  UsePostInputOptions,
+  UsePostInputReturn,
+} from './usePostInput.types';
+import { hasRequiredMediaForEdit, isMediaExistingAttachment } from './usePostInput.utils';
 
 /**
  * Hook that encapsulates all PostInput logic.
@@ -58,6 +64,7 @@ export function usePostInput({
   onContentChange,
   onArticleModeChange,
   editAttachments,
+  editIsArticle,
 }: UsePostInputOptions): UsePostInputReturn {
   // State
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -77,6 +84,8 @@ export function usePostInput({
 
   // Hooks
   const t = useTranslations('post.placeholder');
+  const tPost = useTranslations('post');
+  const tCommon = useTranslations('common');
   const tToast = useTranslations('toast');
   const tFile = useTranslations('toast.file');
   const { currentUserPubky } = useCurrentUserProfile();
@@ -133,8 +142,7 @@ export function usePostInput({
     // Ignore those transient updates to prevent flickering ghost attachments in the dialog.
     if (isSavingEditRef.current) return;
 
-    const isMediaOrUnknownAttachment = (attachment: ExistingAttachmentMeta): boolean =>
-      attachment.type.length === 0 || attachment.type.startsWith('image/') || attachment.type.startsWith('video/');
+    const isMediaOrUnknownAttachment = isMediaExistingAttachment;
 
     // Clear stale state from a previous edit target
     setExistingAttachments([]);
@@ -608,6 +616,67 @@ export function usePostInput({
 
   const handleArticleClick = () => setIsArticle(true);
 
+  const isEdit = variant === POST_INPUT_VARIANT.EDIT;
+  const isArticleEdit = isEdit && Boolean(editIsArticle);
+
+  const editAttachmentControls: EditAttachmentControls | undefined = isEdit
+    ? {
+        existingAttachments,
+        onRemoveExisting: (index) => {
+          const attachmentToRemove = existingAttachments[index];
+          if (!attachmentToRemove) return;
+
+          const nextExistingAttachments = existingAttachments.filter((_, i) => i !== index);
+          const canRemove = hasRequiredMediaForEdit(
+            nextExistingAttachments,
+            attachments,
+            editHadMediaAttachments,
+            isArticleEdit,
+          );
+
+          if (!canRemove) {
+            toast({
+              title: tCommon('error'),
+              description: tPost('editRequiresImage'),
+            });
+            return;
+          }
+
+          setExistingAttachments(nextExistingAttachments);
+        },
+        onRemoveAttachment: (index) => {
+          const attachmentToRemove = attachments[index];
+          if (!attachmentToRemove) return;
+
+          const nextAttachments = attachments.filter((_, i) => i !== index);
+          const canRemove = hasRequiredMediaForEdit(
+            existingAttachments,
+            nextAttachments,
+            editHadMediaAttachments,
+            isArticleEdit,
+          );
+
+          if (!canRemove) {
+            toast({
+              title: tCommon('error'),
+              description: tPost('editRequiresImage'),
+            });
+            return;
+          }
+
+          setAttachments(nextAttachments);
+        },
+        isRemoveExistingDisabled: (index) => {
+          const nextExistingAttachments = existingAttachments.filter((_, i) => i !== index);
+          return !hasRequiredMediaForEdit(nextExistingAttachments, attachments, editHadMediaAttachments, isArticleEdit);
+        },
+        isRemoveAttachmentDisabled: (index) => {
+          const nextAttachments = attachments.filter((_, i) => i !== index);
+          return !hasRequiredMediaForEdit(existingAttachments, nextAttachments, editHadMediaAttachments, isArticleEdit);
+        },
+      }
+    : undefined;
+
   // Derived values
   const hasContent = content.trim().length > 0;
   const displayPlaceholder = placeholder ?? t(variant);
@@ -630,6 +699,7 @@ export function usePostInput({
     setExistingAttachments,
     isLoadingExistingAttachments,
     editHadMediaAttachments,
+    editAttachmentControls,
     isArticle,
     setIsArticle,
     articleTitle,

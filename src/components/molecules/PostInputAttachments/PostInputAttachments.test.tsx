@@ -483,7 +483,13 @@ describe('PostInputAttachments', () => {
           {...defaultProps}
           attachments={attachments}
           setAttachments={mockSetAttachments}
-          onRemoveAttachment={mockOnRemoveAttachment}
+          editAttachmentControls={{
+            existingAttachments: [],
+            onRemoveExisting: vi.fn(),
+            onRemoveAttachment: mockOnRemoveAttachment,
+            isRemoveExistingDisabled: () => false,
+            isRemoveAttachmentDisabled: () => false,
+          }}
         />,
       );
 
@@ -541,7 +547,17 @@ describe('PostInputAttachments', () => {
       ];
 
       render(
-        <PostInputAttachments {...defaultProps} attachments={attachments} existingAttachments={existingAttachments} />,
+        <PostInputAttachments
+          {...defaultProps}
+          attachments={attachments}
+          editAttachmentControls={{
+            existingAttachments,
+            onRemoveExisting: vi.fn(),
+            onRemoveAttachment: vi.fn(),
+            isRemoveExistingDisabled: () => false,
+            isRemoveAttachmentDisabled: () => false,
+          }}
+        />,
       );
 
       expect(document.querySelector('[data-cy="post-input-attachment-remove-existing-0"]')).toBeInTheDocument();
@@ -562,9 +578,13 @@ describe('PostInputAttachments', () => {
       render(
         <PostInputAttachments
           {...defaultProps}
-          existingAttachments={existingAttachments}
-          onRemoveExisting={mockOnRemoveExisting}
-          isRemoveExistingDisabled={() => true}
+          editAttachmentControls={{
+            existingAttachments,
+            onRemoveExisting: mockOnRemoveExisting,
+            onRemoveAttachment: vi.fn(),
+            isRemoveExistingDisabled: () => true,
+            isRemoveAttachmentDisabled: () => false,
+          }}
         />,
       );
 
@@ -583,8 +603,13 @@ describe('PostInputAttachments', () => {
         <PostInputAttachments
           {...defaultProps}
           attachments={attachments}
-          onRemoveAttachment={mockOnRemoveAttachment}
-          isRemoveAttachmentDisabled={() => true}
+          editAttachmentControls={{
+            existingAttachments: [],
+            onRemoveExisting: vi.fn(),
+            onRemoveAttachment: mockOnRemoveAttachment,
+            isRemoveExistingDisabled: () => false,
+            isRemoveAttachmentDisabled: () => true,
+          }}
         />,
       );
 

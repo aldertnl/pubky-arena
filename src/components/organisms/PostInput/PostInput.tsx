@@ -13,7 +13,7 @@ import { useEnterSubmit } from '@/hooks/useEnterSubmit/useEnterSubmit';
 import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
 import type { ArticleJSON } from '@/hooks/usePostArticle/usePostArticle.types';
 import { usePostInput } from '@/hooks/usePostInput/usePostInput';
-import type { ExistingAttachmentMeta } from '@/hooks/usePostInput/usePostInput.types';
+import { isMediaExistingAttachment, isMediaFile } from '@/hooks/usePostInput/usePostInput.utils';
 import { canSubmitPost, cn, getCharacterCount } from '@/libs/utils/utils';
 import { sanitizeCodeBlockLanguages } from '@/molecules/MarkdownEditor/InitializedMDXEditor.utils';
 import { MarkdownEditor } from '@/molecules/MarkdownEditor/MarkdownEditor';
@@ -28,9 +28,6 @@ import { PostInputExpandableSection } from '../PostInputExpandableSection/PostIn
 import { POST_INPUT_VARIANT } from './PostInput.constants';
 import type { PostInputProps } from './PostInput.types';
 
-const isMediaFile = (file: File): boolean => file.type.startsWith('image/') || file.type.startsWith('video/');
-const isMediaExistingAttachment = (attachment: ExistingAttachmentMeta): boolean =>
-  attachment.type.length === 0 || attachment.type.startsWith('image/') || attachment.type.startsWith('video/');
 const EXPANDABLE_SECTION_PARENT_GAP_PX = 16;
 
 export function PostInput({
@@ -100,9 +97,9 @@ export function PostInput({
     handleMentionSelect,
     handleMentionKeyDown,
     existingAttachments,
-    setExistingAttachments,
     isLoadingExistingAttachments,
     editHadMediaAttachments,
+    editAttachmentControls,
   } = usePostInput({
     variant,
     postId,
@@ -114,6 +111,7 @@ export function PostInput({
     onContentChange,
     onArticleModeChange,
     editAttachments,
+    editIsArticle,
   });
 
   const isValid = React.useCallback(() => {
@@ -158,23 +156,8 @@ export function PostInput({
   };
 
   const isEdit = variant === POST_INPUT_VARIANT.EDIT;
-  const isArticleEdit = isEdit && Boolean(editIsArticle);
 
   const { toast } = useToast();
-
-  const hasRequiredMediaForEdit = (
-    nextExistingAttachments: ExistingAttachmentMeta[],
-    nextAttachments: File[],
-  ): boolean => {
-    if (!editHadMediaAttachments) return true;
-    // Article edits can only have one banner attachment; allow temporary removal so users can replace it.
-    // Submit validation still prevents saving while no media is present.
-    if (isArticleEdit) return true;
-
-    const hasExistingMedia = nextExistingAttachments.some(isMediaExistingAttachment);
-    const hasNewMedia = nextAttachments.some(isMediaFile);
-    return hasExistingMedia || hasNewMedia;
-  };
 
   React.useEffect(() => {
     if (isEdit) {
@@ -214,57 +197,6 @@ export function PostInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only run on mount
   }, []);
 
-  const handleOnRemoveExisting = (index: number) => {
-    if (!isEdit) return;
-
-    const attachmentToRemove = existingAttachments[index];
-    if (!attachmentToRemove) return;
-
-    const nextExistingAttachments = existingAttachments.filter((_, i) => i !== index);
-    const canRemove = hasRequiredMediaForEdit(nextExistingAttachments, attachments);
-
-    if (!canRemove) {
-      toast({
-        title: tCommon('error'),
-        description: t('editRequiresImage'),
-      });
-      return;
-    }
-
-    setExistingAttachments(nextExistingAttachments);
-  };
-
-  const isRemoveExistingDisabled = (index: number) => {
-    if (!isEdit) return false;
-    const nextExistingAttachments = existingAttachments.filter((_, i) => i !== index);
-    return !hasRequiredMediaForEdit(nextExistingAttachments, attachments);
-  };
-
-  const handleOnRemoveAttachment = (index: number) => {
-    if (!isEdit) return;
-
-    const attachmentToRemove = attachments[index];
-    if (!attachmentToRemove) return;
-
-    const nextAttachments = attachments.filter((_, i) => i !== index);
-    const canRemove = hasRequiredMediaForEdit(existingAttachments, nextAttachments);
-
-    if (!canRemove) {
-      toast({
-        title: tCommon('error'),
-        description: t('editRequiresImage'),
-      });
-      return;
-    }
-
-    setAttachments(nextAttachments);
-  };
-
-  const isRemoveAttachmentDisabled = (index: number) => {
-    if (!isEdit) return false;
-    const nextAttachments = attachments.filter((_, i) => i !== index);
-    return !hasRequiredMediaForEdit(existingAttachments, nextAttachments);
-  };
   const characterLimit = isArticle ? undefined : { count: getCharacterCount(content), max: POST_MAX_CHARACTER_LENGTH };
 
   const isMobile = useIsMobile();
@@ -359,11 +291,7 @@ export function PostInput({
           isSubmitting={isSubmitting}
           isArticle={isArticle}
           handleFileClick={handleFileClick}
-          existingAttachments={isEdit ? existingAttachments : undefined}
-          onRemoveExisting={isEdit ? handleOnRemoveExisting : undefined}
-          onRemoveAttachment={isEdit ? handleOnRemoveAttachment : undefined}
-          isRemoveExistingDisabled={isEdit ? isRemoveExistingDisabled : undefined}
-          isRemoveAttachmentDisabled={isEdit ? isRemoveAttachmentDisabled : undefined}
+          editAttachmentControls={editAttachmentControls}
         />
 
         {isArticle && (

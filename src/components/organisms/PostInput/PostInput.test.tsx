@@ -6,7 +6,12 @@ import { POST_MAX_CHARACTER_LENGTH } from '@/config/posts';
 import { useEnterSubmit } from '@/hooks/useEnterSubmit/useEnterSubmit';
 import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
 import { usePostInput } from '@/hooks/usePostInput/usePostInput';
-import type { UsePostInputOptions, UsePostInputReturn } from '@/hooks/usePostInput/usePostInput.types';
+import type {
+  EditAttachmentControls,
+  UsePostInputOptions,
+  UsePostInputReturn,
+} from '@/hooks/usePostInput/usePostInput.types';
+import { hasRequiredMediaForEdit } from '@/hooks/usePostInput/usePostInput.utils';
 import { PostMainLayoutProvider } from '@/organisms/PostMain/PostMainLayoutContext';
 import { PostInput } from './PostInput';
 import { POST_INPUT_VARIANT } from './PostInput.constants';
@@ -19,11 +24,7 @@ type MockedPostInputAttachmentsProps = {
   isSubmitting: boolean;
   isArticle?: boolean;
   handleFileClick?: () => void;
-  existingAttachments?: Array<{ uri: string; name: string; type: string; previewUrl: string }>;
-  onRemoveExisting?: (index: number) => void;
-  onRemoveAttachment?: (index: number) => void;
-  isRemoveExistingDisabled?: (index: number) => boolean;
-  isRemoveAttachmentDisabled?: (index: number) => boolean;
+  editAttachmentControls?: EditAttachmentControls;
 };
 
 const { mockPostInputAttachmentsComponent, mockToast } = vi.hoisted(() => ({
@@ -359,6 +360,32 @@ let mockIsLoadingExistingAttachments = false;
 let mockExistingAttachments: Array<{ uri: string; name: string; type: string; previewUrl: string }> = [];
 let mockEditHadMediaAttachments = false;
 
+function createMockEditAttachmentControls(options: UsePostInputOptions): EditAttachmentControls | undefined {
+  if (options.variant !== POST_INPUT_VARIANT.EDIT) return undefined;
+
+  const isArticleEdit = Boolean(options.editIsArticle);
+  const editHadMediaAttachments = mockEditHadMediaAttachments || (options.editAttachments?.length ?? 0) > 0;
+
+  return {
+    existingAttachments: mockExistingAttachments,
+    onRemoveExisting: vi.fn(),
+    onRemoveAttachment: vi.fn(),
+    isRemoveExistingDisabled: (index) => {
+      const nextExistingAttachments = mockExistingAttachments.filter((_, i) => i !== index);
+      return !hasRequiredMediaForEdit(
+        nextExistingAttachments,
+        mockUsePostReturn.attachments,
+        editHadMediaAttachments,
+        isArticleEdit,
+      );
+    },
+    isRemoveAttachmentDisabled: (index) => {
+      const nextAttachments = mockUsePostReturn.attachments.filter((_, i) => i !== index);
+      return !hasRequiredMediaForEdit(mockExistingAttachments, nextAttachments, editHadMediaAttachments, isArticleEdit);
+    },
+  };
+}
+
 function createUsePostInputReturn(options: UsePostInputOptions, overrides: Record<string, unknown> = {}) {
   return {
     textareaRef: mockTextareaRef,
@@ -417,6 +444,7 @@ function createUsePostInputReturn(options: UsePostInputOptions, overrides: Recor
     setExistingAttachments: vi.fn(),
     isLoadingExistingAttachments: mockIsLoadingExistingAttachments,
     editHadMediaAttachments: mockEditHadMediaAttachments || (options.editAttachments?.length ?? 0) > 0,
+    editAttachmentControls: createMockEditAttachmentControls(options),
     mentionUsers: [],
     mentionIsOpen: false,
     mentionSelectedIndex: 0,
@@ -865,7 +893,7 @@ describe('PostInput', () => {
     });
   });
 
-  it('passes edit-mode remove handlers to PostInputAttachments', () => {
+  it('passes editAttachmentControls to PostInputAttachments in edit mode', () => {
     render(
       <PostInput
         variant={POST_INPUT_VARIANT.EDIT}
@@ -878,10 +906,15 @@ describe('PostInput', () => {
 
     const latestCall = mockPostInputAttachmentsComponent.mock.calls.at(-1);
     const props = latestCall?.[0] as MockedPostInputAttachmentsProps;
-    expect(props.onRemoveExisting).toEqual(expect.any(Function));
-    expect(props.onRemoveAttachment).toEqual(expect.any(Function));
-    expect(props.isRemoveExistingDisabled).toEqual(expect.any(Function));
-    expect(props.isRemoveAttachmentDisabled).toEqual(expect.any(Function));
+    expect(props.editAttachmentControls).toEqual(
+      expect.objectContaining({
+        existingAttachments: mockExistingAttachments,
+        onRemoveExisting: expect.any(Function),
+        onRemoveAttachment: expect.any(Function),
+        isRemoveExistingDisabled: expect.any(Function),
+        isRemoveAttachmentDisabled: expect.any(Function),
+      }),
+    );
   });
 
   it('disables remove for the last remaining existing media attachment in edit mode', () => {
@@ -908,7 +941,7 @@ describe('PostInput', () => {
 
     const latestCall = mockPostInputAttachmentsComponent.mock.calls.at(-1);
     const props = latestCall?.[0] as MockedPostInputAttachmentsProps;
-    expect(props.isRemoveExistingDisabled?.(0)).toBe(true);
+    expect(props.editAttachmentControls?.isRemoveExistingDisabled(0)).toBe(true);
   });
 
   it('allows removing the last remaining existing media attachment in article edit mode', () => {
@@ -935,7 +968,7 @@ describe('PostInput', () => {
 
     const latestCall = mockPostInputAttachmentsComponent.mock.calls.at(-1);
     const props = latestCall?.[0] as MockedPostInputAttachmentsProps;
-    expect(props.isRemoveExistingDisabled?.(0)).toBe(false);
+    expect(props.editAttachmentControls?.isRemoveExistingDisabled(0)).toBe(false);
   });
 
   it('disables remove for the last remaining new media attachment in edit mode', () => {
@@ -962,7 +995,7 @@ describe('PostInput', () => {
 
     const latestCall = mockPostInputAttachmentsComponent.mock.calls.at(-1);
     const props = latestCall?.[0] as MockedPostInputAttachmentsProps;
-    expect(props.isRemoveAttachmentDisabled?.(0)).toBe(true);
+    expect(props.editAttachmentControls?.isRemoveAttachmentDisabled(0)).toBe(true);
   });
 
   it('disables submit in edit mode when only non-media attachments remain after a media-origin edit', () => {
@@ -1097,14 +1130,10 @@ describe('PostInput', () => {
 
     const latestCall = mockPostInputAttachmentsComponent.mock.calls.at(-1);
     const props = latestCall?.[0] as MockedPostInputAttachmentsProps;
-    props.onRemoveAttachment?.(0);
 
-    expect(mockSetAttachments).not.toHaveBeenCalled();
-    expect(mockToast).toHaveBeenCalledWith(
-      expect.objectContaining({
-        description: 'This post requires at least one media.',
-      }),
-    );
+    expect(props.editAttachmentControls?.isRemoveAttachmentDisabled(0)).toBe(true);
+    props.editAttachmentControls?.onRemoveAttachment(0);
+    expect(mockUsePostReturn.setAttachments).not.toHaveBeenCalled();
   });
 
   it('disables submit while existing attachments are loading', () => {

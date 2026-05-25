@@ -10,6 +10,14 @@ export type ExistingAttachmentMeta = {
   previewUrl: string;
 };
 
+export type EditAttachmentControls = {
+  existingAttachments: ExistingAttachmentMeta[];
+  onRemoveExisting: (index: number) => void;
+  onRemoveAttachment: (index: number) => void;
+  isRemoveExistingDisabled: (index: number) => boolean;
+  isRemoveAttachmentDisabled: (index: number) => boolean;
+};
+
 export interface UsePostInputOptions {
   /** Variant determines if this is a reply, repost, or a new post */
   variant: PostInputVariant;
@@ -34,6 +42,8 @@ export interface UsePostInputOptions {
   onArticleModeChange?: (isArticle: boolean) => void;
   /** Existing attachment URIs for edit mode */
   editAttachments?: string[];
+  /** Whether the post being edited is an article */
+  editIsArticle?: boolean;
 }
 
 export interface UsePostInputReturn {
@@ -59,6 +69,8 @@ export interface UsePostInputReturn {
   isLoadingExistingAttachments: boolean;
   /** Whether the original post (before edit) had at least one media attachment */
   editHadMediaAttachments: boolean;
+  /** Edit-mode attachment remove handlers; undefined outside edit variant */
+  editAttachmentControls?: EditAttachmentControls;
   isDragging: boolean;
   isExpanded: boolean;
   isSubmitting: boolean;
