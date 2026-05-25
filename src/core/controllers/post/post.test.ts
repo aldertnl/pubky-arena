@@ -11,6 +11,7 @@ import { PostDetailsModel } from '@/models/post/details/postDetails';
 import type { PostDetailsModelSchema } from '@/models/post/details/postDetails.schema';
 import { PostRelationshipsModel } from '@/models/post/relationships/postRelationships';
 import { PostTagsModel } from '@/models/post/tags/postTags';
+import type { TFileAttachmentResult } from '@/pipes/file/file.types';
 import { PostNormalizer } from '@/pipes/post/post.normalizer';
 import { HomeserverService } from '@/services/homeserver/homeserver';
 import type { NexusTaggers } from '@/services/nexus/nexus.types';
@@ -30,6 +31,7 @@ vi.mock('@/application/file/file', () => ({
   FileApplication: {
     upload: vi.fn(),
     delete: vi.fn(),
+    toFileAttachment: vi.fn(),
     commitCreate: vi.fn(),
     commitDelete: vi.fn(),
   },
@@ -298,6 +300,23 @@ describe('PostController', () => {
   });
 
   describe('commitCreate', () => {
+    beforeEach(() => {
+      vi.spyOn(FileApplication, 'toFileAttachment').mockImplementation(async ({ file }) => {
+        const safeName = encodeURIComponent(file.name || 'upload');
+
+        return {
+          blobResult: {
+            blob: { data: new Uint8Array([1, 2, 3]) },
+            meta: { url: `pubky://mock-author/pub/pubky.app/blobs/${safeName}` },
+          } as TFileAttachmentResult['blobResult'],
+          fileResult: {
+            file: { toJson: () => ({}) },
+            meta: { url: `pubky://mock-author/pub/pubky.app/files/${safeName}` },
+          } as TFileAttachmentResult['fileResult'],
+        };
+      });
+    });
+
     it('should create a post and sync to homeserver', async () => {
       const { PostController } = await import('./post');
 
