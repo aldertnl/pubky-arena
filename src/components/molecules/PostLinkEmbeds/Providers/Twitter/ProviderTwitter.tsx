@@ -133,7 +133,7 @@ const TwitterEmbed = ({ tweetId, tweetUrl }: { tweetId: string; tweetUrl: string
   }, [tweetUrl]);
 
   return (
-    <Atoms.Container
+    <Container
       ref={containerRef}
       data-testid="twitter-container"
       data-theme="dark"
@@ -148,7 +148,7 @@ const TwitterEmbed = ({ tweetId, tweetUrl }: { tweetId: string; tweetUrl: string
  * Twitter/X embed provider
  * Implements the standard EmbedProvider interface
  */
-export const Twitter: ProviderTypes.EmbedProvider = {
+export const Twitter: EmbedProvider = {
   /**
    * List of supported Twitter/X domains
    */
@@ -157,7 +157,7 @@ export const Twitter: ProviderTypes.EmbedProvider = {
   /**
    * Parse Twitter/X URL and return embed information
    */
-  parseEmbed: (url: string): ProviderTypes.EmbedData | null => {
+  parseEmbed: (url: string): EmbedData | null => {
     const id = extractTwitterId(url);
 
     if (!id) return null;
@@ -172,7 +172,7 @@ export const Twitter: ProviderTypes.EmbedProvider = {
    * from react-tweet. The hash suffix may change in library updates - verify
    * styling after upgrading react-tweet package.
    */
-  renderEmbed: (embedData: ProviderTypes.EmbedData) => {
+  renderEmbed: (embedData: EmbedData) => {
     // Type guard: ensure we have an ID type
     if (embedData.type !== 'id') return null;
 
