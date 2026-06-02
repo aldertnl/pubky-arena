@@ -592,6 +592,7 @@ describe('createPostStreamParams', () => {
       { kind: 'video', tags: 'tutorials,vlogs', expectedKind: StreamKind.VIDEO },
       { kind: 'link', tags: 'resources,refs', expectedKind: StreamKind.LINK },
       { kind: 'file', tags: 'docs,pdfs', expectedKind: StreamKind.FILE },
+      { kind: 'collection', tags: 'lists,research', expectedKind: StreamKind.COLLECTION },
     ])('should handle tags in $kind content stream', ({ kind, tags, expectedKind }) => {
       const streamIdWithTags = `timeline:bookmarks:${kind}:${tags}` as PostStreamId;
       const result = createPostStreamParams({

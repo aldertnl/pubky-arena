@@ -5,7 +5,7 @@ import { StreamKind, StreamSource } from '@/services/nexus/stream/posts/postStre
 // Post Stream ID Pattern: sorting:source:kind
 // - SORTING: timeline (recent), total_engagement (popularity)
 // - SOURCE: all, following, friends, me, bookmarks, post_replies, author, author_replies
-// - KIND: all, short (posts), long (articles), image, video, link, file
+// - KIND: all, short (posts), long (articles), image, video, link, file, collection
 //
 // Dynamic Post Reply Stream ID Pattern: postReplies:compositePostId
 // - compositePostId format: author:postId (e.g., "did:key:abc123:post456")

@@ -1220,6 +1220,25 @@
     "warningReached": "لقد وصلت إلى الحد الأقصى لعدد الأحرف."
   },
   "collections": {
+    "new": {
+      "cta": "مجموعة جديدة",
+      "title": "مجموعة جديدة",
+      "nameLabel": "العنوان",
+      "namePlaceholder": "إثبات العمل",
+      "descriptionLabel": "الوصف",
+      "descriptionPlaceholder": "أفضل ما قدمه أكبر المساهمين في بيتكوين",
+      "backgroundLabel": "الخلفية",
+      "addImage": "إضافة صورة",
+      "removeImage": "إزالة الصورة",
+      "coverImageInvalid": "يجب أن تكون صورة الغلاف ملف صورة.",
+      "coverImageTooLarge": "صورة الغلاف كبيرة جداً.",
+      "nameRequired": "عنوان المجموعة مطلوب.",
+      "cancel": "إلغاء",
+      "save": "حفظ المجموعة",
+      "saving": "جارٍ الحفظ...",
+      "created": "تم إنشاء المجموعة {name}",
+      "createFailed": "فشل إنشاء المجموعة."
+    },
     "showMore": "عرض المزيد",
     "loadFailed": "تعذّر تحميل المجموعات. يُرجى المحاولة مرة أخرى.",
     "my": {
@@ -1248,5 +1267,21 @@
         "unfollowedDesc": "لقد ألغيت متابعة مجموعة {name}"
       }
     }
+  },
+  "postSave": {
+    "title": "حفظ المنشور",
+    "description": "اختر مكان حفظ هذا المنشور.",
+    "open": "حفظ المنشور",
+    "loading": "جارٍ تحميل خيارات الحفظ",
+    "bookmarks": "الإشارات المرجعية",
+    "newCollection": "مجموعة جديدة",
+    "collectionNamePlaceholder": "اسم المجموعة",
+    "createCollection": "إنشاء مجموعة",
+    "loadingCollections": "جارٍ تحميل المجموعات...",
+    "addedToCollection": "تمت إضافة المنشور إلى {name}.",
+    "removedFromCollection": "تمت إزالة المنشور من {name}.",
+    "updateCollectionFailed": "فشل تحديث المجموعة.",
+    "collectionCreated": "تم إنشاء المجموعة وحفظ المنشور.",
+    "createCollectionFailed": "فشل إنشاء المجموعة."
   }
 }

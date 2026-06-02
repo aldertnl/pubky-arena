@@ -66,8 +66,7 @@ export function sortToStreamSorting(sort: PubkyAppFeedSort): StreamSorting {
 
 export function contentToStreamKind(content: PubkyAppPostKind | null): StreamKind | undefined {
   if (content === null) return undefined;
-  // PubkyAppPostKind.Unknown is intentionally unmapped (returns undefined).
-  const map: Partial<Record<PubkyAppPostKind, StreamKind>> = {
+  const map: Record<PubkyAppPostKind, StreamKind | undefined> = {
     [PubkyAppPostKind.Short]: StreamKind.SHORT,
     [PubkyAppPostKind.Long]: StreamKind.LONG,
     [PubkyAppPostKind.Image]: StreamKind.IMAGE,
@@ -75,6 +74,7 @@ export function contentToStreamKind(content: PubkyAppPostKind | null): StreamKin
     [PubkyAppPostKind.Link]: StreamKind.LINK,
     [PubkyAppPostKind.File]: StreamKind.FILE,
     [PubkyAppPostKind.Collection]: StreamKind.COLLECTION,
+    [PubkyAppPostKind.Unknown]: undefined,
   };
   return map[content];
 }
