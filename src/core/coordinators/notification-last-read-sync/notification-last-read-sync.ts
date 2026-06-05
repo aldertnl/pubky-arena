@@ -1,4 +1,5 @@
 import { AUTH_ROUTES } from '@/app/routes';
+import type { TLastReadEvent } from '@/application/notification/notification.types';
 import {
   NOTIFICATION_LAST_READ_SYNC_CURSOR_STORAGE_PREFIX,
   NOTIFICATION_LAST_READ_SYNC_DEBOUNCE_MS,
@@ -7,7 +8,6 @@ import {
   NOTIFICATION_LAST_READ_SYNC_RECONNECT_BACKOFF_MS,
 } from '@/config/notification-last-read-sync';
 import { NotificationController } from '@/controllers/notification/notification';
-import type { TLastReadEvent } from '@/controllers/notification/notification.types';
 import { routeToRegex } from '@/coordinators/base/coordinators.utils';
 import { Env } from '@/libs/env/env';
 import { Logger } from '@/libs/logger/logger';

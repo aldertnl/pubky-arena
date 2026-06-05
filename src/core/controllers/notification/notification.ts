@@ -1,7 +1,7 @@
 import { NotificationApplication } from '@/application/notification/notification';
-import type { TGetOrFetchNotificationsResponse } from '@/application/notification/notification.types';
+import type { TGetOrFetchNotificationsResponse, TLastReadEvent } from '@/application/notification/notification.types';
 import { NEXUS_NOTIFICATIONS_LIMIT } from '@/config/nexus';
-import type { TGetNotificationsParams, TLastReadEvent } from '@/controllers/notification/notification.types';
+import type { TGetNotificationsParams } from '@/controllers/notification/notification.types';
 import type { TReadProfileParams } from '@/controllers/profile/profile.types';
 import type { Pubky } from '@/models/models.types';
 import { type FlatNotification, NotificationType } from '@/models/notification/notification.types';

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { APP_ROUTES, AUTH_ROUTES, PROFILE_ROUTES } from '@/app/routes';
+import type { TLastReadEvent } from '@/application/notification/notification.types';
 import {
   NOTIFICATION_LAST_READ_SYNC_CURSOR_STORAGE_PREFIX,
   NOTIFICATION_LAST_READ_SYNC_DEBOUNCE_MS,
@@ -7,7 +8,6 @@ import {
   NOTIFICATION_LAST_READ_SYNC_RECONNECT_BACKOFF_MS,
 } from '@/config/notification-last-read-sync';
 import { NotificationController } from '@/controllers/notification/notification';
-import type { TLastReadEvent } from '@/controllers/notification/notification.types';
 import { NotificationLastReadSyncCoordinator } from '@/coordinators/notification-last-read-sync/notification-last-read-sync';
 import { Logger } from '@/libs/logger/logger';
 import type { Pubky } from '@/models/models.types';

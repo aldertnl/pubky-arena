@@ -11,16 +11,3 @@ export type TGetNotificationsParams = {
   olderThan?: number;
   limit?: number;
 };
-
-/**
- * Event emitted by the homeserver event stream for changes to the `last_read` file.
- *
- * `eventType` is narrowed to the only values the pubky SDK emits for a single-file path
- * (`"PUT" | "DEL"`, per the SDK docstring at `@synonymdev/pubky` `eventStreamForUser`).
- * The upstream {@link THomeserverUserEvent} types it loosely as `string` for forward
- * compatibility; the controller casts at the boundary when narrowing for this domain.
- */
-export type TLastReadEvent = {
-  cursor: string;
-  eventType: 'PUT' | 'DEL';
-};

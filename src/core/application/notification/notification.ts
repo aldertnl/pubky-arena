@@ -5,6 +5,7 @@ import type {
   TFlatNotificationList,
   TGetOrFetchNotificationsParams,
   TGetOrFetchNotificationsResponse,
+  TLastReadEvent,
   TNotificationApplicationNotificationsParams,
   TNotificationsPartialCacheHitParams,
   TPersistAndSummarizeParams,
@@ -12,7 +13,6 @@ import type {
 import { PostStreamApplication } from '@/application/stream/posts/post';
 import { UserStreamApplication } from '@/application/stream/users/users';
 import { NOTIFICATION_LAST_READ_HOMESERVER_EVENTS_PATH_PREFIX } from '@/config/notification-last-read-sync';
-import type { TLastReadEvent } from '@/controllers/notification/notification.types';
 import { HttpMethod } from '@/libs/http/http.types';
 import { Logger } from '@/libs/logger/logger';
 import type { Pubky } from '@/models/models.types';
