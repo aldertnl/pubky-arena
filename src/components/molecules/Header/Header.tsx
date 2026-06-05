@@ -223,7 +223,7 @@ export function HeaderExploreNavigationButtons({
     <Container className={cn('hidden min-w-0 flex-1 flex-row items-center justify-end gap-3 lg:flex', className)}>
       {showSearch && <SearchInput />}
       {NAVIGATION_ITEMS.map((item) => {
-        // Home/Hot are public explore routes and navigate freely. Bookmarks/Settings (and any
+        // Home/Hot are public explore routes and navigate freely. Collections/Settings (and any
         // other non-explore route) require an account, so they prompt Join Pubky via requireAuth.
         const requiresAuth = !isCoreExploreRoute(item.href);
         return (
