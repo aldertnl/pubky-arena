@@ -303,6 +303,7 @@ ADRs capture the _why_ behind key architectural decisions. Stored in `docs/adr/`
 | 0014 | Muting system                          |
 | 0015 | Error handling                         |
 | 0016 | Service worker local file cache        |
+| 0017 | Auth flow resume                       |
 
 ## Quick Checklist
 
