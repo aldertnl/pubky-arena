@@ -5,6 +5,7 @@ import { Typography } from '@/atoms/Typography/Typography';
 import { cn, formatPublicKey } from '@/libs/utils/utils';
 import { AvatarWithFallback } from '@/organisms/AvatarWithFallback/AvatarWithFallback';
 import { PostHeaderTimestamp } from '../PostHeaderTimestamp/PostHeaderTimestamp';
+import { PostHomeserverVerifyIcon } from '../PostHomeserverVerifyIcon/PostHomeserverVerifyIcon';
 import { UserInfoPopover } from '../UserInfoPopover/UserInfoPopover';
 
 interface PostHeaderUserInfoProps {
@@ -19,6 +20,7 @@ interface PostHeaderUserInfoProps {
   size?: 'normal' | 'large';
   timeAgo?: string | null;
   indexedAt?: Date | null;
+  postId?: string;
 }
 
 export function PostHeaderUserInfo({
@@ -30,6 +32,7 @@ export function PostHeaderUserInfo({
   size = 'normal',
   timeAgo,
   indexedAt,
+  postId,
 }: PostHeaderUserInfoProps) {
   const formattedPublicKey = formatPublicKey({ key: userId });
   const profileUrl = `/profile/${userId}`;
@@ -77,7 +80,16 @@ export function PostHeaderUserInfo({
               {characterLimit.count}/{characterLimit.max}
             </Typography>
           )}
-          {timeAgo && <PostHeaderTimestamp timeAgo={timeAgo} indexedAt={indexedAt} />}
+          {timeAgo && (
+            <Container overrideDefaults className="flex shrink-0 items-center gap-2.5">
+              <PostHeaderTimestamp
+                timeAgo={timeAgo}
+                indexedAt={indexedAt}
+                showExactTimeTooltip={!postId}
+              />
+              {postId && <PostHomeserverVerifyIcon postId={postId} />}
+            </Container>
+          )}
         </Container>
       </Container>
     </Container>

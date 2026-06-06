@@ -1,4 +1,5 @@
 import { LucideProps } from 'lucide-react';
+import { cn } from '@/libs/utils/utils';
 import { createLucideCompatIcon } from './createLucideCompatIcon';
 
 /** Lucide v0 brand mark (removed in lucide-react v1). */
@@ -350,3 +351,68 @@ export const PubkyIcon = ({ className, size = 24, ...props }: LucideProps) => (
     />
   </svg>
 );
+
+type VerifyBadgeProps = LucideProps;
+
+/** Double-check "seen" icon for unverified homeserver state (click to verify). */
+export const HomeserverSeen = ({ className, size = 24, ...props }: LucideProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={cn('homeserver-seen shrink-0', className)}
+    aria-hidden="true"
+    {...props}
+  >
+    <path
+      d="M5.5 12.5 8.5 15.5 13 10"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="butt"
+      strokeLinejoin="miter"
+    />
+    <path
+      d="M9.5 12.5 12.5 15.5 18 9.5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="butt"
+      strokeLinejoin="miter"
+    />
+  </svg>
+);
+HomeserverSeen.displayName = 'HomeserverSeen';
+
+/** Filled verification seal with centered checkmark (verified homeserver state). */
+export const VerifyBadge = ({ className, size = 24, ...props }: VerifyBadgeProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={cn('verify-badge shrink-0', className)}
+    aria-hidden="true"
+    {...props}
+  >
+    <path
+      d="M12 2.25 9.45 4.15 6.27 4.11 5.33 7.15 2.73 8.99 3.75 12 2.73 15.01 5.33 16.85 6.27 19.89 9.45 19.85 12 21.75 14.55 19.85 17.73 19.89 18.67 16.85 21.27 15.01 20.25 12 21.27 8.99 18.67 7.15 17.73 4.11 14.55 4.15 12 2.25Z"
+      fill="currentColor"
+      stroke="currentColor"
+      strokeWidth="1.25"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M8.25 11.75 11 14.5 15.75 9.5"
+      fill="none"
+      stroke="#000"
+      strokeWidth="2.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+VerifyBadge.displayName = 'VerifyBadge';

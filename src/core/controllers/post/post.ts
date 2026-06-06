@@ -10,6 +10,7 @@ import type {
   TFetchMorePostTagsParams,
   TFetchPostTaggersParams,
   TFileAttachmentsParams,
+  THomeserverVerificationResult,
   TNormalizeTagsParams,
 } from '@/controllers/post/post.types';
 import type { TTagEventParams } from '@/controllers/tag/tag.types';
@@ -105,6 +106,17 @@ export class PostController {
    */
   static async fetch(params: TGetOrFetchPostParams): Promise<PostDetailsModelSchema | null> {
     return await PostApplication.fetch(params);
+  }
+
+  /**
+   * Verifies whether a post and its attachments exist on the author's homeserver (network-only).
+   * @param params - Parameters object
+   * @param params.compositeId - Composite post ID in format "authorId:postId"
+   * @returns Whether the post JSON and all attachment resources are present on the homeserver
+   */
+  static async fetchHomeserverVerification({ compositeId }: TCompositeId): Promise<THomeserverVerificationResult> {
+    const verified = await PostApplication.verifyPostOnHomeserver({ compositeId });
+    return { verified };
   }
 
   /**

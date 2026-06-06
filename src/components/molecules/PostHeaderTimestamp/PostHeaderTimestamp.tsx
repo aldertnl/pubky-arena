@@ -9,8 +9,13 @@ interface PostHeaderTimestampProps {
   timeAgo: string;
   /** When provided, shows exact date/time in a tooltip on hover (desktop only) */
   indexedAt?: Date | null;
+  showExactTimeTooltip?: boolean;
 }
-export function PostHeaderTimestamp({ timeAgo, indexedAt }: PostHeaderTimestampProps) {
+export function PostHeaderTimestamp({
+  timeAgo,
+  indexedAt,
+  showExactTimeTooltip = true,
+}: PostHeaderTimestampProps) {
   const isMobile = useIsMobile();
   const inner = (
     <>
@@ -24,7 +29,7 @@ export function PostHeaderTimestamp({ timeAgo, indexedAt }: PostHeaderTimestampP
       </Typography>
     </>
   );
-  const showTooltip = !isMobile && !!indexedAt;
+  const showTooltip = showExactTimeTooltip && !isMobile && !!indexedAt;
   if (!showTooltip) {
     return (
       <Container className="flex flex-shrink-0 items-center gap-1" overrideDefaults>

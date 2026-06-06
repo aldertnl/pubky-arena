@@ -49,6 +49,7 @@ vi.mock('@/services/local/tag/post/tag.post', () => ({
 vi.mock('@/services/homeserver/homeserver', () => ({
   HomeserverService: {
     request: vi.fn(),
+    get: vi.fn(),
   },
 }));
 
@@ -1207,6 +1208,240 @@ describe('Post Application', () => {
 
       expect(readDetailsSpy).toHaveBeenCalledWith({ postId: mockData.compositePostId });
       expect(editSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('verifyExistsOnHomeserver', () => {
+    const postUri = 'pubky://author/pub/pubky.app/posts/post123';
+
+    beforeEach(() => {
+      PostApplication.clearHomeserverVerificationCache();
+      vi.mocked(HomeserverService.get).mockReset();
+    });
+
+    it('should return true when homeserver GET is ok', async () => {
+      vi.mocked(HomeserverService.get).mockResolvedValue(new Response('{}', { status: 200 }));
+
+      const result = await PostApplication.verifyExistsOnHomeserver({ postUri });
+
+      expect(result).toBe(true);
+      expect(HomeserverService.get).toHaveBeenCalledWith(postUri);
+    });
+
+    it('should return false when homeserver GET returns 404', async () => {
+      vi.mocked(HomeserverService.get).mockResolvedValue(new Response('Not Found', { status: 404 }));
+
+      const result = await PostApplication.verifyExistsOnHomeserver({ postUri });
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false when homeserver GET throws', async () => {
+      vi.mocked(HomeserverService.get).mockRejectedValue(new Error('Network error'));
+
+      const result = await PostApplication.verifyExistsOnHomeserver({ postUri });
+
+      expect(result).toBe(false);
+    });
+
+    it('should use in-memory cache on subsequent calls', async () => {
+      vi.mocked(HomeserverService.get).mockResolvedValue(new Response('{}', { status: 200 }));
+
+      await PostApplication.verifyExistsOnHomeserver({ postUri });
+      await PostApplication.verifyExistsOnHomeserver({ postUri });
+
+      expect(HomeserverService.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('should dedupe concurrent requests for the same uri', async () => {
+      let resolveGet: (value: Response) => void = () => {};
+      vi.mocked(HomeserverService.get).mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveGet = resolve;
+          }),
+      );
+
+      const first = PostApplication.verifyExistsOnHomeserver({ postUri });
+      const second = PostApplication.verifyExistsOnHomeserver({ postUri });
+
+      resolveGet(new Response('{}', { status: 200 }));
+
+      await Promise.all([first, second]);
+
+      expect(HomeserverService.get).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('verifyAllExistOnHomeserver', () => {
+    const postUri = 'pubky://author/pub/pubky.app/posts/post123';
+    const fileUri = 'pubky://author/pub/pubky.app/files/file1';
+
+    beforeEach(() => {
+      PostApplication.clearHomeserverVerificationCache();
+      vi.mocked(HomeserverService.get).mockReset();
+    });
+
+    it('should return false when uris array is empty', async () => {
+      const result = await PostApplication.verifyAllExistOnHomeserver({ uris: [] });
+
+      expect(result).toBe(false);
+      expect(HomeserverService.get).not.toHaveBeenCalled();
+    });
+
+    it('should return true when all uris exist on homeserver', async () => {
+      vi.mocked(HomeserverService.get).mockResolvedValue(new Response('{}', { status: 200 }));
+
+      const result = await PostApplication.verifyAllExistOnHomeserver({ uris: [postUri, fileUri] });
+
+      expect(result).toBe(true);
+      expect(HomeserverService.get).toHaveBeenCalledWith(postUri);
+      expect(HomeserverService.get).toHaveBeenCalledWith(fileUri);
+    });
+
+    it('should return false when any uri is missing on homeserver', async () => {
+      vi.mocked(HomeserverService.get).mockImplementation((uri) =>
+        Promise.resolve(new Response(uri === postUri ? '{}' : 'Not Found', { status: uri === postUri ? 200 : 404 })),
+      );
+
+      const result = await PostApplication.verifyAllExistOnHomeserver({ uris: [postUri, fileUri] });
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('resolveHomeserverVerificationUris', () => {
+    const postUri = 'pubky://author/pub/pubky.app/posts/post123';
+    const fileUri = 'pubky://author/pub/pubky.app/files/file1';
+    const blobUri = 'pubky://author/pub/pubky.app/blobs/blob1';
+
+    beforeEach(() => {
+      PostApplication.clearHomeserverVerificationCache();
+      vi.mocked(HomeserverService.get).mockReset();
+    });
+
+    it('should include post, attachment metadata, and blob uris from homeserver post json', async () => {
+      vi.mocked(HomeserverService.get).mockImplementation((uri) => {
+        if (uri === postUri) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ attachments: [fileUri] }), { status: 200 }),
+          );
+        }
+        if (uri === fileUri) {
+          return Promise.resolve(new Response(JSON.stringify({ src: blobUri }), { status: 200 }));
+        }
+        return Promise.resolve(new Response('Not Found', { status: 404 }));
+      });
+
+      const result = await PostApplication.resolveHomeserverVerificationUris({
+        postUri,
+        localAttachments: null,
+      });
+
+      expect(result.postVerified).toBe(true);
+      expect(result.urisToVerify).toEqual(expect.arrayContaining([fileUri, blobUri]));
+      expect(result.urisToVerify).not.toContain(postUri);
+      expect(result.urisToVerify).toHaveLength(2);
+    });
+
+    it('should prefer local attachments when homeserver post has none', async () => {
+      vi.mocked(HomeserverService.get).mockImplementation((uri) => {
+        if (uri === postUri) {
+          return Promise.resolve(new Response(JSON.stringify({ attachments: null }), { status: 200 }));
+        }
+        if (uri === fileUri) {
+          return Promise.resolve(new Response(JSON.stringify({ src: blobUri }), { status: 200 }));
+        }
+        return Promise.resolve(new Response('Not Found', { status: 404 }));
+      });
+
+      const result = await PostApplication.resolveHomeserverVerificationUris({
+        postUri,
+        localAttachments: [fileUri],
+      });
+
+      expect(result.urisToVerify).toEqual(expect.arrayContaining([fileUri, blobUri]));
+    });
+
+    it('should return postVerified false when post is missing on homeserver', async () => {
+      vi.mocked(HomeserverService.get).mockResolvedValue(new Response('Not Found', { status: 404 }));
+
+      const result = await PostApplication.resolveHomeserverVerificationUris({
+        postUri,
+        localAttachments: [fileUri],
+      });
+
+      expect(result).toEqual({ postUri, postVerified: false, urisToVerify: [] });
+    });
+  });
+
+  describe('verifyPostOnHomeserver', () => {
+    const compositeId = 'author:post123';
+    const postUri = 'pubky://author/pub/pubky.app/posts/post123';
+    const fileUri = 'pubky://author/pub/pubky.app/files/file1';
+    const blobUri = 'pubky://author/pub/pubky.app/blobs/blob1';
+
+    beforeEach(() => {
+      PostApplication.clearHomeserverVerificationCache();
+      vi.mocked(HomeserverService.get).mockReset();
+    });
+
+    it('should GET the post only once when verifying post with attachments', async () => {
+      vi.mocked(HomeserverService.get).mockImplementation((uri) => {
+        if (uri === postUri) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ attachments: [fileUri] }), { status: 200 }),
+          );
+        }
+        if (uri === fileUri) {
+          return Promise.resolve(new Response(JSON.stringify({ src: blobUri }), { status: 200 }));
+        }
+        if (uri === blobUri) {
+          return Promise.resolve(new Response('', { status: 200 }));
+        }
+        return Promise.resolve(new Response('Not Found', { status: 404 }));
+      });
+
+      vi.spyOn(PostApplication, 'getDetails').mockResolvedValue({
+        id: compositeId,
+        content: 'Test',
+        kind: 'short',
+        uri: postUri,
+        indexed_at: Date.now(),
+        attachments: null,
+      });
+
+      const result = await PostApplication.verifyPostOnHomeserver({ compositeId });
+
+      expect(result).toBe(true);
+      expect(vi.mocked(HomeserverService.get).mock.calls.filter(([uri]) => uri === postUri)).toHaveLength(1);
+    });
+
+    it('should dedupe concurrent verification for the same composite id', async () => {
+      const resolveSpy = vi.spyOn(PostApplication, 'resolveHomeserverVerificationUris').mockResolvedValue({
+        postUri,
+        postVerified: true,
+        urisToVerify: [],
+      });
+      vi.spyOn(PostApplication, 'getDetails').mockResolvedValue({
+        id: compositeId,
+        content: 'Test',
+        kind: 'short',
+        uri: postUri,
+        indexed_at: Date.now(),
+        attachments: null,
+      });
+
+      try {
+        await Promise.all([
+          PostApplication.verifyPostOnHomeserver({ compositeId }),
+          PostApplication.verifyPostOnHomeserver({ compositeId }),
+        ]);
+
+        expect(resolveSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        resolveSpy.mockRestore();
+      }
     });
   });
 });

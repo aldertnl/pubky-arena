@@ -78,6 +78,14 @@ vi.mock('@/molecules/PostHeaderTimestamp/PostHeaderTimestamp', () => {
   };
 });
 
+vi.mock('@/molecules/PostHomeserverVerifyIcon/PostHomeserverVerifyIcon', () => ({
+  PostHomeserverVerifyIcon: vi.fn(({ postId }: { postId: string }) => (
+    <button type="button" data-testid="post-homeserver-verify-icon" data-post-id={postId}>
+      verify
+    </button>
+  )),
+}));
+
 vi.mock('@/molecules/PostHeaderUserInfo/PostHeaderUserInfo', () => {
   return {
     PostHeaderUserInfo: vi.fn(

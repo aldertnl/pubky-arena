@@ -7,6 +7,7 @@ import { useRelativeTime } from '@/hooks/useRelativeTime/useRelativeTime';
 import { useUserDetails } from '@/hooks/useUserDetails/useUserDetails';
 import { PostHeaderTimestamp } from '@/molecules/PostHeaderTimestamp/PostHeaderTimestamp';
 import { PostHeaderUserInfo } from '@/molecules/PostHeaderUserInfo/PostHeaderUserInfo';
+import { PostHomeserverVerifyIcon } from '@/molecules/PostHomeserverVerifyIcon/PostHomeserverVerifyIcon';
 import { PostHeaderSkeleton } from './PostHeader.skeleton';
 import type { PostHeaderProps } from './PostHeader.types';
 
@@ -52,8 +53,14 @@ export function PostHeader({
         size={size}
         timeAgo={timeAgoPlacement === 'bottom-left' ? timeAgo : null}
         indexedAt={timeAgoPlacement === 'bottom-left' ? indexedAt : null}
+        postId={timeAgoPlacement === 'bottom-left' && !isReplyInput ? postId : undefined}
       />
-      {timeAgo && timeAgoPlacement === 'top-right' && <PostHeaderTimestamp timeAgo={timeAgo} indexedAt={indexedAt} />}
+      {timeAgo && timeAgoPlacement === 'top-right' && (
+        <Container className="flex flex-shrink-0 items-center gap-2.5" overrideDefaults>
+          <PostHeaderTimestamp timeAgo={timeAgo} indexedAt={indexedAt} showExactTimeTooltip={false} />
+          {!isReplyInput && <PostHomeserverVerifyIcon postId={postId} />}
+        </Container>
+      )}
     </Container>
   );
 }

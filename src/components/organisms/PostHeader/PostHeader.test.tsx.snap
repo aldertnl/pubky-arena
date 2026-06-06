@@ -21,14 +21,26 @@ exports[`PostHeader - Snapshots > matches snapshot in loaded state 1`] = `
     </div>
   </div>
   <div
-    data-testid="post-header-timestamp"
+    class="flex flex-shrink-0 items-center gap-2.5"
+    data-testid="container"
   >
-    <svg
-      data-testid="clock-icon"
-    />
-    <span>
-      2h
-    </span>
+    <div
+      data-testid="post-header-timestamp"
+    >
+      <svg
+        data-testid="clock-icon"
+      />
+      <span>
+        2h
+      </span>
+    </div>
+    <button
+      data-post-id="snapshotUserKey:post789"
+      data-testid="post-homeserver-verify-icon"
+      type="button"
+    >
+      verify
+    </button>
   </div>
 </div>
 `;

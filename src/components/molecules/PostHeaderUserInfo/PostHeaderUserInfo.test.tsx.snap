@@ -231,11 +231,17 @@ exports[`PostHeaderUserInfo - Snapshots > matches snapshot with all new props 1`
           >
             snap...rKey
           </p>
-          <span
-            data-testid="post-header-timestamp"
+          <div
+            class="flex shrink-0 items-center gap-2.5"
+            data-override-defaults="true"
+            data-testid="container"
           >
-            1h ago
-          </span>
+            <span
+              data-testid="post-header-timestamp"
+            >
+              1h ago
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -669,11 +675,17 @@ exports[`PostHeaderUserInfo - Snapshots > matches snapshot with timeAgo 1`] = `
           >
             snap...rKey
           </p>
-          <span
-            data-testid="post-header-timestamp"
+          <div
+            class="flex shrink-0 items-center gap-2.5"
+            data-override-defaults="true"
+            data-testid="container"
           >
-            5m ago
-          </span>
+            <span
+              data-testid="post-header-timestamp"
+            >
+              5m ago
+            </span>
+          </div>
         </div>
       </div>
     </div>

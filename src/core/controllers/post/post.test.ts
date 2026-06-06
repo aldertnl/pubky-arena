@@ -757,6 +757,43 @@ describe('PostController', () => {
     });
   });
 
+  describe('fetchHomeserverVerification', () => {
+    const compositeId = 'author:post123';
+
+    beforeEach(() => {
+      PostApplication.clearHomeserverVerificationCache();
+    });
+
+    it('should delegate to PostApplication.verifyPostOnHomeserver', async () => {
+      const { PostController } = await import('./post');
+
+      const verifySpy = vi.spyOn(PostApplication, 'verifyPostOnHomeserver').mockResolvedValue(true);
+
+      try {
+        const result = await PostController.fetchHomeserverVerification({ compositeId });
+
+        expect(verifySpy).toHaveBeenCalledWith({ compositeId });
+        expect(result).toEqual({ verified: true });
+      } finally {
+        verifySpy.mockRestore();
+      }
+    });
+
+    it('should return verified false when homeserver check fails', async () => {
+      const { PostController } = await import('./post');
+
+      const verifySpy = vi.spyOn(PostApplication, 'verifyPostOnHomeserver').mockResolvedValue(false);
+
+      try {
+        const result = await PostController.fetchHomeserverVerification({ compositeId });
+
+        expect(result).toEqual({ verified: false });
+      } finally {
+        verifySpy.mockRestore();
+      }
+    });
+  });
+
   describe('fetchTaggers', () => {
     it('should call PostApplication.fetchTaggers and return result', async () => {
       const { PostController } = await import('./post');

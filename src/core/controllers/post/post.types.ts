@@ -42,3 +42,7 @@ export interface TFetchPostTaggersParams extends TCompositeId {
   limit?: number;
   viewerId?: Pubky;
 }
+
+export type THomeserverVerificationResult = {
+  verified: boolean;
+};

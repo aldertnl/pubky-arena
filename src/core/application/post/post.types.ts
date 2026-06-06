@@ -21,3 +21,23 @@ export type TGetOrFetchPostParams = {
   /** Optional viewer ID for relationship data. Null/undefined for unauthenticated views. */
   viewerId?: Pubky | null;
 };
+
+export type TVerifyExistsOnHomeserverParams = {
+  postUri: string;
+};
+
+export type TVerifyAllOnHomeserverParams = {
+  uris: string[];
+};
+
+export type TResolveHomeserverVerificationUrisParams = {
+  postUri: string;
+  localAttachments: string[] | null;
+};
+
+export type TResolveHomeserverVerificationUrisResult = {
+  postUri: string;
+  postVerified: boolean;
+  /** Attachment and blob URIs still needing existence checks (post URI excluded). */
+  urisToVerify: string[];
+};

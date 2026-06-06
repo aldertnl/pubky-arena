@@ -205,6 +205,14 @@ vi.mock('@/molecules/PostHeaderTimestamp/PostHeaderTimestamp', () => {
   };
 });
 
+vi.mock('@/molecules/PostHomeserverVerifyIcon/PostHomeserverVerifyIcon', () => ({
+  PostHomeserverVerifyIcon: ({ postId }: { postId: string }) => (
+    <button type="button" data-testid="post-homeserver-verify-icon" data-post-id={postId}>
+      verify
+    </button>
+  ),
+}));
+
 vi.mock('@/molecules/UserInfoPopover/UserInfoPopover', () => {
   return {
     UserInfoPopover: (props: Parameters<typeof mockUserInfoPopover>[0]) => mockUserInfoPopover(props),

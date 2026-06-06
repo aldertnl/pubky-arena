@@ -18,6 +18,7 @@ import { cn } from '@/libs/utils/utils';
 import { parseCompositeId } from '@/models/models.utils';
 import { PostHeaderTimestamp } from '@/molecules/PostHeaderTimestamp/PostHeaderTimestamp';
 import { PostHeaderUserInfo } from '@/molecules/PostHeaderUserInfo/PostHeaderUserInfo';
+import { PostHomeserverVerifyIcon } from '@/molecules/PostHomeserverVerifyIcon/PostHomeserverVerifyIcon';
 import { PostText } from '@/molecules/PostText/PostText';
 import { truncateAtWordBoundary } from '@/molecules/PostText/PostText.utils';
 import { TimelineEndMessage } from '@/molecules/Timeline/TimelineEndMessage';
@@ -165,8 +166,13 @@ function VisualTimelineTileOverlay({ tile, size, onReplyClick, onRepostClick }: 
               )}
             </Container>
 
-            <Container overrideDefaults className="shrink-0 pt-0.5 [&_span]:text-white/70 [&_svg]:text-white/70">
-              <PostHeaderTimestamp timeAgo={formatRelativeTime(indexedAt)} indexedAt={indexedAt} />
+            <Container overrideDefaults className="flex shrink-0 items-center gap-2.5 pt-0.5 [&_span]:text-white/70 [&_svg]:text-white/70">
+              <PostHeaderTimestamp
+                timeAgo={formatRelativeTime(indexedAt)}
+                indexedAt={indexedAt}
+                showExactTimeTooltip={false}
+              />
+              <PostHomeserverVerifyIcon postId={tile.postId} variant="visual" />
             </Container>
           </Container>
 
