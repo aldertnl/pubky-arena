@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { UseKeyboardAvoidanceTransformResult } from '@/hooks/useKeyboardAvoidanceTransform/useKeyboardAvoidanceTransform.types';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,26 @@ import {
   DialogTitle,
   DialogTrigger,
 } from './Dialog';
+
+const mockUseKeyboardAvoidanceTransform = vi.hoisted(() =>
+  vi.fn<() => UseKeyboardAvoidanceTransformResult>(() => ({
+    isKeyboardVisible: false,
+    keyboardAvoidanceOffset: 0,
+    keyboardAvoidanceStyle: undefined,
+  })),
+);
+
+vi.mock('@/hooks/useKeyboardAvoidanceTransform/useKeyboardAvoidanceTransform', () => ({
+  useKeyboardAvoidanceTransform: mockUseKeyboardAvoidanceTransform,
+}));
+
+beforeEach(() => {
+  mockUseKeyboardAvoidanceTransform.mockReturnValue({
+    isKeyboardVisible: false,
+    keyboardAvoidanceOffset: 0,
+    keyboardAvoidanceStyle: undefined,
+  });
+});
 
 describe('Dialog', () => {
   it('renders with default props', () => {
@@ -50,6 +71,26 @@ describe('Dialog', () => {
     const closeButton = document.querySelector('[data-slot="dialog-close"]');
     expect(closeButton).toBeInTheDocument();
     expect(closeButton).toHaveClass('hidden');
+  });
+
+  it('applies keyboard avoidance transform when keyboard is visible', () => {
+    mockUseKeyboardAvoidanceTransform.mockReturnValue({
+      isKeyboardVisible: true,
+      keyboardAvoidanceOffset: 120,
+      keyboardAvoidanceStyle: { transform: 'translateY(-120px)' },
+    });
+
+    render(
+      <Dialog open={true}>
+        <DialogContent>
+          <div>Dialog Content</div>
+        </DialogContent>
+      </Dialog>,
+    );
+
+    const dialogContent = screen.getByTestId('dialog-content');
+    expect(dialogContent).toHaveClass('will-change-transform');
+    expect(dialogContent).toHaveStyle({ transform: 'translateY(-120px)' });
   });
 });
 

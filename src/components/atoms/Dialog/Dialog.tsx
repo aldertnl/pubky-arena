@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { X } from 'lucide-react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
+import { useKeyboardAvoidanceTransform } from '@/hooks/useKeyboardAvoidanceTransform/useKeyboardAvoidanceTransform';
 import { cn } from '@/libs/utils/utils';
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
@@ -65,6 +66,7 @@ function DialogContent({
   showCloseButton = true,
   hiddenTitle,
   overrideDefaults = false,
+  style,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
@@ -73,6 +75,7 @@ function DialogContent({
 }) {
   const closeRef = React.useRef<HTMLButtonElement>(null);
   const contentRef = React.useRef<HTMLDivElement>(null);
+  const { isKeyboardVisible, keyboardAvoidanceStyle } = useKeyboardAvoidanceTransform(contentRef);
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay onCloseRef={closeRef} contentRef={contentRef} />
@@ -85,14 +88,16 @@ function DialogContent({
           data-testid="dialog-content"
           className={cn(
             'relative z-50 grid',
-            'duration-200',
+            'transition-transform duration-200 ease-out',
             'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
             'm-4 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
+            isKeyboardVisible && 'will-change-transform',
             overrideDefaults
               ? ''
               : 'max-h-[calc(100dvh-2rem)] gap-6 overflow-y-auto rounded-lg border bg-background p-6 shadow-lg sm:rounded-xl sm:p-8',
             className,
           )}
+          style={{ ...style, ...keyboardAvoidanceStyle }}
           {...props}
         >
           {hiddenTitle && <DialogPrimitive.Title className="sr-only">{hiddenTitle}</DialogPrimitive.Title>}
