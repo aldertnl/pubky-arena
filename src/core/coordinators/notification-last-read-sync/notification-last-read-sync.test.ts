@@ -41,6 +41,25 @@ function streamOf(...events: TLastReadEvent[]): ReadableStream<TLastReadEvent> {
   });
 }
 
+/** A stream that opens then closes immediately with no events (reader.read() → { done: true }). */
+function closedStream(): ReadableStream<TLastReadEvent> {
+  return new ReadableStream<TLastReadEvent>({
+    start(controller) {
+      controller.close();
+    },
+  });
+}
+
+/** A stream that delivers events then closes, so the loop reconnects instead of blocking on read. */
+function streamThenClose(...events: TLastReadEvent[]): ReadableStream<TLastReadEvent> {
+  return new ReadableStream<TLastReadEvent>({
+    start(controller) {
+      for (const event of events) controller.enqueue(event);
+      controller.close();
+    },
+  });
+}
+
 describe('NotificationLastReadSyncCoordinator', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -233,6 +252,49 @@ describe('NotificationLastReadSyncCoordinator', () => {
     await vi.advanceTimersByTimeAsync(500_000);
 
     expect(subscribe).toHaveBeenCalledTimes(NOTIFICATION_LAST_READ_SYNC_MAX_RETRY_ATTEMPTS);
+  });
+
+  it('gives up reconnecting when the stream opens but closes immediately with no events', async () => {
+    // A clean close (done: true) is not an error, so without counting empty connections the loop
+    // would reset its retry budget every iteration and reconnect forever.
+    vi.mocked(NotificationController.subscribeLastReadEventStream).mockImplementation(async () => closedStream());
+    authenticate();
+    const subscribe = vi.mocked(NotificationController.subscribeLastReadEventStream);
+
+    const coordinator = NotificationLastReadSyncCoordinator.getInstance();
+    coordinator.setRoute(APP_ROUTES.HOME);
+    coordinator.start();
+
+    await vi.advanceTimersByTimeAsync(500_000);
+
+    expect(subscribe).toHaveBeenCalledTimes(NOTIFICATION_LAST_READ_SYNC_MAX_RETRY_ATTEMPTS);
+  });
+
+  it('resets the reconnect budget once the stream delivers an event', async () => {
+    // Closed-empty MAX-1 times (budget nearly exhausted), then a real event must reset the counter so
+    // the stream is not abandoned prematurely. Each closed connection is followed by another closed one
+    // until a healthy stream arrives.
+    const subscribe = vi.mocked(NotificationController.subscribeLastReadEventStream);
+    for (let i = 0; i < NOTIFICATION_LAST_READ_SYNC_MAX_RETRY_ATTEMPTS - 1; i += 1) {
+      subscribe.mockImplementationOnce(async () => closedStream());
+    }
+    subscribe.mockImplementationOnce(async () => streamThenClose({ cursor: 'c1', eventType: 'PUT' }));
+    // Subsequent reconnects keep closing empty; the counter restarts from the delivered event above.
+    subscribe.mockImplementation(async () => closedStream());
+
+    authenticate();
+    const refresh = vi.mocked(NotificationController.refreshLastReadFromHomeserver);
+
+    const coordinator = NotificationLastReadSyncCoordinator.getInstance();
+    coordinator.setRoute(APP_ROUTES.HOME);
+    coordinator.start();
+
+    await vi.advanceTimersByTimeAsync(500_000);
+
+    // The event after the near-exhausted budget was still processed (counter reset, not abandoned).
+    expect(refresh).toHaveBeenCalledWith(PUBKY);
+    // Total subscribes = (MAX-1 empty) + 1 healthy + (MAX empty after reset) = 2 * MAX.
+    expect(subscribe).toHaveBeenCalledTimes(2 * NOTIFICATION_LAST_READ_SYNC_MAX_RETRY_ATTEMPTS);
   });
 
   it('does not reconnect the stream when moving between allowed routes', async () => {

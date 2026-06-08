@@ -207,8 +207,9 @@ export class NotificationLastReadSyncCoordinator {
    * ends or the coordinator should stop (stopped, superseded by a newer `generation`, or sync no
    * longer allowed). `PUT` events schedule a debounced refresh; other events just advance the cursor.
    * When the stream drops, it reopens after an exponential backoff, giving up after
-   * {@link NOTIFICATION_LAST_READ_SYNC_MAX_RETRY_ATTEMPTS} consecutive failures (a successful subscribe
-   * resets the counter).
+   * {@link NOTIFICATION_LAST_READ_SYNC_MAX_RETRY_ATTEMPTS} consecutive empty connections. A connection
+   * counts as progress (and resets the counter) only once it delivers an event — opening the stream
+   * alone does not, so a server that accepts the subscribe then closes immediately still hits the cap.
    *
    * `generation` guards against stale loops: `evaluateStreaming` bumps `loopGeneration` on every
    * restart, so an older loop sees `generation !== this.loopGeneration` and exits.
@@ -218,11 +219,13 @@ export class NotificationLastReadSyncCoordinator {
     while (this.state.isStarted && generation === this.loopGeneration && this.shouldSyncLastReadStream()) {
       const pubky = useAuthStore.getState().currentUserPubky as Pubky;
       let reader: ReadableStreamDefaultReader<TLastReadEvent> | undefined;
+      // Only a delivered event counts as progress and resets the retry budget. Treating "stream opened"
+      // as success would let an immediately-closing server reset the counter every loop and reconnect forever.
+      let madeProgress = false;
 
       try {
         const cursor = this.readStoredCursor(pubky);
         const stream = await NotificationController.subscribeLastReadEventStream(pubky, cursor);
-        reconnectAttempts = 0; // subscribe succeeded — the stream is healthy again
         if (generation !== this.loopGeneration) {
           await stream
             .getReader()
@@ -248,6 +251,9 @@ export class NotificationLastReadSyncCoordinator {
             break;
           }
 
+          madeProgress = true; // a delivered event proves the stream is healthy
+          reconnectAttempts = 0;
+
           if (value.eventType === 'PUT') {
             this.refreshAttempts = 0; // new event starts a fresh retry budget
             this.scheduleDebouncedRefresh(pubky, value.cursor, NOTIFICATION_LAST_READ_SYNC_DEBOUNCE_MS);
@@ -262,8 +268,7 @@ export class NotificationLastReadSyncCoordinator {
         }
       } catch (error) {
         // subscribe() failures are already reported to Sentry at the service boundary; only trace here.
-        reconnectAttempts += 1;
-        Logger.debug('Last read stream interrupted; will reconnect', { error, reconnectAttempts });
+        Logger.debug('Last read stream interrupted; will reconnect', { error });
       } finally {
         if (reader) {
           await reader.cancel().catch(() => {});
@@ -275,6 +280,12 @@ export class NotificationLastReadSyncCoordinator {
 
       if (!this.state.isStarted || generation !== this.loopGeneration || !this.shouldSyncLastReadStream()) {
         break;
+      }
+
+      // No event this round (subscribe threw OR the stream opened and closed immediately) → count it as
+      // a failed attempt so repeated empty connections eventually hit the cap below instead of looping forever.
+      if (!madeProgress) {
+        reconnectAttempts += 1;
       }
 
       if (reconnectAttempts >= NOTIFICATION_LAST_READ_SYNC_MAX_RETRY_ATTEMPTS) {
