@@ -464,5 +464,38 @@ describe('NotificationController', () => {
       expect(countSpy).toHaveBeenCalledWith(5000, enabled);
       expect(setUnread).toHaveBeenCalledWith(1);
     });
+
+    it('does not advance lastRead when the unread count fails (no partial commit)', async () => {
+      const { setLastRead, setUnread } = setupStores(1000);
+      vi.spyOn(NotificationApplication, 'fetchLastReadFromHomeserver').mockResolvedValue(2000);
+      vi.spyOn(NotificationApplication, 'countFilteredUnreadSince').mockRejectedValue(new Error('idb error'));
+
+      await expect(NotificationController.refreshLastReadFromHomeserver(mockUserId)).rejects.toThrow('idb error');
+
+      // Neither value is mutated, so the coordinator's retry re-enters instead of hitting the
+      // race guard and silently leaving the badge stale.
+      expect(setLastRead).not.toHaveBeenCalled();
+      expect(setUnread).not.toHaveBeenCalled();
+    });
+
+    it('recovers on retry after the unread count fails once', async () => {
+      const { setLastRead, setUnread } = setupStores(1000);
+      vi.spyOn(NotificationApplication, 'fetchLastReadFromHomeserver').mockResolvedValue(2000);
+      const countSpy = vi
+        .spyOn(NotificationApplication, 'countFilteredUnreadSince')
+        .mockRejectedValueOnce(new Error('idb error'))
+        .mockResolvedValueOnce(3);
+
+      await expect(NotificationController.refreshLastReadFromHomeserver(mockUserId)).rejects.toThrow('idb error');
+      expect(setLastRead).not.toHaveBeenCalled();
+      expect(setUnread).not.toHaveBeenCalled();
+
+      // Retry: lastRead is still 1000, so the guard passes and both values commit together.
+      await NotificationController.refreshLastReadFromHomeserver(mockUserId);
+
+      expect(countSpy).toHaveBeenCalledTimes(2);
+      expect(setLastRead).toHaveBeenCalledWith(2000);
+      expect(setUnread).toHaveBeenCalledWith(3);
+    });
   });
 });

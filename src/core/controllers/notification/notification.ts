@@ -146,11 +146,14 @@ export class NotificationController {
     const notificationStore = useNotificationStore.getState();
     if (remoteLastRead <= notificationStore.selectLastRead()) return;
 
-    notificationStore.setLastRead(remoteLastRead);
-
+    // Compute unread BEFORE mutating the store.
     const preferences = useSettingsStore.getState().notifications;
     const allowedTypes = NotificationNormalizer.toEnabledTypes(preferences);
     const unread = await NotificationApplication.countFilteredUnreadSince(remoteLastRead, allowedTypes);
+
+    // Re-check: a local mark-as-read during the count may have moved `lastRead` ahead — don't roll it back.
+    if (remoteLastRead <= notificationStore.selectLastRead()) return;
+    notificationStore.setLastRead(remoteLastRead);
     notificationStore.setUnread(unread);
   }
 }
