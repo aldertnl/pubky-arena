@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useKeyboardAvoidanceTransform } from './useKeyboardAvoidanceTransform';
+import { useElementKeyboardAvoidance } from './useElementKeyboardAvoidance';
 
 const listeners = new Map<string, Set<EventListener>>();
 const mockVisualViewport = {
@@ -16,7 +16,7 @@ const mockVisualViewport = {
   }),
 };
 
-describe('useKeyboardAvoidanceTransform', () => {
+describe('useElementKeyboardAvoidance', () => {
   let originalInnerHeight: number;
   let originalVisualViewport: typeof window.visualViewport;
   let originalRequestAnimationFrame: typeof window.requestAnimationFrame;
@@ -100,18 +100,30 @@ describe('useKeyboardAvoidanceTransform', () => {
   it('returns no transform when the keyboard is not visible', () => {
     const ref = createElementRef(700);
 
-    const { result } = renderHook(() => useKeyboardAvoidanceTransform(ref));
+    const { result } = renderHook(() => useElementKeyboardAvoidance(ref));
 
     expect(result.current.isKeyboardVisible).toBe(false);
     expect(result.current.keyboardAvoidanceOffset).toBe(0);
     expect(result.current.keyboardAvoidanceStyle).toBeUndefined();
   });
 
+  it('does not calculate or listen for viewport changes when disabled', () => {
+    mockVisualViewport.height = 500;
+    const ref = createElementRef(700);
+
+    const { result } = renderHook(() => useElementKeyboardAvoidance(ref, { enabled: false }));
+
+    expect(result.current.isKeyboardVisible).toBe(false);
+    expect(result.current.keyboardAvoidanceOffset).toBe(0);
+    expect(result.current.keyboardAvoidanceStyle).toBeUndefined();
+    expect(mockVisualViewport.addEventListener).not.toHaveBeenCalled();
+  });
+
   it('returns no transform when the keyboard is visible but the element does not overlap it', () => {
     mockVisualViewport.height = 500;
     const ref = createElementRef(450);
 
-    const { result } = renderHook(() => useKeyboardAvoidanceTransform(ref));
+    const { result } = renderHook(() => useElementKeyboardAvoidance(ref));
 
     expect(result.current.isKeyboardVisible).toBe(true);
     expect(result.current.keyboardAvoidanceOffset).toBe(0);
@@ -122,7 +134,7 @@ describe('useKeyboardAvoidanceTransform', () => {
     mockVisualViewport.height = 500;
     const ref = createElementRef(700);
 
-    const { result } = renderHook(() => useKeyboardAvoidanceTransform(ref));
+    const { result } = renderHook(() => useElementKeyboardAvoidance(ref));
 
     expect(result.current.isKeyboardVisible).toBe(true);
     expect(result.current.keyboardAvoidanceOffset).toBe(216);
@@ -134,7 +146,7 @@ describe('useKeyboardAvoidanceTransform', () => {
     mockVisualViewport.offsetTop = 50;
     const ref = createElementRef(700);
 
-    const { result } = renderHook(() => useKeyboardAvoidanceTransform(ref));
+    const { result } = renderHook(() => useElementKeyboardAvoidance(ref));
 
     expect(result.current.keyboardAvoidanceOffset).toBe(166);
   });
@@ -147,7 +159,7 @@ describe('useKeyboardAvoidanceTransform', () => {
     });
     const ref = createElementRef(700);
 
-    const { result } = renderHook(() => useKeyboardAvoidanceTransform(ref));
+    const { result } = renderHook(() => useElementKeyboardAvoidance(ref));
 
     expect(result.current.isKeyboardVisible).toBe(false);
     expect(result.current.keyboardAvoidanceOffset).toBe(0);
@@ -156,7 +168,7 @@ describe('useKeyboardAvoidanceTransform', () => {
   it('cleans up viewport listeners on unmount', () => {
     const ref = createElementRef(700);
 
-    const { unmount } = renderHook(() => useKeyboardAvoidanceTransform(ref));
+    const { unmount } = renderHook(() => useElementKeyboardAvoidance(ref));
     unmount();
 
     expect(mockVisualViewport.removeEventListener).toHaveBeenCalledWith('resize', expect.any(Function));

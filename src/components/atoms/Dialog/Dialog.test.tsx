@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { UseKeyboardAvoidanceTransformResult } from '@/hooks/useKeyboardAvoidanceTransform/useKeyboardAvoidanceTransform.types';
+import type { UseElementKeyboardAvoidanceResult } from '@/hooks/useElementKeyboardAvoidance/useElementKeyboardAvoidance.types';
 import {
   Dialog,
   DialogContent,
@@ -12,20 +12,20 @@ import {
   DialogTrigger,
 } from './Dialog';
 
-const mockUseKeyboardAvoidanceTransform = vi.hoisted(() =>
-  vi.fn<() => UseKeyboardAvoidanceTransformResult>(() => ({
+const mockUseElementKeyboardAvoidance = vi.hoisted(() =>
+  vi.fn<() => UseElementKeyboardAvoidanceResult>(() => ({
     isKeyboardVisible: false,
     keyboardAvoidanceOffset: 0,
     keyboardAvoidanceStyle: undefined,
   })),
 );
 
-vi.mock('@/hooks/useKeyboardAvoidanceTransform/useKeyboardAvoidanceTransform', () => ({
-  useKeyboardAvoidanceTransform: mockUseKeyboardAvoidanceTransform,
+vi.mock('@/hooks/useElementKeyboardAvoidance/useElementKeyboardAvoidance', () => ({
+  useElementKeyboardAvoidance: mockUseElementKeyboardAvoidance,
 }));
 
 beforeEach(() => {
-  mockUseKeyboardAvoidanceTransform.mockReturnValue({
+  mockUseElementKeyboardAvoidance.mockReturnValue({
     isKeyboardVisible: false,
     keyboardAvoidanceOffset: 0,
     keyboardAvoidanceStyle: undefined,
@@ -73,8 +73,8 @@ describe('Dialog', () => {
     expect(closeButton).toHaveClass('hidden');
   });
 
-  it('applies keyboard avoidance transform when keyboard is visible', () => {
-    mockUseKeyboardAvoidanceTransform.mockReturnValue({
+  it('does not apply keyboard avoidance transform by default', () => {
+    mockUseElementKeyboardAvoidance.mockReturnValue({
       isKeyboardVisible: true,
       keyboardAvoidanceOffset: 120,
       keyboardAvoidanceStyle: { transform: 'translateY(-120px)' },
@@ -83,6 +83,26 @@ describe('Dialog', () => {
     render(
       <Dialog open={true}>
         <DialogContent>
+          <div>Dialog Content</div>
+        </DialogContent>
+      </Dialog>,
+    );
+
+    const dialogContent = screen.getByTestId('dialog-content');
+    expect(dialogContent).not.toHaveClass('will-change-transform');
+    expect(dialogContent).not.toHaveStyle({ transform: 'translateY(-120px)' });
+  });
+
+  it('applies keyboard avoidance transform when keyboard is visible', () => {
+    mockUseElementKeyboardAvoidance.mockReturnValue({
+      isKeyboardVisible: true,
+      keyboardAvoidanceOffset: 120,
+      keyboardAvoidanceStyle: { transform: 'translateY(-120px)' },
+    });
+
+    render(
+      <Dialog open={true}>
+        <DialogContent avoidKeyboard>
           <div>Dialog Content</div>
         </DialogContent>
       </Dialog>,

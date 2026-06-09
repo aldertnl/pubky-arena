@@ -1,6 +1,11 @@
 import type { CSSProperties } from 'react';
 
-export interface UseKeyboardAvoidanceTransformOptions {
+export interface UseElementKeyboardAvoidanceOptions {
+  /**
+   * Whether the hook should calculate and listen for keyboard avoidance updates.
+   * Default: true.
+   */
+  enabled?: boolean;
   /**
    * Minimum space to keep between the element bottom and the visual viewport bottom.
    * Default: 16px.
@@ -13,7 +18,7 @@ export interface UseKeyboardAvoidanceTransformOptions {
   threshold?: number;
 }
 
-export interface UseKeyboardAvoidanceTransformResult {
+export interface UseElementKeyboardAvoidanceResult {
   isKeyboardVisible: boolean;
   keyboardAvoidanceOffset: number;
   keyboardAvoidanceStyle: CSSProperties | undefined;

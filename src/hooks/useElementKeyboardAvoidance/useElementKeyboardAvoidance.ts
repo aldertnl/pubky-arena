@@ -3,22 +3,28 @@
 import { useEffect, useState } from 'react';
 import type { RefObject } from 'react';
 import type {
-  UseKeyboardAvoidanceTransformOptions,
-  UseKeyboardAvoidanceTransformResult,
-} from './useKeyboardAvoidanceTransform.types';
+  UseElementKeyboardAvoidanceOptions,
+  UseElementKeyboardAvoidanceResult,
+} from './useElementKeyboardAvoidance.types';
 
 const DEFAULT_BOTTOM_MARGIN = 16;
 const DEFAULT_THRESHOLD = 150;
 
-export function useKeyboardAvoidanceTransform<T extends HTMLElement>(
+export function useElementKeyboardAvoidance<T extends HTMLElement>(
   elementRef: RefObject<T | null>,
-  options: UseKeyboardAvoidanceTransformOptions = {},
-): UseKeyboardAvoidanceTransformResult {
-  const { bottomMargin = DEFAULT_BOTTOM_MARGIN, threshold = DEFAULT_THRESHOLD } = options;
+  options: UseElementKeyboardAvoidanceOptions = {},
+): UseElementKeyboardAvoidanceResult {
+  const { enabled = true, bottomMargin = DEFAULT_BOTTOM_MARGIN, threshold = DEFAULT_THRESHOLD } = options;
   const [keyboardAvoidanceOffset, setKeyboardAvoidanceOffset] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
+    if (!enabled) {
+      setIsKeyboardVisible(false);
+      setKeyboardAvoidanceOffset(0);
+      return;
+    }
+
     if (typeof window === 'undefined' || !window.visualViewport) {
       setIsKeyboardVisible(false);
       setKeyboardAvoidanceOffset(0);
@@ -72,7 +78,7 @@ export function useKeyboardAvoidanceTransform<T extends HTMLElement>(
       viewport.removeEventListener('scroll', scheduleCalculateOffset);
       resizeObserver?.disconnect();
     };
-  }, [bottomMargin, elementRef, threshold]);
+  }, [bottomMargin, elementRef, enabled, threshold]);
 
   return {
     isKeyboardVisible,
