@@ -94,7 +94,8 @@ function DialogContent({
           data-testid="dialog-content"
           className={cn(
             'relative z-50 grid',
-            avoidKeyboard && 'transition-transform duration-200 ease-out',
+            'duration-200',
+            avoidKeyboard && 'transition-transform ease-out',
             'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
             'm-4 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
             avoidKeyboard && isKeyboardVisible && 'will-change-transform',
