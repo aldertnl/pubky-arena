@@ -14,6 +14,7 @@ import { Typography } from '@/atoms/Typography/Typography';
 import { GITHUB_URL, TELEGRAM_URL, TWITTER_GETPUBKY_URL } from '@/config/externalLinks';
 import { useRequireAuth } from '@/hooks/useRequireAuth/useRequireAuth';
 import { Github2, Telegram, XTwitter } from '@/icons';
+import { handleFeedNavClick } from '@/libs/utils/feedScrollTop';
 import { cn } from '@/libs/utils/utils';
 import { AvatarWithFallback } from '@/organisms/AvatarWithFallback/AvatarWithFallback';
 import { SearchInput } from '@/organisms/SearchInput/SearchInput';
@@ -87,6 +88,7 @@ type NavigationItemConfig = {
   labelKey: string;
   dataCy?: string;
   activePrefix?: string;
+  isFeedRoute?: boolean;
 };
 type HeaderNavigationButtonsProps = {
   counter?: number;
@@ -101,6 +103,7 @@ const NAVIGATION_ITEMS: NavigationItemConfig[] = [
     icon: Home,
     labelKey: 'home',
     dataCy: 'header-home-btn',
+    isFeedRoute: true,
   },
   {
     href: APP_ROUTES.HOT,
@@ -133,8 +136,17 @@ type NavigationButtonProps = {
   label: string;
   isActive: boolean;
   dataCy?: string;
+  isFeedRoute?: boolean;
 };
-const NavigationButton = ({ href, onClick, icon: Icon, label, isActive, dataCy }: NavigationButtonProps) => {
+const NavigationButton = ({
+  href,
+  onClick,
+  icon: Icon,
+  label,
+  isActive,
+  dataCy,
+  isFeedRoute,
+}: NavigationButtonProps) => {
   const button = (
     <Button
       data-cy={href ? undefined : dataCy}
@@ -148,7 +160,13 @@ const NavigationButton = ({ href, onClick, icon: Icon, label, isActive, dataCy }
     </Button>
   );
   return href ? (
-    <Link href={href} data-cy={dataCy}>
+    <Link
+      href={href}
+      data-cy={dataCy}
+      onClick={
+        isFeedRoute ? (event) => handleFeedNavClick(event, { isActive, smoothScrollWhenActive: true }) : undefined
+      }
+    >
       {button}
     </Link>
   ) : (
@@ -176,6 +194,7 @@ export function HeaderNavigationButtons({
           label={t(item.labelKey)}
           isActive={isNavItemActive(pathname, item)}
           dataCy={item.dataCy}
+          isFeedRoute={item.isFeedRoute}
         />
       ))}
 

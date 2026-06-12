@@ -38,3 +38,14 @@ export const GRID_FEED_COLUMNS_CLASS = 'grid-cols-1 md:grid-cols-2 xl:grid-cols-
  * Figma grid spacing; shared by the renderer and its skeleton to avoid drift.
  */
 export const GRID_FEED_GAP_CLASS = 'gap-3 lg:gap-6';
+
+/**
+ * Session-storage flag set by feed-cluster nav entry points (Pubky logo,
+ * desktop header, mobile footer, feed navigation) when the user explicitly
+ * navigates to a feed route they are not already on. The persistent
+ * `(feeds)/layout.tsx` does not reset `window.scrollY` on intra-cluster
+ * navigation, so the layout consumes this one-shot flag to scroll the feed to
+ * the top on arrival. Browser back never sets it, preserving native history
+ * scroll restoration. Centralized here so all call sites cannot drift.
+ */
+export const FORCE_FEED_SCROLL_TOP_KEY = 'pubky:force-feed-scroll-top';
