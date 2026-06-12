@@ -13,6 +13,7 @@ import { CollectionCard } from './CollectionCard';
 // ---------------------------------------------------------------------------
 
 const mockUseAuthStore = vi.fn();
+const mockLocalCollections: Record<string, string | undefined> = {};
 
 vi.mock('next-intl', () => ({
   useTranslations: (namespace?: string) => (key: string) => `${namespace ?? ''}.${key}`,
@@ -33,8 +34,42 @@ vi.mock('@/hooks/useBookmark/useBookmark', () => ({
   useBookmark: vi.fn(),
 }));
 
+const mockDeletePost = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/hooks/useDeletePost/useDeletePost', () => ({
+  useDeletePost: () => ({ deletePost: mockDeletePost, isDeleting: false }),
+}));
+
+vi.mock('@/molecules/DialogConfirmDelete/DialogConfirmDelete', () => ({
+  DialogConfirmDelete: ({
+    open,
+    onConfirm,
+    i18nNamespace,
+  }: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onConfirm: () => void;
+    i18nNamespace?: string;
+  }) =>
+    open ? (
+      <div data-testid="dialog-confirm-delete" data-i18n-namespace={i18nNamespace}>
+        <button data-testid="dialog-confirm-delete-btn" onClick={onConfirm}>
+          confirm delete
+        </button>
+      </div>
+    ) : null,
+}));
+
+vi.mock('@/molecules/CollectionDeleted/CollectionDeleted', () => ({
+  CollectionDeleted: () => <div data-testid="collection-deleted" />,
+}));
+
 vi.mock('@/stores/auth/auth.store', () => ({
   useAuthStore: (selector: (state: { currentUserPubky: string | null }) => unknown) => mockUseAuthStore(selector),
+}));
+
+vi.mock('@/stores/localFiles/localFiles.store', () => ({
+  useLocalFilesStore: (selector: (state: { collections: Record<string, string | undefined> }) => unknown) =>
+    selector({ collections: mockLocalCollections }),
 }));
 
 vi.mock('@/organisms/AvatarWithFallback/AvatarWithFallback', () => ({
@@ -163,6 +198,7 @@ function setBookmark({ isBookmarked = false, isToggling = false } = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  for (const key of Object.keys(mockLocalCollections)) delete mockLocalCollections[key];
   setAuthStore(null);
   setPostDetails(COLLECTION_CONTENT);
   setOwnerProfile('Bitcoin Wizard', 'https://example.com/avatar.png');
@@ -218,6 +254,31 @@ describe('CollectionCard', () => {
 
     expect(screen.queryByText('A bit of Bitcoin purity amidst all of the madness.')).not.toBeInTheDocument();
     expect(screen.getByText('0')).toBeInTheDocument(); // empty items count still renders
+  });
+
+  describe('cover image — local-files store fallback', () => {
+    // Cover-image background lives in an aria-hidden overlay div with `bg-cover`.
+    const findCoverOverlay = (container: HTMLElement) =>
+      container.querySelector<HTMLDivElement>('[aria-hidden="true"].bg-cover');
+
+    it('uses a recently-uploaded blob URL from the local-files store when present', () => {
+      mockLocalCollections[COMPOSITE_ID] = 'blob:mock-fresh-cover';
+
+      const { container } = render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+      const overlay = findCoverOverlay(container);
+
+      expect(overlay).not.toBeNull();
+      expect(overlay!.getAttribute('style')).toContain('blob:mock-fresh-cover');
+      expect(overlay!.getAttribute('style')).not.toContain('https://example.com/cover.png');
+    });
+
+    it('falls back to the envelope cover URL when the local-files store has no entry', () => {
+      const { container } = render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+      const overlay = findCoverOverlay(container);
+
+      expect(overlay).not.toBeNull();
+      expect(overlay!.getAttribute('style')).toContain('https://example.com/cover.png');
+    });
   });
 
   it('renders the card skeleton while post details have not loaded yet', () => {
@@ -301,6 +362,51 @@ describe('CollectionCard', () => {
       fireEvent.click(screen.getByLabelText('collections.card.delete'));
 
       expect(toggle).not.toHaveBeenCalled();
+    });
+
+    describe('delete flow', () => {
+      it('opens the confirmation dialog with collection-specific copy on Delete click', () => {
+        setAuthStore(AUTHOR_PUBKY);
+        setBookmark({ isBookmarked: false });
+        render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+
+        fireEvent.click(screen.getByLabelText('collections.card.delete'));
+
+        const dialog = screen.getByTestId('dialog-confirm-delete');
+        expect(dialog).toBeInTheDocument();
+        // The dialog must use the collection-specific i18n namespace, not the
+        // generic `dialogs.deletePost` copy.
+        expect(dialog).toHaveAttribute('data-i18n-namespace', 'dialogs.deleteCollection');
+      });
+
+      it('calls useDeletePost.deletePost with the composite id when confirming', () => {
+        setAuthStore(AUTHOR_PUBKY);
+        setBookmark({ isBookmarked: false });
+        mockDeletePost.mockClear();
+        render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+
+        fireEvent.click(screen.getByLabelText('collections.card.delete'));
+        fireEvent.click(screen.getByTestId('dialog-confirm-delete-btn'));
+
+        expect(mockDeletePost).toHaveBeenCalledTimes(1);
+        expect(mockDeletePost).toHaveBeenCalledWith(COMPOSITE_ID);
+      });
+    });
+  });
+
+  describe('deleted-state fallback', () => {
+    // When `usePostDetails` resolves with `content === '[DELETED]'`, the card
+    // must render the `CollectionDeleted` molecule instead of an empty card,
+    // without calling `parseCollectionContent` against the `[DELETED]` sentinel.
+    it('renders the CollectionDeleted molecule when content is the [DELETED] tombstone', () => {
+      setPostDetails('[DELETED]');
+      render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+
+      expect(screen.getByTestId('collection-deleted')).toBeInTheDocument();
+      // No follow / delete action row is rendered for deleted collections.
+      expect(screen.queryByLabelText('collections.card.delete')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('collections.card.follow')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('collections.card.unfollow')).not.toBeInTheDocument();
     });
   });
 

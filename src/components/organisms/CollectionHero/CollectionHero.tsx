@@ -1,13 +1,17 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Minus, Pencil, Plus, Share2, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { APP_ROUTES } from '@/app/routes';
 import { TagKind } from '@/application/tag/tag.types';
 import { Button } from '@/atoms/Button/Button';
 import { Card, CardContent } from '@/atoms/Card/Card';
 import { Container } from '@/atoms/Container/Container';
 import { Typography } from '@/atoms/Typography/Typography';
 import { useBookmark } from '@/hooks/useBookmark/useBookmark';
+import { useDeletePost } from '@/hooks/useDeletePost/useDeletePost';
 import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
 import { usePostReplyRepostDialogs } from '@/hooks/usePostReplyRepostDialogs/usePostReplyRepostDialogs';
 import { useUserProfile } from '@/hooks/useUserProfile/useUserProfile';
@@ -15,11 +19,14 @@ import { parseCollectionContent, resolveCollectionCoverImage } from '@/libs/post
 import { cn } from '@/libs/utils/utils';
 import { buildCompositeId } from '@/models/models.utils';
 import { CollectionCountBadge } from '@/molecules/CollectionCountBadge/CollectionCountBadge';
+import { DialogConfirmDelete } from '@/molecules/DialogConfirmDelete/DialogConfirmDelete';
 import { ClickableTagsList } from '@/organisms/ClickableTagsList/ClickableTagsList';
 import { CollectionHeroSkeleton } from '@/organisms/CollectionHero/CollectionHero.skeleton';
+import { EditCollectionDialog } from '@/organisms/EditCollectionDialog/EditCollectionDialog';
 import { HeroOwner } from '@/organisms/HeroOwner/HeroOwner';
 import { FileVariant } from '@/services/nexus/file/file.types';
 import { useAuthStore } from '@/stores/auth/auth.store';
+import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
 import type { CollectionHeroContentProps, CollectionHeroProps } from './CollectionHero.types';
 
 /**
@@ -72,8 +79,13 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
   const title = collection?.name ?? '';
   const description = collection?.description?.trim() ?? '';
   const itemCount = collection?.items?.length ?? 0;
-  // The hero requests the higher-fidelity MAIN variant (the card uses FEED).
-  const coverImage = resolveCollectionCoverImage(collection?.cover_image, FileVariant.MAIN);
+
+  // Prefer a recently-uploaded blob URL stashed in the local-files store —
+  // covers the window between commit and CDN availability so the cover renders
+  // instantly after create/edit. The hero requests the higher-fidelity MAIN
+  // variant (the card uses FEED).
+  const localCoverUrl = useLocalFilesStore((s) => s.collections[compositeId]);
+  const coverImage = localCoverUrl ?? resolveCollectionCoverImage(collection?.cover_image, FileVariant.MAIN);
 
   const ownerName = ownerProfile?.name || authorPubky;
   const ownerAvatarUrl = ownerProfile?.avatarUrl;
@@ -99,10 +111,34 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
   const { openRepostDialog, dialogs } = usePostReplyRepostDialogs(compositeId);
   const handleShare = openRepostDialog;
 
-  // Placeholder actions — the flows themselves are out of scope this slice.
-  // TODO: wire in collection edit / delete (#1866 follow-ups).
-  const handleEdit = () => {};
-  const handleDelete = () => {};
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const handleEdit = () => setIsEditDialogOpen(true);
+
+  // Delete flow: open confirmation → on confirm, await the commit before
+  // redirecting to `/collections`. Awaiting matters: the local-first delete
+  // write is async, and racing the redirect causes (a) stream queries on the
+  // landing page to read stale state, and (b) for the soft-delete branch
+  // (linked collections), the `[DELETED]` content marker only lands after
+  // navigation, leaving the user able to navigate back to the still-rendered
+  // hero and re-fire `commitDelete` (which then errors on the homeserver as
+  // already-gone). `replace` so the back button doesn't return to the now-
+  // deleted page. Collection-specific toast copy so the success / failure
+  // toast reads as "Collection deleted" not "Post deleted".
+  const router = useRouter();
+  const tCollectionToast = useTranslations('toast.collection');
+  const { deletePost, isDeleting } = useDeletePost({
+    toastMessages: {
+      deleted: tCollectionToast('collectionDeleted'),
+      deletedDesc: tCollectionToast('collectionDeletedDesc'),
+      deleteFailed: tCollectionToast('deleteFailed'),
+    },
+  });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const handleDelete = () => setDeleteConfirmOpen(true);
+  const handleDeleteConfirm = async () => {
+    await deletePost(compositeId);
+    router.replace(APP_ROUTES.COLLECTIONS);
+  };
 
   return (
     <Card
@@ -172,10 +208,14 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
         <Container overrideDefaults className="flex flex-wrap items-center gap-3">
           {isOwn ? (
             <>
+              {/* While a delete is in flight, disable every owner action.
+                  Lets the user know something's happening and prevents racing
+                  Share / Edit against an imminent route replace. */}
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={handleShare}
+                disabled={isDeleting}
                 aria-label={t('share')}
                 className="gap-2 text-xs"
               >
@@ -186,6 +226,7 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
                 variant="secondary"
                 size="sm"
                 onClick={handleEdit}
+                disabled={isDeleting}
                 aria-label={t('edit')}
                 className="gap-2 text-xs"
               >
@@ -196,6 +237,7 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
                 variant="secondary"
                 size="sm"
                 onClick={handleDelete}
+                disabled={isDeleting}
                 aria-label={t('delete')}
                 className="gap-2 text-xs"
               >
@@ -231,6 +273,21 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
         </Container>
       </CardContent>
       {dialogs}
+      {isOwn && (
+        <>
+          <EditCollectionDialog
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            compositeCollectionId={compositeId}
+          />
+          <DialogConfirmDelete
+            open={deleteConfirmOpen}
+            onOpenChange={setDeleteConfirmOpen}
+            onConfirm={() => void handleDeleteConfirm()}
+            i18nNamespace="dialogs.deleteCollection"
+          />
+        </>
+      )}
     </Card>
   );
 }

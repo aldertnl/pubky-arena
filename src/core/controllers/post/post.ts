@@ -8,6 +8,7 @@ import type {
   TCreateCollectionParams,
   TCreatePostParams,
   TDeletePostParams,
+  TEditCollectionParams,
   TEditPostParams,
   TFetchMorePostTagsParams,
   TFetchPostTaggersParams,
@@ -19,6 +20,7 @@ import type { TTagEventParams } from '@/controllers/tag/tag.types';
 import { ClientErrorCode, ValidationErrorCode } from '@/libs/error/error.codes';
 import { Err } from '@/libs/error/error.factories';
 import { ErrorService } from '@/libs/error/error.types';
+import { isPostDeleted } from '@/libs/utils/utils';
 import { buildCompositeId, parseCompositeId } from '@/models/models.utils';
 import type { CollectionPost, TAuthoredCollectionsParams } from '@/models/post/collection/collectionPost.types';
 import type { PostCountsModelSchema } from '@/models/post/counts/postCounts.schema';
@@ -285,6 +287,86 @@ export class PostController {
     return compositePostId;
   }
 
+  static async commitEditCollection({
+    compositeCollectionId,
+    name,
+    description,
+    coverImage,
+  }: TEditCollectionParams): Promise<void> {
+    // Reject non-authors up front, before any side effects: the cover File
+    // upload below would otherwise hit the homeserver (and `PostNormalizer.toEdit`
+    // only enforces the author check later). Mirrors the explicit guard in
+    // `commitDelete`.
+    const { pubky: authorId } = parseCompositeId(compositeCollectionId);
+    const currentUserPubky = useAuthStore.getState().selectCurrentUserPubky();
+    if (authorId !== currentUserPubky) {
+      throw Err.client(ClientErrorCode.NOT_FOUND, 'Current user is not the author of this post', {
+        service: ErrorService.Local,
+        operation: 'commitEditCollection',
+        context: { compositeCollectionId, currentUserPubky },
+      });
+    }
+
+    const collection = await PostApplication.getDetails({ compositeId: compositeCollectionId });
+
+    // Tombstoned collections (`content === '[DELETED]'`) are treated as
+    // not-found here. Pre-tombstone refactor `!collection` caught hard-deleted
+    // rows; now they stick around as tombstones, and falling through would
+    // surface a misleading "Collection content is invalid" error.
+    if (!collection || isPostDeleted(collection.content)) {
+      throw Err.client(ClientErrorCode.NOT_FOUND, 'Collection not found', {
+        service: ErrorService.Local,
+        operation: 'commitEditCollection',
+        context: { compositeCollectionId },
+      });
+    }
+
+    const currentContent = CollectionPostContent.parse(collection.content);
+    if (!currentContent) {
+      throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'Collection content is invalid', {
+        service: ErrorService.Local,
+        operation: 'commitEditCollection',
+        context: { compositeCollectionId },
+      });
+    }
+
+    let coverImageUrl: string | null = null;
+    if (coverImage instanceof File) {
+      try {
+        const fileAttachment = await FileApplication.toFileAttachment({ file: coverImage, pubky: authorId });
+        await FileApplication.commitCreate({ fileAttachments: [fileAttachment] });
+        coverImageUrl = fileAttachment.fileResult.meta.url;
+      } catch (error) {
+        throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'Failed to upload collection cover image', {
+          service: ErrorService.Local,
+          operation: 'commitEditCollection',
+          cause: error,
+        });
+      }
+    } else if (typeof coverImage === 'string') {
+      coverImageUrl = coverImage;
+    }
+
+    const nextContent = CollectionPostContent.toJson({
+      name,
+      description,
+      items: currentContent.items ?? [],
+      coverImage: coverImageUrl,
+    });
+
+    const { post, meta } = await PostNormalizer.toEdit({
+      compositePostId: compositeCollectionId,
+      content: nextContent,
+      currentUserPubky,
+    });
+
+    await PostApplication.commitEdit({
+      compositePostId: compositeCollectionId,
+      post,
+      postUrl: meta.url,
+    });
+  }
+
   static async commitUpdateCollectionItem({
     collectionId,
     postId,
@@ -293,7 +375,9 @@ export class PostController {
     const currentUserPubky = useAuthStore.getState().selectCurrentUserPubky();
     const collection = await PostApplication.getDetails({ compositeId: collectionId });
 
-    if (!collection) {
+    // Tombstoned collections are not-found. See `commitEditCollection` above
+    // for the rationale.
+    if (!collection || isPostDeleted(collection.content)) {
       throw Err.client(ClientErrorCode.NOT_FOUND, 'Collection not found', {
         service: ErrorService.Local,
         operation: 'commitUpdateCollectionItem',

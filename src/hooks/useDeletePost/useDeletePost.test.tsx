@@ -164,6 +164,26 @@ describe('useDeletePost', () => {
     expect(mockPrependPosts).not.toHaveBeenCalled();
   });
 
+  it('does not restore when the row exists but is tombstoned (content === [DELETED])', async () => {
+    // After the `LocalPostService.delete` tombstone refactor, a successful
+    // local-first write leaves a row with `content === '[DELETED]'` instead
+    // of removing it. Without the content-aware check the hook would
+    // restore — bringing back a `PostDeleted` molecule where the user's
+    // post used to be. Verify the tombstone is treated as "local write
+    // committed" and the optimistic removal stays in place.
+    mockDelete.mockRejectedValue(new Error('homeserver sync failed'));
+    mockGetPostDetails.mockResolvedValue({ id: mockPostId, content: '[DELETED]' });
+
+    const { result } = renderHook(() => useDeletePost());
+
+    await act(async () => {
+      await result.current.deletePost(mockPostId);
+    });
+
+    expect(mockGetPostDetails).toHaveBeenCalledWith({ compositeId: mockPostId });
+    expect(mockPrependPosts).not.toHaveBeenCalled();
+  });
+
   it('shows error toast on deletion failure', async () => {
     const error = new Error('Deletion failed');
     mockDelete.mockRejectedValue(error);
@@ -238,6 +258,75 @@ describe('useDeletePost', () => {
       title: 'Post deleted',
       description: 'Your post has been deleted',
       dismissButton: true,
+    });
+  });
+
+  describe('toastMessages override', () => {
+    it('uses overridden success toast copy when provided', async () => {
+      mockDelete.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() =>
+        useDeletePost({
+          toastMessages: {
+            deleted: 'Collection deleted',
+            deletedDesc: 'Your collection has been deleted',
+          },
+        }),
+      );
+
+      await act(async () => {
+        await result.current.deletePost(mockPostId);
+      });
+
+      expect(mockToast).toHaveBeenCalledWith({
+        title: 'Collection deleted',
+        description: 'Your collection has been deleted',
+        dismissButton: true,
+      });
+    });
+
+    it('uses overridden failure toast copy when provided', async () => {
+      mockDelete.mockRejectedValue(new Error('boom'));
+
+      const { result } = renderHook(() =>
+        useDeletePost({
+          toastMessages: {
+            deleteFailed: 'Failed to delete collection. Please try again.',
+          },
+        }),
+      );
+
+      await act(async () => {
+        await result.current.deletePost(mockPostId);
+      });
+
+      expect(mockToast).toHaveBeenCalledWith({
+        title: 'Error',
+        description: 'Failed to delete collection. Please try again.',
+        className: 'destructive border-destructive bg-destructive text-destructive-foreground',
+      });
+    });
+
+    it('falls back to generic post copy for each omitted field', async () => {
+      mockDelete.mockResolvedValue(undefined);
+
+      // Only override the title; description should still come from the
+      // generic `toast.post.postDeletedDesc` fallback.
+      const { result } = renderHook(() =>
+        useDeletePost({
+          toastMessages: { deleted: 'Collection deleted' },
+        }),
+      );
+
+      await act(async () => {
+        await result.current.deletePost(mockPostId);
+      });
+
+      expect(mockToast).toHaveBeenCalledWith({
+        title: 'Collection deleted',
+        description: 'Your post has been deleted',
+        dismissButton: true,
+      });
     });
   });
 });
