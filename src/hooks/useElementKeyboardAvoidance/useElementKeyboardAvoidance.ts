@@ -33,12 +33,14 @@ export function useElementKeyboardAvoidance<T extends HTMLElement>(
 
     const viewport = window.visualViewport;
     let animationFrame: number | null = null;
+    let currentOffset = 0;
 
     const calculateOffset = () => {
       animationFrame = null;
 
       const element = elementRef.current;
       if (!element) {
+        currentOffset = 0;
         setIsKeyboardVisible(false);
         setKeyboardAvoidanceOffset(0);
         return;
@@ -49,13 +51,17 @@ export function useElementKeyboardAvoidance<T extends HTMLElement>(
       setIsKeyboardVisible(keyboardVisible);
 
       if (!keyboardVisible) {
+        currentOffset = 0;
         setKeyboardAvoidanceOffset(0);
         return;
       }
 
       const keyboardTop = viewport.height + viewport.offsetTop;
-      const elementBottom = element.getBoundingClientRect().bottom;
+      // getBoundingClientRect reflects the applied transform; add currentOffset back
+      // to measure the untransformed layout position.
+      const elementBottom = element.getBoundingClientRect().bottom + currentOffset;
       const offset = Math.max(0, Math.ceil(elementBottom - keyboardTop + bottomMargin));
+      currentOffset = offset;
       setKeyboardAvoidanceOffset(offset);
     };
 
