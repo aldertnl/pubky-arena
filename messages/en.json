@@ -1092,7 +1092,8 @@
       "images": "Images",
       "videos": "Videos",
       "links": "Links",
-      "files": "Files"
+      "files": "Files",
+      "collections": "Collections"
     },
     "timeframe": {
       "title": "Timeframe",
