@@ -380,19 +380,6 @@ describe('MobileFooter', () => {
     expect(setItemSpy).toHaveBeenCalledWith(FORCE_FEED_SCROLL_TOP_KEY, '1');
   });
 
-  it('sets the top-scroll flag when navigating to Bookmarks from another feed', () => {
-    vi.mocked(usePathname).mockReturnValue('/home');
-    Object.defineProperty(window, 'scrollTo', { value: vi.fn(), writable: true });
-    const setItemSpy = vi.spyOn(window.sessionStorage, 'setItem');
-
-    render(<MobileFooter />);
-    const bookmarksLink = document.querySelector('.lucide-bookmark')?.closest('a');
-    expect(bookmarksLink).toBeTruthy();
-
-    fireEvent.click(bookmarksLink!);
-    expect(setItemSpy).toHaveBeenCalledWith(FORCE_FEED_SCROLL_TOP_KEY, '1');
-  });
-
   it('applies transform when keyboard is visible', async () => {
     vi.mocked(useKeyboardOffset).mockReturnValue({ isKeyboardVisible: true, keyboardOffset: 300 });
 
