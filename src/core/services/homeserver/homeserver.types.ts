@@ -75,6 +75,8 @@ export type THomeserverListParams = {
   limit?: number;
 };
 
+export type THomeserverListAllParams = Pick<THomeserverListParams, 'baseDirectory'>;
+
 export type THomeserverUserEvent = {
   cursor: string;
   eventType: string;
