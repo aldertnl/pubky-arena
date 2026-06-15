@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { UserRoundPlus } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
@@ -13,9 +14,11 @@ import { HeaderSocialLinks } from '../Header/Header';
 import { HeaderButtonSignIn } from '../HeaderButtonSignIn/HeaderButtonSignIn';
 
 export const HeaderHome = ({ ...props }: React.HTMLAttributes<HTMLDivElement>) => {
+  const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations('landing');
   const [showJoinButton, setShowJoinButton] = React.useState(false);
+  const isHomePage = pathname === '/';
 
   React.useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') return;
@@ -23,6 +26,7 @@ export const HeaderHome = ({ ...props }: React.HTMLAttributes<HTMLDivElement>) =
     const heroSection = document.getElementById(LANDING_HERO_SECTION_ID);
 
     if (!heroSection) return;
+    if (!isHomePage) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -43,7 +47,7 @@ export const HeaderHome = ({ ...props }: React.HTMLAttributes<HTMLDivElement>) =
     return () => {
       observer.disconnect();
     };
-  }, []);
+  }, [isHomePage]);
 
   const handleJoin = () => {
     router.push(ONBOARDING_ROUTES.HUMAN);
