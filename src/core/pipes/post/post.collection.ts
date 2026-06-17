@@ -12,6 +12,11 @@ import { ValidationErrorCode } from '@/libs/error/error.codes';
 import { Err } from '@/libs/error/error.factories';
 import { ErrorService } from '@/libs/error/error.types';
 import type { CollectionContentInput } from '@/models/post/collection/collectionPost.types';
+import { collectionItemsIncludePost, resolvePostUrl } from '@/pipes/post/post.collectionItemUrl';
+
+function canonicalItemUri(value: string): string {
+  return resolvePostUrl(value)?.itemUri ?? value.trim();
+}
 
 const ALLOWED_COLLECTION_URL_PROTOCOLS = new Set(
   COLLECTION_COVER_IMAGE_ALLOWED_PROTOCOLS.map((scheme) => `${scheme}:`),
@@ -202,28 +207,33 @@ export class CollectionPostContent {
     const trimmedUri = itemUri.trim();
     const items = collection.items ?? [];
 
-    if (items.includes(trimmedUri)) {
+    // Membership is matched by canonical post identity so an item already saved
+    // as a web URL is not duplicated when re-added as a pubky URI (and vice versa).
+    if (collectionItemsIncludePost(items, trimmedUri)) {
       return collection;
     }
 
     return this.normalize({
       ...collection,
-      items: [...items, trimmedUri],
+      items: [trimmedUri, ...items],
       coverImage: collection.cover_image,
     });
   }
 
   static removeItem(collection: PubkyAppCollectionContent, itemUri: string): PubkyAppCollectionContent {
-    const trimmedUri = itemUri.trim();
     const items = collection.items ?? [];
+    const target = canonicalItemUri(itemUri);
 
-    if (!items.includes(trimmedUri)) {
+    // Match by canonical identity, mirroring `addItem`/`collectionItemsIncludePost`,
+    // so an item stored in any supported URL form is removable.
+    const nextItems = items.filter((item) => canonicalItemUri(item) !== target);
+    if (nextItems.length === items.length) {
       return collection;
     }
 
     return this.normalize({
       ...collection,
-      items: items.filter((item) => item !== trimmedUri),
+      items: nextItems,
       coverImage: collection.cover_image,
     });
   }

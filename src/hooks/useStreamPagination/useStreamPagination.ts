@@ -34,6 +34,11 @@ export function useStreamPagination({
 
   const postIdsRef = useRef<string[]>([]);
 
+  // Skip-paginated streams page by offset. Track that offset independently of the rendered
+  // list length so optimistic mutations (prependItems/prependPosts) don't shift the cursor and
+  // cause server-side items to be skipped on the next loadMore.
+  const skipOffsetRef = useRef<number>(0);
+
   /**
    * Sets the appropriate loading state based on load type
    */
@@ -61,6 +66,9 @@ export function useStreamPagination({
         let result: TReadPostStreamChunkResponse;
 
         if (isInitialLoad) {
+          // Initial load always re-seeds skip-paginated streams from offset 0.
+          skipOffsetRef.current = 0;
+
           // Prepare stream for initial load: clear stale cache, merge unread posts, clear unread stream
           await StreamPostsController.prepareStreamForInitialLoad({ streamId });
 
@@ -75,7 +83,7 @@ export function useStreamPagination({
             limit,
           });
         } else {
-          const cursorValue = isSkipStream ? postIdsRef.current.length : streamTail;
+          const cursorValue = isSkipStream ? skipOffsetRef.current : streamTail;
 
           result = await StreamPostsController.getOrFetchStreamSlice({
             streamId,
@@ -119,6 +127,13 @@ export function useStreamPagination({
           setStreamTail(result.timestamp);
         }
 
+        // Advance the skip cursor by the number of ids this page returned (already
+        // server-side filtered and capped to `limit`), independently of the rendered
+        // list, so the next offset stays correct even when client-side dedup drops some.
+        if (isSkipStream) {
+          skipOffsetRef.current += result.nextPageIds.length;
+        }
+
         // Check hasMore based on reachedEnd flag from the response
         // This correctly handles cases where we hit MAX_FETCH_ITERATIONS due to mute filtering
         // vs actually reaching the end of the stream
@@ -153,6 +168,7 @@ export function useStreamPagination({
    */
   const clearState = useCallback(() => {
     postIdsRef.current = [];
+    skipOffsetRef.current = 0;
     setPostIds([]);
     setLastPostId(undefined);
     setStreamTail(0);
@@ -175,6 +191,26 @@ export function useStreamPagination({
     if (loadingMore || !hasMore) return;
     await fetchStreamSlice(false);
   }, [loadingMore, hasMore, fetchStreamSlice]);
+
+  /**
+   * Prepend post(s) to the start of the feed without re-sorting.
+   * Use for curator-ordered feeds (collection items, bookmarks) where the newest
+   * entry belongs at the head of the stream. Unlike `prependPosts` this preserves
+   * the existing order instead of re-sorting by timestamp.
+   */
+  const prependItems = (postIds: string | string[]) => {
+    const idsToAdd = Array.isArray(postIds) ? postIds : [postIds];
+    const existingIds = new Set(postIdsRef.current);
+    const newIds = idsToAdd.filter((id) => !existingIds.has(id));
+
+    if (newIds.length === 0) {
+      return;
+    }
+
+    const allIds = [...newIds, ...postIdsRef.current];
+    postIdsRef.current = allIds;
+    setPostIds(allIds);
+  };
 
   /**
    * Add post(s) to the timeline, sorted by timestamp
@@ -240,6 +276,7 @@ export function useStreamPagination({
     loadMore,
     refresh,
     prependPosts,
+    prependItems,
     removePosts,
   };
 }

@@ -2,7 +2,6 @@
 
 import { useParams } from 'next/navigation';
 import { TIMELINE_FEED_VARIANT } from '@/config/feed';
-import { useBookmarksStreamId } from '@/hooks/useBookmarksStreamId/useBookmarksStreamId';
 import { useCustomStreamId } from '@/hooks/useCustomStreamId/useCustomStreamId';
 import { useFeedLayoutResolution } from '@/hooks/useFeedLayoutResolution/useFeedLayoutResolution';
 import { useHotStreamId } from '@/hooks/useHotStreamId/useHotStreamId';
@@ -14,7 +13,6 @@ import {
   buildAuthorCollectionsStreamId,
   buildCollectionItemsStreamId,
 } from '@/models/stream/post/postStream.types';
-import { TimelineLoading } from '@/molecules/Timeline/TimelineLoading';
 import { getTagsLayoutForSurfaceLayout } from '@/organisms/PostMain/PostMainLayoutRules';
 import { useProfileContext } from '@/providers/ProfileProvider/ProfileProvider';
 import { StreamSource } from '@/services/nexus/stream/posts/postStream.types';
@@ -37,9 +35,6 @@ export function TimelineFeed({ variant, children, emptyState }: TimelineFeedProp
       return <HomeTimelineFeed>{children}</HomeTimelineFeed>;
     case TIMELINE_FEED_VARIANT.CUSTOM:
       return <CustomTimelineFeed>{children}</CustomTimelineFeed>;
-    case TIMELINE_FEED_VARIANT.BOOKMARKS:
-      // Bookmarks owns a custom stream-driven empty state; other variants use the shared default.
-      return <BookmarksTimelineFeed emptyState={emptyState}>{children}</BookmarksTimelineFeed>;
     case TIMELINE_FEED_VARIANT.PROFILE:
       return <ProfileTimelineFeed>{children}</ProfileTimelineFeed>;
     case TIMELINE_FEED_VARIANT.PROFILE_COLLECTIONS:
@@ -49,9 +44,11 @@ export function TimelineFeed({ variant, children, emptyState }: TimelineFeedProp
     case TIMELINE_FEED_VARIANT.SEARCH:
       return <SearchTimelineFeed>{children}</SearchTimelineFeed>;
     case TIMELINE_FEED_VARIANT.COLLECTION:
-      return <CollectionTimelineFeed>{children}</CollectionTimelineFeed>;
-    default:
-      return <TimelineLoading />;
+      return <CollectionTimelineFeed emptyState={emptyState}>{children}</CollectionTimelineFeed>;
+    default: {
+      const exhaustiveCheck: never = variant;
+      return exhaustiveCheck;
+    }
   }
 }
 
@@ -96,37 +93,6 @@ function CustomTimelineFeed({ children }: { children?: TimelineFeedProps['childr
   );
 }
 
-function BookmarksTimelineFeed({
-  children,
-  emptyState,
-}: {
-  children?: TimelineFeedProps['children'];
-  emptyState?: TimelineFeedProps['emptyState'];
-}) {
-  const content = useHomeStore((state) => state.content);
-  const layoutResolution = useFeedLayoutResolution(TIMELINE_FEED_VARIANT.BOOKMARKS);
-  const resolvedContent = resolveVisualFeedContent({
-    content,
-    variant: TIMELINE_FEED_VARIANT.BOOKMARKS,
-    isVisualActive: layoutResolution.isVisualActive,
-  });
-  useSyncInteractiveVisualContent(resolvedContent);
-  const streamId = useBookmarksStreamId(resolvedContent);
-  const tagsLayout = getTagsLayoutForSurfaceLayout(layoutResolution.effectiveLayout);
-
-  return (
-    <TimelineFeedWithStream
-      streamId={streamId}
-      variant={TIMELINE_FEED_VARIANT.BOOKMARKS}
-      tagsLayout={tagsLayout}
-      layoutResolution={layoutResolution}
-      emptyState={emptyState}
-    >
-      {children}
-    </TimelineFeedWithStream>
-  );
-}
-
 function ProfileTimelineFeed({ children }: { children?: TimelineFeedProps['children'] }) {
   const { pubky } = useProfileContext();
   const streamId = pubky ? (`${StreamSource.AUTHOR}:${pubky}` as AuthorStreamCompositeId) : undefined;
@@ -163,7 +129,13 @@ function ProfileCollectionsTimelineFeed({ children }: { children?: TimelineFeedP
   );
 }
 
-function CollectionTimelineFeed({ children }: { children?: TimelineFeedProps['children'] }) {
+function CollectionTimelineFeed({
+  children,
+  emptyState,
+}: {
+  children?: TimelineFeedProps['children'];
+  emptyState?: TimelineFeedProps['emptyState'];
+}) {
   // The single-collection route owns these params (`/collections/[userId]/[postId]`).
   // Reading them here mirrors how `ProfileTimelineFeed` resolves its stream from context.
   const params = useParams<{ userId: string; postId: string }>();
@@ -178,6 +150,7 @@ function CollectionTimelineFeed({ children }: { children?: TimelineFeedProps['ch
       variant={TIMELINE_FEED_VARIANT.COLLECTION}
       tagsLayout="inline"
       layoutResolution={layoutResolution}
+      emptyState={emptyState}
     >
       {children}
     </TimelineFeedWithStream>

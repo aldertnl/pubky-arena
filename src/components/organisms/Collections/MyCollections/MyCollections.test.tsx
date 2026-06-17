@@ -134,6 +134,7 @@ const defaultPagination = {
   loadMore: vi.fn(),
   refresh: vi.fn(),
   prependPosts: vi.fn(),
+  prependItems: vi.fn(),
   removePosts: vi.fn(),
 };
 

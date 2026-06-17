@@ -63,6 +63,12 @@ export interface UseStreamPaginationResult {
    */
   prependPosts: (postIds: string | string[]) => Promise<void>;
   /**
+   * Function to prepend post(s) to the start of the feed without re-sorting
+   * (curator-ordered feeds: collection items, bookmarks)
+   * @param postIds - A single post ID or array of post IDs to add
+   */
+  prependItems: (postIds: string | string[]) => void;
+  /**
    * Function to remove post(s) from the timeline
    * @param postIds - A single post ID or array of post IDs to remove
    */

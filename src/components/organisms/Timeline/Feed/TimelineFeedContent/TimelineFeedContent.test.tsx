@@ -154,6 +154,7 @@ const defaultPaginationResult = {
   loadMore: mockLoadMore,
   refresh: mockRefresh,
   prependPosts: mockPrependPosts,
+  prependItems: vi.fn(),
   removePosts: mockRemovePosts,
 };
 const mockUseStreamPagination = vi.mocked(useStreamPagination);
@@ -259,11 +260,11 @@ describe('TimelineFeedContent', () => {
       );
     });
 
-    it('disables pull-to-refresh for bookmarks variant', () => {
+    it('disables pull-to-refresh for search variant', () => {
       render(
         <TimelineFeedWithStream
-          streamId={PostStreamTypes.TIMELINE_BOOKMARKS_ALL}
-          variant={TIMELINE_FEED_VARIANT.BOOKMARKS}
+          streamId={PostStreamTypes.TIMELINE_ALL_ALL}
+          variant={TIMELINE_FEED_VARIANT.SEARCH}
           tagsLayout="inline"
         />,
       );
@@ -288,8 +289,8 @@ describe('TimelineFeedContent', () => {
       mockUsePullToRefresh.mockReturnValue({ state: 'pulling' as const, pullDistance: 50 });
       render(
         <TimelineFeedWithStream
-          streamId={PostStreamTypes.TIMELINE_BOOKMARKS_ALL}
-          variant={TIMELINE_FEED_VARIANT.BOOKMARKS}
+          streamId={PostStreamTypes.TIMELINE_ALL_ALL}
+          variant={TIMELINE_FEED_VARIANT.SEARCH}
           tagsLayout="inline"
         />,
       );
@@ -471,39 +472,6 @@ describe('TimelineFeedContent', () => {
       expect(mockRefresh).not.toHaveBeenCalled();
       expect(mockRemovePosts).not.toHaveBeenCalled();
     });
-
-    it('does not remove or refresh posts for bookmarks feeds', () => {
-      let mutedUserIds = ['muted-user'];
-      mockUseStreamPagination.mockReturnValue({
-        ...defaultPaginationResult,
-        postIds: ['muted-user:post-1', 'other-user:post-2'],
-      });
-      mockUseMutedUsers.mockImplementation(() => ({
-        ...defaultMutedUsersResult,
-        mutedUserIds,
-        mutedUserIdSet: new Set(mutedUserIds),
-      }));
-
-      const { rerender } = render(
-        <TimelineFeedWithStream
-          streamId={PostStreamTypes.TIMELINE_BOOKMARKS_ALL}
-          variant={TIMELINE_FEED_VARIANT.BOOKMARKS}
-          tagsLayout="inline"
-        />,
-      );
-
-      mutedUserIds = [];
-      rerender(
-        <TimelineFeedWithStream
-          streamId={PostStreamTypes.TIMELINE_BOOKMARKS_ALL}
-          variant={TIMELINE_FEED_VARIANT.BOOKMARKS}
-          tagsLayout="inline"
-        />,
-      );
-
-      expect(mockRefresh).not.toHaveBeenCalled();
-      expect(mockRemovePosts).not.toHaveBeenCalled();
-    });
   });
 });
 
@@ -541,33 +509,18 @@ describe('Grid layout variants (decisions D5/D7)', () => {
     expect(screen.getByTestId('timeline-grid-posts')).toHaveAttribute('data-show-end-message', 'false');
   });
 
-  it('renders the bookmarks variant in the grid and suppresses the end-of-feed message', () => {
-    render(
-      <TimelineFeedWithStream
-        streamId={PostStreamTypes.TIMELINE_BOOKMARKS_ALL}
-        variant={TIMELINE_FEED_VARIANT.BOOKMARKS}
-        tagsLayout="inline"
-        layoutResolution={gridLayoutResolution}
-      />,
-    );
-
-    expect(screen.getByTestId('timeline-grid-posts')).toBeInTheDocument();
-    expect(screen.queryByTestId('timeline-posts')).not.toBeInTheDocument();
-    expect(screen.getByTestId('timeline-grid-posts')).toHaveAttribute('data-show-end-message', 'false');
-  });
-
   it('forwards a custom empty state to the grid renderer', () => {
     render(
       <TimelineFeedWithStream
-        streamId={PostStreamTypes.TIMELINE_BOOKMARKS_ALL}
-        variant={TIMELINE_FEED_VARIANT.BOOKMARKS}
+        streamId={COLLECTION_STREAM_ID}
+        variant={TIMELINE_FEED_VARIANT.COLLECTION}
         tagsLayout="inline"
         layoutResolution={gridLayoutResolution}
-        emptyState={<div data-testid="bookmarks-empty-state">No bookmarks yet</div>}
+        emptyState={<div data-testid="collection-empty-state">This collection is empty.</div>}
       />,
     );
 
-    expect(screen.getByTestId('timeline-grid-posts')).toContainElement(screen.getByTestId('bookmarks-empty-state'));
+    expect(screen.getByTestId('timeline-grid-posts')).toContainElement(screen.getByTestId('collection-empty-state'));
   });
 
   it('falls back to the vertical list when no grid layout resolution is provided', () => {

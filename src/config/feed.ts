@@ -22,10 +22,7 @@ export type TimelineFeedVariant = (typeof TIMELINE_FEED_VARIANT)[keyof typeof TI
  * lives here in feed-domain config rather than in the home store's `LAYOUT` enum.
  * `useFeedLayoutResolution` derives `isGridActive` from this set.
  */
-export const GRID_LAYOUT_VARIANTS = new Set<TimelineFeedVariant>([
-  TIMELINE_FEED_VARIANT.BOOKMARKS,
-  TIMELINE_FEED_VARIANT.COLLECTION,
-]);
+export const GRID_LAYOUT_VARIANTS = new Set<TimelineFeedVariant>([TIMELINE_FEED_VARIANT.COLLECTION]);
 
 /**
  * Responsive column classes for the shared card grid (`TimelineGridPosts`).

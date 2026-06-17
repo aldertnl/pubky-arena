@@ -103,6 +103,7 @@ function TimelineFeedContent({
     loadMore,
     refresh,
     prependPosts,
+    prependItems,
     removePosts,
   } = useStreamPagination({
     streamId,
@@ -129,11 +130,7 @@ function TimelineFeedContent({
     // Store the latest set before early returns so Strict Mode reruns do not retrigger the same transition.
     previousMutedUserIdSetRef.current = currentMutedUserIdSet;
 
-    if (
-      variant === TIMELINE_FEED_VARIANT.PROFILE ||
-      variant === TIMELINE_FEED_VARIANT.PROFILE_COLLECTIONS ||
-      variant === TIMELINE_FEED_VARIANT.BOOKMARKS
-    ) {
+    if (variant === TIMELINE_FEED_VARIANT.PROFILE || variant === TIMELINE_FEED_VARIANT.PROFILE_COLLECTIONS) {
       return;
     }
 
@@ -160,10 +157,10 @@ function TimelineFeedContent({
   const contextValue: TimelineFeedContextValue = {
     variant,
     prependPosts,
+    prependItems,
     removePosts,
   };
-  const showGridEndMessage =
-    variant !== TIMELINE_FEED_VARIANT.COLLECTION && variant !== TIMELINE_FEED_VARIANT.BOOKMARKS;
+  const showGridEndMessage = variant !== TIMELINE_FEED_VARIANT.COLLECTION;
 
   return (
     <TimelineFeedContext.Provider value={contextValue}>
@@ -173,7 +170,6 @@ function TimelineFeedContent({
           {!isVisualActive ? children : null}
           <NewPostsSection
             streamId={streamId}
-            variant={variant}
             postIds={postIds}
             mutedUserIdSet={mutedUserIdSet}
             loading={loading}

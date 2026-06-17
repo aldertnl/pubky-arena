@@ -439,6 +439,47 @@ describe('useStreamPagination', () => {
         }),
       );
     });
+
+    it('does not shift the skip cursor when posts are optimistically prepended', async () => {
+      // Regression guard: prependItems must not perturb the offset cursor, otherwise the
+      // server-side item at the previous tail offset would be silently skipped on loadMore.
+      vi.mocked(StreamPostsController.getCachedLastPostTimestamp).mockResolvedValue(0);
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['c1', 'c2', 'c3'],
+        timestamp: undefined,
+      });
+
+      const { result } = renderHook(() => useStreamPagination({ streamId: collectionStreamId }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+      expect(result.current.postIds).toEqual(['c1', 'c2', 'c3']);
+
+      // Owner adds a post via the dialog → optimistic prepend (length becomes 4, new item first).
+      act(() => {
+        result.current.prependItems('manual-add');
+      });
+      expect(result.current.postIds).toEqual(['manual-add', 'c1', 'c2', 'c3']);
+
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['c4', 'c5'],
+        timestamp: undefined,
+      });
+
+      await act(async () => {
+        await result.current.loadMore();
+      });
+
+      // Cursor must still be 3 (server items consumed), not 4 (rendered list length).
+      expect(StreamPostsController.getOrFetchStreamSlice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          streamId: collectionStreamId,
+          streamTail: 3,
+        }),
+      );
+    });
   });
 
   describe('Stream Preparation on Initial Load', () => {
@@ -771,6 +812,96 @@ describe('useStreamPagination', () => {
       expect(result.current.postIds.length).toBe(initialPostIds.length + 2);
       expect(result.current.postIds[0]).toBe('new-post-1');
       expect(result.current.postIds[1]).toBe('new-post-2');
+    });
+  });
+
+  describe('prependItems', () => {
+    it('should add single post to the start of the list', async () => {
+      const { result } = renderHook(() =>
+        useStreamPagination({
+          streamId: mockStreamId,
+        }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const initialPostIds = result.current.postIds;
+      const newPostId = 'new-post-1';
+
+      act(() => {
+        result.current.prependItems(newPostId);
+      });
+
+      expect(result.current.postIds[0]).toBe(newPostId);
+      expect(result.current.postIds.length).toBe(initialPostIds.length + 1);
+      expect(result.current.postIds.slice(1)).toEqual(initialPostIds);
+    });
+
+    it('should add multiple posts to the start of the list preserving their order', async () => {
+      const { result } = renderHook(() =>
+        useStreamPagination({
+          streamId: mockStreamId,
+        }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const initialPostIds = result.current.postIds;
+      const newPostIds = ['new-post-1', 'new-post-2', 'new-post-3'];
+
+      act(() => {
+        result.current.prependItems(newPostIds);
+      });
+
+      expect(result.current.postIds.slice(0, 3)).toEqual(newPostIds);
+      expect(result.current.postIds.length).toBe(initialPostIds.length + 3);
+      expect(result.current.postIds.slice(3)).toEqual(initialPostIds);
+    });
+
+    it('should not add duplicate posts', async () => {
+      const { result } = renderHook(() =>
+        useStreamPagination({
+          streamId: mockStreamId,
+        }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const initialPostIds = result.current.postIds;
+      const duplicatePostId = initialPostIds[0];
+
+      act(() => {
+        result.current.prependItems(duplicatePostId);
+      });
+
+      expect(result.current.postIds.length).toBe(initialPostIds.length);
+      expect(result.current.postIds[0]).toBe(duplicatePostId);
+    });
+
+    it('should handle empty array', async () => {
+      const { result } = renderHook(() =>
+        useStreamPagination({
+          streamId: mockStreamId,
+        }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const initialPostIds = result.current.postIds;
+
+      act(() => {
+        result.current.prependItems([]);
+      });
+
+      expect(result.current.postIds).toEqual(initialPostIds);
     });
   });
 

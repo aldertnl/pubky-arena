@@ -2,6 +2,12 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePostSaveTargets } from './usePostSaveTargets';
 
+const AUTHOR_PUBKY = 'o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy';
+const POST_ID = '0034BBBDFK83G';
+const POST_COMPOSITE_ID = `${AUTHOR_PUBKY}:${POST_ID}`;
+const POST_URI = `pubky://${AUTHOR_PUBKY}/pub/pubky.app/posts/${POST_ID}`;
+const WEB_POST_URL = `https://pubky.app/post/${AUTHOR_PUBKY}/${POST_ID}`;
+
 const mocks = vi.hoisted(() => ({
   commitUpdateCollectionItem: vi.fn(),
   commitCreateCollection: vi.fn(),
@@ -39,7 +45,7 @@ vi.mock('@/hooks/useAuthoredCollections/useAuthoredCollections', () => ({
         content: {
           name: 'Proof of Work',
           description: 'Bitcoin writing',
-          items: ['pubky://author/pub/pubky.app/posts/post1'],
+          items: [POST_URI],
         },
       },
       {
@@ -48,6 +54,14 @@ vi.mock('@/hooks/useAuthoredCollections/useAuthoredCollections', () => ({
           name: 'AI Papers',
           description: '',
           items: [],
+        },
+      },
+      {
+        details: { id: 'author:collection3' },
+        content: {
+          name: 'Web URLs',
+          description: '',
+          items: [WEB_POST_URL],
         },
       },
     ],
@@ -78,17 +92,18 @@ describe('usePostSaveTargets', () => {
   });
 
   it('combines bookmark state and collection membership', () => {
-    const { result } = renderHook(() => usePostSaveTargets('author:post1'));
+    const { result } = renderHook(() => usePostSaveTargets(POST_COMPOSITE_ID));
 
     expect(result.current.isBookmarked).toBe(true);
     expect(result.current.collections).toEqual([
       expect.objectContaining({ id: 'author:collection1', name: 'Proof of Work', isSaved: true }),
       expect.objectContaining({ id: 'author:collection2', name: 'AI Papers', isSaved: false }),
+      expect.objectContaining({ id: 'author:collection3', name: 'Web URLs', isSaved: true }),
     ]);
   });
 
   it('toggles collection membership separately from bookmarks', async () => {
-    const { result } = renderHook(() => usePostSaveTargets('author:post1'));
+    const { result } = renderHook(() => usePostSaveTargets(POST_COMPOSITE_ID));
 
     await act(async () => {
       await result.current.toggleCollection('author:collection1');
@@ -96,7 +111,7 @@ describe('usePostSaveTargets', () => {
 
     expect(mocks.commitUpdateCollectionItem).toHaveBeenCalledWith({
       collectionId: 'author:collection1',
-      postId: 'author:post1',
+      postId: POST_COMPOSITE_ID,
       shouldAdd: false,
     });
     expect(mocks.toggleBookmark).not.toHaveBeenCalled();
@@ -107,7 +122,7 @@ describe('usePostSaveTargets', () => {
   });
 
   it('shows the target collection name when adding a post to a collection', async () => {
-    const { result } = renderHook(() => usePostSaveTargets('author:post1'));
+    const { result } = renderHook(() => usePostSaveTargets(POST_COMPOSITE_ID));
 
     await act(async () => {
       await result.current.toggleCollection('author:collection2');
@@ -115,7 +130,7 @@ describe('usePostSaveTargets', () => {
 
     expect(mocks.commitUpdateCollectionItem).toHaveBeenCalledWith({
       collectionId: 'author:collection2',
-      postId: 'author:post1',
+      postId: POST_COMPOSITE_ID,
       shouldAdd: true,
     });
     expect(mocks.toast).toHaveBeenCalledWith({
@@ -125,7 +140,7 @@ describe('usePostSaveTargets', () => {
   });
 
   it('creates a collection with the current post URI as first item', async () => {
-    const { result } = renderHook(() => usePostSaveTargets('author:post1'));
+    const { result } = renderHook(() => usePostSaveTargets(POST_COMPOSITE_ID));
 
     await act(async () => {
       await result.current.createCollectionWithPost('New collection');
@@ -134,7 +149,7 @@ describe('usePostSaveTargets', () => {
     expect(mocks.commitCreateCollection).toHaveBeenCalledWith({
       authorId: 'current-user',
       name: 'New collection',
-      items: ['pubky://author/pub/pubky.app/posts/post1'],
+      items: [POST_URI],
     });
   });
 });

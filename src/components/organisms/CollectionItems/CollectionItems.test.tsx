@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EnrichedPostDetails } from '@/application/moderation/moderation.types';
 import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
@@ -26,8 +27,36 @@ vi.mock('@/stores/auth/auth.store', () => ({
   useAuthStore: (selector: (state: { currentUserPubky: string | null }) => unknown) => mockUseAuthStore(selector),
 }));
 
+// Expose whether a custom empty state was forwarded (the regression fix) via a
+// data attribute; the real feed only renders it when the stream is empty, so the
+// mock mirrors that by not rendering the slot content unconditionally.
 vi.mock('@/organisms/Timeline/Feed/TimelineFeed/TimelineFeed', () => ({
-  TimelineFeed: ({ variant }: { variant: string }) => <div data-testid="timeline-feed" data-variant={variant} />,
+  TimelineFeed: ({
+    variant,
+    children,
+    emptyState,
+  }: {
+    variant: string;
+    children?: ReactNode;
+    emptyState?: ReactNode;
+  }) => (
+    <div data-testid="timeline-feed" data-variant={variant} data-has-empty-state={emptyState ? 'true' : 'false'}>
+      {children}
+    </div>
+  ),
+}));
+
+// The dialog's trigger button and optimistic append wiring live inside
+// AddContentDialog now, so here we only assert it is rendered and targeted.
+vi.mock('@/organisms/AddContentDialog/AddContentDialog', () => ({
+  AddContentDialog: ({ target }: { target: { kind: string; collectionId?: string; collectionName?: string } }) => (
+    <div
+      data-testid="add-content-dialog"
+      data-target-kind={target.kind}
+      data-collection-id={target.collectionId}
+      data-collection-name={target.collectionName}
+    />
+  ),
 }));
 
 // ---------------------------------------------------------------------------
@@ -94,7 +123,39 @@ describe('CollectionItems', () => {
 
     const feed = screen.getByTestId('timeline-feed');
     expect(feed).toHaveAttribute('data-variant', 'collection');
+    expect(feed).toHaveAttribute('data-has-empty-state', 'false');
     expect(screen.queryByTestId('collection-items-empty')).not.toBeInTheDocument();
+  });
+
+  it('renders the owner Add Content CTA dialog above the feed for a non-empty envelope', () => {
+    setAuthStore(AUTHOR_PUBKY);
+    setPostDetails(COLLECTION_CONTENT);
+
+    render(<CollectionItems authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-variant', 'collection');
+    expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-target-kind', 'collection');
+    expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-collection-id', COMPOSITE_ID);
+    expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-collection-name', 'Based Bitcoin');
+  });
+
+  it('forwards the shared empty state to the owner feed so an empty collection avoids "No posts found"', () => {
+    setAuthStore(AUTHOR_PUBKY);
+    setPostDetails(COLLECTION_CONTENT_EMPTY);
+
+    render(<CollectionItems authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-empty-state', 'true');
+  });
+
+  it('does not render the Add Content CTA dialog for non-owner populated collections', () => {
+    setAuthStore('some-other-user');
+    setPostDetails(COLLECTION_CONTENT);
+
+    render(<CollectionItems authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-variant', 'collection');
+    expect(screen.queryByTestId('add-content-dialog')).not.toBeInTheDocument();
   });
 
   it('renders the feed (never the empty state) while the envelope is still loading', () => {
@@ -106,14 +167,18 @@ describe('CollectionItems', () => {
     expect(screen.queryByTestId('collection-items-empty')).not.toBeInTheDocument();
   });
 
-  it('renders the owner Add Content CTA (and no feed) for an empty envelope owned by the viewer', () => {
+  it('renders the owner Add Content CTA dialog inside the feed for an empty envelope owned by the viewer', () => {
     setAuthStore(AUTHOR_PUBKY);
     setPostDetails(COLLECTION_CONTENT_EMPTY);
 
     render(<CollectionItems authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
 
-    expect(screen.getByLabelText('collections.single.addContent')).toBeInTheDocument();
-    expect(screen.queryByTestId('timeline-feed')).not.toBeInTheDocument();
+    expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-target-kind', 'collection');
+    expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-collection-id', COMPOSITE_ID);
+    expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-collection-name', 'Quiet collection');
+    const feed = screen.getByTestId('timeline-feed');
+    expect(feed).toHaveAttribute('data-variant', 'collection');
+    expect(feed).toHaveAttribute('data-has-empty-state', 'true');
   });
 
   it('renders plain empty text (and no Add Content CTA) for an empty envelope viewed by a non-owner', () => {
@@ -123,7 +188,7 @@ describe('CollectionItems', () => {
     render(<CollectionItems authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
 
     expect(screen.getByText('collections.single.empty')).toBeInTheDocument();
-    expect(screen.queryByLabelText('collections.single.addContent')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('add-content-dialog')).not.toBeInTheDocument();
     expect(screen.queryByTestId('timeline-feed')).not.toBeInTheDocument();
   });
 });

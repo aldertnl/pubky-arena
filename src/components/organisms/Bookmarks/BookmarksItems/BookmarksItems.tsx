@@ -1,47 +1,57 @@
 'use client';
 
-import { Plus } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
-import { Typography } from '@/atoms/Typography/Typography';
-import { GRID_FEED_COLUMNS_CLASS, GRID_FEED_GAP_CLASS, TIMELINE_FEED_VARIANT } from '@/config/feed';
-import { cn } from '@/libs/utils/utils';
-import { TimelineFeed } from '@/organisms/Timeline/Feed/TimelineFeed/TimelineFeed';
+import { TIMELINE_FEED_VARIANT } from '@/config/feed';
+import { useBookmarksFeed } from '@/hooks/useBookmarksFeed/useBookmarksFeed';
+import { CollectionEmptyState } from '@/molecules/CollectionEmptyState/CollectionEmptyState';
+import { AddContentDialog } from '@/organisms/AddContentDialog/AddContentDialog';
+import { PostMainLayoutProvider } from '@/organisms/PostMain/PostMainLayoutContext';
+import type { TimelineFeedContextValue } from '@/organisms/Timeline/Feed/TimelineFeed/TimelineFeed.types';
+import { TimelineFeedContext } from '@/organisms/Timeline/Feed/TimelineFeed/TimelineFeedContext';
+import { TimelineGridPosts } from '@/organisms/Timeline/Posts/GridPosts/GridPosts';
 
+/**
+ * BookmarksItems
+ *
+ * Saved-posts grid rendered from the local `bookmarks` table via
+ * `useBookmarksFeed` (live query + background Nexus seed), replacing the old
+ * stream-cache feed so a stale re-seed can no longer drop a freshly-added
+ * bookmark.
+ *
+ * Bookmarks always belong to the current user, so the add-content CTA renders
+ * for every state. A `TimelineFeedContext` is still provided (variant
+ * `BOOKMARKS`) so descendants keep working unchanged: `AddContentDialog`
+ * prepends optimistically via `prependItems`, and `PostSavePicker` removes a
+ * no-longer-bookmarked card via `removePosts` when its menu closes.
+ */
 export function BookmarksItems() {
-  // The empty state is driven by the bookmarks stream itself (via TimelineFeed's
-  // `emptyState` slot), not the aggregate bookmark count — the two are populated
-  // by separate paths and can diverge, so gating on the count could hide a
-  // non-empty grid (or render an empty grid for a stale non-zero count).
-  return <TimelineFeed variant={TIMELINE_FEED_VARIANT.BOOKMARKS} emptyState={<BookmarksItemsEmpty />} />;
-}
+  const { postIds, loading, loadingMore, error, hasMore, loadMore, prependItems, prependPosts, removePosts } =
+    useBookmarksFeed();
 
-function BookmarksItemsEmpty() {
-  const t = useTranslations('collections.single');
-
-  // Placeholder — bookmarks now use collection-style empty chrome, but the
-  // add-content flow itself is out of scope for this slice.
-  // TODO: wire in collection add-content (#1866 follow-up).
-  const handleAddContent = () => {};
+  const contextValue: TimelineFeedContextValue = {
+    variant: TIMELINE_FEED_VARIANT.BOOKMARKS,
+    prependPosts,
+    prependItems,
+    removePosts,
+  };
 
   return (
-    <Container
-      overrideDefaults
-      data-cy="bookmarks-items-empty"
-      className={cn('grid', GRID_FEED_COLUMNS_CLASS, GRID_FEED_GAP_CLASS)}
-    >
-      <Button
-        overrideDefaults
-        onClick={handleAddContent}
-        aria-label={t('addContent')}
-        className="flex h-39 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
-      >
-        <Plus className="size-4 shrink-0" />
-        <Typography as="span" overrideDefaults className="text-sm font-bold">
-          {t('addContent')}
-        </Typography>
-      </Button>
-    </Container>
+    <TimelineFeedContext.Provider value={contextValue}>
+      <PostMainLayoutProvider tagsLayout="inline">
+        <Container className="min-w-0 flex-1 gap-6">
+          <AddContentDialog target={{ kind: 'bookmark' }} />
+          <TimelineGridPosts
+            postIds={postIds}
+            loading={loading}
+            loadingMore={loadingMore}
+            error={error}
+            hasMore={hasMore}
+            loadMore={loadMore}
+            showEndMessage={false}
+            emptyState={<CollectionEmptyState />}
+          />
+        </Container>
+      </PostMainLayoutProvider>
+    </TimelineFeedContext.Provider>
   );
 }

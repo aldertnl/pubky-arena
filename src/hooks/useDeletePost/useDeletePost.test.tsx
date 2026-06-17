@@ -32,6 +32,7 @@ const mockTimelineFeed = {
   variant: TIMELINE_FEED_VARIANT.HOME,
   removePosts: mockRemovePosts,
   prependPosts: mockPrependPosts,
+  prependItems: vi.fn(),
 };
 
 vi.mock('@/organisms/Timeline/Feed/TimelineFeed/TimelineFeedContext', () => {

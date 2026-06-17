@@ -6,36 +6,18 @@ import { ErrorService } from '@/libs/error/error.types';
 import { HttpMethod } from '@/libs/http/http.types';
 import { Logger } from '@/libs/logger/logger';
 import { BookmarkModel } from '@/models/bookmark/bookmark';
-import { PostDetailsModel } from '@/models/post/details/postDetails';
-import { PostStreamTypes } from '@/models/stream/post/postStream.types';
-import { PostStreamModel } from '@/models/stream/post/tables/postStream';
 import { UserCountsModel } from '@/models/user/counts/userCounts';
-import { LocalStreamPostsService } from '@/services/local/stream/posts/posts';
-
-/**
- * Mapping of post kinds to their corresponding bookmark stream types.
- * The 'all' key represents the stream containing all bookmarks.
- */
-const BOOKMARK_STREAMS: Record<string, PostStreamTypes> = {
-  all: PostStreamTypes.TIMELINE_BOOKMARKS_ALL,
-  short: PostStreamTypes.TIMELINE_BOOKMARKS_SHORT,
-  long: PostStreamTypes.TIMELINE_BOOKMARKS_LONG,
-  image: PostStreamTypes.TIMELINE_BOOKMARKS_IMAGE,
-  video: PostStreamTypes.TIMELINE_BOOKMARKS_VIDEO,
-  file: PostStreamTypes.TIMELINE_BOOKMARKS_FILE,
-  link: PostStreamTypes.TIMELINE_BOOKMARKS_LINK,
-};
 
 export class LocalBookmarkService {
-  private static readonly BOOKMARK_TABLES = [
-    BookmarkModel.table,
-    UserCountsModel.table,
-    PostStreamModel.table,
-    PostDetailsModel.table,
-  ] as const;
+  private static readonly BOOKMARK_TABLES = [BookmarkModel.table, UserCountsModel.table] as const;
 
   /**
    * Persists a bookmark operation (create or delete).
+   *
+   * The `bookmarks` table is the single local source of truth for the saved-posts
+   * feed (rendered via `useBookmarksFeed`'s live query), so this only upserts /
+   * deletes the bookmark record and adjusts the user's bookmark count. No stream
+   * cache is touched — the live query reacts to the table write directly.
    */
   static async persist(action: HttpMethod, { userId, postId }: TBookmarkEventParams) {
     const isCreate = action === HttpMethod.PUT;
@@ -51,10 +33,6 @@ export class LocalBookmarkService {
           return;
         }
 
-        // Fetch post details to determine which streams to update
-        const postDetails = await PostDetailsModel.findById(postId);
-        const kind = postDetails?.kind;
-
         if (isCreate) {
           await Promise.all([
             BookmarkModel.upsert({
@@ -62,7 +40,6 @@ export class LocalBookmarkService {
               created_at: Date.now(),
             }),
             UserCountsModel.updateCounts({ userId, countChanges: { bookmarks: 1 } }),
-            this.addToBookmarkStreams(postId, kind),
           ]);
 
           Logger.debug('Bookmark created', { postId });
@@ -70,7 +47,6 @@ export class LocalBookmarkService {
           await Promise.all([
             BookmarkModel.deleteById(postId),
             UserCountsModel.updateCounts({ userId, countChanges: { bookmarks: -1 } }),
-            this.removeFromBookmarkStreams(postId, kind),
           ]);
 
           Logger.debug('Bookmark deleted', { postId });
@@ -115,47 +91,5 @@ export class LocalBookmarkService {
   static async getAllBookmarksSorted(): Promise<string[]> {
     const sorted = await BookmarkModel.findAllSorted();
     return sorted.map((b) => b.id);
-  }
-
-  /**
-   * Add a post to the appropriate bookmark streams based on post type
-   *
-   * @param postId - Composite post ID
-   * @param kind - Post kind (short, long, image, video, file, link)
-   */
-  private static async addToBookmarkStreams(postId: string, kind?: string): Promise<void> {
-    const streams = [BOOKMARK_STREAMS.all]; // Always add to ALL stream.
-
-    // If there is a post kind also add to that stream, but never more than one.
-    const kindStream = kind && BOOKMARK_STREAMS[kind];
-    if (kindStream) {
-      streams.push(kindStream);
-    }
-
-    await Promise.all(
-      streams.map((streamId) => LocalStreamPostsService.prependToStream({ streamId, compositePostId: postId })),
-    );
-  }
-
-  /**
-   * Remove a post from bookmark streams
-   *
-   * Removes from the 'all' stream and the kind-specific stream if kind is provided.
-   *
-   * @param postId - Composite post ID
-   * @param kind - Post kind (short, long, image, video, file, link)
-   */
-  private static async removeFromBookmarkStreams(postId: string, kind?: string): Promise<void> {
-    const streams = [BOOKMARK_STREAMS.all]; // Always remove from ALL stream.
-
-    // If there is a post kind also remove from that stream.
-    const kindStream = kind && BOOKMARK_STREAMS[kind];
-    if (kindStream) {
-      streams.push(kindStream);
-    }
-
-    await Promise.all(
-      streams.map((streamId) => LocalStreamPostsService.removeFromStream({ streamId, compositePostId: postId })),
-    );
   }
 }

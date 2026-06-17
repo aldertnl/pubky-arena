@@ -2,7 +2,6 @@
 
 import { useTranslations } from 'next-intl';
 import { MuteFilter } from '@/application/stream/posts/muting/mute-filter';
-import { TIMELINE_FEED_VARIANT, type TimelineFeedVariant } from '@/config/feed';
 import { StreamPostsController } from '@/controllers/stream/posts/posts';
 import { useIsScrolledFromTop } from '@/hooks/useIsScrolledFromTop/useIsScrolledFromTop';
 import { useUnreadPosts } from '@/hooks/useUnreadPosts/useUnreadPosts';
@@ -14,7 +13,6 @@ import { toast } from '@/molecules/Toaster/use-toast';
 
 interface NewPostsSectionProps {
   streamId: PostStreamId;
-  variant: TimelineFeedVariant;
   postIds: string[];
   mutedUserIdSet: Set<Pubky>;
   loading: boolean;
@@ -27,28 +25,15 @@ interface NewPostsSectionProps {
  * Isolated component for the "New Posts" button.
  * Owns useIsScrolledFromTop and useUnreadPosts so neither scroll events
  * nor coordinator polls propagate re-renders to the parent feed content.
- *
- * Bookmarks: unread "new posts" counts must not apply the mute list, so bookmarked
- * posts from muted authors stay consistent with the feed (#1804).
  */
-export function NewPostsSection({
-  streamId,
-  variant,
-  postIds,
-  mutedUserIdSet,
-  loading,
-  prependPosts,
-}: NewPostsSectionProps) {
+export function NewPostsSection({ streamId, postIds, mutedUserIdSet, loading, prependPosts }: NewPostsSectionProps) {
   const { unreadPostIds } = useUnreadPosts({ streamId });
   const t = useTranslations('toast.post');
   const isScrolled = useIsScrolledFromTop();
 
   const displayedPostIds = new Set(postIds);
   const notDisplayed = unreadPostIds.filter((id) => !displayedPostIds.has(id));
-  const actualNewPostIds =
-    variant === TIMELINE_FEED_VARIANT.BOOKMARKS
-      ? notDisplayed
-      : MuteFilter.filterPostsSafe(notDisplayed, mutedUserIdSet);
+  const actualNewPostIds = MuteFilter.filterPostsSafe(notDisplayed, mutedUserIdSet);
   const actualNewCount = actualNewPostIds.length;
 
   const handleNewPostsClick = async () => {

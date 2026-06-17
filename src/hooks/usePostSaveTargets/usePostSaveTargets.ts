@@ -9,6 +9,7 @@ import { useBookmark } from '@/hooks/useBookmark/useBookmark';
 import { Logger } from '@/libs/logger/logger';
 import { parseCompositeId } from '@/models/models.utils';
 import { useToast } from '@/molecules/Toaster/use-toast';
+import { collectionItemsIncludePost } from '@/pipes/post/post.collectionItemUrl';
 import { useAuthStore } from '@/stores/auth/auth.store';
 
 export type PostSaveCollectionTarget = {
@@ -48,7 +49,7 @@ export function usePostSaveTargets(postId: string): UsePostSaveTargetsResult {
     id: collection.details.id,
     name: collection.content.name,
     description: collection.content.description ?? '',
-    isSaved: (collection.content.items ?? []).includes(postUri),
+    isSaved: collectionItemsIncludePost(collection.content.items, postUri),
     isUpdating: updatingCollectionIds.has(collection.details.id),
   }));
 
