@@ -1006,8 +1006,7 @@
       "loginRequired": "Entre para salvar publicações"
     },
     "collection": {
-      "collectionDeleted": "Coleção excluída",
-      "collectionDeletedDesc": "Sua coleção foi excluída",
+      "collectionDeleted": "Sua coleção foi excluída",
       "deleteFailed": "Falha ao excluir a coleção. Tente novamente."
     },
     "copy": {
@@ -1365,10 +1364,8 @@
       "unfollow": "Deixar de seguir",
       "delete": "Excluir",
       "toast": {
-        "followed": "Coleção seguida",
-        "followedDesc": "Você agora segue a coleção {name}",
-        "unfollowed": "Coleção deixada de seguir",
-        "unfollowedDesc": "Você deixou de seguir a coleção {name}"
+        "followed": "Você agora segue a coleção {name}",
+        "unfollowed": "Você deixou de seguir a coleção {name}"
       }
     },
     "single": {

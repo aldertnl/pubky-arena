@@ -40,7 +40,6 @@ export function useDeletePost(options?: UseDeletePostOptions): UseDeletePostResu
   // CollectionHero can swap in collection-specific copy without forking the hook.
   // Missing fields fall back to the generic `toast.post.*` strings.
   const deletedTitle = options?.toastMessages?.deleted ?? tPost('postDeleted');
-  const deletedDesc = options?.toastMessages?.deletedDesc ?? tPost('postDeletedDesc');
   const deleteFailedDesc = options?.toastMessages?.deleteFailed ?? tPost('deleteFailed');
 
   const deletePost = async (postId: string) => {

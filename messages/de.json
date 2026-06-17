@@ -1008,8 +1008,7 @@
       "loginRequired": "Melden Sie sich an, um Beiträge zu speichern"
     },
     "collection": {
-      "collectionDeleted": "Sammlung gelöscht",
-      "collectionDeletedDesc": "Ihre Sammlung wurde gelöscht",
+      "collectionDeleted": "Ihre Sammlung wurde gelöscht",
       "deleteFailed": "Sammlung konnte nicht gelöscht werden. Bitte erneut versuchen."
     },
     "copy": {
@@ -1367,10 +1366,8 @@
       "unfollow": "Entfolgen",
       "delete": "Löschen",
       "toast": {
-        "followed": "Sammlung gefolgt",
-        "followedDesc": "Du folgst jetzt der Sammlung {name}",
-        "unfollowed": "Sammlung entfolgt",
-        "unfollowedDesc": "Du folgst der Sammlung {name} nicht mehr"
+        "followed": "Du folgst jetzt der Sammlung {name}",
+        "unfollowed": "Du folgst der Sammlung {name} nicht mehr"
       }
     },
     "single": {

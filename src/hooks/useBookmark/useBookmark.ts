@@ -22,9 +22,7 @@ export interface UseBookmarkOptions {
    */
   toastMessages?: {
     added: string;
-    addedDesc: string;
     removed: string;
-    removedDesc: string;
   };
   /**
    * Seed the initial `isBookmarked` state when the caller already knows the
@@ -63,9 +61,7 @@ export function useBookmark(postId: string, options?: UseBookmarkOptions): UseBo
   // Resolve toast copy once per render so the `useCallback` dep array can track
   // string identity rather than the (possibly inline-allocated) options object.
   const addedTitle = options?.toastMessages?.added ?? tBookmark('added');
-  const addedDesc = options?.toastMessages?.addedDesc ?? tBookmark('addedDesc');
   const removedTitle = options?.toastMessages?.removed ?? tBookmark('removed');
-  const removedDesc = options?.toastMessages?.removedDesc ?? tBookmark('removedDesc');
 
   const [isBookmarked, setIsBookmarked] = useState(options?.initialIsBookmarked ?? false);
   const [isLoading, setIsLoading] = useState(true);
@@ -127,18 +123,7 @@ export function useBookmark(postId: string, options?: UseBookmarkOptions): UseBo
     } finally {
       setIsToggling(false);
     }
-  }, [
-    postId,
-    currentUserPubky,
-    isBookmarked,
-    isToggling,
-    toast,
-    tBookmark,
-    addedTitle,
-    addedDesc,
-    removedTitle,
-    removedDesc,
-  ]);
+  }, [postId, currentUserPubky, isBookmarked, isToggling, toast, tBookmark, addedTitle, removedTitle]);
 
   return {
     isBookmarked,

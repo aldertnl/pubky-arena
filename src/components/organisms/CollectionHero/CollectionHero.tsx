@@ -95,10 +95,8 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
   const toastName = title || authorPubky;
   const { isBookmarked, isToggling, toggle } = useBookmark(compositeId, {
     toastMessages: {
-      added: tCardToast('followed'),
-      addedDesc: tCardToast('followedDesc', { name: toastName }),
-      removed: tCardToast('unfollowed'),
-      removedDesc: tCardToast('unfollowedDesc', { name: toastName }),
+      added: tCardToast('followed', { name: toastName }),
+      removed: tCardToast('unfollowed', { name: toastName }),
     },
   });
 
@@ -129,7 +127,6 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
   const { deletePost, isDeleting } = useDeletePost({
     toastMessages: {
       deleted: tCollectionToast('collectionDeleted'),
-      deletedDesc: tCollectionToast('collectionDeletedDesc'),
       deleteFailed: tCollectionToast('deleteFailed'),
     },
   });

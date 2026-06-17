@@ -266,7 +266,6 @@ describe('useDeletePost', () => {
         useDeletePost({
           toastMessages: {
             deleted: 'Collection deleted',
-            deletedDesc: 'Your collection has been deleted',
           },
         }),
       );
@@ -277,7 +276,6 @@ describe('useDeletePost', () => {
 
       expect(mockToast).toHaveBeenCalledWith({
         title: 'Collection deleted',
-        description: 'Your collection has been deleted',
         dismissButton: true,
       });
     });
@@ -298,17 +296,14 @@ describe('useDeletePost', () => {
       });
 
       expect(mockToast).toHaveBeenCalledWith({
-        title: 'Error',
+        variant: 'error',
         description: 'Failed to delete collection. Please try again.',
-        className: 'destructive border-destructive bg-destructive text-destructive-foreground',
       });
     });
 
-    it('falls back to generic post copy for each omitted field', async () => {
+    it('uses overridden title while falling back to generic copy for omitted fields', async () => {
       mockDelete.mockResolvedValue(undefined);
 
-      // Only override the title; description should still come from the
-      // generic `toast.post.postDeletedDesc` fallback.
       const { result } = renderHook(() =>
         useDeletePost({
           toastMessages: { deleted: 'Collection deleted' },
@@ -321,7 +316,6 @@ describe('useDeletePost', () => {
 
       expect(mockToast).toHaveBeenCalledWith({
         title: 'Collection deleted',
-        description: 'Your post has been deleted',
         dismissButton: true,
       });
     });

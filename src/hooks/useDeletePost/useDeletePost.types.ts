@@ -7,7 +7,6 @@ export interface UseDeletePostOptions {
    */
   toastMessages?: {
     deleted?: string;
-    deletedDesc?: string;
     deleteFailed?: string;
   };
 }

@@ -208,9 +208,7 @@ describe('useBookmark', () => {
         useBookmark(mockPostId, {
           toastMessages: {
             added: 'Collection followed',
-            addedDesc: 'You will see updates in Followed',
             removed: 'Collection unfollowed',
-            removedDesc: 'It will no longer appear in Followed',
           },
         }),
       );
@@ -225,7 +223,6 @@ describe('useBookmark', () => {
 
       expect(mockToast).toHaveBeenCalledWith({
         title: 'Collection followed',
-        description: 'You will see updates in Followed',
       });
     });
 
@@ -237,9 +234,7 @@ describe('useBookmark', () => {
         useBookmark(mockPostId, {
           toastMessages: {
             added: 'Collection followed',
-            addedDesc: 'You will see updates in Followed',
             removed: 'Collection unfollowed',
-            removedDesc: 'It will no longer appear in Followed',
           },
         }),
       );
@@ -254,7 +249,6 @@ describe('useBookmark', () => {
 
       expect(mockToast).toHaveBeenCalledWith({
         title: 'Collection unfollowed',
-        description: 'It will no longer appear in Followed',
       });
     });
 
@@ -267,9 +261,7 @@ describe('useBookmark', () => {
         useBookmark(mockPostId, {
           toastMessages: {
             added: 'Collection followed',
-            addedDesc: 'desc',
             removed: 'Collection unfollowed',
-            removedDesc: 'desc',
           },
         }),
       );
@@ -283,8 +275,8 @@ describe('useBookmark', () => {
       });
 
       expect(mockToast).toHaveBeenCalledWith({
-        title: 'Error',
-        description: 'Failed to add bookmark',
+        variant: 'error',
+        description: 'Could not add bookmark',
       });
     });
   });

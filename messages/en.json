@@ -1006,8 +1006,7 @@
       "loginRequired": "Sign in to bookmark posts"
     },
     "collection": {
-      "collectionDeleted": "Collection deleted",
-      "collectionDeletedDesc": "Your collection has been deleted",
+      "collectionDeleted": "Your collection has been deleted",
       "deleteFailed": "Failed to delete collection. Please try again."
     },
     "copy": {
@@ -1365,10 +1364,8 @@
       "unfollow": "Unfollow",
       "delete": "Delete",
       "toast": {
-        "followed": "Collection followed",
-        "followedDesc": "You've followed the {name} collection",
-        "unfollowed": "Collection unfollowed",
-        "unfollowedDesc": "You've unfollowed the {name} collection"
+        "followed": "You've followed the {name} collection",
+        "unfollowed": "You've unfollowed the {name} collection"
       }
     },
     "single": {

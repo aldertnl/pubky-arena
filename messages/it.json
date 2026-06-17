@@ -1006,8 +1006,7 @@
       "loginRequired": "Accedi per salvare i post"
     },
     "collection": {
-      "collectionDeleted": "Raccolta eliminata",
-      "collectionDeletedDesc": "La tua raccolta è stata eliminata",
+      "collectionDeleted": "La tua raccolta è stata eliminata",
       "deleteFailed": "Eliminazione raccolta fallita. Riprova."
     },
     "copy": {
@@ -1365,10 +1364,8 @@
       "unfollow": "Non seguire più",
       "delete": "Elimina",
       "toast": {
-        "followed": "Raccolta seguita",
-        "followedDesc": "Ora segui la raccolta {name}",
-        "unfollowed": "Raccolta non più seguita",
-        "unfollowedDesc": "Hai smesso di seguire la raccolta {name}"
+        "followed": "Ora segui la raccolta {name}",
+        "unfollowed": "Hai smesso di seguire la raccolta {name}"
       }
     },
     "single": {

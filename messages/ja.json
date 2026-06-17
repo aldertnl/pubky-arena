@@ -1006,8 +1006,7 @@
       "loginRequired": "投稿を保存するにはサインインしてください"
     },
     "collection": {
-      "collectionDeleted": "コレクションを削除しました",
-      "collectionDeletedDesc": "あなたのコレクションが削除されました",
+      "collectionDeleted": "あなたのコレクションが削除されました",
       "deleteFailed": "コレクションの削除に失敗しました。もう一度お試しください。"
     },
     "copy": {
@@ -1365,10 +1364,8 @@
       "unfollow": "フォロー解除",
       "delete": "削除",
       "toast": {
-        "followed": "コレクションをフォローしました",
-        "followedDesc": "「{name}」コレクションをフォローしました",
-        "unfollowed": "コレクションのフォローを解除しました",
-        "unfollowedDesc": "「{name}」コレクションのフォローを解除しました"
+        "followed": "「{name}」コレクションをフォローしました",
+        "unfollowed": "「{name}」コレクションのフォローを解除しました"
       }
     },
     "single": {

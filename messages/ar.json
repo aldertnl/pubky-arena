@@ -1008,8 +1008,7 @@
       "loginRequired": "سجّل الدخول لحفظ المنشورات"
     },
     "collection": {
-      "collectionDeleted": "تم حذف المجموعة",
-      "collectionDeletedDesc": "تم حذف مجموعتك",
+      "collectionDeleted": "تم حذف مجموعتك",
       "deleteFailed": "فشل حذف المجموعة. يُرجى المحاولة مرة أخرى."
     },
     "copy": {
@@ -1361,10 +1360,8 @@
       "unfollow": "إلغاء المتابعة",
       "delete": "حذف",
       "toast": {
-        "followed": "تمت متابعة المجموعة",
-        "followedDesc": "لقد تابعت مجموعة {name}",
-        "unfollowed": "تم إلغاء متابعة المجموعة",
-        "unfollowedDesc": "لقد ألغيت متابعة مجموعة {name}"
+        "followed": "لقد تابعت مجموعة {name}",
+        "unfollowed": "لقد ألغيت متابعة مجموعة {name}"
       }
     },
     "single": {

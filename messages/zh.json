@@ -1006,8 +1006,7 @@
       "loginRequired": "请登录以保存帖子"
     },
     "collection": {
-      "collectionDeleted": "收藏集已删除",
-      "collectionDeletedDesc": "您的收藏集已被删除",
+      "collectionDeleted": "您的收藏集已被删除",
       "deleteFailed": "删除收藏集失败。请重试。"
     },
     "copy": {
@@ -1359,10 +1358,8 @@
       "unfollow": "取消关注",
       "delete": "删除",
       "toast": {
-        "followed": "已关注收藏",
-        "followedDesc": "你已关注 {name} 收藏",
-        "unfollowed": "已取消关注收藏",
-        "unfollowedDesc": "你已取消关注 {name} 收藏"
+        "followed": "你已关注 {name} 收藏",
+        "unfollowed": "你已取消关注 {name} 收藏"
       }
     },
     "single": {

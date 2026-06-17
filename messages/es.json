@@ -1008,8 +1008,7 @@
       "loginRequired": "Inicia sesión para guardar publicaciones"
     },
     "collection": {
-      "collectionDeleted": "Colección eliminada",
-      "collectionDeletedDesc": "Tu colección ha sido eliminada",
+      "collectionDeleted": "Tu colección ha sido eliminada",
       "deleteFailed": "Error al eliminar la colección. Inténtalo de nuevo."
     },
     "copy": {
@@ -1369,10 +1368,8 @@
       "unfollow": "Dejar de seguir",
       "delete": "Eliminar",
       "toast": {
-        "followed": "Colección seguida",
-        "followedDesc": "Ahora sigues la colección {name}",
-        "unfollowed": "Colección no seguida",
-        "unfollowedDesc": "Has dejado de seguir la colección {name}"
+        "followed": "Ahora sigues la colección {name}",
+        "unfollowed": "Has dejado de seguir la colección {name}"
       }
     },
     "single": {
