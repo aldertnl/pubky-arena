@@ -73,9 +73,9 @@ vi.mock('@/molecules/Timeline/TimelineLoading', () => {
   };
 });
 
-vi.mock('@/molecules/Toaster/showErrorToast', () => {
+vi.mock('@/molecules/Toaster/use-toast', () => {
   return {
-    showErrorToast: vi.fn(),
+    toast: vi.fn(),
   };
 });
 

@@ -57,7 +57,6 @@ export interface UseBookmarkOptions {
  */
 export function useBookmark(postId: string, options?: UseBookmarkOptions): UseBookmarkResult {
   const { toast } = useToast();
-  const tToast = useTranslations('toast');
   const tBookmark = useTranslations('toast.bookmark');
   const currentUserPubky = useAuthStore((state) => state.currentUserPubky);
 
@@ -96,7 +95,7 @@ export function useBookmark(postId: string, options?: UseBookmarkOptions): UseBo
   const toggle = useCallback(async (): Promise<void> => {
     if (!currentUserPubky) {
       toast({
-        title: tToast('error'),
+        variant: 'error',
         description: tBookmark('loginRequired'),
       });
       return;
@@ -111,20 +110,18 @@ export function useBookmark(postId: string, options?: UseBookmarkOptions): UseBo
         setIsBookmarked(false);
         toast({
           title: removedTitle,
-          description: removedDesc,
         });
       } else {
         await BookmarkController.commitCreate({ postId, userId: currentUserPubky });
         setIsBookmarked(true);
         toast({
           title: addedTitle,
-          description: addedDesc,
         });
       }
     } catch (error) {
       Logger.error('[useBookmark] Failed to toggle bookmark', { error, postId, currentUserPubky });
       toast({
-        title: tToast('error'),
+        variant: 'error',
         description: isBookmarked ? tBookmark('removeFailed') : tBookmark('addFailed'),
       });
     } finally {
@@ -136,7 +133,6 @@ export function useBookmark(postId: string, options?: UseBookmarkOptions): UseBo
     isBookmarked,
     isToggling,
     toast,
-    tToast,
     tBookmark,
     addedTitle,
     addedDesc,
