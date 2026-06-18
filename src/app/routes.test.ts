@@ -4,6 +4,7 @@ import {
   AUTH_ROUTES,
   getCollectionRoute,
   getProfileRoute,
+  getUserProfileUrl,
   isCoreExploreRoute,
   isDynamicPublicRoute,
   isLogoLandingRoute,
@@ -202,6 +203,24 @@ describe('isNavItemActive', () => {
     expect(isNavItemActive('/settings/notifications', settingsItem)).toBe(true);
     expect(isNavItemActive('/settings/edit', settingsItem)).toBe(true);
     expect(isNavItemActive('/home', settingsItem)).toBe(false);
+  });
+});
+
+describe('getUserProfileUrl', () => {
+  const pubky = 'o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy';
+  const otherPubky = 'gujx6qd8ksydh1makdphd3bxu351d9b8waqka8hfg6q7hnqkxexo';
+
+  it('returns the static own-profile route when the pubky is the current user', () => {
+    expect(getUserProfileUrl(pubky, pubky)).toBe('/profile');
+  });
+
+  it('returns the dynamic profile route for another user', () => {
+    expect(getUserProfileUrl(otherPubky, pubky)).toBe(`/profile/${otherPubky}`);
+  });
+
+  it('returns the dynamic profile route when there is no current user', () => {
+    expect(getUserProfileUrl(pubky)).toBe(`/profile/${pubky}`);
+    expect(getUserProfileUrl(pubky, null)).toBe(`/profile/${pubky}`);
   });
 });
 
