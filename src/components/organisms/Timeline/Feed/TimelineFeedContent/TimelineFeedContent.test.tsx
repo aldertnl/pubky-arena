@@ -1,5 +1,5 @@
+import { createRef, type ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TIMELINE_FEED_VARIANT } from '@/config/feed';
 import type { FeedLayoutResolution } from '@/hooks/useFeedLayoutResolution/useFeedLayoutResolution';
@@ -13,6 +13,7 @@ import {
   PostStreamTypes,
 } from '@/models/stream/post/postStream.types';
 import { LAYOUT } from '@/stores/home/home.types';
+import { useTimelineFeedContext } from '../TimelineFeed/TimelineFeedContext';
 import { TimelineFeedWithStream } from './TimelineFeedContent';
 
 const mockUsePullToRefresh = vi.hoisted(() =>
@@ -116,7 +117,7 @@ vi.mock('@/organisms/Timeline/Posts/GridPosts/GridPosts', () => {
     }) => (
       <div data-testid="timeline-grid-posts" data-show-end-message={String(showEndMessage)}>
         <span data-testid="grid-post-count">{postIds.length}</span>
-        {emptyState}
+        {postIds.length === 0 ? emptyState : null}
       </div>
     ),
   };
@@ -136,6 +137,7 @@ const gridLayoutResolution: FeedLayoutResolution = {
 const mockLoadMore = vi.fn();
 const mockRefresh = vi.fn();
 const mockPrependPosts = vi.fn();
+const mockPrependOptimisticPosts = vi.fn();
 const mockRemovePosts = vi.fn();
 
 const defaultMutedUsersResult = {
@@ -154,10 +156,17 @@ const defaultPaginationResult = {
   loadMore: mockLoadMore,
   refresh: mockRefresh,
   prependPosts: mockPrependPosts,
+  prependOptimisticPosts: mockPrependOptimisticPosts,
   removePosts: mockRemovePosts,
 };
 const mockUseStreamPagination = vi.mocked(useStreamPagination);
 const mockUseMutedUsers = vi.mocked(useMutedUsers);
+
+function ContextProbe() {
+  const context = useTimelineFeedContext();
+
+  return <div data-testid="timeline-context-collection-id">{context?.collectionId ?? 'none'}</div>;
+}
 
 describe('TimelineFeedContent', () => {
   beforeEach(() => {
@@ -239,6 +248,20 @@ describe('TimelineFeedContent', () => {
         />,
       );
       expect(screen.getByTestId('post-count')).toHaveTextContent('3');
+    });
+
+    it('provides collection id in the timeline feed context when passed', () => {
+      render(
+        <TimelineFeedWithStream
+          streamId={COLLECTION_STREAM_ID}
+          variant={TIMELINE_FEED_VARIANT.COLLECTION}
+          tagsLayout="inline"
+          collectionId="author-pubky:collection-post"
+        >
+          <ContextProbe />
+        </TimelineFeedWithStream>,
+      );
+      expect(screen.getByTestId('timeline-context-collection-id')).toHaveTextContent('author-pubky:collection-post');
     });
   });
 
@@ -541,6 +564,25 @@ describe('Grid layout variants (decisions D5/D7)', () => {
     expect(screen.getByTestId('timeline-grid-posts')).toHaveAttribute('data-show-end-message', 'false');
   });
 
+  it('forwards a custom empty state to the grid renderer', () => {
+    mockUseStreamPagination.mockReturnValue({
+      ...defaultPaginationResult,
+      postIds: [],
+    });
+
+    render(
+      <TimelineFeedWithStream
+        streamId={COLLECTION_STREAM_ID}
+        variant={TIMELINE_FEED_VARIANT.COLLECTION}
+        tagsLayout="inline"
+        layoutResolution={gridLayoutResolution}
+        emptyState={<div data-testid="custom-empty">Collection is empty</div>}
+      />,
+    );
+
+    expect(screen.getByTestId('custom-empty')).toBeInTheDocument();
+  });
+
   it('renders the bookmarks variant in the grid and suppresses the end-of-feed message', () => {
     render(
       <TimelineFeedWithStream
@@ -556,20 +598,6 @@ describe('Grid layout variants (decisions D5/D7)', () => {
     expect(screen.getByTestId('timeline-grid-posts')).toHaveAttribute('data-show-end-message', 'false');
   });
 
-  it('forwards a custom empty state to the grid renderer', () => {
-    render(
-      <TimelineFeedWithStream
-        streamId={PostStreamTypes.TIMELINE_BOOKMARKS_ALL}
-        variant={TIMELINE_FEED_VARIANT.BOOKMARKS}
-        tagsLayout="inline"
-        layoutResolution={gridLayoutResolution}
-        emptyState={<div data-testid="bookmarks-empty-state">No bookmarks yet</div>}
-      />,
-    );
-
-    expect(screen.getByTestId('timeline-grid-posts')).toContainElement(screen.getByTestId('bookmarks-empty-state'));
-  });
-
   it('falls back to the vertical list when no grid layout resolution is provided', () => {
     render(
       <TimelineFeedWithStream
@@ -582,7 +610,7 @@ describe('Grid layout variants (decisions D5/D7)', () => {
     expect(screen.queryByTestId('timeline-grid-posts')).not.toBeInTheDocument();
   });
 
-  it('enables pull-to-refresh for the collection variant (D7)', () => {
+  it('enables pull-to-refresh for the collection variant', () => {
     render(
       <TimelineFeedWithStream
         streamId={COLLECTION_STREAM_ID}
@@ -592,6 +620,35 @@ describe('Grid layout variants (decisions D5/D7)', () => {
       />,
     );
     expect(mockUsePullToRefresh).toHaveBeenCalledWith(expect.objectContaining({ disabled: false }));
+  });
+
+  it('uses an external pull-to-refresh container ref when provided', () => {
+    const pullToRefreshContainerRef = createRef<HTMLElement>();
+    render(
+      <TimelineFeedWithStream
+        streamId={COLLECTION_STREAM_ID}
+        variant={TIMELINE_FEED_VARIANT.COLLECTION}
+        tagsLayout="inline"
+        layoutResolution={gridLayoutResolution}
+        pullToRefreshContainerRef={pullToRefreshContainerRef}
+      />,
+    );
+    expect(mockUsePullToRefresh).toHaveBeenCalledWith(
+      expect.objectContaining({ containerRef: pullToRefreshContainerRef }),
+    );
+  });
+
+  it('shows pull-to-refresh indicator for the collection variant when pulling', () => {
+    mockUsePullToRefresh.mockReturnValue({ state: 'pulling' as const, pullDistance: 50 });
+    render(
+      <TimelineFeedWithStream
+        streamId={COLLECTION_STREAM_ID}
+        variant={TIMELINE_FEED_VARIANT.COLLECTION}
+        tagsLayout="inline"
+        layoutResolution={gridLayoutResolution}
+      />,
+    );
+    expect(screen.getByTestId('pull-to-refresh')).toBeInTheDocument();
   });
 
   it('applies muting for the collection variant (not in the mute skip list, D7)', () => {

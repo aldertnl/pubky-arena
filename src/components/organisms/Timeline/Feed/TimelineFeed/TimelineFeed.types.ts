@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react';
-import type { TimelineFeedVariant } from '@/config/feed';
+import type { ReactNode, RefObject } from 'react';
+import { TIMELINE_FEED_VARIANT, type TimelineFeedVariant } from '@/config/feed';
 
-export interface TimelineFeedProps {
+interface TimelineFeedPropsBase {
   /**
    * Variant determines which stream to fetch
    * - 'home': Uses global filters (sort, reach, content)
@@ -13,19 +13,47 @@ export interface TimelineFeedProps {
    * - 'search': Uses tags from URL query params with sort/content filters
    * - 'collection': Uses a single collection's item stream from route params
    */
-  variant: TimelineFeedVariant;
   /**
    * Optional children to render above the timeline (e.g., PostInput)
    * Children can access prependPosts via TimelineFeedContext
    */
   children?: ReactNode;
+}
+
+type TimelineFeedPullToRefreshContainerRef = RefObject<HTMLElement | null>;
+
+type BookmarksTimelineFeedProps = TimelineFeedPropsBase & {
+  variant: typeof TIMELINE_FEED_VARIANT.BOOKMARKS;
   /**
-   * Optional custom empty state for feed variants that forward one. Currently
-   * used by bookmarks to replace the default "No posts found" copy while keeping
-   * emptiness driven by the resolved bookmarks stream.
+   * Empty state for finite collection-like feeds.
    */
   emptyState?: ReactNode;
-}
+  pullToRefreshContainerRef?: never;
+};
+
+type CollectionTimelineFeedProps = TimelineFeedPropsBase & {
+  variant: typeof TIMELINE_FEED_VARIANT.COLLECTION;
+  /**
+   * Empty state for finite collection-like feeds.
+   */
+  emptyState?: ReactNode;
+  /**
+   * Optional element that should own pull-to-refresh touch events. Defaults to
+   * the feed container.
+   */
+  pullToRefreshContainerRef?: TimelineFeedPullToRefreshContainerRef;
+};
+
+type StandardTimelineFeedProps = TimelineFeedPropsBase & {
+  variant: Exclude<
+    TimelineFeedVariant,
+    typeof TIMELINE_FEED_VARIANT.BOOKMARKS | typeof TIMELINE_FEED_VARIANT.COLLECTION
+  >;
+  emptyState?: never;
+  pullToRefreshContainerRef?: never;
+};
+
+export type TimelineFeedProps = BookmarksTimelineFeedProps | CollectionTimelineFeedProps | StandardTimelineFeedProps;
 
 export interface TimelineFeedContextValue {
   /**
@@ -36,10 +64,20 @@ export interface TimelineFeedContextValue {
    */
   variant: TimelineFeedVariant;
   /**
+   * Current collection composite id when this context belongs to a single
+   * collection feed.
+   */
+  collectionId?: string;
+  /**
    * Add post(s) to the timeline, sorted by timestamp
    * @param postIds - A single post ID or array of post IDs to add
    */
   prependPosts: (postIds: string | string[]) => Promise<void>;
+  /**
+   * Add post(s) to the top without timestamp sorting.
+   * Use for membership-ordered feeds such as bookmarks and single collections.
+   */
+  prependOptimisticPosts: (postIds: string | string[]) => void;
   /**
    * Remove post(s) from the timeline
    * @param postIds - A single post ID or array of post IDs to remove

@@ -28,10 +28,6 @@ interface TimelineGridPostsProps {
    * finite, library-style surfaces.
    */
   showEndMessage?: boolean;
-  /**
-   * Optional custom empty state rendered when the stream resolves with no posts.
-   * Falls back to the shared "no posts" message when omitted.
-   */
   emptyState?: ReactNode;
 }
 

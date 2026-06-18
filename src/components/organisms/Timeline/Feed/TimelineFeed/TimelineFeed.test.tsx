@@ -37,6 +37,9 @@ vi.mock('next/navigation', () => ({
   }),
   usePathname: () => '/',
   useParams: () => ({ id: '' }),
+  useRouter: () => ({
+    push: vi.fn(),
+  }),
 }));
 
 // Mock dependencies
@@ -189,6 +192,7 @@ const mockUseStreamPagination = vi.mocked(useStreamPagination);
 const mockUseFeedLayoutResolution = vi.mocked(useFeedLayoutResolution);
 
 const mockPrependPosts = vi.fn();
+const mockPrependOptimisticPosts = vi.fn();
 const mockLoadMore = vi.fn();
 const mockRefresh = vi.fn();
 const defaultPaginationResult = {
@@ -200,6 +204,7 @@ const defaultPaginationResult = {
   loadMore: mockLoadMore,
   refresh: mockRefresh,
   prependPosts: mockPrependPosts,
+  prependOptimisticPosts: mockPrependOptimisticPosts,
   removePosts: vi.fn(),
 };
 
@@ -462,6 +467,31 @@ describe('TimelineFeed', () => {
           disabled: true,
         }),
       );
+    });
+
+    it('should render the custom bookmarks empty state when the grid is empty', () => {
+      mockUseStreamPagination.mockReturnValue({
+        ...defaultPaginationResult,
+        postIds: [],
+      });
+      mockUseFeedLayoutResolution.mockReturnValue({
+        requestedLayout: 'columns',
+        effectiveLayout: 'columns',
+        isVisualRequested: false,
+        isVisualActive: false,
+        isGridActive: true,
+        isPhoneViewport: false,
+      });
+
+      render(
+        <TimelineFeed
+          variant={TIMELINE_FEED_VARIANT.BOOKMARKS}
+          emptyState={<div data-testid="bookmarks-empty-state">This collection is empty.</div>}
+        />,
+      );
+
+      expect(screen.getByTestId('bookmarks-empty-state')).toBeInTheDocument();
+      expect(screen.queryByText('No posts found')).not.toBeInTheDocument();
     });
 
     it('should persist visual content coercion for bookmarks feeds', async () => {
@@ -731,6 +761,7 @@ describe('TimelineFeed', () => {
         const lastValue = contextValues[contextValues.length - 1];
         expect(lastValue).not.toBeNull();
         expect(lastValue?.prependPosts).toBe(mockPrependPosts);
+        expect(lastValue?.prependOptimisticPosts).toBe(mockPrependOptimisticPosts);
       });
     });
 

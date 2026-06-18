@@ -9,6 +9,7 @@ import { useHotStreamId } from '@/hooks/useHotStreamId/useHotStreamId';
 import { useSearchStreamId } from '@/hooks/useSearchStreamId/useSearchStreamId';
 import { useStreamIdFromFilters } from '@/hooks/useStreamIdFromFilters/useStreamIdFromFilters';
 import { useSyncInteractiveVisualContent } from '@/hooks/useSyncInteractiveVisualContent/useSyncInteractiveVisualContent';
+import { buildCompositeId } from '@/models/models.utils';
 import {
   type AuthorStreamCompositeId,
   buildAuthorCollectionsStreamId,
@@ -31,14 +32,13 @@ export { useTimelineFeedContext } from './TimelineFeedContext';
  * Organism that encapsulates stream calculation and pagination logic.
  * Routes to variant-specific wrappers so each only subscribes to its own data sources.
  */
-export function TimelineFeed({ variant, children, emptyState }: TimelineFeedProps) {
+export function TimelineFeed({ variant, children, emptyState, pullToRefreshContainerRef }: TimelineFeedProps) {
   switch (variant) {
     case TIMELINE_FEED_VARIANT.HOME:
       return <HomeTimelineFeed>{children}</HomeTimelineFeed>;
     case TIMELINE_FEED_VARIANT.CUSTOM:
       return <CustomTimelineFeed>{children}</CustomTimelineFeed>;
     case TIMELINE_FEED_VARIANT.BOOKMARKS:
-      // Bookmarks owns a custom stream-driven empty state; other variants use the shared default.
       return <BookmarksTimelineFeed emptyState={emptyState}>{children}</BookmarksTimelineFeed>;
     case TIMELINE_FEED_VARIANT.PROFILE:
       return <ProfileTimelineFeed>{children}</ProfileTimelineFeed>;
@@ -49,7 +49,11 @@ export function TimelineFeed({ variant, children, emptyState }: TimelineFeedProp
     case TIMELINE_FEED_VARIANT.SEARCH:
       return <SearchTimelineFeed>{children}</SearchTimelineFeed>;
     case TIMELINE_FEED_VARIANT.COLLECTION:
-      return <CollectionTimelineFeed>{children}</CollectionTimelineFeed>;
+      return (
+        <CollectionTimelineFeed emptyState={emptyState} pullToRefreshContainerRef={pullToRefreshContainerRef}>
+          {children}
+        </CollectionTimelineFeed>
+      );
     default:
       return <TimelineLoading />;
   }
@@ -163,13 +167,22 @@ function ProfileCollectionsTimelineFeed({ children }: { children?: TimelineFeedP
   );
 }
 
-function CollectionTimelineFeed({ children }: { children?: TimelineFeedProps['children'] }) {
+function CollectionTimelineFeed({
+  children,
+  emptyState,
+  pullToRefreshContainerRef,
+}: {
+  children?: TimelineFeedProps['children'];
+  emptyState?: TimelineFeedProps['emptyState'];
+  pullToRefreshContainerRef?: TimelineFeedProps['pullToRefreshContainerRef'];
+}) {
   // The single-collection route owns these params (`/collections/[userId]/[postId]`).
   // Reading them here mirrors how `ProfileTimelineFeed` resolves its stream from context.
   const params = useParams<{ userId: string; postId: string }>();
   const userId = params?.userId;
   const postId = params?.postId;
   const streamId = userId && postId ? buildCollectionItemsStreamId(userId, postId) : undefined;
+  const collectionId = userId && postId ? buildCompositeId({ pubky: userId, id: postId }) : undefined;
   const layoutResolution = useFeedLayoutResolution(TIMELINE_FEED_VARIANT.COLLECTION);
 
   return (
@@ -178,6 +191,9 @@ function CollectionTimelineFeed({ children }: { children?: TimelineFeedProps['ch
       variant={TIMELINE_FEED_VARIANT.COLLECTION}
       tagsLayout="inline"
       layoutResolution={layoutResolution}
+      emptyState={emptyState}
+      collectionId={collectionId}
+      pullToRefreshContainerRef={pullToRefreshContainerRef}
     >
       {children}
     </TimelineFeedWithStream>

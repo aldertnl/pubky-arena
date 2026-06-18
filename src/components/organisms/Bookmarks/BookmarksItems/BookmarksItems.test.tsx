@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { BookmarksItems } from './BookmarksItems';
@@ -7,14 +7,21 @@ vi.mock('next-intl', () => ({
   useTranslations: (namespace?: string) => (key: string) => `${namespace ?? ''}.${key}`,
 }));
 
-// The mock renders the `emptyState` slot inline so we can assert what the feed
-// would show when the bookmarks stream resolves empty.
 vi.mock('@/organisms/Timeline/Feed/TimelineFeed/TimelineFeed', () => ({
-  TimelineFeed: ({ variant, emptyState }: { variant: string; emptyState?: ReactNode }) => (
-    <div data-testid="timeline-feed" data-variant={variant}>
-      {emptyState}
+  TimelineFeed: ({
+    variant,
+    children,
+    emptyState,
+  }: {
+    variant: string;
+    children?: ReactNode;
+    emptyState?: ReactNode;
+  }) => (
+    <div data-testid="timeline-feed" data-variant={variant} data-has-empty-state={String(Boolean(emptyState))}>
+      {children}
     </div>
   ),
+  useTimelineFeedContext: () => null,
 }));
 
 describe('BookmarksItems', () => {
@@ -22,14 +29,14 @@ describe('BookmarksItems', () => {
     render(<BookmarksItems />);
 
     expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-variant', 'bookmarks');
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-empty-state', 'true');
   });
 
-  it('passes the add-content CTA as the feed empty-state slot (stream-driven, not count-driven)', () => {
-    const { container } = render(<BookmarksItems />);
+  it('renders the add-content CTA above the feed', () => {
+    render(<BookmarksItems />);
 
-    expect(container.querySelector('[data-cy="bookmarks-items-empty"]')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'collections.single.addContent' })).toBeInTheDocument();
-    expect(screen.getByText('collections.single.addContent')).toBeInTheDocument();
+    const feed = screen.getByTestId('timeline-feed');
+    expect(within(feed).getByRole('button', { name: 'collections.single.addContent' })).toBeInTheDocument();
   });
 });
 

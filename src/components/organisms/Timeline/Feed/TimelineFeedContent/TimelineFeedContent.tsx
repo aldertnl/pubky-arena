@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { MuteFilter } from '@/application/stream/posts/muting/mute-filter';
 import { Container } from '@/atoms/Container/Container';
 import { TIMELINE_FEED_VARIANT } from '@/config/feed';
@@ -26,7 +26,9 @@ interface TimelineFeedContentProps {
   tagsLayout: TagsLayout;
   layoutResolution?: FeedLayoutResolution;
   children?: TimelineFeedProps['children'];
-  emptyState?: ReactNode;
+  emptyState?: TimelineFeedProps['emptyState'];
+  collectionId?: TimelineFeedContextValue['collectionId'];
+  pullToRefreshContainerRef?: TimelineFeedProps['pullToRefreshContainerRef'];
 }
 
 interface TimelineFeedWithStreamProps {
@@ -35,7 +37,9 @@ interface TimelineFeedWithStreamProps {
   tagsLayout: TagsLayout;
   layoutResolution?: FeedLayoutResolution;
   children?: TimelineFeedProps['children'];
-  emptyState?: ReactNode;
+  emptyState?: TimelineFeedProps['emptyState'];
+  collectionId?: TimelineFeedContextValue['collectionId'];
+  pullToRefreshContainerRef?: TimelineFeedProps['pullToRefreshContainerRef'];
 }
 
 /**
@@ -51,6 +55,8 @@ export function TimelineFeedWithStream({
   layoutResolution,
   children,
   emptyState,
+  collectionId,
+  pullToRefreshContainerRef,
 }: TimelineFeedWithStreamProps) {
   if (!streamId) {
     return <TimelineLoading />;
@@ -63,6 +69,8 @@ export function TimelineFeedWithStream({
       tagsLayout={tagsLayout}
       layoutResolution={layoutResolution}
       emptyState={emptyState}
+      collectionId={collectionId}
+      pullToRefreshContainerRef={pullToRefreshContainerRef}
     >
       {children}
     </TimelineFeedContent>
@@ -75,11 +83,12 @@ export function TimelineFeedWithStream({
  * Primary component that manages stream pagination, muting, pull-to-refresh,
  * and provides the TimelineFeedContext to children.
  *
- * The outermost Atoms.Container carries the containerRef so that pull-to-refresh
- * touch events are scoped to this feed area only. Its classes match
- * ContentLayout's main content area (min-w-0 flex-1 gap-6 lg:overflow-hidden)
- * to preserve the same flex-col spacing that children previously inherited as
- * direct descendants of that container.
+ * The outermost Atoms.Container is the default pull-to-refresh touch scope.
+ * Some pages can pass an external scope (for example, the collection page wraps
+ * hero + items so pulling from the hero refreshes the collection feed too). Its
+ * classes match ContentLayout's main content area (min-w-0 flex-1 gap-6
+ * lg:overflow-hidden) to preserve the same flex-col spacing that children
+ * previously inherited as direct descendants of that container.
  */
 function TimelineFeedContent({
   streamId,
@@ -88,8 +97,11 @@ function TimelineFeedContent({
   layoutResolution,
   children,
   emptyState,
+  collectionId,
+  pullToRefreshContainerRef,
 }: TimelineFeedContentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const refreshContainerRef = pullToRefreshContainerRef ?? containerRef;
   const previousMutedUserIdSetRef = useRef<Set<string> | null>(null);
 
   const isVisualActive = layoutResolution?.isVisualActive ?? false;
@@ -103,6 +115,7 @@ function TimelineFeedContent({
     loadMore,
     refresh,
     prependPosts,
+    prependOptimisticPosts,
     removePosts,
   } = useStreamPagination({
     streamId,
@@ -118,7 +131,7 @@ function TimelineFeedContent({
     variant === TIMELINE_FEED_VARIANT.HOT ||
     variant === TIMELINE_FEED_VARIANT.COLLECTION;
   const { state: pullState, pullDistance } = usePullToRefresh({
-    containerRef,
+    containerRef: refreshContainerRef,
     onRefresh: refresh,
     disabled: !enablePullToRefresh,
   });
@@ -159,7 +172,9 @@ function TimelineFeedContent({
 
   const contextValue: TimelineFeedContextValue = {
     variant,
+    collectionId,
     prependPosts,
+    prependOptimisticPosts,
     removePosts,
   };
   const showGridEndMessage =

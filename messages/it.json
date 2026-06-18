@@ -1385,6 +1385,23 @@
         "backToCollections": "Torna alle raccolte",
         "viewProfile": "Vedi profilo"
       }
+    },
+    "addContentDialog": {
+      "title": "Aggiungi contenuto",
+      "description": "Aggiungi un post o un articolo dal tuo feed oppure incolla direttamente un URL.",
+      "fromFeedTitle": "Aggiungi dal feed",
+      "fromFeedLead": "Trova un post",
+      "fromFeedRest": " che vuoi aggiungere e clicca sul pulsante delle raccolte.",
+      "pasteTitle": "Incolla URL del post",
+      "pasteDescription": "Puoi anche incollare l'URL di un post per aggiungerlo rapidamente alla tua raccolta.",
+      "adding": "Aggiunta...",
+      "errors": {
+        "required": "Incolla l'URL di un post.",
+        "invalid": "Inserisci un URL di post valido.",
+        "notFound": "Non abbiamo trovato quel post.",
+        "alreadyAdded": "Questo post è già stato aggiunto.",
+        "failure": "Impossibile aggiungere questo post."
+      }
     }
   },
   "postSave": {
