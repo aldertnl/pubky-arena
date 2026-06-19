@@ -638,7 +638,7 @@
     },
     "deleteCollection": {
       "title": "Supprimer la collection ?",
-      "description": "Cette action est irréversible. La collection sera définitivement supprimée.",
+      "description": "Voulez-vous supprimer la collection « {name} » ? Les utilisateurs qui l'ont ajoutée à leurs collections n'y auront plus accès et vous perdrez toutes les statistiques.",
       "confirmButton": "Supprimer",
       "cancelButton": "Annuler"
     },
@@ -1319,6 +1319,7 @@
     "deleted": "Cette collection a été supprimée par son auteur.",
     "new": {
       "cta": "Nouvelle collection",
+      "ctaShort": "Nouveau",
       "title": "Nouvelle collection",
       "nameLabel": "Titre",
       "namePlaceholder": "Proof of Work",
@@ -1331,7 +1332,7 @@
       "coverImageTooLarge": "L'image de couverture est trop grande.",
       "nameRequired": "Le titre de la collection est requis.",
       "cancel": "Annuler",
-      "save": "Enregistrer la collection",
+      "save": "Enregistrer les modifications",
       "saving": "Enregistrement...",
       "created": "Collection {name} créée",
       "createFailed": "Échec de la création de la collection."
@@ -1346,7 +1347,8 @@
     "loadFailed": "Échec du chargement des collections. Veuillez réessayer.",
     "my": {
       "title": "Mes collections",
-      "publicNote": "À noter : toutes les collections sont publiques et visibles."
+      "publicNote": "À noter : toutes les collections sont publiques et visibles.",
+      "publicNoteShort": "Toutes les collections sont publiques et visibles."
     },
     "followed": {
       "title": "Collections suivies",
@@ -1358,7 +1360,7 @@
     },
     "bookmarks": {
       "title": "Signets",
-      "description": "Tout ce que vous souhaitez enregistrer pour plus tard."
+      "description": "Tout ce que vous avez enregistré pour plus tard."
     },
     "card": {
       "follow": "Suivre",

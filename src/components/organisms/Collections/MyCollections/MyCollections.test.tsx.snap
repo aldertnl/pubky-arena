@@ -62,7 +62,18 @@ exports[`MyCollections > MyCollections - Snapshots > matches the snapshot for th
             d="M12 5v14"
           />
         </svg>
-        collections.new.cta
+        <span
+          class="text-sm font-bold lg:hidden"
+          data-testid="typography"
+        >
+          collections.new.ctaShort
+        </span>
+        <span
+          class="hidden text-sm font-bold lg:inline"
+          data-testid="typography"
+        >
+          collections.new.cta
+        </span>
       </button>
     </div>
   </div>
@@ -157,7 +168,18 @@ exports[`MyCollections > MyCollections - Snapshots > matches the snapshot for th
             d="M12 5v14"
           />
         </svg>
-        collections.new.cta
+        <span
+          class="text-sm font-bold lg:hidden"
+          data-testid="typography"
+        >
+          collections.new.ctaShort
+        </span>
+        <span
+          class="hidden text-sm font-bold lg:inline"
+          data-testid="typography"
+        >
+          collections.new.cta
+        </span>
       </button>
     </div>
   </div>

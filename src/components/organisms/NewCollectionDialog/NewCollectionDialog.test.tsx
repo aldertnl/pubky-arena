@@ -22,7 +22,7 @@ const translations: Record<string, string> = {
   'collections.new.coverImageTooLarge': 'Cover image is too large.',
   'collections.new.nameRequired': 'Collection title is required.',
   'collections.new.cancel': 'Cancel',
-  'collections.new.save': 'Save collection',
+  'collections.new.save': 'Save changes',
   'collections.new.saving': 'Saving...',
   'collections.new.created': 'Collection {name} created',
   'collections.new.createFailed': 'Failed to create collection.',
@@ -93,11 +93,11 @@ describe('NewCollectionDialog', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open dialog' }));
 
-    expect(screen.getByRole('button', { name: 'Save collection' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Proof of Work' } });
 
-    expect(screen.getByRole('button', { name: 'Save collection' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeEnabled();
   });
 
   it('does not show required title feedback when the user only focuses then blurs an untouched title field', async () => {
@@ -179,7 +179,7 @@ describe('NewCollectionDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open dialog' }));
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Proof of Work' } });
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Bitcoin writing' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save collection' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => {
       expect(mocks.commitCreateCollection).toHaveBeenCalledWith({
@@ -220,7 +220,7 @@ describe('NewCollectionDialog', () => {
 
     expect(screen.getByRole('button', { name: 'Remove image' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Save collection' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => {
       expect(mocks.commitCreateCollection).toHaveBeenCalledWith({

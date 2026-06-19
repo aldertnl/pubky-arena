@@ -115,7 +115,23 @@ describe('DialogConfirmDelete', () => {
 
     expect(screen.getByTestId('dialog-title')).toHaveTextContent('Delete collection?');
     expect(screen.getByTestId('dialog-description')).toHaveTextContent(
-      'This action cannot be undone. The collection will be permanently deleted.',
+      'Do you want to delete the collection ‘{name}’? Users who added it to their collections will no longer have access and you will lose all stats.',
+    );
+  });
+
+  it('renders a caller-provided description when the description prop is set', () => {
+    render(
+      <DialogConfirmDelete
+        open={true}
+        onOpenChange={vi.fn()}
+        onConfirm={vi.fn()}
+        i18nNamespace="dialogs.deleteCollection"
+        description="Do you want to delete the collection ‘Proof of Work’? Users who added it to their collections will no longer have access and you will lose all stats."
+      />,
+    );
+
+    expect(screen.getByTestId('dialog-description')).toHaveTextContent(
+      'Do you want to delete the collection ‘Proof of Work’? Users who added it to their collections will no longer have access and you will lose all stats.',
     );
   });
 });

@@ -77,14 +77,24 @@ export function MyCollections({ showPublicNote = false }: MyCollectionsProps = {
           <NewCollectionDialog>
             <Button variant="secondary" size="sm">
               <Plus />
-              {t('new.cta')}
+              <Typography as="span" overrideDefaults className="text-sm font-bold lg:hidden">
+                {t('new.ctaShort')}
+              </Typography>
+              <Typography as="span" overrideDefaults className="hidden text-sm font-bold lg:inline">
+                {t('new.cta')}
+              </Typography>
             </Button>
           </NewCollectionDialog>
         </Container>
         {showPublicNote && (
-          <Typography as="span" size="md" className="text-input">
-            {t('my.publicNote')}
-          </Typography>
+          <>
+            <Typography as="span" overrideDefaults className="text-base font-medium text-input lg:hidden">
+              {t('my.publicNoteShort')}
+            </Typography>
+            <Typography as="span" overrideDefaults className="hidden text-base font-medium text-input lg:inline">
+              {t('my.publicNote')}
+            </Typography>
+          </>
         )}
       </Container>
 

@@ -18,6 +18,11 @@ import {
 } from '@/hooks/useCreateCollection/useCreateCollection.types';
 import { ControlledInputField } from '@/molecules/ControlledInputField/ControlledInputField';
 
+/** Truncates long placeholder/value text with an ellipsis (matches Figma dashed inputs). */
+const COLLECTION_FORM_INPUT_WRAPPER_CLASS = 'mb-0 min-w-0 overflow-hidden';
+const COLLECTION_FORM_INPUT_CLASS =
+  'min-w-0 truncate placeholder:overflow-hidden placeholder:text-ellipsis placeholder:whitespace-nowrap';
+
 type CollectionFormDialogProps = {
   /** Controlled open state. */
   open: boolean;
@@ -127,6 +132,8 @@ export function CollectionFormDialog({
             variant="dashed"
             size="lg"
             disabled={areInputsDisabled}
+            className={COLLECTION_FORM_INPUT_WRAPPER_CLASS}
+            inputClassName={COLLECTION_FORM_INPUT_CLASS}
           />
 
           <ControlledInputField
@@ -138,6 +145,8 @@ export function CollectionFormDialog({
             variant="dashed"
             size="lg"
             disabled={areInputsDisabled}
+            className={COLLECTION_FORM_INPUT_WRAPPER_CLASS}
+            inputClassName={COLLECTION_FORM_INPUT_CLASS}
           />
 
           <Container overrideDefaults className="flex flex-col gap-2">
@@ -200,11 +209,17 @@ export function CollectionFormDialog({
         </Container>
 
         <DialogFooter>
-          <Button variant="outline" size="lg" onClick={() => onOpenChange(false)} disabled={isSaving}>
-            {t('cancel')}
-          </Button>
-          <Button size="lg" onClick={onSubmit} disabled={!canSubmit}>
+          <Button size="lg" onClick={onSubmit} disabled={!canSubmit} className="order-1 sm:order-2">
             {isSaving ? t('saving') : submitLabel}
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+            className="order-2 sm:order-1"
+          >
+            {t('cancel')}
           </Button>
         </DialogFooter>
       </DialogContent>

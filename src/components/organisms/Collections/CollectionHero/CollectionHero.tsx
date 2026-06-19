@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Minus, Pencil, Plus, Share2, Trash2 } from 'lucide-react';
+import { Minus, Pencil, Plus, StickyNote, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { APP_ROUTES } from '@/app/routes';
 import { TagKind } from '@/application/tag/tag.types';
@@ -124,6 +124,8 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
   // toast reads as "Collection deleted" not "Post deleted".
   const router = useRouter();
   const tCollectionToast = useTranslations('toast.collection');
+  const tDeleteCollection = useTranslations('dialogs.deleteCollection');
+  const deleteCollectionDescription = tDeleteCollection('description', { name: title || authorPubky });
   const { deletePost, isDeleting } = useDeletePost({
     toastMessages: {
       deleted: tCollectionToast('collectionDeleted'),
@@ -167,17 +169,16 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
           {title}
         </Typography>
 
-        {/* Owner + item count */}
-        <Container overrideDefaults className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {/* Owner + item count — mobile: count on the right; lg+: inline next to owner */}
+        <Container overrideDefaults className="flex w-full items-center gap-6">
           <HeroOwner
             name={ownerName}
             fallbackSeed={authorPubky}
             avatarUrl={ownerAvatarUrl}
             isResolved={isOwnerResolved}
             size="md"
-            className="gap-2"
+            className="min-w-0 flex-1 gap-2 lg:flex-none"
           />
-
           <CollectionCountBadge count={itemCount} />
         </Container>
 
@@ -210,36 +211,24 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
                   Share / Edit against an imminent route replace. */}
               <Button
                 variant="secondary"
-                size="sm"
+                size="icon"
                 onClick={handleShare}
                 disabled={isDeleting}
                 aria-label={t('share')}
-                className="gap-2 text-xs"
               >
-                <Share2 className="size-4" />
-                {t('share')}
+                <StickyNote className="size-4" />
               </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleEdit}
-                disabled={isDeleting}
-                aria-label={t('edit')}
-                className="gap-2 text-xs"
-              >
+              <Button variant="secondary" size="icon" onClick={handleEdit} disabled={isDeleting} aria-label={t('edit')}>
                 <Pencil className="size-4" />
-                {t('edit')}
               </Button>
               <Button
                 variant="secondary"
-                size="sm"
+                size="icon"
                 onClick={handleDelete}
                 disabled={isDeleting}
                 aria-label={t('delete')}
-                className="gap-2 text-xs"
               >
                 <Trash2 className="size-4" />
-                {t('delete')}
               </Button>
             </>
           ) : (
@@ -255,15 +244,8 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
                 {isBookmarked ? <Minus className="size-4" /> : <Plus className="size-4" />}
                 {isBookmarked ? t('unfollow') : t('follow')}
               </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleShare}
-                aria-label={t('share')}
-                className="gap-2 text-xs"
-              >
-                <Share2 className="size-4" />
-                {t('share')}
+              <Button variant="secondary" size="icon" onClick={handleShare} aria-label={t('share')}>
+                <StickyNote className="size-4" />
               </Button>
             </>
           )}
@@ -282,6 +264,7 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
             onOpenChange={setDeleteConfirmOpen}
             onConfirm={() => void handleDeleteConfirm()}
             i18nNamespace="dialogs.deleteCollection"
+            description={deleteCollectionDescription}
           />
         </>
       )}

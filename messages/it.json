@@ -638,7 +638,7 @@
     },
     "deleteCollection": {
       "title": "Eliminare la raccolta?",
-      "description": "Questa azione non può essere annullata. La raccolta verrà eliminata definitivamente.",
+      "description": "Vuoi eliminare la collezione «{name}»? Gli utenti che l'hanno aggiunta alle proprie collezioni non avranno più accesso e perderai tutte le statistiche.",
       "confirmButton": "Elimina",
       "cancelButton": "Annulla"
     },
@@ -1319,6 +1319,7 @@
     "deleted": "Questa raccolta è stata eliminata dal suo autore.",
     "new": {
       "cta": "Nuova collezione",
+      "ctaShort": "Nuova",
       "title": "Nuova collezione",
       "nameLabel": "Titolo",
       "namePlaceholder": "Proof of Work",
@@ -1331,7 +1332,7 @@
       "coverImageTooLarge": "L'immagine di copertina è troppo grande.",
       "nameRequired": "Il titolo della collezione è obbligatorio.",
       "cancel": "Annulla",
-      "save": "Salva collezione",
+      "save": "Salva modifiche",
       "saving": "Salvataggio...",
       "created": "Collezione {name} creata",
       "createFailed": "Impossibile creare la collezione."
@@ -1346,7 +1347,8 @@
     "loadFailed": "Impossibile caricare le collezioni. Riprova.",
     "my": {
       "title": "Le mie collezioni",
-      "publicNote": "Nota: tutte le collezioni sono pubbliche e individuabili."
+      "publicNote": "Nota: tutte le collezioni sono pubbliche e individuabili.",
+      "publicNoteShort": "Tutte le collezioni sono pubbliche e individuabili."
     },
     "followed": {
       "title": "Collezioni seguite",
@@ -1358,7 +1360,7 @@
     },
     "bookmarks": {
       "title": "Segnalibri",
-      "description": "Tutto ciò che vuoi salvare per dopo."
+      "description": "Tutto ciò che hai salvato per dopo."
     },
     "card": {
       "follow": "Segui",

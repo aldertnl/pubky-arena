@@ -1,9 +1,23 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import enMessages from '../../../../../messages/en.json';
 import { BookmarksHero } from './BookmarksHero';
 
+const BOOKMARKS_COPY = enMessages.collections.bookmarks;
+
 vi.mock('next-intl', () => ({
-  useTranslations: (namespace?: string) => (key: string) => `${namespace ?? ''}.${key}`,
+  useTranslations: (namespace?: string) => (key: string) => {
+    if (namespace !== 'collections') {
+      return `${namespace ?? ''}.${key}`;
+    }
+
+    const nestedKeys: Record<string, string> = {
+      'bookmarks.title': BOOKMARKS_COPY.title,
+      'bookmarks.description': BOOKMARKS_COPY.description,
+    };
+
+    return nestedKeys[key] ?? `collections.${key}`;
+  },
   useFormatter: () => ({
     number: (value: number, _options?: Intl.NumberFormatOptions) => String(value),
   }),
@@ -48,8 +62,8 @@ describe('BookmarksHero', () => {
       />,
     );
 
-    expect(screen.getByRole('heading', { name: 'collections.bookmarks.title' })).toBeInTheDocument();
-    expect(screen.getByText('collections.bookmarks.description')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: BOOKMARKS_COPY.title })).toBeInTheDocument();
+    expect(screen.getByText(BOOKMARKS_COPY.description)).toBeInTheDocument();
     // TODO: The bookmark count badge is temporarily hidden (the BE total counts
     // collections + deleted posts, overstating the grid). Re-assert once the
     // backend exposes an accurate posts-only count and the badge is re-wired.

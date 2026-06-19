@@ -638,7 +638,7 @@
     },
     "deleteCollection": {
       "title": "コレクションを削除しますか？",
-      "description": "この操作は取り消せません。コレクションは完全に削除されます。",
+      "description": "コレクション「{name}」を削除しますか？コレクションに追加したユーザーはアクセスできなくなり、すべての統計情報が失われます。",
       "confirmButton": "削除",
       "cancelButton": "キャンセル"
     },
@@ -1319,6 +1319,7 @@
     "deleted": "このコレクションは作成者によって削除されました。",
     "new": {
       "cta": "新しいコレクション",
+      "ctaShort": "新規",
       "title": "新しいコレクション",
       "nameLabel": "タイトル",
       "namePlaceholder": "Proof of Work",
@@ -1331,7 +1332,7 @@
       "coverImageTooLarge": "カバー画像が大きすぎます。",
       "nameRequired": "コレクションのタイトルは必須です。",
       "cancel": "キャンセル",
-      "save": "コレクションを保存",
+      "save": "変更を保存",
       "saving": "保存中...",
       "created": "コレクション「{name}」を作成しました",
       "createFailed": "コレクションの作成に失敗しました。"
@@ -1346,7 +1347,8 @@
     "loadFailed": "コレクションの読み込みに失敗しました。もう一度お試しください。",
     "my": {
       "title": "マイコレクション",
-      "publicNote": "ご注意: すべてのコレクションは公開され、発見可能です。"
+      "publicNote": "ご注意: すべてのコレクションは公開され、発見可能です。",
+      "publicNoteShort": "すべてのコレクションは公開され、発見可能です。"
     },
     "followed": {
       "title": "フォロー中のコレクション",
@@ -1358,7 +1360,7 @@
     },
     "bookmarks": {
       "title": "ブックマーク",
-      "description": "あとで見たいものをすべて保存できます。"
+      "description": "あとで見るために保存したものがすべてここにあります。"
     },
     "card": {
       "follow": "フォロー",

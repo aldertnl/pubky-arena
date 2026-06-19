@@ -640,7 +640,7 @@
     },
     "deleteCollection": {
       "title": "Sammlung löschen?",
-      "description": "Diese Aktion kann nicht rückgängig gemacht werden. Die Sammlung wird dauerhaft gelöscht.",
+      "description": "Möchten Sie die Sammlung ‘{name}’ löschen? Nutzer, die sie zu ihren Sammlungen hinzugefügt haben, haben keinen Zugriff mehr und Sie verlieren alle Statistiken.",
       "confirmButton": "Löschen",
       "cancelButton": "Abbrechen"
     },
@@ -1321,6 +1321,7 @@
     "deleted": "Diese Sammlung wurde vom Autor gelöscht.",
     "new": {
       "cta": "Neue Sammlung",
+      "ctaShort": "Neu",
       "title": "Neue Sammlung",
       "nameLabel": "Titel",
       "namePlaceholder": "Proof of Work",
@@ -1333,7 +1334,7 @@
       "coverImageTooLarge": "Das Coverbild ist zu groß.",
       "nameRequired": "Sammlungstitel ist erforderlich.",
       "cancel": "Abbrechen",
-      "save": "Sammlung speichern",
+      "save": "Änderungen speichern",
       "saving": "Wird gespeichert...",
       "created": "Sammlung {name} erstellt",
       "createFailed": "Sammlung konnte nicht erstellt werden."
@@ -1348,7 +1349,8 @@
     "loadFailed": "Sammlungen konnten nicht geladen werden. Bitte erneut versuchen.",
     "my": {
       "title": "Meine Sammlungen",
-      "publicNote": "Hinweis: Alle Sammlungen sind öffentlich und auffindbar."
+      "publicNote": "Hinweis: Alle Sammlungen sind öffentlich und auffindbar.",
+      "publicNoteShort": "Alle Sammlungen sind öffentlich und auffindbar."
     },
     "followed": {
       "title": "Gefolgte Sammlungen",
@@ -1360,7 +1362,7 @@
     },
     "bookmarks": {
       "title": "Lesezeichen",
-      "description": "Alles, was du für später speichern möchtest."
+      "description": "Alles, was du für später gespeichert hast."
     },
     "card": {
       "follow": "Folgen",

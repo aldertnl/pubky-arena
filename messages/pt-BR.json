@@ -638,7 +638,7 @@
     },
     "deleteCollection": {
       "title": "Excluir coleção?",
-      "description": "Esta ação não pode ser desfeita. A coleção será excluída permanentemente.",
+      "description": "Deseja excluir a coleção «{name}»? Os usuários que a adicionaram às suas coleções não terão mais acesso e você perderá todas as estatísticas.",
       "confirmButton": "Excluir",
       "cancelButton": "Cancelar"
     },
@@ -1319,6 +1319,7 @@
     "deleted": "Esta coleção foi excluída pelo autor.",
     "new": {
       "cta": "Nova coleção",
+      "ctaShort": "Nova",
       "title": "Nova coleção",
       "nameLabel": "Título",
       "namePlaceholder": "Proof of Work",
@@ -1331,7 +1332,7 @@
       "coverImageTooLarge": "A imagem de capa é muito grande.",
       "nameRequired": "O título da coleção é obrigatório.",
       "cancel": "Cancelar",
-      "save": "Salvar coleção",
+      "save": "Salvar alterações",
       "saving": "Salvando...",
       "created": "Coleção {name} criada",
       "createFailed": "Falha ao criar a coleção."
@@ -1346,7 +1347,8 @@
     "loadFailed": "Falha ao carregar as coleções. Tente novamente.",
     "my": {
       "title": "Minhas coleções",
-      "publicNote": "Atenção: todas as coleções são públicas e podem ser descobertas."
+      "publicNote": "Atenção: todas as coleções são públicas e podem ser descobertas.",
+      "publicNoteShort": "Todas as coleções são públicas e podem ser descobertas."
     },
     "followed": {
       "title": "Coleções seguidas",
@@ -1358,7 +1360,7 @@
     },
     "bookmarks": {
       "title": "Favoritos",
-      "description": "Tudo o que você quer salvar para mais tarde."
+      "description": "Tudo o que você salvou para mais tarde."
     },
     "card": {
       "follow": "Seguir",

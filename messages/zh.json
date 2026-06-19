@@ -638,7 +638,7 @@
     },
     "deleteCollection": {
       "title": "删除收藏集？",
-      "description": "此操作无法撤销。收藏集将被永久删除。",
+      "description": "确定要删除收藏集「{name}」吗？将其添加到收藏集的用户将无法再访问，您也将失去所有统计数据。",
       "confirmButton": "删除",
       "cancelButton": "取消"
     },
@@ -1313,6 +1313,7 @@
     "deleted": "此收藏集已被作者删除。",
     "new": {
       "cta": "新建收藏集",
+      "ctaShort": "新建",
       "title": "新建收藏集",
       "nameLabel": "标题",
       "namePlaceholder": "Proof of Work",
@@ -1325,7 +1326,7 @@
       "coverImageTooLarge": "封面图片太大。",
       "nameRequired": "收藏集标题为必填项。",
       "cancel": "取消",
-      "save": "保存收藏集",
+      "save": "保存更改",
       "saving": "保存中...",
       "created": "收藏集 {name} 已创建",
       "createFailed": "创建收藏集失败。"
@@ -1340,7 +1341,8 @@
     "loadFailed": "加载收藏集失败，请重试。",
     "my": {
       "title": "我的收藏集",
-      "publicNote": "请注意：所有收藏集均为公开且可被发现。"
+      "publicNote": "请注意：所有收藏集均为公开且可被发现。",
+      "publicNoteShort": "所有收藏集均为公开且可被发现。"
     },
     "followed": {
       "title": "已关注的收藏集",
@@ -1352,7 +1354,7 @@
     },
     "bookmarks": {
       "title": "书签",
-      "description": "保存你想稍后查看的所有内容。"
+      "description": "您保存以供稍后查看的所有内容。"
     },
     "card": {
       "follow": "关注",

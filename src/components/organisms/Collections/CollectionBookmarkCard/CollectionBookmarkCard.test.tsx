@@ -2,14 +2,28 @@ import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { COLLECTION_ROUTES } from '@/app/routes';
 import { useBookmarksCollectionSummary } from '@/hooks/useBookmarksCollectionSummary/useBookmarksCollectionSummary';
+import enMessages from '../../../../../messages/en.json';
 import { CollectionBookmarkCard } from './CollectionBookmarkCard';
+
+const BOOKMARKS_COPY = enMessages.collections.bookmarks;
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
 vi.mock('next-intl', () => ({
-  useTranslations: (namespace?: string) => (key: string) => `${namespace ?? ''}.${key}`,
+  useTranslations: (namespace?: string) => (key: string) => {
+    if (namespace !== 'collections') {
+      return `${namespace ?? ''}.${key}`;
+    }
+
+    const nestedKeys: Record<string, string> = {
+      'bookmarks.title': BOOKMARKS_COPY.title,
+      'bookmarks.description': BOOKMARKS_COPY.description,
+    };
+
+    return nestedKeys[key] ?? `collections.${key}`;
+  },
   useFormatter: () => ({
     number: (value: number, _options?: Intl.NumberFormatOptions) => String(value),
   }),
@@ -91,22 +105,22 @@ describe('CollectionBookmarkCard', () => {
     setup();
     render(<CollectionBookmarkCard />);
 
-    const link = screen.getByRole('link', { name: 'collections.bookmarks.title' });
+    const link = screen.getByRole('link', { name: BOOKMARKS_COPY.title });
     expect(link).toHaveAttribute('href', COLLECTION_ROUTES.BOOKMARKS);
     expect(link).toHaveAttribute('data-cy', 'collection-bookmark-card');
-    expect(link).toHaveAttribute('aria-label', 'collections.bookmarks.title');
+    expect(link).toHaveAttribute('aria-label', BOOKMARKS_COPY.title);
   });
 
   it('renders the title from i18n', () => {
     setup();
     render(<CollectionBookmarkCard />);
-    expect(screen.getByText('collections.bookmarks.title')).toBeInTheDocument();
+    expect(screen.getByText(BOOKMARKS_COPY.title)).toBeInTheDocument();
   });
 
   it('renders the description from i18n', () => {
     setup();
     render(<CollectionBookmarkCard />);
-    expect(screen.getByText('collections.bookmarks.description')).toBeInTheDocument();
+    expect(screen.getByText(BOOKMARKS_COPY.description)).toBeInTheDocument();
   });
 
   it('hides the bookmark count label (temporarily, pending an accurate BE count)', () => {
@@ -138,7 +152,7 @@ describe('CollectionBookmarkCard', () => {
     setup();
     render(<CollectionBookmarkCard className="custom-extra-class" />);
 
-    const link = screen.getByRole('link', { name: 'collections.bookmarks.title' });
+    const link = screen.getByRole('link', { name: BOOKMARKS_COPY.title });
     expect(link.className).toContain('custom-extra-class');
   });
 });

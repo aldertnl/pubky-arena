@@ -29,7 +29,7 @@ export function BookmarksHero({
   // bookmarkCount,
   isProfileResolved,
 }: BookmarksHeroProps) {
-  const t = useTranslations('collections.bookmarks');
+  const t = useTranslations('collections');
 
   return (
     <Card data-cy="bookmarks-hero" className="relative overflow-hidden rounded-md py-0">
@@ -45,7 +45,7 @@ export function BookmarksHero({
           overrideDefaults
           className="min-w-0 text-5xl leading-none font-bold text-foreground md:text-6xl"
         >
-          {t('title')}
+          {t('bookmarks.title')}
         </Typography>
 
         <Container overrideDefaults className="flex w-full flex-wrap items-center gap-3 sm:gap-6">
@@ -66,7 +66,7 @@ export function BookmarksHero({
           overrideDefaults
           className="max-w-full text-xl leading-7 font-light text-muted-foreground md:text-2xl md:leading-8"
         >
-          {t('description')}
+          {t('bookmarks.description')}
         </Typography>
       </CardContent>
     </Card>

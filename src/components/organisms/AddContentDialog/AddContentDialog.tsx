@@ -41,7 +41,7 @@ const AddContentTrigger = forwardRef<
       aria-label={t('addContent')}
       data-cy={dataCy}
       className={cn(
-        'flex h-39 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-input p-6 text-muted-foreground transition-colors outline-none hover:border-foreground hover:text-foreground focus:outline-none focus-visible:ring-0 focus-visible:outline-none',
+        'flex h-39 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-input p-6 text-foreground transition-colors outline-none hover:border-foreground focus:outline-none focus-visible:ring-0 focus-visible:outline-none',
         className,
       )}
       {...props}

@@ -20,7 +20,7 @@ exports[`BookmarksHero - Snapshots > matches the snapshot with count and avatar 
       class="min-w-0 text-5xl leading-none font-bold text-foreground md:text-6xl"
       data-testid="typography"
     >
-      collections.bookmarks.title
+      Bookmarks
     </h1>
     <div
       class="flex w-full flex-wrap items-center gap-3 sm:gap-6"
@@ -52,7 +52,7 @@ exports[`BookmarksHero - Snapshots > matches the snapshot with count and avatar 
       class="max-w-full text-xl leading-7 font-light text-muted-foreground md:text-2xl md:leading-8"
       data-testid="typography"
     >
-      collections.bookmarks.description
+      Everything you saved for later.
     </p>
   </div>
 </div>

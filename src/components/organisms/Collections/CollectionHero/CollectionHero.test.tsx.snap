@@ -24,11 +24,11 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the non-owner Fol
       Based Bitcoin
     </h1>
     <div
-      class="flex flex-wrap items-center gap-x-4 gap-y-2"
+      class="flex w-full items-center gap-6"
       data-testid="container"
     >
       <div
-        class="flex min-w-0 items-center gap-2"
+        class="flex items-center min-w-0 flex-1 gap-2 lg:flex-none"
         data-testid="container"
       >
         <div
@@ -127,14 +127,14 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the non-owner Fol
       </button>
       <button
         aria-label="collections.single.share"
-        class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-8 px-3 has-[>svg]:px-3.5 gap-2 text-xs"
-        data-size="sm"
+        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9"
+        data-size="icon"
         data-slot="button"
         data-variant="secondary"
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-share2 lucide-share-2 size-4"
+          class="lucide lucide-sticky-note size-4"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -145,35 +145,13 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the non-owner Fol
           width="24"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <circle
-            cx="18"
-            cy="5"
-            r="3"
+          <path
+            d="M21 9a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"
           />
-          <circle
-            cx="6"
-            cy="12"
-            r="3"
-          />
-          <circle
-            cx="18"
-            cy="19"
-            r="3"
-          />
-          <line
-            x1="8.59"
-            x2="15.42"
-            y1="13.51"
-            y2="17.49"
-          />
-          <line
-            x1="15.41"
-            x2="8.59"
-            y1="6.51"
-            y2="10.49"
+          <path
+            d="M15 3v5a1 1 0 0 0 1 1h5"
           />
         </svg>
-        collections.single.share
       </button>
     </div>
   </div>
@@ -207,11 +185,11 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the owner state 1
       Based Bitcoin
     </h1>
     <div
-      class="flex flex-wrap items-center gap-x-4 gap-y-2"
+      class="flex w-full items-center gap-6"
       data-testid="container"
     >
       <div
-        class="flex min-w-0 items-center gap-2"
+        class="flex items-center min-w-0 flex-1 gap-2 lg:flex-none"
         data-testid="container"
       >
         <div
@@ -281,14 +259,14 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the owner state 1
     >
       <button
         aria-label="collections.single.share"
-        class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-8 px-3 has-[>svg]:px-3.5 gap-2 text-xs"
-        data-size="sm"
+        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9"
+        data-size="icon"
         data-slot="button"
         data-variant="secondary"
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-share2 lucide-share-2 size-4"
+          class="lucide lucide-sticky-note size-4"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -299,40 +277,18 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the owner state 1
           width="24"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <circle
-            cx="18"
-            cy="5"
-            r="3"
+          <path
+            d="M21 9a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"
           />
-          <circle
-            cx="6"
-            cy="12"
-            r="3"
-          />
-          <circle
-            cx="18"
-            cy="19"
-            r="3"
-          />
-          <line
-            x1="8.59"
-            x2="15.42"
-            y1="13.51"
-            y2="17.49"
-          />
-          <line
-            x1="15.41"
-            x2="8.59"
-            y1="6.51"
-            y2="10.49"
+          <path
+            d="M15 3v5a1 1 0 0 0 1 1h5"
           />
         </svg>
-        collections.single.share
       </button>
       <button
         aria-label="collections.single.edit"
-        class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-8 px-3 has-[>svg]:px-3.5 gap-2 text-xs"
-        data-size="sm"
+        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9"
+        data-size="icon"
         data-slot="button"
         data-variant="secondary"
       >
@@ -356,12 +312,11 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the owner state 1
             d="m15 5 4 4"
           />
         </svg>
-        collections.single.edit
       </button>
       <button
         aria-label="collections.single.delete"
-        class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-8 px-3 has-[>svg]:px-3.5 gap-2 text-xs"
-        data-size="sm"
+        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9"
+        data-size="icon"
         data-slot="button"
         data-variant="secondary"
       >
@@ -394,7 +349,6 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the owner state 1
             d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
           />
         </svg>
-        collections.single.delete
       </button>
     </div>
   </div>
@@ -422,11 +376,11 @@ exports[`CollectionHero - Snapshots > matches the snapshot when no cover image a
       Quiet collection
     </h1>
     <div
-      class="flex flex-wrap items-center gap-x-4 gap-y-2"
+      class="flex w-full items-center gap-6"
       data-testid="container"
     >
       <div
-        class="flex min-w-0 items-center gap-2"
+        class="flex items-center min-w-0 flex-1 gap-2 lg:flex-none"
         data-testid="container"
       >
         <div
@@ -519,14 +473,14 @@ exports[`CollectionHero - Snapshots > matches the snapshot when no cover image a
       </button>
       <button
         aria-label="collections.single.share"
-        class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-8 px-3 has-[>svg]:px-3.5 gap-2 text-xs"
-        data-size="sm"
+        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9"
+        data-size="icon"
         data-slot="button"
         data-variant="secondary"
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-share2 lucide-share-2 size-4"
+          class="lucide lucide-sticky-note size-4"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -537,35 +491,13 @@ exports[`CollectionHero - Snapshots > matches the snapshot when no cover image a
           width="24"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <circle
-            cx="18"
-            cy="5"
-            r="3"
+          <path
+            d="M21 9a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"
           />
-          <circle
-            cx="6"
-            cy="12"
-            r="3"
-          />
-          <circle
-            cx="18"
-            cy="19"
-            r="3"
-          />
-          <line
-            x1="8.59"
-            x2="15.42"
-            y1="13.51"
-            y2="17.49"
-          />
-          <line
-            x1="15.41"
-            x2="8.59"
-            y1="6.51"
-            y2="10.49"
+          <path
+            d="M15 3v5a1 1 0 0 0 1 1h5"
           />
         </svg>
-        collections.single.share
       </button>
     </div>
   </div>

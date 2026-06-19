@@ -638,7 +638,7 @@
     },
     "deleteCollection": {
       "title": "Delete collection?",
-      "description": "This action cannot be undone. The collection will be permanently deleted.",
+      "description": "Do you want to delete the collection ‘{name}’? Users who added it to their collections will no longer have access and you will lose all stats.",
       "confirmButton": "Delete",
       "cancelButton": "Cancel"
     },
@@ -1319,6 +1319,7 @@
     "deleted": "This collection has been deleted by its author.",
     "new": {
       "cta": "New Collection",
+      "ctaShort": "New",
       "title": "New Collection",
       "nameLabel": "Title",
       "namePlaceholder": "Proof of Work",
@@ -1331,7 +1332,7 @@
       "coverImageTooLarge": "Cover image is too large.",
       "nameRequired": "Collection title is required.",
       "cancel": "Cancel",
-      "save": "Save collection",
+      "save": "Save changes",
       "saving": "Saving...",
       "created": "Collection {name} created",
       "createFailed": "Failed to create collection."
@@ -1346,7 +1347,8 @@
     "loadFailed": "Failed to load collections. Please try again.",
     "my": {
       "title": "My Collections",
-      "publicNote": "Please note: all collections are public and discoverable."
+      "publicNote": "Please note: all collections are public and discoverable.",
+      "publicNoteShort": "All collections are public and discoverable."
     },
     "followed": {
       "title": "Followed Collections",
@@ -1358,7 +1360,7 @@
     },
     "bookmarks": {
       "title": "Bookmarks",
-      "description": "Everything you want to save for later."
+      "description": "Everything you saved for later."
     },
     "card": {
       "follow": "Follow",
