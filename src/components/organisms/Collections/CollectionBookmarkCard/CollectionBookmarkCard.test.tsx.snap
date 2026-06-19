@@ -3,21 +3,21 @@
 exports[`CollectionBookmarkCard - Snapshots > matches the snapshot for a signed-in user with full state 1`] = `
 <a
   aria-label="Bookmarks"
-  class="block h-full w-full lg:max-w-187"
+  class="block h-auto w-full lg:h-full lg:max-w-187"
   data-cy="collection-bookmark-card"
   href="/collections/bookmarks"
 >
   <div
-    class="flex flex-col bg-card text-card-foreground shadow-sm h-full gap-3 rounded-md py-0"
+    class="flex flex-col bg-card text-card-foreground shadow-sm h-auto gap-3 rounded-md py-0 lg:h-full"
     data-slot="card"
     data-testid="card"
   >
     <div
-      class="flex h-full flex-col gap-3 p-6"
+      class="flex h-auto flex-col gap-3 p-6 lg:h-full"
       data-slot="card-content"
     >
       <div
-        class="flex w-full flex-wrap items-center gap-2 sm:flex-nowrap"
+        class="flex w-full flex-wrap items-center gap-2 lg:flex-nowrap"
         data-testid="container"
       >
         <div
@@ -49,7 +49,7 @@ exports[`CollectionBookmarkCard - Snapshots > matches the snapshot for a signed-
           </span>
         </div>
         <div
-          class="flex shrink-0 items-center gap-2 sm:gap-3"
+          class="flex shrink-0 items-center justify-end gap-2 lg:gap-3"
           data-testid="container"
         >
           <div
@@ -78,21 +78,21 @@ exports[`CollectionBookmarkCard - Snapshots > matches the snapshot for a signed-
 exports[`CollectionBookmarkCard - Snapshots > matches the snapshot for the signed-out / no-data fallback state 1`] = `
 <a
   aria-label="Bookmarks"
-  class="block h-full w-full lg:max-w-187"
+  class="block h-auto w-full lg:h-full lg:max-w-187"
   data-cy="collection-bookmark-card"
   href="/collections/bookmarks"
 >
   <div
-    class="flex flex-col bg-card text-card-foreground shadow-sm h-full gap-3 rounded-md py-0"
+    class="flex flex-col bg-card text-card-foreground shadow-sm h-auto gap-3 rounded-md py-0 lg:h-full"
     data-slot="card"
     data-testid="card"
   >
     <div
-      class="flex h-full flex-col gap-3 p-6"
+      class="flex h-auto flex-col gap-3 p-6 lg:h-full"
       data-slot="card-content"
     >
       <div
-        class="flex w-full flex-wrap items-center gap-2 sm:flex-nowrap"
+        class="flex w-full flex-wrap items-center gap-2 lg:flex-nowrap"
         data-testid="container"
       >
         <div
@@ -124,7 +124,7 @@ exports[`CollectionBookmarkCard - Snapshots > matches the snapshot for the signe
           </span>
         </div>
         <div
-          class="flex shrink-0 items-center gap-2 sm:gap-3"
+          class="flex shrink-0 items-center justify-end gap-2 lg:gap-3"
           data-testid="container"
         >
           <div

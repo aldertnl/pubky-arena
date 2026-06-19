@@ -35,6 +35,20 @@ vi.mock('@/hooks/useBookmark/useBookmark', () => ({
   useBookmark: vi.fn(),
 }));
 
+vi.mock('@/organisms/PostActionsBar/PostActionsBar', () => ({
+  PostActionsBar: ({ postId, onTagClick }: { postId: string; onTagClick?: () => void; tagOnly?: boolean }) => (
+    <button
+      type="button"
+      data-testid="post-tag-btn"
+      data-post-id={postId}
+      onClick={onTagClick}
+      aria-label="Tag post (5)"
+    >
+      Tag
+    </button>
+  ),
+}));
+
 vi.mock('@/hooks/usePostReplyRepostDialogs/usePostReplyRepostDialogs', () => ({
   usePostReplyRepostDialogs: vi.fn(),
 }));
@@ -137,6 +151,12 @@ vi.mock('@/organisms/ClickableTagsList/ClickableTagsList', () => ({
       data-tagged-kind={String(taggedKind)}
       data-show-add-button={String(showAddButton)}
     />
+  ),
+}));
+
+vi.mock('@/organisms/PostTagsPanel/PostTagsPanel', () => ({
+  PostTagsPanel: ({ postId, widthMode }: { postId: string; widthMode?: string }) => (
+    <div data-testid="post-tags-panel" data-post-id={postId} data-width-mode={widthMode ?? ''} />
   ),
 }));
 
@@ -265,6 +285,37 @@ describe('CollectionHero', () => {
     expect(tags).toHaveAttribute('data-tagged-id', COMPOSITE_ID);
     expect(tags).toHaveAttribute('data-tagged-kind', String(TagKind.POST));
     expect(tags).toHaveAttribute('data-show-add-button', 'true');
+  });
+
+  it('renders the tag count button from post counts', () => {
+    render(<CollectionHero authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+
+    expect(screen.getByLabelText('Tag post (5)')).toBeInTheDocument();
+  });
+
+  it('swaps ClickableTagsList for PostTagsPanel when the tag button is clicked', () => {
+    render(<CollectionHero authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+
+    expect(screen.getByTestId('clickable-tags-list')).toBeInTheDocument();
+    expect(screen.queryByTestId('post-tags-panel')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Tag post (5)'));
+
+    const panel = screen.getByTestId('post-tags-panel');
+    expect(panel).toHaveAttribute('data-post-id', COMPOSITE_ID);
+    expect(panel).toHaveAttribute('data-width-mode', 'fit');
+    expect(screen.queryByTestId('clickable-tags-list')).not.toBeInTheDocument();
+  });
+
+  it('toggles back to ClickableTagsList when the tag button is clicked again', () => {
+    render(<CollectionHero authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+
+    const tagButton = screen.getByLabelText('Tag post (5)');
+    fireEvent.click(tagButton);
+    fireEvent.click(tagButton);
+
+    expect(screen.getByTestId('clickable-tags-list')).toBeInTheDocument();
+    expect(screen.queryByTestId('post-tags-panel')).not.toBeInTheDocument();
   });
 
   it('omits the description block when the envelope description is empty / nullish', () => {

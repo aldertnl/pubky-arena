@@ -50,11 +50,11 @@ export function CollectionBookmarkCard({ className }: CollectionBookmarkCardProp
       href={COLLECTION_ROUTES.BOOKMARKS}
       aria-label={title}
       data-cy="collection-bookmark-card"
-      className={cn('block h-full w-full lg:max-w-187', className)}
+      className={cn('block h-auto w-full lg:h-full lg:max-w-187', className)}
     >
-      <Card className="h-full gap-3 rounded-md py-0">
-        <CardContent className="flex h-full flex-col gap-3 p-6">
-          <Container overrideDefaults className="flex w-full flex-wrap items-center gap-2 sm:flex-nowrap">
+      <Card className="h-auto gap-3 rounded-md py-0 lg:h-full">
+        <CardContent className="flex h-auto flex-col gap-3 p-6 lg:h-full">
+          <Container overrideDefaults className="flex w-full flex-wrap items-center gap-2 lg:flex-nowrap">
             <Container overrideDefaults className="flex min-w-0 flex-1 items-center gap-2">
               <Bookmark className="size-6 shrink-0" />
               <Typography
@@ -66,7 +66,7 @@ export function CollectionBookmarkCard({ className }: CollectionBookmarkCardProp
               </Typography>
             </Container>
 
-            <Container overrideDefaults className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <Container overrideDefaults className="flex shrink-0 items-center justify-end gap-2 lg:gap-3">
               {/* TODO: Bookmark count badge hidden — see import note above. Re-enable once
                   the backend provides an accurate posts-only bookmark count. */}
               {/* {bookmarkCount !== undefined && <CollectionCountBadge count={bookmarkCount} />} */}

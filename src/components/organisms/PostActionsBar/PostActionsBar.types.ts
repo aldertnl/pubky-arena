@@ -7,6 +7,8 @@ export interface PostActionsBarProps {
   onRepostClick?: () => void;
   className?: string;
   variant?: 'default' | 'visual';
+  /** When true, renders only the tag toggle button (collections card/hero). */
+  tagOnly?: boolean;
 }
 
 export interface ActionButtonConfig {

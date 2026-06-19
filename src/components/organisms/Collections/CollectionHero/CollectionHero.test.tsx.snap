@@ -87,11 +87,29 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the non-owner Fol
       A bit of Bitcoin purity amidst all of the madness.
     </p>
     <div
-      data-show-add-button="true"
-      data-tagged-id="o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy:0034BBBDFK83G"
-      data-tagged-kind="post"
-      data-testid="clickable-tags-list"
-    />
+      class="flex w-full flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4 sm:items-start"
+      data-testid="container"
+    >
+      <div
+        class="w-full min-w-0 flex-1"
+        data-testid="container"
+      >
+        <div
+          data-show-add-button="true"
+          data-tagged-id="o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy:0034BBBDFK83G"
+          data-tagged-kind="post"
+          data-testid="clickable-tags-list"
+        />
+      </div>
+      <button
+        aria-label="Tag post (5)"
+        data-post-id="o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy:0034BBBDFK83G"
+        data-testid="post-tag-btn"
+        type="button"
+      >
+        Tag
+      </button>
+    </div>
     <div
       class="flex flex-wrap items-center gap-3"
       data-testid="container"
@@ -127,8 +145,8 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the non-owner Fol
       </button>
       <button
         aria-label="collections.single.share"
-        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9 lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
-        data-size="icon"
+        class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-8 has-[>svg]:px-3.5 gap-1.5 px-3.5 text-xs"
+        data-size="sm"
         data-slot="button"
         data-variant="secondary"
       >
@@ -254,19 +272,37 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the owner state 1
       A bit of Bitcoin purity amidst all of the madness.
     </p>
     <div
-      data-show-add-button="true"
-      data-tagged-id="o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy:0034BBBDFK83G"
-      data-tagged-kind="post"
-      data-testid="clickable-tags-list"
-    />
+      class="flex w-full flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4 sm:items-start"
+      data-testid="container"
+    >
+      <div
+        class="w-full min-w-0 flex-1"
+        data-testid="container"
+      >
+        <div
+          data-show-add-button="true"
+          data-tagged-id="o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy:0034BBBDFK83G"
+          data-tagged-kind="post"
+          data-testid="clickable-tags-list"
+        />
+      </div>
+      <button
+        aria-label="Tag post (5)"
+        data-post-id="o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy:0034BBBDFK83G"
+        data-testid="post-tag-btn"
+        type="button"
+      >
+        Tag
+      </button>
+    </div>
     <div
       class="flex flex-wrap items-center gap-3"
       data-testid="container"
     >
       <button
         aria-label="collections.single.share"
-        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9 lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
-        data-size="icon"
+        class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-8 has-[>svg]:px-3.5 gap-1.5 px-3.5 text-xs"
+        data-size="sm"
         data-slot="button"
         data-variant="secondary"
       >
@@ -299,8 +335,8 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the owner state 1
       </button>
       <button
         aria-label="collections.single.edit"
-        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9 lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
-        data-size="icon"
+        class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-8 has-[>svg]:px-3.5 gap-1.5 px-3.5 text-xs"
+        data-size="sm"
         data-slot="button"
         data-variant="secondary"
       >
@@ -333,8 +369,8 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the owner state 1
       </button>
       <button
         aria-label="collections.single.delete"
-        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9 lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
-        data-size="icon"
+        class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-8 has-[>svg]:px-3.5 gap-1.5 px-3.5 text-xs"
+        data-size="sm"
         data-slot="button"
         data-variant="secondary"
       >
@@ -457,11 +493,29 @@ exports[`CollectionHero - Snapshots > matches the snapshot when no cover image a
       </div>
     </div>
     <div
-      data-show-add-button="true"
-      data-tagged-id="o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy:0034BBBDFK83G"
-      data-tagged-kind="post"
-      data-testid="clickable-tags-list"
-    />
+      class="flex w-full flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4 sm:items-start"
+      data-testid="container"
+    >
+      <div
+        class="w-full min-w-0 flex-1"
+        data-testid="container"
+      >
+        <div
+          data-show-add-button="true"
+          data-tagged-id="o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy:0034BBBDFK83G"
+          data-tagged-kind="post"
+          data-testid="clickable-tags-list"
+        />
+      </div>
+      <button
+        aria-label="Tag post (5)"
+        data-post-id="o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy:0034BBBDFK83G"
+        data-testid="post-tag-btn"
+        type="button"
+      >
+        Tag
+      </button>
+    </div>
     <div
       class="flex flex-wrap items-center gap-3"
       data-testid="container"
@@ -497,8 +551,8 @@ exports[`CollectionHero - Snapshots > matches the snapshot when no cover image a
       </button>
       <button
         aria-label="collections.single.share"
-        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9 lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
-        data-size="icon"
+        class="inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-8 has-[>svg]:px-3.5 gap-1.5 px-3.5 text-xs"
+        data-size="sm"
         data-slot="button"
         data-variant="secondary"
       >

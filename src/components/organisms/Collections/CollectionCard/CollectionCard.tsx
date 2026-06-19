@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { type MouseEvent, useState } from 'react';
 import { Library, Minus, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { getCollectionRoute } from '@/app/routes';
@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/atoms/Card/Card';
 import { Container } from '@/atoms/Container/Container';
 import { Link } from '@/atoms/Link/Link';
 import { Typography } from '@/atoms/Typography/Typography';
+import { POST_TAGS_MAX_LENGTH, POST_TAGS_MAX_TOTAL_CHARS } from '@/config/tags';
 import { useBookmark } from '@/hooks/useBookmark/useBookmark';
 import { useDeletePost } from '@/hooks/useDeletePost/useDeletePost';
 import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
@@ -25,6 +26,8 @@ import { DialogConfirmDelete } from '@/molecules/DialogConfirmDelete/DialogConfi
 import { AvatarWithFallback } from '@/organisms/AvatarWithFallback/AvatarWithFallback';
 import { ClickableTagsList } from '@/organisms/ClickableTagsList/ClickableTagsList';
 import { CollectionCardSkeleton } from '@/organisms/Collections/CollectionCard/CollectionCard.skeleton';
+import { PostActionsBar } from '@/organisms/PostActionsBar/PostActionsBar';
+import { PostTagsPanel } from '@/organisms/PostTagsPanel/PostTagsPanel';
 import { useAuthStore } from '@/stores/auth/auth.store';
 import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
 
@@ -175,12 +178,12 @@ function CollectionCardContent({
   // Both calls are required: `preventDefault` blocks the native `<a>` default
   // action; `stopPropagation` keeps the event from reaching any parent React
   // handlers (and is harmless when called on a leaf handler).
-  const suppressCardNavigation = (event: React.MouseEvent) => {
+  const suppressCardNavigation = (event: MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
   };
 
-  const handleFollowToggle = (event: React.MouseEvent) => {
+  const handleFollowToggle = (event: MouseEvent) => {
     suppressCardNavigation(event);
     if (isToggling) return;
     void toggle();
@@ -199,8 +202,9 @@ function CollectionCardContent({
     },
   });
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [tagsExpanded, setTagsExpanded] = useState(false);
 
-  const handleDelete = (event: React.MouseEvent) => {
+  const handleDelete = (event: MouseEvent) => {
     suppressCardNavigation(event);
     setDeleteConfirmOpen(true);
   };
@@ -216,14 +220,14 @@ function CollectionCardContent({
         href={href}
         aria-label={title}
         data-cy="collection-card"
-        className={cn('group relative block h-full w-full lg:max-w-187', className)}
+        className={cn('group relative block h-auto w-full lg:h-full lg:max-w-187', className)}
       >
         <Card
           className={cn(
             // `isolate` creates a new stacking context so the cover image at `-z-10`
             // stays behind this card's content but does not slip behind an enclosing
             // post card's opaque background when nested in `PostContentBase`.
-            'relative isolate h-full gap-0 overflow-hidden rounded-md py-0',
+            'relative isolate h-auto gap-0 overflow-hidden rounded-md py-0 lg:h-full',
             coverImage && 'border-transparent bg-card/40',
             // Preview contexts pick their bg based on how nested they are:
             // one card-step deep (inline feed, dialog repost) reads fine on `bg-muted`,
@@ -243,9 +247,9 @@ function CollectionCardContent({
             />
           )}
 
-          <CardContent className="flex h-full flex-col gap-3 p-6">
-            {/* Header row: icon + title (left, grows) | item-count + avatar (right) */}
-            <Container overrideDefaults className="flex w-full flex-wrap items-center gap-3 sm:flex-nowrap">
+          <CardContent className="flex h-auto flex-col gap-3 p-6 lg:h-full">
+            {/* Header row: icon + title (left) | item-count + avatar (right, web only count) */}
+            <Container overrideDefaults className="flex w-full flex-wrap items-center gap-2 lg:flex-nowrap">
               <Container overrideDefaults className="flex min-w-0 flex-1 items-center gap-2">
                 <Library className="size-6 shrink-0 text-foreground" />
                 <Typography
@@ -257,8 +261,10 @@ function CollectionCardContent({
                 </Typography>
               </Container>
 
-              <Container overrideDefaults className="flex shrink-0 items-center justify-end gap-3">
-                <CollectionCountBadge count={itemCount} />
+              <Container overrideDefaults className="flex shrink-0 items-center justify-end gap-2 lg:gap-3">
+                <Container overrideDefaults className="hidden items-center lg:flex">
+                  <CollectionCountBadge count={itemCount} />
+                </Container>
 
                 <AvatarWithFallback
                   avatarUrl={ownerAvatarUrl}
@@ -270,39 +276,54 @@ function CollectionCardContent({
               </Container>
             </Container>
 
-            {/* Description */}
-            {description && (
+            {/* Description — hug content on mobile; one-line slot on lg for equal card height. */}
+            {description ? (
               <Typography
                 overrideDefaults
-                className="line-clamp-2 w-full min-w-0 text-base leading-6 font-medium wrap-anywhere text-muted-foreground"
+                className="line-clamp-1 w-full min-w-0 text-base leading-6 font-medium wrap-anywhere text-muted-foreground"
               >
                 {description}
               </Typography>
+            ) : (
+              <Typography
+                overrideDefaults
+                aria-hidden
+                className="line-clamp-1 hidden min-h-6 w-full min-w-0 text-base leading-6 font-medium lg:block"
+              >
+                {'\u00A0'}
+              </Typography>
             )}
 
-            {/* Bottom row: tags (left, grows) | action button (right).
-              Hidden in `preview` so embedded collections (repost dialog, repost
-              previews) match how normal reposts render — no inline tags, no
-              actions on the previewed post. */}
+            {/* Bottom row: tags (left) | tag toggle + action (right). */}
             {!isPreview && (
               <Container
                 overrideDefaults
                 onClick={suppressCardNavigation}
                 onAuxClick={suppressCardNavigation}
-                className="flex w-full flex-wrap items-center justify-between gap-3 sm:flex-nowrap"
+                className={cn(
+                  'flex w-full items-start gap-3 lg:mt-auto lg:flex-wrap lg:gap-2',
+                  tagsExpanded ? 'items-end' : 'lg:min-h-8',
+                )}
               >
                 <Container overrideDefaults className="min-w-0 flex-1">
-                  <ClickableTagsList
-                    taggedId={compositeId}
-                    taggedKind={TagKind.POST}
-                    showCount={true}
-                    showInput={false}
-                    showAddButton={true}
-                    addMode={true}
-                  />
+                  {tagsExpanded ? (
+                    <PostTagsPanel postId={compositeId} widthMode="fit" autoFocusInput enableLoadingSkeleton={false} />
+                  ) : (
+                    <ClickableTagsList
+                      taggedId={compositeId}
+                      taggedKind={TagKind.POST}
+                      maxTagLength={POST_TAGS_MAX_LENGTH}
+                      maxTotalChars={POST_TAGS_MAX_TOTAL_CHARS}
+                      showCount={true}
+                      showInput={false}
+                      showAddButton={true}
+                      addMode={true}
+                    />
+                  )}
                 </Container>
 
                 <Container overrideDefaults className="flex shrink-0 items-center gap-2">
+                  <PostActionsBar postId={compositeId} tagOnly onTagClick={() => setTagsExpanded((prev) => !prev)} />
                   {isOwn ? (
                     <Button
                       variant="secondary"
@@ -310,10 +331,9 @@ function CollectionCardContent({
                       onClick={handleDelete}
                       disabled={isDeleting}
                       aria-label={t('delete')}
-                      className="gap-2 text-xs"
+                      className="shrink-0 border-none px-3.5 shadow-xs"
                     >
                       <Trash2 className="size-4" />
-                      {t('delete')}
                     </Button>
                   ) : (
                     <Button
@@ -322,7 +342,7 @@ function CollectionCardContent({
                       onClick={handleFollowToggle}
                       disabled={isToggling}
                       aria-label={isBookmarked ? t('unfollow') : t('follow')}
-                      className="gap-2 text-xs"
+                      className="shrink-0 gap-2 px-3.5 text-xs"
                     >
                       {isBookmarked ? <Minus className="size-4" /> : <Plus className="size-4" />}
                       {isBookmarked ? t('unfollow') : t('follow')}

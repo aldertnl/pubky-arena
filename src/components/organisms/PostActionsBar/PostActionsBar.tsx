@@ -43,6 +43,7 @@ export function PostActionsBar({
   onRepostClick,
   className,
   variant = 'default',
+  tagOnly = false,
 }: PostActionsBarProps) {
   const { postCounts, isLoading: isCountsLoading } = usePostCounts(postId);
   const { postDetails } = usePostDetails(postId);
@@ -63,7 +64,7 @@ export function PostActionsBar({
   };
   const tagCount = postCounts.unique_tags ?? 0;
   const isCollection = postDetails?.kind === 'collection';
-  const actionButtons: ActionButtonConfig[] = [
+  const allActionButtons: ActionButtonConfig[] = [
     {
       id: 'tag',
       icon: Tag,
@@ -86,6 +87,7 @@ export function PostActionsBar({
       ariaLabel: `Repost (${postCounts.reposts})`,
     },
   ];
+  const actionButtons = tagOnly ? allActionButtons.filter(({ id }) => id === 'tag') : allActionButtons;
   const moreButton = (
     <Button {...commonButtonProps} aria-label="More options" data-cy="post-more-btn">
       <Ellipsis />
@@ -113,8 +115,8 @@ export function PostActionsBar({
           </Button>
         ),
       )}
-      {!isCollection && <PostSavePicker postId={postId} buttonClassName={buttonClassName} />}
-      <PostMenuActions postId={postId} trigger={moreButton} />
+      {!tagOnly && !isCollection && <PostSavePicker postId={postId} buttonClassName={buttonClassName} />}
+      {!tagOnly && <PostMenuActions postId={postId} trigger={moreButton} />}
     </Container>
   );
 }

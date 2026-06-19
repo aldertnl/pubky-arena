@@ -10,6 +10,7 @@ import { Button } from '@/atoms/Button/Button';
 import { Card, CardContent } from '@/atoms/Card/Card';
 import { Container } from '@/atoms/Container/Container';
 import { Typography } from '@/atoms/Typography/Typography';
+import { POST_TAGS_MAX_LENGTH, POST_TAGS_MAX_TOTAL_CHARS } from '@/config/tags';
 import { useBookmark } from '@/hooks/useBookmark/useBookmark';
 import { useDeletePost } from '@/hooks/useDeletePost/useDeletePost';
 import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
@@ -24,6 +25,8 @@ import { ClickableTagsList } from '@/organisms/ClickableTagsList/ClickableTagsLi
 import { CollectionHeroSkeleton } from '@/organisms/Collections/CollectionHero/CollectionHero.skeleton';
 import { EditCollectionDialog } from '@/organisms/EditCollectionDialog/EditCollectionDialog';
 import { HeroOwner } from '@/organisms/HeroOwner/HeroOwner';
+import { PostActionsBar } from '@/organisms/PostActionsBar/PostActionsBar';
+import { PostTagsPanel } from '@/organisms/PostTagsPanel/PostTagsPanel';
 import { FileVariant } from '@/services/nexus/file/file.types';
 import { useAuthStore } from '@/stores/auth/auth.store';
 import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
@@ -133,6 +136,7 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
     },
   });
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [tagsExpanded, setTagsExpanded] = useState(false);
   const handleDelete = () => setDeleteConfirmOpen(true);
   const handleDeleteConfirm = async () => {
     await deletePost(compositeId);
@@ -192,30 +196,50 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
           </Typography>
         )}
 
-        {/* Tags */}
-        <ClickableTagsList
-          taggedId={compositeId}
-          taggedKind={TagKind.POST}
-          showCount={true}
-          showInput={false}
-          showAddButton={true}
-          addMode={true}
-        />
+        {/* Tags row — tag toggle stays on the right; Share/Edit/Delete live below. */}
+        <Container
+          overrideDefaults
+          className={cn(
+            'flex w-full flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4',
+            tagsExpanded ? 'sm:items-end' : 'sm:items-start',
+          )}
+        >
+          <Container overrideDefaults className="w-full min-w-0 flex-1">
+            {tagsExpanded ? (
+              <PostTagsPanel postId={compositeId} widthMode="fit" autoFocusInput enableLoadingSkeleton={false} />
+            ) : (
+              <ClickableTagsList
+                taggedId={compositeId}
+                taggedKind={TagKind.POST}
+                maxTagLength={POST_TAGS_MAX_LENGTH}
+                maxTotalChars={POST_TAGS_MAX_TOTAL_CHARS}
+                showCount={true}
+                showInput={false}
+                showAddButton={true}
+                addMode={true}
+              />
+            )}
+          </Container>
 
-        {/* Actions */}
+          <PostActionsBar
+            postId={compositeId}
+            tagOnly
+            onTagClick={() => setTagsExpanded((prev) => !prev)}
+            className="shrink-0"
+          />
+        </Container>
+
+        {/* Collection actions — always below the tags line */}
         <Container overrideDefaults className="flex flex-wrap items-center gap-3">
           {isOwn ? (
             <>
-              {/* While a delete is in flight, disable every owner action.
-                  Lets the user know something's happening and prevents racing
-                  Share / Edit against an imminent route replace. */}
               <Button
                 variant="secondary"
-                size="icon"
+                size="sm"
                 onClick={handleShare}
                 disabled={isDeleting}
                 aria-label={t('share')}
-                className="lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
+                className="gap-1.5 px-3.5 text-xs"
               >
                 <StickyNote className="size-4" />
                 <Typography as="span" overrideDefaults className="hidden lg:inline">
@@ -224,11 +248,11 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
               </Button>
               <Button
                 variant="secondary"
-                size="icon"
+                size="sm"
                 onClick={handleEdit}
                 disabled={isDeleting}
                 aria-label={t('edit')}
-                className="lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
+                className="gap-1.5 px-3.5 text-xs"
               >
                 <Pencil className="size-4" />
                 <Typography as="span" overrideDefaults className="hidden lg:inline">
@@ -237,11 +261,11 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
               </Button>
               <Button
                 variant="secondary"
-                size="icon"
+                size="sm"
                 onClick={handleDelete}
                 disabled={isDeleting}
                 aria-label={t('delete')}
-                className="lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
+                className="gap-1.5 px-3.5 text-xs"
               >
                 <Trash2 className="size-4" />
                 <Typography as="span" overrideDefaults className="hidden lg:inline">
@@ -264,10 +288,10 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
               </Button>
               <Button
                 variant="secondary"
-                size="icon"
+                size="sm"
                 onClick={handleShare}
                 aria-label={t('share')}
-                className="lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
+                className="gap-1.5 px-3.5 text-xs"
               >
                 <StickyNote className="size-4" />
                 <Typography as="span" overrideDefaults className="hidden lg:inline">

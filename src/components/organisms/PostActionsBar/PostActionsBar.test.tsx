@@ -194,6 +194,21 @@ describe('PostActionsBar', () => {
     expect(screen.getByTestId('post-save-picker')).toHaveAttribute('data-post-id', 'post-bookmark');
   });
 
+  it('renders only the tag button when tagOnly is set', () => {
+    mockUsePostCounts.mockReturnValue({
+      postCounts: { tags: 2, unique_tags: 2, replies: 3, reposts: 4 },
+      isLoading: false,
+    });
+
+    render(<PostActionsBar postId="post-tag-only" tagOnly onTagClick={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Tag post (2)' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reply to post (3)' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Repost (4)' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('post-save-picker')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'More options' })).not.toBeInTheDocument();
+  });
+
   it('hides the save picker for collection posts', () => {
     mockUsePostCounts.mockReturnValue({
       postCounts: { tags: 1, unique_tags: 1, replies: 1, reposts: 1 },

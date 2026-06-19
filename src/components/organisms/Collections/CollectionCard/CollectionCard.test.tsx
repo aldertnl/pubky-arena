@@ -34,6 +34,20 @@ vi.mock('@/hooks/useBookmark/useBookmark', () => ({
   useBookmark: vi.fn(),
 }));
 
+vi.mock('@/organisms/PostActionsBar/PostActionsBar', () => ({
+  PostActionsBar: ({ postId, onTagClick }: { postId: string; onTagClick?: () => void; tagOnly?: boolean }) => (
+    <button
+      type="button"
+      data-testid="post-tag-btn"
+      data-post-id={postId}
+      onClick={onTagClick}
+      aria-label="Tag post (5)"
+    >
+      Tag
+    </button>
+  ),
+}));
+
 const mockDeletePost = vi.fn().mockResolvedValue(undefined);
 vi.mock('@/hooks/useDeletePost/useDeletePost', () => ({
   useDeletePost: () => ({ deletePost: mockDeletePost, isDeleting: false }),
@@ -115,6 +129,12 @@ vi.mock('@/organisms/ClickableTagsList/ClickableTagsList', () => ({
       data-tagged-kind={String(taggedKind)}
       data-show-add-button={String(showAddButton)}
     />
+  ),
+}));
+
+vi.mock('@/organisms/PostTagsPanel/PostTagsPanel', () => ({
+  PostTagsPanel: ({ postId, widthMode }: { postId: string; widthMode?: string }) => (
+    <div data-testid="post-tags-panel" data-post-id={postId} data-width-mode={widthMode ?? ''} />
   ),
 }));
 
@@ -239,6 +259,37 @@ describe('CollectionCard', () => {
     expect(tags).toHaveAttribute('data-show-add-button', 'true');
   });
 
+  it('renders the tag count button from post counts', () => {
+    render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+
+    expect(screen.getByLabelText('Tag post (5)')).toBeInTheDocument();
+  });
+
+  it('swaps ClickableTagsList for PostTagsPanel when the tag button is clicked', () => {
+    render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+
+    expect(screen.getByTestId('clickable-tags-list')).toBeInTheDocument();
+    expect(screen.queryByTestId('post-tags-panel')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Tag post (5)'));
+
+    const panel = screen.getByTestId('post-tags-panel');
+    expect(panel).toHaveAttribute('data-post-id', COMPOSITE_ID);
+    expect(panel).toHaveAttribute('data-width-mode', 'fit');
+    expect(screen.queryByTestId('clickable-tags-list')).not.toBeInTheDocument();
+  });
+
+  it('toggles back to ClickableTagsList when the tag button is clicked again', () => {
+    render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+
+    const tagButton = screen.getByLabelText('Tag post (5)');
+    fireEvent.click(tagButton);
+    fireEvent.click(tagButton);
+
+    expect(screen.getByTestId('clickable-tags-list')).toBeInTheDocument();
+    expect(screen.queryByTestId('post-tags-panel')).not.toBeInTheDocument();
+  });
+
   it('falls back to the author pubky as the owner name when the profile is missing', () => {
     setOwnerProfile(null);
 
@@ -247,13 +298,14 @@ describe('CollectionCard', () => {
     expect(screen.getByTestId('avatar-with-fallback')).toHaveAttribute('data-name', AUTHOR_PUBKY);
   });
 
-  it('omits the description block when the envelope description is empty / nullish', () => {
+  it('reserves the description row when the envelope description is empty / nullish', () => {
     setPostDetails(COLLECTION_CONTENT_NO_COVER);
 
-    render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+    const { container } = render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
 
     expect(screen.queryByText('A bit of Bitcoin purity amidst all of the madness.')).not.toBeInTheDocument();
     expect(screen.getByText('0')).toBeInTheDocument(); // empty items count still renders
+    expect(container.querySelector('[aria-hidden="true"].line-clamp-1')).toBeInTheDocument();
   });
 
   describe('cover image — local-files store fallback', () => {
@@ -349,6 +401,7 @@ describe('CollectionCard', () => {
       render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
 
       expect(screen.getByLabelText('collections.card.delete')).toBeInTheDocument();
+      expect(screen.queryByText('collections.card.delete')).not.toBeInTheDocument();
       expect(screen.queryByLabelText('collections.card.follow')).not.toBeInTheDocument();
       expect(screen.queryByLabelText('collections.card.unfollow')).not.toBeInTheDocument();
     });
