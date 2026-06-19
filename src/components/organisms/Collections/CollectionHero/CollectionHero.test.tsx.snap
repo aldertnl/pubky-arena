@@ -127,7 +127,7 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the non-owner Fol
       </button>
       <button
         aria-label="collections.single.share"
-        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9"
+        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9 lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
         data-size="icon"
         data-slot="button"
         data-variant="secondary"
@@ -152,6 +152,12 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the non-owner Fol
             d="M15 3v5a1 1 0 0 0 1 1h5"
           />
         </svg>
+        <span
+          class="hidden lg:inline"
+          data-testid="typography"
+        >
+          collections.single.share
+        </span>
       </button>
     </div>
   </div>
@@ -259,7 +265,7 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the owner state 1
     >
       <button
         aria-label="collections.single.share"
-        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9"
+        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9 lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
         data-size="icon"
         data-slot="button"
         data-variant="secondary"
@@ -284,10 +290,16 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the owner state 1
             d="M15 3v5a1 1 0 0 0 1 1h5"
           />
         </svg>
+        <span
+          class="hidden lg:inline"
+          data-testid="typography"
+        >
+          collections.single.share
+        </span>
       </button>
       <button
         aria-label="collections.single.edit"
-        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9"
+        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9 lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
         data-size="icon"
         data-slot="button"
         data-variant="secondary"
@@ -312,10 +324,16 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the owner state 1
             d="m15 5 4 4"
           />
         </svg>
+        <span
+          class="hidden lg:inline"
+          data-testid="typography"
+        >
+          collections.single.edit
+        </span>
       </button>
       <button
         aria-label="collections.single.delete"
-        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9"
+        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9 lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
         data-size="icon"
         data-slot="button"
         data-variant="secondary"
@@ -349,6 +367,12 @@ exports[`CollectionHero - Snapshots > matches the snapshot for the owner state 1
             d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
           />
         </svg>
+        <span
+          class="hidden lg:inline"
+          data-testid="typography"
+        >
+          collections.single.delete
+        </span>
       </button>
     </div>
   </div>
@@ -473,7 +497,7 @@ exports[`CollectionHero - Snapshots > matches the snapshot when no cover image a
       </button>
       <button
         aria-label="collections.single.share"
-        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9"
+        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent size-9 lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
         data-size="icon"
         data-slot="button"
         data-variant="secondary"
@@ -498,6 +522,12 @@ exports[`CollectionHero - Snapshots > matches the snapshot when no cover image a
             d="M15 3v5a1 1 0 0 0 1 1h5"
           />
         </svg>
+        <span
+          class="hidden lg:inline"
+          data-testid="typography"
+        >
+          collections.single.share
+        </span>
       </button>
     </div>
   </div>

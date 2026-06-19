@@ -215,11 +215,25 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
                 onClick={handleShare}
                 disabled={isDeleting}
                 aria-label={t('share')}
+                className="lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
               >
                 <StickyNote className="size-4" />
+                <Typography as="span" overrideDefaults className="hidden lg:inline">
+                  {t('share')}
+                </Typography>
               </Button>
-              <Button variant="secondary" size="icon" onClick={handleEdit} disabled={isDeleting} aria-label={t('edit')}>
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={handleEdit}
+                disabled={isDeleting}
+                aria-label={t('edit')}
+                className="lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
+              >
                 <Pencil className="size-4" />
+                <Typography as="span" overrideDefaults className="hidden lg:inline">
+                  {t('edit')}
+                </Typography>
               </Button>
               <Button
                 variant="secondary"
@@ -227,8 +241,12 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
                 onClick={handleDelete}
                 disabled={isDeleting}
                 aria-label={t('delete')}
+                className="lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
               >
                 <Trash2 className="size-4" />
+                <Typography as="span" overrideDefaults className="hidden lg:inline">
+                  {t('delete')}
+                </Typography>
               </Button>
             </>
           ) : (
@@ -244,8 +262,17 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
                 {isBookmarked ? <Minus className="size-4" /> : <Plus className="size-4" />}
                 {isBookmarked ? t('unfollow') : t('follow')}
               </Button>
-              <Button variant="secondary" size="icon" onClick={handleShare} aria-label={t('share')}>
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={handleShare}
+                aria-label={t('share')}
+                className="lg:h-8 lg:w-auto lg:gap-1.5 lg:px-3.5 lg:text-xs"
+              >
                 <StickyNote className="size-4" />
+                <Typography as="span" overrideDefaults className="hidden lg:inline">
+                  {t('share')}
+                </Typography>
               </Button>
             </>
           )}

@@ -308,6 +308,9 @@ describe('CollectionHero', () => {
       expect(screen.getByLabelText('collections.single.share')).toBeInTheDocument();
       expect(screen.getByLabelText('collections.single.edit')).toBeInTheDocument();
       expect(screen.getByLabelText('collections.single.delete')).toBeInTheDocument();
+      expect(screen.getByText('collections.single.share', { selector: 'span' })).toHaveClass('hidden', 'lg:inline');
+      expect(screen.getByText('collections.single.edit', { selector: 'span' })).toHaveClass('hidden', 'lg:inline');
+      expect(screen.getByText('collections.single.delete', { selector: 'span' })).toHaveClass('hidden', 'lg:inline');
       expect(screen.queryByLabelText('collections.single.follow')).not.toBeInTheDocument();
       expect(screen.queryByLabelText('collections.single.unfollow')).not.toBeInTheDocument();
     });
@@ -456,6 +459,7 @@ describe('CollectionHero', () => {
 
       render(<CollectionHero authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
 
+      expect(screen.getByText('collections.single.share', { selector: 'span' })).toHaveClass('hidden', 'lg:inline');
       fireEvent.click(screen.getByLabelText('collections.single.share'));
 
       expect(openRepostDialog).toHaveBeenCalledTimes(1);
