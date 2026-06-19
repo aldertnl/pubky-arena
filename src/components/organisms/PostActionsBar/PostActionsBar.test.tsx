@@ -138,7 +138,14 @@ describe('PostActionsBar', () => {
     mockUsePostCounts.mockReturnValue({ postCounts: null, isLoading: true });
 
     render(<PostActionsBar postId="post-1" />);
-    expect(screen.getAllByTestId('skeleton').length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId('skeleton')).toHaveLength(5);
+  });
+
+  it('shows a single tag skeleton while counts load in tagOnly mode', () => {
+    mockUsePostCounts.mockReturnValue({ postCounts: null, isLoading: true });
+
+    render(<PostActionsBar postId="post-tag-only-loading" tagOnly />);
+    expect(screen.getAllByTestId('skeleton')).toHaveLength(1);
   });
 
   it('renders all action buttons with counts and aria labels', () => {

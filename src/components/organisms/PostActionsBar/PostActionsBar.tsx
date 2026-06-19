@@ -55,7 +55,7 @@ export function PostActionsBar({
     variant,
   });
   if (isCountsLoading || !postCounts) {
-    return <PostActionsBarSkeleton className={className} />;
+    return <PostActionsBarSkeleton className={className} tagOnly={tagOnly} />;
   }
   const commonButtonProps = {
     variant: 'secondary' as const,
