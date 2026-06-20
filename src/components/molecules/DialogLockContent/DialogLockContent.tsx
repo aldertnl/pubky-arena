@@ -73,8 +73,12 @@ export function DialogLockContent({ open, onOpenChange, onPublished }: DialogLoc
 
         <Tabs value={method} onValueChange={(value) => setMethod(value as LockMethod)}>
           <TabsList>
-            <TabsTrigger value="password">{t('tabs.password')}</TabsTrigger>
-            <TabsTrigger value="payment">{t('tabs.payment')}</TabsTrigger>
+            <TabsTrigger value="password" id="lock-tab-password">
+              {t('tabs.password')}
+            </TabsTrigger>
+            <TabsTrigger value="payment" id="lock-tab-payment">
+              {t('tabs.payment')}
+            </TabsTrigger>
           </TabsList>
 
           {/*
@@ -82,7 +86,12 @@ export function DialogLockContent({ open, onOpenChange, onPublished }: DialogLoc
            * modal height jumps between tabs. Here both panels overlap in one grid cell and the password
            * form keeps its space via `invisible` (visibility:hidden), fixing the modal height.
            */}
-          <Container overrideDefaults className="grid" role="tabpanel">
+          <Container
+            overrideDefaults
+            className="grid"
+            role="tabpanel"
+            aria-labelledby={isPassword ? 'lock-tab-password' : 'lock-tab-payment'}
+          >
             <Container
               overrideDefaults
               aria-hidden={!isPassword}
