@@ -638,7 +638,7 @@
     },
     "deleteCollection": {
       "title": "Delete collection?",
-      "description": "Do you want to delete the collection ‘{name}’? Users who added it to their collections will no longer have access and you will lose all stats.",
+      "description": "This action cannot be undone. The collection will be permanently deleted.",
       "confirmButton": "Delete",
       "cancelButton": "Cancel"
     },

@@ -190,8 +190,6 @@ function CollectionCardContent({
   // deleted" rather than "Post deleted". `useDeletePost` falls back to the
   // generic `toast.post.*` strings for any field we omit.
   const tCollectionToast = useTranslations('toast.collection');
-  const tDeleteCollection = useTranslations('dialogs.deleteCollection');
-  const deleteCollectionDescription = tDeleteCollection('description', { name: title || authorPubky });
   const { deletePost, isDeleting } = useDeletePost({
     toastMessages: {
       deleted: tCollectionToast('collectionDeleted'),
@@ -339,7 +337,6 @@ function CollectionCardContent({
         onOpenChange={setDeleteConfirmOpen}
         onConfirm={handleDeleteConfirm}
         i18nNamespace="dialogs.deleteCollection"
-        description={deleteCollectionDescription}
       />
     </>
   );

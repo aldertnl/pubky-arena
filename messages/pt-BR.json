@@ -638,7 +638,7 @@
     },
     "deleteCollection": {
       "title": "Excluir coleção?",
-      "description": "Deseja excluir a coleção «{name}»? Os usuários que a adicionaram às suas coleções não terão mais acesso e você perderá todas as estatísticas.",
+      "description": "Esta ação não pode ser desfeita. A coleção será excluída permanentemente.",
       "confirmButton": "Excluir",
       "cancelButton": "Cancelar"
     },

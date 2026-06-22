@@ -640,7 +640,7 @@
     },
     "deleteCollection": {
       "title": "Sammlung löschen?",
-      "description": "Möchten Sie die Sammlung ‘{name}’ löschen? Nutzer, die sie zu ihren Sammlungen hinzugefügt haben, haben keinen Zugriff mehr und Sie verlieren alle Statistiken.",
+      "description": "Diese Aktion kann nicht rückgängig gemacht werden. Die Sammlung wird dauerhaft gelöscht.",
       "confirmButton": "Löschen",
       "cancelButton": "Abbrechen"
     },

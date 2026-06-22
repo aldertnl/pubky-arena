@@ -124,8 +124,6 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
   // toast reads as "Collection deleted" not "Post deleted".
   const router = useRouter();
   const tCollectionToast = useTranslations('toast.collection');
-  const tDeleteCollection = useTranslations('dialogs.deleteCollection');
-  const deleteCollectionDescription = tDeleteCollection('description', { name: title || authorPubky });
   const { deletePost, isDeleting } = useDeletePost({
     toastMessages: {
       deleted: tCollectionToast('collectionDeleted'),
@@ -291,7 +289,6 @@ function CollectionHeroContent({ authorPubky, compositeId, postDetails, classNam
             onOpenChange={setDeleteConfirmOpen}
             onConfirm={() => void handleDeleteConfirm()}
             i18nNamespace="dialogs.deleteCollection"
-            description={deleteCollectionDescription}
           />
         </>
       )}

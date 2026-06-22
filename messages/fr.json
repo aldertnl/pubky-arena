@@ -638,7 +638,7 @@
     },
     "deleteCollection": {
       "title": "Supprimer la collection ?",
-      "description": "Voulez-vous supprimer la collection « {name} » ? Les utilisateurs qui l'ont ajoutée à leurs collections n'y auront plus accès et vous perdrez toutes les statistiques.",
+      "description": "Cette action est irréversible. La collection sera définitivement supprimée.",
       "confirmButton": "Supprimer",
       "cancelButton": "Annuler"
     },
