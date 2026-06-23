@@ -122,7 +122,7 @@ exports[`CollectionCard - Snapshots > matches the snapshot for the non-owner Fol
         A bit of Bitcoin purity amidst all of the madness.
       </p>
       <div
-        class="flex w-full items-start gap-3 lg:mt-auto lg:flex-wrap lg:gap-2 lg:min-h-8"
+        class="mt-auto flex w-full items-start gap-3 lg:flex-wrap lg:gap-2 min-h-8"
         data-testid="container"
       >
         <div
@@ -306,7 +306,7 @@ exports[`CollectionCard - Snapshots > matches the snapshot for the owner Delete 
         A bit of Bitcoin purity amidst all of the madness.
       </p>
       <div
-        class="flex w-full items-start gap-3 lg:mt-auto lg:flex-wrap lg:gap-2 lg:min-h-8"
+        class="mt-auto flex w-full items-start gap-3 lg:flex-wrap lg:gap-2 min-h-8"
         data-testid="container"
       >
         <div
@@ -485,15 +485,8 @@ exports[`CollectionCard - Snapshots > matches the snapshot when no cover image a
           </div>
         </div>
       </div>
-      <p
-        aria-hidden="true"
-        class="line-clamp-1 hidden min-h-6 w-full min-w-0 text-base leading-6 font-medium lg:block"
-        data-testid="typography"
-      >
-         
-      </p>
       <div
-        class="flex w-full items-start gap-3 lg:mt-auto lg:flex-wrap lg:gap-2 lg:min-h-8"
+        class="mt-auto flex w-full items-start gap-3 lg:flex-wrap lg:gap-2 min-h-8"
         data-testid="container"
       >
         <div

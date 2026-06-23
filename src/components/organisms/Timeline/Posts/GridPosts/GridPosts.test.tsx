@@ -6,6 +6,8 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll/useInfiniteScroll';
 import { TimelineGridPosts } from './GridPosts';
 import { GridPostsSkeleton } from './GridPosts.skeleton';
 
+const mockPostMain = vi.hoisted(() => vi.fn());
+
 // Mock dependencies
 vi.mock('next/navigation');
 vi.mock('dexie-react-hooks');
@@ -75,9 +77,20 @@ vi.mock('@/molecules/Timeline/TimelineStateWrapper/TimelineStateWrapper', async 
 
 vi.mock('@/organisms/PostMain/PostMain', () => {
   return {
-    PostMain: ({ postId, onClick, ...props }: { postId: string; onClick: () => void; [key: string]: unknown }) => (
-      <div data-testid={`post-${postId}`} onClick={onClick} {...props} />
-    ),
+    PostMain: ({
+      postId,
+      onClick,
+      pinActionsToBottom,
+      ...props
+    }: {
+      postId: string;
+      onClick: () => void;
+      pinActionsToBottom?: boolean;
+      [key: string]: unknown;
+    }) => {
+      mockPostMain({ postId, pinActionsToBottom, ...props });
+      return <div data-testid={`post-${postId}`} onClick={onClick} {...props} />;
+    },
   };
 });
 
@@ -318,6 +331,26 @@ describe('TimelineGridPosts', () => {
         const grid = container.querySelector('[data-cy="timeline-posts-grid"]');
         expect(grid).toBeInTheDocument();
         expect(grid).toHaveAttribute('role', 'feed');
+      });
+    });
+
+    it('should pass pinned action layout to each post when requested', async () => {
+      render(
+        <TimelineGridPosts
+          postIds={mockPostIds}
+          loading={false}
+          loadingMore={false}
+          error={null}
+          hasMore={true}
+          loadMore={vi.fn()}
+          pinActionsToBottom
+        />,
+      );
+
+      await waitFor(() => {
+        mockPostIds.forEach((postId) => {
+          expect(mockPostMain).toHaveBeenCalledWith(expect.objectContaining({ postId, pinActionsToBottom: true }));
+        });
       });
     });
   });

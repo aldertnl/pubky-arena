@@ -298,14 +298,14 @@ describe('CollectionCard', () => {
     expect(screen.getByTestId('avatar-with-fallback')).toHaveAttribute('data-name', AUTHOR_PUBKY);
   });
 
-  it('reserves the description row when the envelope description is empty / nullish', () => {
+  it('omits the description row when the envelope description is empty / nullish', () => {
     setPostDetails(COLLECTION_CONTENT_NO_COVER);
 
     const { container } = render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
 
     expect(screen.queryByText('A bit of Bitcoin purity amidst all of the madness.')).not.toBeInTheDocument();
     expect(screen.getByText('0')).toBeInTheDocument(); // empty items count still renders
-    expect(container.querySelector('[aria-hidden="true"].line-clamp-1')).toBeInTheDocument();
+    expect(container.querySelector('[aria-hidden="true"].line-clamp-1')).toBeNull();
   });
 
   describe('cover image — local-files store fallback', () => {

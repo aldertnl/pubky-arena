@@ -24,6 +24,7 @@ const mockUsePullToRefresh = vi.hoisted(() =>
     }),
   ),
 );
+const mockTimelineGridPosts = vi.hoisted(() => vi.fn());
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -110,16 +111,21 @@ vi.mock('@/organisms/Timeline/Posts/GridPosts/GridPosts', () => {
       postIds,
       showEndMessage,
       emptyState,
+      pinActionsToBottom,
     }: {
       postIds: string[];
       showEndMessage?: boolean;
       emptyState?: ReactNode;
-    }) => (
-      <div data-testid="timeline-grid-posts" data-show-end-message={String(showEndMessage)}>
-        <span data-testid="grid-post-count">{postIds.length}</span>
-        {postIds.length === 0 ? emptyState : null}
-      </div>
-    ),
+      pinActionsToBottom?: boolean;
+    }) => {
+      mockTimelineGridPosts({ postIds, showEndMessage, emptyState, pinActionsToBottom });
+      return (
+        <div data-testid="timeline-grid-posts" data-show-end-message={String(showEndMessage)}>
+          <span data-testid="grid-post-count">{postIds.length}</span>
+          {postIds.length === 0 ? emptyState : null}
+        </div>
+      );
+    },
   };
 });
 
@@ -550,6 +556,7 @@ describe('Grid layout variants (decisions D5/D7)', () => {
     expect(screen.getByTestId('timeline-grid-posts')).toBeInTheDocument();
     expect(screen.queryByTestId('timeline-posts')).not.toBeInTheDocument();
     expect(screen.getByTestId('grid-post-count')).toHaveTextContent('3');
+    expect(mockTimelineGridPosts).toHaveBeenCalledWith(expect.objectContaining({ pinActionsToBottom: true }));
   });
 
   it('suppresses the end-of-feed message for the collection grid', () => {
@@ -596,6 +603,7 @@ describe('Grid layout variants (decisions D5/D7)', () => {
     expect(screen.getByTestId('timeline-grid-posts')).toBeInTheDocument();
     expect(screen.queryByTestId('timeline-posts')).not.toBeInTheDocument();
     expect(screen.getByTestId('timeline-grid-posts')).toHaveAttribute('data-show-end-message', 'false');
+    expect(mockTimelineGridPosts).toHaveBeenCalledWith(expect.objectContaining({ pinActionsToBottom: false }));
   });
 
   it('falls back to the vertical list when no grid layout resolution is provided', () => {

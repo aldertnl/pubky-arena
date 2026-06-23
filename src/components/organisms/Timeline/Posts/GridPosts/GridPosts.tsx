@@ -29,6 +29,7 @@ interface TimelineGridPostsProps {
    */
   showEndMessage?: boolean;
   emptyState?: ReactNode;
+  pinActionsToBottom?: boolean;
 }
 
 /**
@@ -57,6 +58,7 @@ export function TimelineGridPosts({
   loadMore,
   showEndMessage = true,
   emptyState,
+  pinActionsToBottom = false,
 }: TimelineGridPostsProps) {
   const { sentinelRef } = useInfiniteScroll({
     onLoadMore: loadMore,
@@ -97,7 +99,7 @@ export function TimelineGridPosts({
               onKeyDown={(e) => handlePostKeyDown(postId, e)}
               className="@container/grid rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring [&>*:first-child]:flex-1"
             >
-              <PostMain postId={postId} isReply={false} />
+              <PostMain postId={postId} isReply={false} pinActionsToBottom={pinActionsToBottom} />
             </Container>
           ))}
         </Container>

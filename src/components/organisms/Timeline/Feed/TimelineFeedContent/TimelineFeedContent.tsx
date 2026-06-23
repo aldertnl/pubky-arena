@@ -204,6 +204,7 @@ function TimelineFeedContent({
               loadMore={loadMore}
               showEndMessage={showGridEndMessage}
               emptyState={emptyState}
+              pinActionsToBottom={variant === TIMELINE_FEED_VARIANT.COLLECTION}
             />
           ) : isVisualActive ? (
             <VisualTimelinePosts

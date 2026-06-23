@@ -276,21 +276,13 @@ function CollectionCardContent({
               </Container>
             </Container>
 
-            {/* Description — hug content on mobile; one-line slot on lg for equal card height. */}
-            {description ? (
+            {/* Description — render only real copy; the pinned bottom row provides the empty-space balance. */}
+            {description && (
               <Typography
                 overrideDefaults
                 className="line-clamp-1 w-full min-w-0 text-base leading-6 font-medium wrap-anywhere text-muted-foreground"
               >
                 {description}
-              </Typography>
-            ) : (
-              <Typography
-                overrideDefaults
-                aria-hidden
-                className="line-clamp-1 hidden min-h-6 w-full min-w-0 text-base leading-6 font-medium lg:block"
-              >
-                {'\u00A0'}
               </Typography>
             )}
 
@@ -301,8 +293,8 @@ function CollectionCardContent({
                 onClick={suppressCardNavigation}
                 onAuxClick={suppressCardNavigation}
                 className={cn(
-                  'flex w-full items-start gap-3 lg:mt-auto lg:flex-wrap lg:gap-2',
-                  tagsExpanded ? 'items-end' : 'lg:min-h-8',
+                  'mt-auto flex w-full items-start gap-3 lg:flex-wrap lg:gap-2',
+                  tagsExpanded ? 'items-end' : 'min-h-8',
                 )}
               >
                 <Container overrideDefaults className="min-w-0 flex-1">

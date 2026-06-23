@@ -16,9 +16,9 @@ const ICON_ACTION_BUTTON_CLASS = 'h-8 w-11 shrink-0 rounded-full';
  * Skeleton loading state for `CollectionCard`.
  *
  * Mirrors the real card's responsive layout:
- *   - mobile: hug content (no description slot, no stretch)
- *   - lg+: one-line description slot + tags row pinned to the bottom for equal
- *     height in the two-column grid (matches `CollectionCard` desktop behavior)
+ *   - mobile: hug content, with the tags row occupying the same minimum action height
+ *   - lg+: stretch with the tags row pinned to the bottom for equal height in
+ *     the two-column grid (matches `CollectionCard` desktop behavior)
  */
 export function CollectionCardSkeleton({ className }: CollectionCardSkeletonProps) {
   return (
@@ -44,14 +44,11 @@ export function CollectionCardSkeleton({ className }: CollectionCardSkeletonProp
             </Container>
           </Container>
 
-          {/* Description — hug on mobile; reserved one-line slot on lg (empty or filled cards). */}
+          {/* Description placeholder — only shown on lg while the envelope is unknown. */}
           <Skeleton className="hidden h-6 w-full rounded-md lg:block" />
 
-          {/* Bottom row: tags (left) | tag toggle + action (right) — pinned on lg. */}
-          <Container
-            overrideDefaults
-            className="flex w-full items-start gap-3 lg:mt-auto lg:min-h-8 lg:flex-wrap lg:gap-2"
-          >
+          {/* Bottom row: tags (left) | tag toggle + action (right) — pinned like the real card. */}
+          <Container overrideDefaults className="mt-auto flex min-h-8 w-full items-start gap-3 lg:flex-wrap lg:gap-2">
             <Container overrideDefaults className="min-w-0 flex-1">
               <Container overrideDefaults className="flex flex-wrap items-start gap-2">
                 <Skeleton className="h-8 w-[4.5rem] shrink-0 rounded-md" />
