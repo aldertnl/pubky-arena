@@ -59,12 +59,6 @@ function hasZipMagic(bytes: Uint8Array): boolean {
 }
 
 /**
- * Package a locked post + attachments into a single ZIP blob.
- *
- * Per-entry compression: the manifest is DEFLATE-d (text compresses well);
- * already-compressed media is STORE-d (re-deflating wastes CPU for ~no gain).
- */
-/**
  * Build the manifest + raw media entries for a bundle, without zipping. Exposed
  * so a caller can inspect the exact manifest that will be serialized before the
  * ZIP is produced (used by the spike demo to log the pre-zip structure).
@@ -90,6 +84,12 @@ export async function buildLockBundleParts(
   return { manifest, media };
 }
 
+/**
+ * Package a locked post + attachments into a single ZIP blob.
+ *
+ * Per-entry compression: the manifest is DEFLATE-d (text compresses well);
+ * already-compressed media is STORE-d (re-deflating wastes CPU for ~no gain).
+ */
 export async function serializeLockBundle(input: LockBundleInput): Promise<Uint8Array> {
   const { manifest, media } = await buildLockBundleParts(input);
 
