@@ -23,6 +23,7 @@ import { useMentionAutocomplete } from '@/hooks/useMentionAutocomplete/useMentio
 import { getContentWithMention } from '@/hooks/useMentionAutocomplete/useMentionAutocomplete.utils';
 import { usePost } from '@/hooks/usePost/usePost';
 import { useUserDetails } from '@/hooks/useUserDetails/useUserDetails';
+import { LOCK_BUNDLE_SPIKE_DEMO_ENABLED, runLockBundleSpikeDemo } from '@/libs/lockBundle/lockBundle.demo';
 import { useToast } from '@/molecules/Toaster/use-toast';
 import { POST_INPUT_VARIANT } from '@/organisms/PostInput/PostInput.constants';
 import { useTimelineFeedContext } from '@/organisms/Timeline/Feed/TimelineFeed/TimelineFeedContext';
@@ -228,6 +229,29 @@ export function usePostInput({
         break;
       case POST_INPUT_VARIANT.POST:
       default:
+        // TODO:[Locks] #2058 — spike demo intercepts POST: no network write. Runs the
+        // zip → decode round-trip in the console, then renders the decoded bundle as a
+        // real local post in the feed. Remove together with the spike.
+        if (LOCK_BUNDLE_SPIKE_DEMO_ENABLED) {
+          const draftContent = content;
+          const draftFiles = attachments;
+          const draftIsArticle = isArticle;
+          // Clear the composer immediately, like a normal submit.
+          setContent('');
+          setTags([]);
+          setAttachments([]);
+          setIsArticle(false);
+          setArticleTitle('');
+          setIsExpanded(false);
+          await runLockBundleSpikeDemo({
+            content: draftContent,
+            files: draftFiles,
+            isArticle: draftIsArticle,
+            authorId: currentUserPubky,
+            prependPost: (createdPostId) => timelineFeed?.prependPosts(createdPostId),
+          });
+          break;
+        }
         await post({ onSuccess: handleSuccess });
         break;
     }
@@ -249,6 +273,12 @@ export function usePostInput({
     onSuccess,
     timelineFeed,
     deletePost,
+    currentUserPubky,
+    setContent,
+    setTags,
+    setAttachments,
+    setIsArticle,
+    setArticleTitle,
   ]);
 
   // Handle textarea change with validation
