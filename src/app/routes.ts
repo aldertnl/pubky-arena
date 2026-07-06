@@ -1,4 +1,5 @@
 import { isPubkyIdentifier } from '@/libs/utils/utils';
+import { parseCompositeId } from '@/models/models.utils';
 
 export const ROOT_ROUTES = '/';
 
@@ -238,6 +239,18 @@ export function getProfileRoute(route: PROFILE_ROUTES, pubky?: string): string {
  */
 export function getCollectionRoute(authorPubky: string, postId: string): string {
   return `${APP_ROUTES.COLLECTIONS}/${authorPubky}/${postId}`;
+}
+
+/**
+ * Resolves the canonical detail URL for a composite post id.
+ * Collection posts route to `/collections/...`; all other kinds use `/post/...`.
+ */
+export function resolvePostHref(postId: string, kind?: string | null): string {
+  const { pubky, id } = parseCompositeId(postId);
+  if (kind === 'collection') {
+    return getCollectionRoute(pubky, id);
+  }
+  return `${POST_ROUTES.POST}/${pubky}/${id}`;
 }
 
 /** `/collections` exactly — the collections overview page (not a single collection or bookmarks). */

@@ -119,6 +119,12 @@ exports[`NotificationItem - Snapshots > matches snapshot for Mention notificatio
           mentioned you in post
         </a>
       </p>
+      <a
+        class="hidden shrink-0 text-base font-medium text-muted-foreground hover:underline xl:inline"
+        href="/post/user1/post123"
+      >
+        'Hello'
+      </a>
     </div>
   </div>
   <a
@@ -193,6 +199,12 @@ exports[`NotificationItem - Snapshots > matches snapshot for TagPost notificatio
           tagged your post
         </a>
       </p>
+      <a
+        class="hidden shrink-0 text-base font-medium text-muted-foreground hover:underline xl:inline"
+        href="/post/user1/post123"
+      >
+        'Hello'
+      </a>
       <span
         class="hidden shrink-0 lg:inline-flex"
         data-testid="post-tag"

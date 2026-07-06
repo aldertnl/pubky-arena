@@ -669,6 +669,44 @@ describe('CollectionCard', () => {
       expect(screen.queryByLabelText('post.actions.tagPost')).not.toBeInTheDocument();
     });
   });
+
+  describe('layout="wide"', () => {
+    it('renders wide padding, title, and avatar sizing', () => {
+      const { container } = render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} layout="wide" />);
+
+      expect(screen.getByText('Based Bitcoin')).toHaveClass('text-2xl', 'leading-8');
+      expect(screen.getByTestId('avatar-with-fallback')).toHaveAttribute('data-size', 'lg');
+      expect(container.querySelector('[class*="p-12"]')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Based Bitcoin' })).not.toHaveClass('lg:max-w-187');
+    });
+
+    it('ignores wide layout when variant is preview', () => {
+      render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} variant="preview" layout="wide" />);
+
+      expect(screen.getByText('Based Bitcoin')).toHaveClass('text-xl', 'leading-7');
+      expect(screen.getByTestId('avatar-with-fallback')).toHaveAttribute('data-size', 'sm');
+    });
+  });
+
+  describe('seedPostDetails', () => {
+    it('skips usePostDetails when seed post details are provided', () => {
+      const seedDetails = asOpaque<EnrichedPostDetails>({
+        id: COMPOSITE_ID,
+        content: COLLECTION_CONTENT,
+        kind: 'collection',
+        indexed_at: 0,
+        uri: '',
+        attachments: null,
+        is_moderated: false,
+        is_blurred: false,
+      });
+
+      render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} seedPostDetails={seedDetails} />);
+
+      expect(mockUsePostDetails).toHaveBeenCalledWith(COMPOSITE_ID, { enabled: false });
+      expect(screen.getByText('Based Bitcoin')).toBeInTheDocument();
+    });
+  });
 });
 
 describe('CollectionCard - Snapshots', () => {

@@ -172,6 +172,24 @@ export function isCollectionPostsStream(streamId: string): boolean {
 }
 
 /**
+ * Returns true when a stream may include `kind=collection` posts alongside other
+ * kinds (e.g. All content filters, author profile posts). Used by the timeline
+ * feed to prefer collection skeletons while post details are still resolving.
+ */
+export function canStreamContainCollectionPosts(streamId: string): boolean {
+  if (isCollectionPostsStream(streamId)) {
+    return true;
+  }
+  if (streamId.endsWith(':all')) {
+    return true;
+  }
+  if (streamId.startsWith(`${StreamSource.AUTHOR}:`)) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Single-collection item feeds (`collection:<author>:<postId>`) and the
  * bookmarks post feeds (`<sorting>:bookmarks:<kind>`) intentionally keep deleted
  * posts in the stream so the feed still renders the saved/collected slot with the

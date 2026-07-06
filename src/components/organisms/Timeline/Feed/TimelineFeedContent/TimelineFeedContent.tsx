@@ -14,6 +14,7 @@ import { PullToRefreshIndicator } from '@/molecules/PullToRefreshIndicator/PullT
 import { TimelineLoading } from '@/molecules/Timeline/TimelineLoading';
 import type { TagsLayout } from '@/organisms/PostMain/PostMain.types';
 import { PostMainLayoutProvider } from '@/organisms/PostMain/PostMainLayoutContext';
+import type { CollectionCardLayout } from '@/organisms/PostMain/PostMainLayoutRules';
 import { buildFeedKey } from '@/stores/feedOptimistic/feedOptimistic.types';
 import { TimelineGridPosts } from '../../Posts/GridPosts/GridPosts';
 import { TimelinePosts } from '../../Posts/Posts';
@@ -31,6 +32,7 @@ interface TimelineFeedContentProps {
   streamId: PostStreamId;
   variant: TimelineFeedProps['variant'];
   tagsLayout: TagsLayout;
+  collectionCardLayout?: CollectionCardLayout;
   layoutResolution?: FeedLayoutResolution;
   children?: TimelineFeedProps['children'];
   emptyState?: TimelineFeedProps['emptyState'];
@@ -43,6 +45,7 @@ interface TimelineFeedWithStreamProps {
   streamId: PostStreamId | undefined;
   variant: TimelineFeedProps['variant'];
   tagsLayout: TagsLayout;
+  collectionCardLayout?: CollectionCardLayout;
   layoutResolution?: FeedLayoutResolution;
   children?: TimelineFeedProps['children'];
   emptyState?: TimelineFeedProps['emptyState'];
@@ -61,6 +64,7 @@ export function TimelineFeedWithStream({
   streamId,
   variant,
   tagsLayout,
+  collectionCardLayout = 'default',
   layoutResolution,
   children,
   emptyState,
@@ -77,6 +81,7 @@ export function TimelineFeedWithStream({
       streamId={streamId}
       variant={variant}
       tagsLayout={tagsLayout}
+      collectionCardLayout={collectionCardLayout}
       layoutResolution={layoutResolution}
       emptyState={emptyState}
       collectionId={collectionId}
@@ -105,6 +110,7 @@ function TimelineFeedContent({
   streamId,
   variant,
   tagsLayout,
+  collectionCardLayout = 'default',
   layoutResolution,
   children,
   emptyState,
@@ -249,6 +255,7 @@ function TimelineFeedContent({
               error={error}
               hasMore={hasMore}
               loadMore={loadMore}
+              collectionCardLayout={collectionCardLayout}
             />
           )}
         </Container>

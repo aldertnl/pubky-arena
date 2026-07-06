@@ -2,11 +2,11 @@
 
 import { useCallback, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { POST_ROUTES } from '@/app/routes';
+import { resolvePostHref } from '@/app/routes';
 import { useCurrentUserProfile } from '@/hooks/useCurrentUserProfile/useCurrentUserProfile';
+import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
 import { postJson } from '@/libs/api/client-request';
 import { Logger } from '@/libs/logger/logger';
-import { parseCompositeId } from '@/models/models.utils';
 import { toast } from '@/molecules/Toaster/use-toast';
 import type { ReportIssueType } from '@/pipes/report/report.types';
 import { REPORT_API_ENDPOINT, REPORT_POST_STEPS } from './useReportPost.constants';
@@ -25,9 +25,9 @@ import type { UseReportPostReturn } from './useReportPost.types';
  */
 export function useReportPost(postId: string): UseReportPostReturn {
   const { currentUserPubky, userDetails } = useCurrentUserProfile();
+  const { postDetails } = usePostDetails(postId);
   const tReport = useTranslations('toast.report');
-  const parsedId = parseCompositeId(postId);
-  const postUrl = `${window.location.origin}${POST_ROUTES.POST}/${parsedId.pubky}/${parsedId.id}`;
+  const postUrl = `${window.location.origin}${resolvePostHref(postId, postDetails?.kind)}`;
 
   const [step, setStep] = useState<ReportPostStep>(REPORT_POST_STEPS.ISSUE_SELECTION);
   const [selectedIssueType, setSelectedIssueType] = useState<ReportIssueType | null>(null);

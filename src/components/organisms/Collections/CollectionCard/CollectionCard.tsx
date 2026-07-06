@@ -25,6 +25,7 @@ import { DialogConfirmDelete } from '@/molecules/DialogConfirmDelete/DialogConfi
 import { AvatarWithFallback } from '@/organisms/AvatarWithFallback/AvatarWithFallback';
 import { CollectionCardSkeleton } from '@/organisms/Collections/CollectionCard/CollectionCard.skeleton';
 import { CollectionCardBlurred } from '@/organisms/Collections/CollectionCard/CollectionCardBlurred';
+import type { CollectionCardLayout } from '@/organisms/PostMain/PostMainLayoutRules';
 import { PostTagsExpandableRow } from '@/organisms/PostTagsExpandableRow/PostTagsExpandableRow';
 import { PostTagToggleButton } from '@/organisms/PostTagsExpandableRow/PostTagToggleButton';
 import { useAuthStore } from '@/stores/auth/auth.store';
@@ -58,6 +59,16 @@ interface CollectionCardProps {
    * Ignored when there is a cover image (the cover overlay handles contrast).
    */
   contrast?: 'subtle' | 'strong';
+  /**
+   * Feed layout sizing. `'wide'` uses full-width cards with larger padding,
+   * title, and avatar (Wide feed layout). Ignored when `variant === 'preview'`.
+   */
+  layout?: CollectionCardLayout;
+  /**
+   * When the parent already resolved post details (e.g. timeline feed item
+   * branching), pass them here to skip a redundant `usePostDetails` fetch.
+   */
+  seedPostDetails?: EnrichedPostDetails;
 }
 
 /**
@@ -83,15 +94,24 @@ export function CollectionCard({
   initialIsBookmarked,
   variant = 'default',
   contrast = 'subtle',
+  layout = 'default',
+  seedPostDetails,
 }: CollectionCardProps) {
   const compositeId = buildCompositeId({ pubky: authorPubky, id: postId });
-  const { postDetails, isLoading } = usePostDetails(compositeId);
+  const hasSeed = seedPostDetails !== undefined;
+  const { postDetails: fetchedDetails, isLoading } = usePostDetails(compositeId, { enabled: !hasSeed });
+  const postDetails = hasSeed ? seedPostDetails : fetchedDetails;
+  const effectiveLayout = variant === 'preview' ? 'default' : layout;
 
   if (!postDetails) {
     // `undefined`/in-flight → skeleton; a settled `null` means the collection
     // post 404'd, so show the terminal "not found" card instead of skeletoning
     // forever. Defensive — mirrors the post fix for the theoretical 404 case.
-    return isLoading ? <CollectionCardSkeleton className={className} /> : <CollectionMissing className={className} />;
+    return isLoading ? (
+      <CollectionCardSkeleton className={className} layout={effectiveLayout} />
+    ) : (
+      <CollectionMissing className={className} />
+    );
   }
 
   // Soft-deleted collections (`content === '[DELETED]'`) render the standard
@@ -107,7 +127,7 @@ export function CollectionCard({
   // wins) and mirrors `PostContentBase`'s blur intercept — direct-render
   // surfaces (landing sections) need their own check since they bypass it.
   if (postDetails.is_blurred) {
-    return <CollectionCardBlurred compositeId={compositeId} className={className} />;
+    return <CollectionCardBlurred compositeId={compositeId} className={className} layout={effectiveLayout} />;
   }
 
   return (
@@ -120,6 +140,7 @@ export function CollectionCard({
       initialIsBookmarked={initialIsBookmarked}
       variant={variant}
       contrast={contrast}
+      layout={effectiveLayout}
     />
   );
 }
@@ -133,6 +154,7 @@ interface CollectionCardContentProps {
   initialIsBookmarked?: boolean;
   variant: 'default' | 'preview';
   contrast: 'subtle' | 'strong';
+  layout: CollectionCardLayout;
 }
 
 function CollectionCardContent({
@@ -144,8 +166,10 @@ function CollectionCardContent({
   initialIsBookmarked,
   variant,
   contrast,
+  layout,
 }: CollectionCardContentProps) {
   const isPreview = variant === 'preview';
+  const isWide = layout === 'wide';
   const t = useTranslations('collections.card');
   const tCardToast = useTranslations('collections.card.toast');
 
@@ -232,7 +256,7 @@ function CollectionCardContent({
         href={href}
         aria-label={title}
         data-cy="collection-card"
-        className={cn('group relative block h-full w-full lg:max-w-187', className)}
+        className={cn('group relative block h-full w-full', !isWide && 'lg:max-w-187', className)}
       >
         <Card
           className={cn(
@@ -259,7 +283,7 @@ function CollectionCardContent({
             />
           )}
 
-          <CardContent className="flex h-full flex-col gap-3 p-6">
+          <CardContent className={cn('flex h-full flex-col gap-3', isWide ? 'p-12' : 'p-6')}>
             {/* Header row: icon + title + item-count (left, grows) | avatar (right) */}
             <Container overrideDefaults className="flex w-full flex-wrap items-center gap-3 sm:flex-nowrap">
               <Container overrideDefaults className="flex min-w-0 flex-1 items-center gap-2">
@@ -267,7 +291,10 @@ function CollectionCardContent({
                 <Typography
                   as="span"
                   overrideDefaults
-                  className="min-w-0 truncate text-xl leading-7 font-bold text-foreground"
+                  className={cn(
+                    'min-w-0 truncate font-bold text-foreground',
+                    isWide ? 'text-2xl leading-8' : 'text-xl leading-7',
+                  )}
                 >
                   {title}
                 </Typography>
@@ -279,7 +306,7 @@ function CollectionCardContent({
                   avatarUrl={ownerAvatarUrl}
                   name={ownerName}
                   fallbackSeed={authorPubky}
-                  size="sm"
+                  size={isWide ? 'lg' : 'sm'}
                   alt={ownerName}
                 />
               </Container>

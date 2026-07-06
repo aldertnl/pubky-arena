@@ -3,9 +3,8 @@
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
-import { POST_ROUTES } from '@/app/routes';
-import { parseCompositeId } from '@/models/models.utils';
-import type { UsePostNavigationResult } from './usePostNavigation.types';
+import { resolvePostHref } from '@/app/routes';
+import type { PostNavigationKind, UsePostNavigationResult } from './usePostNavigation.types';
 
 const INTERACTIVE_SELECTOR = 'a,button,input,textarea,select,label,[role="button"],[role="link"]';
 const POST_NAVIGATION_ALLOW_SELECTOR = '[data-allow-post-navigation]';
@@ -33,27 +32,24 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 export function usePostNavigation(): UsePostNavigationResult {
   const router = useRouter();
 
-  const getPostHref = useCallback((postId: string) => {
-    const { pubky: userId, id: pId } = parseCompositeId(postId);
-    return `${POST_ROUTES.POST}/${userId}/${pId}`;
-  }, []);
+  const getPostHref = useCallback((postId: string, kind?: PostNavigationKind) => resolvePostHref(postId, kind), []);
 
   const navigateToPost = useCallback(
-    (postId: string) => {
-      router.push(getPostHref(postId));
+    (postId: string, kind?: PostNavigationKind) => {
+      router.push(getPostHref(postId, kind));
     },
     [router, getPostHref],
   );
 
   const handlePostClick = useCallback(
-    (postId: string, event: React.MouseEvent) => {
+    (postId: string, event: React.MouseEvent, kind?: PostNavigationKind) => {
       if (isInteractiveTarget(event.target)) return;
 
       // Don't navigate if the user is selecting text inside the card.
       const selection = typeof window !== 'undefined' ? window.getSelection() : null;
       if (selection && selection.toString().length > 0) return;
 
-      const href = getPostHref(postId);
+      const href = getPostHref(postId, kind);
       if (event.metaKey || event.ctrlKey || event.shiftKey) {
         window.open(href, '_blank', 'noopener,noreferrer');
         return;
@@ -64,23 +60,23 @@ export function usePostNavigation(): UsePostNavigationResult {
   );
 
   const handlePostAuxClick = useCallback(
-    (postId: string, event: React.MouseEvent) => {
+    (postId: string, event: React.MouseEvent, kind?: PostNavigationKind) => {
       if (event.button !== 1) return;
       if (isInteractiveTarget(event.target)) return;
       event.preventDefault();
-      window.open(getPostHref(postId), '_blank', 'noopener,noreferrer');
+      window.open(getPostHref(postId, kind), '_blank', 'noopener,noreferrer');
     },
     [getPostHref],
   );
 
   const handlePostKeyDown = useCallback(
-    (postId: string, event: React.KeyboardEvent) => {
+    (postId: string, event: React.KeyboardEvent, kind?: PostNavigationKind) => {
       // Only act when the wrapper itself has focus, not a descendant (button, link, input).
       if (event.target !== event.currentTarget) return;
       if (event.key !== 'Enter' && event.key !== ' ') return;
       event.preventDefault();
 
-      const href = getPostHref(postId);
+      const href = getPostHref(postId, kind);
       if (event.metaKey || event.ctrlKey || event.shiftKey) {
         window.open(href, '_blank', 'noopener,noreferrer');
         return;

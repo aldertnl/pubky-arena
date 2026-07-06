@@ -6,6 +6,7 @@ import {
   buildDiscoverCollectionsStreamId,
   buildFollowedCollectionsStreamId,
   buildPostReplyStreamId,
+  canStreamContainCollectionPosts,
   isAuthorStreamSkippingMuteFilter,
   isCollectionItemsStream,
   isCollectionPostsStream,
@@ -116,6 +117,23 @@ describe('isCollectionPostsStream', () => {
     expect(isCollectionPostsStream('timeline:all:all')).toBe(false);
     expect(isCollectionPostsStream('timeline:all:short')).toBe(false);
     expect(isCollectionPostsStream(buildCollectionItemsStreamId(TEST_PUBKY, TEST_POST_ID))).toBe(false);
+  });
+});
+
+describe('canStreamContainCollectionPosts', () => {
+  it('returns true for collection-only, all-content, and author profile streams', () => {
+    expect(canStreamContainCollectionPosts('timeline:all:collection')).toBe(true);
+    expect(canStreamContainCollectionPosts('timeline:all:all')).toBe(true);
+    expect(canStreamContainCollectionPosts('timeline:bookmarks:all')).toBe(true);
+    expect(canStreamContainCollectionPosts(`author:${TEST_PUBKY}`)).toBe(true);
+    expect(canStreamContainCollectionPosts(buildAuthorCollectionsStreamId(TEST_PUBKY))).toBe(true);
+  });
+
+  it('returns false for kind-specific and single-collection item streams', () => {
+    expect(canStreamContainCollectionPosts('timeline:all:short')).toBe(false);
+    expect(canStreamContainCollectionPosts('timeline:all:image')).toBe(false);
+    expect(canStreamContainCollectionPosts(buildCollectionItemsStreamId(TEST_PUBKY, TEST_POST_ID))).toBe(false);
+    expect(canStreamContainCollectionPosts(buildPostReplyStreamId(`${TEST_PUBKY}:${TEST_POST_ID}`))).toBe(false);
   });
 });
 

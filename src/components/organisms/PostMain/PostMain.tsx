@@ -74,8 +74,8 @@ export function PostMain({
       <Container
         ref={ttlRef}
         overrideDefaults
-        onClick={isNavigable ? (e) => handlePostClick(postId, e) : undefined}
-        onAuxClick={isNavigable ? (e) => handlePostAuxClick(postId, e) : undefined}
+        onClick={isNavigable ? (e) => handlePostClick(postId, e, postDetails?.kind) : undefined}
+        onAuxClick={isNavigable ? (e) => handlePostAuxClick(postId, e, postDetails?.kind) : undefined}
         className={cn('relative flex min-w-0 @max-xl/grid:h-full', isNavigable && 'cursor-pointer', isReply && 'pl-3')}
       >
         {isReply && (

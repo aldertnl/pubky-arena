@@ -57,7 +57,7 @@ exports[`CollectionCard - Snapshots > matches the snapshot for the non-owner Fol
             />
           </svg>
           <span
-            class="min-w-0 truncate text-xl leading-7 font-bold text-foreground"
+            class="min-w-0 truncate font-bold text-foreground text-xl leading-7"
             data-testid="typography"
           >
             Based Bitcoin
@@ -277,7 +277,7 @@ exports[`CollectionCard - Snapshots > matches the snapshot for the owner Delete 
             />
           </svg>
           <span
-            class="min-w-0 truncate text-xl leading-7 font-bold text-foreground"
+            class="min-w-0 truncate font-bold text-foreground text-xl leading-7"
             data-testid="typography"
           >
             Based Bitcoin
@@ -499,7 +499,7 @@ exports[`CollectionCard - Snapshots > matches the snapshot when no cover image a
             />
           </svg>
           <span
-            class="min-w-0 truncate text-xl leading-7 font-bold text-foreground"
+            class="min-w-0 truncate font-bold text-foreground text-xl leading-7"
             data-testid="typography"
           >
             Quiet collection

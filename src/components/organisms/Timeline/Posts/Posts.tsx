@@ -9,6 +9,7 @@ import { TimelineEndMessage } from '@/molecules/Timeline/TimelineEndMessage';
 import { TimelineError } from '@/molecules/Timeline/TimelineError';
 import { TimelineLoadingMore } from '@/molecules/Timeline/TimelineLoadingMore';
 import { TimelineStateWrapper } from '@/molecules/Timeline/TimelineStateWrapper/TimelineStateWrapper';
+import type { CollectionCardLayout } from '@/organisms/PostMain/PostMainLayoutRules';
 import { TimelineFeedItem } from './FeedItem/TimelineFeedItem';
 
 interface TimelinePostsProps {
@@ -19,6 +20,7 @@ interface TimelinePostsProps {
   error: string | null;
   hasMore: boolean;
   loadMore: () => Promise<void>;
+  collectionCardLayout?: CollectionCardLayout;
 }
 
 /**
@@ -38,6 +40,7 @@ export function TimelinePosts({
   error,
   hasMore,
   loadMore,
+  collectionCardLayout = 'default',
 }: TimelinePostsProps) {
   const { sentinelRef } = useInfiniteScroll({
     onLoadMore: loadMore,
@@ -69,6 +72,7 @@ export function TimelinePosts({
               totalCount={postIds.length}
               cardRef={setCardRef(index)}
               onPostKeyDown={handlePostKeyDown}
+              collectionCardLayout={collectionCardLayout}
             />
           ))}
 

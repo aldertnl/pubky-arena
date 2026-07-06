@@ -16,7 +16,10 @@ import {
   PostStreamTypes,
 } from '@/models/stream/post/postStream.types';
 import { TimelineLoading } from '@/molecules/Timeline/TimelineLoading';
-import { getTagsLayoutForSurfaceLayout } from '@/organisms/PostMain/PostMainLayoutRules';
+import {
+  getCollectionCardLayoutForSurfaceLayout,
+  getTagsLayoutForSurfaceLayout,
+} from '@/organisms/PostMain/PostMainLayoutRules';
 import { useProfileContext } from '@/providers/ProfileProvider/ProfileProvider';
 import { StreamSource } from '@/services/nexus/stream/posts/postStream.types';
 import { useHomeStore } from '@/stores/home/home.store';
@@ -84,12 +87,14 @@ function HomeTimelineFeed({ children }: { children?: TimelineFeedProps['children
   useSyncInteractiveVisualContent(resolvedContent);
   const streamId = useStreamIdFromFilters(resolvedContent);
   const tagsLayout = getTagsLayoutForSurfaceLayout(layoutResolution.effectiveLayout);
+  const collectionCardLayout = getCollectionCardLayoutForSurfaceLayout(layoutResolution.effectiveLayout);
 
   return (
     <TimelineFeedWithStream
       streamId={streamId}
       variant={TIMELINE_FEED_VARIANT.HOME}
       tagsLayout={tagsLayout}
+      collectionCardLayout={collectionCardLayout}
       layoutResolution={layoutResolution}
     >
       {children}
@@ -101,12 +106,14 @@ function CustomTimelineFeed({ children }: { children?: TimelineFeedProps['childr
   const streamId = useCustomStreamId();
   const layoutResolution = useFeedLayoutResolution(TIMELINE_FEED_VARIANT.CUSTOM);
   const tagsLayout = getTagsLayoutForSurfaceLayout(layoutResolution.effectiveLayout);
+  const collectionCardLayout = getCollectionCardLayoutForSurfaceLayout(layoutResolution.effectiveLayout);
 
   return (
     <TimelineFeedWithStream
       streamId={streamId}
       variant={TIMELINE_FEED_VARIANT.CUSTOM}
       tagsLayout={tagsLayout}
+      collectionCardLayout={collectionCardLayout}
       layoutResolution={layoutResolution}
     >
       {children}
@@ -255,12 +262,14 @@ function SearchTimelineFeed({ children }: { children?: TimelineFeedProps['childr
   useSyncInteractiveVisualContent(resolvedContent);
   const streamId = useSearchStreamId(resolvedContent);
   const tagsLayout = getTagsLayoutForSurfaceLayout(layoutResolution.effectiveLayout);
+  const collectionCardLayout = getCollectionCardLayoutForSurfaceLayout(layoutResolution.effectiveLayout);
 
   return (
     <TimelineFeedWithStream
       streamId={streamId}
       variant={TIMELINE_FEED_VARIANT.SEARCH}
       tagsLayout={tagsLayout}
+      collectionCardLayout={collectionCardLayout}
       layoutResolution={layoutResolution}
     >
       {children}

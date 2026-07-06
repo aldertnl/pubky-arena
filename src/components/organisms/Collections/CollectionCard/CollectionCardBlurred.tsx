@@ -9,11 +9,13 @@ import { Typography } from '@/atoms/Typography/Typography';
 import { ModerationController } from '@/controllers/moderation/moderation';
 import { cn } from '@/libs/utils/utils';
 import { ModerationBlurOverlay } from '@/molecules/ModerationBlurOverlay/ModerationBlurOverlay';
+import type { CollectionCardLayout } from '@/organisms/PostMain/PostMainLayoutRules';
 
 interface CollectionCardBlurredProps {
   /** `author:postId` composite id — the moderation record key passed to `unBlur`. */
   compositeId: string;
   className?: string;
+  layout?: CollectionCardLayout;
 }
 
 /**
@@ -25,8 +27,10 @@ interface CollectionCardBlurredProps {
  * card is a single click-to-unblur button (no navigation), matching how
  * `PostContentBlurred` handles moderated posts.
  */
-export function CollectionCardBlurred({ compositeId, className }: CollectionCardBlurredProps) {
+export function CollectionCardBlurred({ compositeId, className, layout = 'default' }: CollectionCardBlurredProps) {
   const t = useTranslations('moderation');
+  const isWide = layout === 'wide';
+
   return (
     <Button
       overrideDefaults
@@ -34,11 +38,18 @@ export function CollectionCardBlurred({ compositeId, className }: CollectionCard
         e.stopPropagation();
         ModerationController.unBlur(compositeId);
       }}
-      className={cn('group relative block h-full w-full cursor-pointer text-left lg:max-w-187', className)}
+      className={cn(
+        'group relative block h-full w-full cursor-pointer text-left',
+        !isWide && 'lg:max-w-187',
+        className,
+      )}
     >
       <Card className="relative isolate h-full gap-0 overflow-hidden rounded-md py-0">
         {/* Blurred mock of the real card layout */}
-        <CardContent aria-hidden="true" className="flex h-full flex-col gap-3 p-6 blur-lg select-none">
+        <CardContent
+          aria-hidden="true"
+          className={cn('flex h-full flex-col gap-3 blur-lg select-none', isWide ? 'p-12' : 'p-6')}
+        >
           {/* Header row: icon + title (left) | count + avatar (right) */}
           <Container overrideDefaults className="flex w-full flex-wrap items-center gap-3 sm:flex-nowrap">
             <Container overrideDefaults className="flex min-w-0 flex-1 items-center gap-2">
@@ -46,7 +57,10 @@ export function CollectionCardBlurred({ compositeId, className }: CollectionCard
               <Typography
                 as="span"
                 overrideDefaults
-                className="min-w-0 flex-1 truncate text-xl leading-7 font-bold text-white"
+                className={cn(
+                  'min-w-0 flex-1 truncate font-bold text-white',
+                  isWide ? 'text-2xl leading-8' : 'text-xl leading-7',
+                )}
               >
                 Collection title placeholder
               </Typography>
@@ -54,7 +68,10 @@ export function CollectionCardBlurred({ compositeId, className }: CollectionCard
 
             <Container overrideDefaults className="flex shrink-0 items-center justify-end gap-3">
               <Container overrideDefaults className="h-3 w-6 rounded-md bg-white/30" />
-              <Container overrideDefaults className="size-9 shrink-0 rounded-full bg-white/30" />
+              <Container
+                overrideDefaults
+                className={cn('shrink-0 rounded-full bg-white/30', isWide ? 'size-12' : 'size-9')}
+              />
             </Container>
           </Container>
 

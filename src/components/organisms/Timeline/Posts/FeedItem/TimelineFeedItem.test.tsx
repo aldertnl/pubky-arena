@@ -42,13 +42,31 @@ vi.mock('@/atoms/Container/Container', () => ({
 }));
 
 vi.mock('@/organisms/Collections/CollectionCard/CollectionCard', () => ({
-  CollectionCard: ({ authorPubky, postId }: { authorPubky: string; postId: string }) => (
-    <div data-testid="collection-card" data-author={authorPubky} data-post-id={postId} />
+  CollectionCard: ({
+    authorPubky,
+    postId,
+    layout,
+    seedPostDetails,
+  }: {
+    authorPubky: string;
+    postId: string;
+    layout?: string;
+    seedPostDetails?: unknown;
+  }) => (
+    <div
+      data-testid="collection-card"
+      data-author={authorPubky}
+      data-post-id={postId}
+      data-layout={layout ?? 'default'}
+      data-has-seed={String(seedPostDetails !== undefined)}
+    />
   ),
 }));
 
 vi.mock('@/organisms/Collections/CollectionCard/CollectionCard.skeleton', () => ({
-  CollectionCardSkeleton: () => <div data-testid="collection-card-skeleton" />,
+  CollectionCardSkeleton: ({ layout }: { layout?: string }) => (
+    <div data-testid="collection-card-skeleton" data-layout={layout ?? 'default'} />
+  ),
 }));
 
 vi.mock('@/organisms/PostMain/PostMain', () => ({
@@ -65,6 +83,7 @@ const mockUseRouter = vi.mocked(useRouter);
 const COLLECTION_POST_ID = 'author-pubky:collection-post-id';
 const COLLECTION_STREAM_ID = PostStreamTypes.TIMELINE_ALL_COLLECTION;
 const DEFAULT_STREAM_ID = PostStreamTypes.TIMELINE_ALL_ALL;
+const SHORT_STREAM_ID = PostStreamTypes.TIMELINE_ALL_SHORT;
 
 describe('TimelineFeedItem', () => {
   const cardRef = vi.fn();
@@ -106,7 +125,7 @@ describe('TimelineFeedItem', () => {
     expect(screen.queryByTestId('post-replies')).not.toBeInTheDocument();
   });
 
-  it('renders CollectionCardSkeleton on collection streams while post details are loading', () => {
+  it('renders CollectionCardSkeleton on collection-capable streams while post details are loading', () => {
     mockUsePostDetails.mockReturnValue({
       postDetails: undefined,
       isLoading: true,
@@ -127,6 +146,47 @@ describe('TimelineFeedItem', () => {
     expect(screen.getByTestId('collection-card-skeleton')).toBeInTheDocument();
     expect(screen.queryByTestId('post-main')).not.toBeInTheDocument();
     expect(screen.queryByTestId('collection-card')).not.toBeInTheDocument();
+  });
+
+  it('renders CollectionCardSkeleton on all-content streams while post details are loading', () => {
+    mockUsePostDetails.mockReturnValue({
+      postDetails: undefined,
+      isLoading: true,
+    });
+
+    render(
+      <TimelineFeedItem
+        streamId={DEFAULT_STREAM_ID}
+        postId={COLLECTION_POST_ID}
+        index={0}
+        totalCount={1}
+        cardRef={cardRef}
+        onPostKeyDown={onPostKeyDown}
+      />,
+    );
+
+    expect(screen.getByTestId('collection-card-skeleton')).toBeInTheDocument();
+    expect(screen.queryByTestId('post-main')).not.toBeInTheDocument();
+  });
+
+  it('passes seed post details to CollectionCard when already resolved', () => {
+    mockUsePostDetails.mockReturnValue({
+      postDetails: { kind: 'collection' } as never,
+      isLoading: false,
+    });
+
+    render(
+      <TimelineFeedItem
+        streamId={COLLECTION_STREAM_ID}
+        postId={COLLECTION_POST_ID}
+        index={0}
+        totalCount={1}
+        cardRef={cardRef}
+        onPostKeyDown={onPostKeyDown}
+      />,
+    );
+
+    expect(screen.getByTestId('collection-card')).toHaveAttribute('data-has-seed', 'true');
   });
 
   it('navigates to the collection page on Enter for collection feed items', () => {
@@ -197,6 +257,46 @@ describe('TimelineFeedItem', () => {
     expect(onPostKeyDown).toHaveBeenCalledWith('author-pubky:post-id', expect.any(Object));
     expect(mockPush).not.toHaveBeenCalled();
   });
+
+  it('forwards wide layout to CollectionCard and skeleton', () => {
+    mockUsePostDetails.mockReturnValue({
+      postDetails: { kind: 'collection' } as never,
+      isLoading: false,
+    });
+
+    const { rerender } = render(
+      <TimelineFeedItem
+        streamId={COLLECTION_STREAM_ID}
+        postId={COLLECTION_POST_ID}
+        index={0}
+        totalCount={1}
+        cardRef={cardRef}
+        onPostKeyDown={onPostKeyDown}
+        collectionCardLayout="wide"
+      />,
+    );
+
+    expect(screen.getByTestId('collection-card')).toHaveAttribute('data-layout', 'wide');
+
+    mockUsePostDetails.mockReturnValue({
+      postDetails: undefined,
+      isLoading: true,
+    });
+
+    rerender(
+      <TimelineFeedItem
+        streamId={COLLECTION_STREAM_ID}
+        postId={COLLECTION_POST_ID}
+        index={0}
+        totalCount={1}
+        cardRef={cardRef}
+        onPostKeyDown={onPostKeyDown}
+        collectionCardLayout="wide"
+      />,
+    );
+
+    expect(screen.getByTestId('collection-card-skeleton')).toHaveAttribute('data-layout', 'wide');
+  });
 });
 
 describe('TimelineFeedItem - Snapshots', () => {
@@ -254,7 +354,7 @@ describe('TimelineFeedItem - Snapshots', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('matches snapshot while post details are still loading on a non-collection stream', () => {
+  it('matches snapshot while post details are still loading on a non-collection-capable stream', () => {
     mockUsePostDetails.mockReturnValue({
       postDetails: undefined,
       isLoading: true,
@@ -262,7 +362,7 @@ describe('TimelineFeedItem - Snapshots', () => {
 
     const { container } = render(
       <TimelineFeedItem
-        streamId={DEFAULT_STREAM_ID}
+        streamId={SHORT_STREAM_ID}
         postId="author-pubky:post-id"
         index={0}
         totalCount={1}

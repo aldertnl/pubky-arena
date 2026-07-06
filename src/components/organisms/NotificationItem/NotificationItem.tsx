@@ -25,6 +25,7 @@ import {
   formatPreviewText,
   getNotificationActionKey,
   getNotificationLink,
+  getPostNavigationCompositeId,
   getPostUriFromNotification,
   getUserIdFromNotification,
   hasPostPreview,
@@ -49,8 +50,11 @@ export function NotificationItem({ notification, isUnread }: NotificationItemPro
     return postUri ? pubkyUriToCompositeId(postUri) : null;
   }, [notification]);
 
+  const navigationCompositeId = useMemo(() => getPostNavigationCompositeId(notification), [notification]);
+
   // State for post content (fetched via controller)
   const [postContent, setPostContent] = useState<string | null>(null);
+  const [navigationPostKind, setNavigationPostKind] = useState<string | null | undefined>(undefined);
 
   // Use existing hook for user profile data
   const { profile } = useUserProfile(actorUserId || '');
@@ -70,35 +74,41 @@ export function NotificationItem({ notification, isUnread }: NotificationItemPro
     // 3. Write to local DB
     PostController.getOrFetch({ compositeId: postCompositeId, viewerId })
       .then(async (post) => {
-        if (!isCancelled && post?.content) {
-          if (isPostDeleted(post.content)) {
-            setPostContent(tPost('deleted'));
-          } else if (post.kind === 'long') {
-            try {
-              const parsed = JSON.parse(post.content) as ArticleJSON;
-              setPostContent(parsed.title || '');
-            } catch {
-              setPostContent(post.content);
-              toast({
-                variant: 'error',
-                description: tPostToast('parseError'),
-              });
-            }
-          } else if (post.kind === 'collection') {
-            const parsed = parseCollectionContent(post.content);
-            if (parsed) {
-              setPostContent(parsed.name);
-            } else {
-              setPostContent(post.content);
-              toast({
-                variant: 'error',
-                description: tPostToast('collectionParseError'),
-              });
-            }
-          } else {
-            const content = await resolvePubkyToNames(post.content);
-            if (!isCancelled) setPostContent(content);
+        if (isCancelled) return;
+
+        if (navigationCompositeId === postCompositeId) {
+          setNavigationPostKind(post?.kind ?? null);
+        }
+
+        if (!post?.content) return;
+
+        if (isPostDeleted(post.content)) {
+          setPostContent(tPost('deleted'));
+        } else if (post.kind === 'long') {
+          try {
+            const parsed = JSON.parse(post.content) as ArticleJSON;
+            setPostContent(parsed.title || '');
+          } catch {
+            setPostContent(post.content);
+            toast({
+              variant: 'error',
+              description: tPostToast('parseError'),
+            });
           }
+        } else if (post.kind === 'collection') {
+          const parsed = parseCollectionContent(post.content);
+          if (parsed) {
+            setPostContent(parsed.name);
+          } else {
+            setPostContent(post.content);
+            toast({
+              variant: 'error',
+              description: tPostToast('collectionParseError'),
+            });
+          }
+        } else {
+          const content = await resolvePubkyToNames(post.content);
+          if (!isCancelled) setPostContent(content);
         }
       })
       .catch((error) => {
@@ -111,7 +121,41 @@ export function NotificationItem({ notification, isUnread }: NotificationItemPro
       isCancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- toast is an external side-effect, not a dependency
-  }, [postCompositeId]);
+  }, [postCompositeId, navigationCompositeId]);
+
+  useEffect(() => {
+    if (!navigationCompositeId) {
+      setNavigationPostKind(undefined);
+      return;
+    }
+
+    // Preview fetch above already resolves kind when preview and navigation targets match.
+    if (navigationCompositeId === postCompositeId) {
+      return;
+    }
+
+    const viewerId = useAuthStore.getState().currentUserPubky;
+    if (!viewerId) return;
+
+    let isCancelled = false;
+
+    PostController.getOrFetch({ compositeId: navigationCompositeId, viewerId })
+      .then((post) => {
+        if (!isCancelled) {
+          setNavigationPostKind(post?.kind ?? null);
+        }
+      })
+      .catch((error) => {
+        if (!isCancelled) {
+          Logger.warn('Failed to fetch notification navigation post:', { navigationCompositeId, error });
+          setNavigationPostKind(null);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [navigationCompositeId, postCompositeId]);
 
   // Get user name and avatar from profile hook
   const userName = profile?.name || tCommon('user');
@@ -129,7 +173,10 @@ export function NotificationItem({ notification, isUnread }: NotificationItemPro
   const timestampLong = formatNotificationTime(notification.timestamp, true);
 
   // Calculate notification links (business logic separated in pure function)
-  const { notificationLink, userProfileLink } = getNotificationLink(notification);
+  const { notificationLink, userProfileLink } = useMemo(
+    () => getNotificationLink(notification, navigationPostKind),
+    [notification, navigationPostKind],
+  );
 
   // Handle tag click - navigate to search with the tag
   const handleTagClick = (tagLabel: string) => (e: React.MouseEvent) => {

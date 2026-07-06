@@ -1,4 +1,4 @@
-import { APP_ROUTES, POST_ROUTES, PROFILE_ROUTES } from '@/app/routes';
+import { APP_ROUTES, PROFILE_ROUTES, resolvePostHref } from '@/app/routes';
 import { Logger } from '@/libs/logger/logger';
 import { truncateString } from '@/libs/utils/utils';
 import { CompositeIdDomain } from '@/models/models.types';
@@ -64,15 +64,7 @@ export function getUserIdFromNotification(notification: FlatNotification): strin
 // NOTIFICATION LINK UTILITIES
 // ============================================================================
 
-/**
- * Convert a pubky URI or composite ID to a URL path format (userId/postId).
- * Uses shared composite ID utilities.
- * Supports:
- * - pubky:// URI format: pubky://userId/pub/pubky.app/posts/postId
- * - Composite ID format: userId:postId
- * Returns: userId/postId
- */
-function uriToUrlPath(uri: string | undefined): string | null {
+function uriToCompositeId(uri: string | undefined): string | null {
   if (!uri) return null;
 
   let compositeId: string | null = null;
@@ -89,48 +81,55 @@ function uriToUrlPath(uri: string | undefined): string | null {
   if (!compositeId) return null;
 
   try {
-    // Parse the composite ID to get userId and postId
-    const { pubky, id } = parseCompositeId(compositeId);
-    return `${pubky}/${id}`;
+    parseCompositeId(compositeId);
+    return compositeId;
   } catch (error) {
     Logger.debug('Failed to parse composite ID', { compositeId, error });
     return null;
   }
 }
 
+function getPostUriForNavigation(notification: FlatNotification): string | undefined {
+  switch (notification.type) {
+    case NotificationType.Reply:
+      // Navigate to parent post so user sees the full thread with the reply in context
+      return notification.parent_post_uri;
+    case NotificationType.Mention:
+      return notification.post_uri;
+    case NotificationType.TagPost:
+      return notification.post_uri;
+    case NotificationType.Repost:
+      return notification.repost_uri;
+    case NotificationType.PostDeleted:
+      return notification.linked_uri;
+    case NotificationType.PostEdited:
+      return notification.edited_uri;
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Composite id for the post a notification navigates to (when post-centric).
+ */
+export function getPostNavigationCompositeId(notification: FlatNotification): string | null {
+  if (
+    notification.type === NotificationType.Follow ||
+    notification.type === NotificationType.NewFriend ||
+    notification.type === NotificationType.TagProfile
+  ) {
+    return null;
+  }
+
+  return uriToCompositeId(getPostUriForNavigation(notification));
+}
+
 /**
  * Get the appropriate post link for a notification based on its type
  * Uses TypeScript's discriminated union type narrowing for type safety
  */
-function getPostLink(notification: FlatNotification): string | null {
-  let uri: string | undefined;
-
+function getPostLink(notification: FlatNotification, kind?: string | null): string | null {
   switch (notification.type) {
-    case NotificationType.Reply:
-      // Navigate to parent post so user sees the full thread with the reply in context
-      uri = notification.parent_post_uri;
-      break;
-
-    case NotificationType.Mention:
-      uri = notification.post_uri;
-      break;
-
-    case NotificationType.TagPost:
-      uri = notification.post_uri;
-      break;
-
-    case NotificationType.Repost:
-      uri = notification.repost_uri;
-      break;
-
-    case NotificationType.PostDeleted:
-      uri = notification.linked_uri;
-      break;
-
-    case NotificationType.PostEdited:
-      uri = notification.edited_uri;
-      break;
-
     case NotificationType.Follow:
     case NotificationType.NewFriend:
       // User-centric notifications - no post link
@@ -140,13 +139,14 @@ function getPostLink(notification: FlatNotification): string | null {
       // When someone tags your profile, link to your tagged page
       return PROFILE_ROUTES.UNIQUE_TAGS;
 
-    default:
-      return null;
+    default: {
+      const compositeId = getPostNavigationCompositeId(notification);
+      if (!compositeId) return null;
+      // Wait for the navigation target's kind before emitting a post URL.
+      if (kind === undefined) return null;
+      return resolvePostHref(compositeId, kind);
+    }
   }
-
-  // Convert URI to URL path format
-  const urlPath = uriToUrlPath(uri);
-  return urlPath ? `${POST_ROUTES.POST}/${urlPath}` : null;
 }
 
 /**
@@ -170,7 +170,7 @@ function shouldUsePrimaryUserLink(notification: FlatNotification): boolean {
  * @param notification - The notification to process
  * @returns Object with notificationLink and userProfileLink
  */
-export function getNotificationLink(notification: FlatNotification) {
+export function getNotificationLink(notification: FlatNotification, postKind?: string | null) {
   // Get user ID to create profile link
   const userId = getUserIdFromNotification(notification);
   const userProfileLink = userId ? getUserProfileLink(userId) : null;
@@ -178,7 +178,7 @@ export function getNotificationLink(notification: FlatNotification) {
   // Determine the main notification link
   // For user-centric notifications (follow/unfollow/friend), use profile link
   // For post-centric notifications, use post link
-  const postLink = getPostLink(notification);
+  const postLink = getPostLink(notification, postKind);
   const usePrimaryUserLink = shouldUsePrimaryUserLink(notification);
   const notificationLink = usePrimaryUserLink ? userProfileLink : postLink;
 

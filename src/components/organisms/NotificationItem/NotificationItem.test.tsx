@@ -166,7 +166,7 @@ describe('NotificationItem', () => {
     vi.clearAllMocks();
     mockToast.mockClear();
     mockGetOrFetch.mockClear();
-    mockGetOrFetch.mockResolvedValue(null);
+    mockGetOrFetch.mockResolvedValue({ kind: 'short', content: 'Hello' });
     vi.mocked(useUserProfile).mockReturnValue({
       profile: { name: 'User', avatarUrl: undefined },
       isLoading: false,
@@ -522,7 +522,7 @@ describe('NotificationItem', () => {
     });
   });
 
-  it('links to parent post (not the reply) for Reply notifications', () => {
+  it('links to parent post (not the reply) for Reply notifications', async () => {
     // Issue #1034: Reply notifications should link to the parent post thread,
     // not the isolated reply, so user sees the full conversation context
     const replyNotification = {
@@ -536,11 +536,12 @@ describe('NotificationItem', () => {
 
     render(<NotificationItem notification={replyNotification} isUnread={false} />);
 
-    // Find the action text link
-    const actionLink = screen.getByText('replied to your post');
-
-    // Verify the href points to the PARENT post, not the reply
-    expect(actionLink.closest('a')).toHaveAttribute('href', '/post/original-author/parent-post-id');
+    await vi.waitFor(() => {
+      expect(screen.getByText('replied to your post').closest('a')).toHaveAttribute(
+        'href',
+        '/post/original-author/parent-post-id',
+      );
+    });
   });
 
   it('navigates to notification link when clicking empty space in the row', () => {
@@ -557,7 +558,7 @@ describe('NotificationItem', () => {
     expect(mockPush).toHaveBeenCalledWith('/profile/user1');
   });
 
-  it('navigates to the tagged post from its action or empty row space', () => {
+  it('navigates to the tagged post from its action or empty row space', async () => {
     const tagNotification = {
       id: 'tagpost:123:user1',
       type: NotificationType.TagPost,
@@ -568,12 +569,39 @@ describe('NotificationItem', () => {
     } as FlatNotification;
     render(<NotificationItem notification={tagNotification} isUnread={false} />);
 
-    expect(screen.getByText('tagged your post').closest('a')).toHaveAttribute('href', '/post/user1/post123');
+    await vi.waitFor(() => {
+      expect(screen.getByText('tagged your post').closest('a')).toHaveAttribute('href', '/post/user1/post123');
+    });
     expect(screen.getByText('User').closest('a')).toHaveAttribute('href', '/profile/user1');
 
     fireEvent.click(screen.getAllByTestId('container')[0]);
 
     expect(mockPush).toHaveBeenCalledWith('/post/user1/post123');
+  });
+
+  it('links collection tag notifications to /collections/...', async () => {
+    mockGetOrFetch.mockResolvedValue({
+      kind: 'collection',
+      content: JSON.stringify({ name: 'My collection', items: [] }),
+    });
+
+    const tagNotification = {
+      id: 'tagpost:123:user1',
+      type: NotificationType.TagPost,
+      timestamp: Date.now() - 1000 * 60 * 30,
+      tagged_by: 'user1',
+      tag_label: 'bitcoin',
+      post_uri: 'user1:collection123',
+    } as FlatNotification;
+
+    render(<NotificationItem notification={tagNotification} isUnread={false} />);
+
+    await vi.waitFor(() => {
+      expect(screen.getByText('tagged your post').closest('a')).toHaveAttribute(
+        'href',
+        '/collections/user1/collection123',
+      );
+    });
   });
 
   it('does not navigate when clicking on a link inside the row', () => {
@@ -586,7 +614,7 @@ describe('NotificationItem', () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it('does not navigate when clicking on a link inside the TagPost notification row', () => {
+  it('does not navigate when clicking on a link inside the TagPost notification row', async () => {
     const tagNotification = {
       id: 'tagpost:123:user1',
       type: NotificationType.TagPost,
@@ -597,16 +625,17 @@ describe('NotificationItem', () => {
     } as FlatNotification;
     render(<NotificationItem notification={tagNotification} isUnread={false} />);
 
-    // PostTag mock renders a span, but let's verify the closest('a, button') guard
-    // by clicking a link element - the handler should bail out
+    await vi.waitFor(() => {
+      expect(screen.getByText('tagged your post').closest('a')).toBeInTheDocument();
+    });
+
     const actionLink = screen.getByText('tagged your post').closest('a')!;
     fireEvent.click(actionLink);
 
-    // mockPush should only be called from tag click handler, not row click
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it('does not navigate when clicking on a link inside Reply notification row', () => {
+  it('does not navigate when clicking on a link inside Reply notification row', async () => {
     const replyNotification = {
       id: 'reply:123:user1',
       type: NotificationType.Reply,
@@ -616,6 +645,10 @@ describe('NotificationItem', () => {
       reply_uri: 'pubky://user1/pub/pubky.app/posts/reply-post-id',
     } as FlatNotification;
     render(<NotificationItem notification={replyNotification} isUnread={false} />);
+
+    await vi.waitFor(() => {
+      expect(screen.getByText('replied to your post').closest('a')).toBeInTheDocument();
+    });
 
     const actionLink = screen.getByText('replied to your post').closest('a')!;
     fireEvent.click(actionLink);
@@ -654,7 +687,7 @@ describe('NotificationItem', () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it('does not navigate via row click when clicking on the timestamp and icon link', () => {
+  it('does not navigate via row click when clicking on the timestamp and icon link', async () => {
     const replyNotification = {
       id: 'reply:123:user1',
       type: NotificationType.Reply,
@@ -665,8 +698,10 @@ describe('NotificationItem', () => {
     } as FlatNotification;
     render(<NotificationItem notification={replyNotification} isUnread={false} />);
 
-    // The timestamp and icon share the same parent Link — use the icon as a stable selector
-    // "notification-icon" test id comes from the NotificationIcon mock defined in this file
+    await vi.waitFor(() => {
+      expect(screen.getByTestId('notification-icon').closest('a')).toBeInTheDocument();
+    });
+
     const timestampLink = screen.getByTestId('notification-icon').closest('a')!;
     fireEvent.click(timestampLink);
 
@@ -681,6 +716,10 @@ describe('NotificationItem', () => {
 });
 
 describe('NotificationItem - Snapshots', () => {
+  beforeEach(() => {
+    mockGetOrFetch.mockResolvedValue({ kind: 'short', content: 'Hello' });
+  });
+
   it('matches snapshot for Follow notification', () => {
     const notification = {
       id: 'follow:123:user1',
@@ -692,7 +731,7 @@ describe('NotificationItem - Snapshots', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('matches snapshot for TagPost notification', () => {
+  it('matches snapshot for TagPost notification', async () => {
     const notification = {
       id: 'tagpost:123:user1',
       type: NotificationType.TagPost,
@@ -702,10 +741,15 @@ describe('NotificationItem - Snapshots', () => {
       post_uri: 'user1:post123',
     } as FlatNotification;
     const { container } = render(<NotificationItem notification={notification} isUnread={false} />);
+
+    await vi.waitFor(() => {
+      expect(screen.getByText('tagged your post').closest('a')).toHaveAttribute('href', '/post/user1/post123');
+    });
+
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('matches snapshot for Mention notification', () => {
+  it('matches snapshot for Mention notification', async () => {
     const notification = {
       id: 'mention:123:user1',
       type: NotificationType.Mention,
@@ -714,6 +758,11 @@ describe('NotificationItem - Snapshots', () => {
       post_uri: 'user1:post123',
     } as FlatNotification;
     const { container } = render(<NotificationItem notification={notification} isUnread={false} />);
+
+    await vi.waitFor(() => {
+      expect(screen.getByText('mentioned you in post').closest('a')).toHaveAttribute('href', '/post/user1/post123');
+    });
+
     expect(container.firstChild).toMatchSnapshot();
   });
 });

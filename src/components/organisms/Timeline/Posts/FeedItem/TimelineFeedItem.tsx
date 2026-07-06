@@ -1,15 +1,20 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { getCollectionRoute } from '@/app/routes';
+import { resolvePostHref } from '@/app/routes';
 import { Container } from '@/atoms/Container/Container';
 import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
 import { useTtlSubscription } from '@/hooks/useTtlSubscription/useTtlSubscription';
 import { parseCompositeId } from '@/models/models.utils';
-import { isCollectionPostsStream, type PostStreamId } from '@/models/stream/post/postStream.types';
+import {
+  canStreamContainCollectionPosts,
+  isCollectionPostsStream,
+  type PostStreamId,
+} from '@/models/stream/post/postStream.types';
 import { CollectionCard } from '@/organisms/Collections/CollectionCard/CollectionCard';
 import { CollectionCardSkeleton } from '@/organisms/Collections/CollectionCard/CollectionCard.skeleton';
 import { PostMain } from '@/organisms/PostMain/PostMain';
+import type { CollectionCardLayout } from '@/organisms/PostMain/PostMainLayoutRules';
 import { TimelinePostReplies } from '../../PostReplies/PostReplies';
 
 interface TimelineFeedItemShellProps {
@@ -22,11 +27,14 @@ interface TimelineFeedItemShellProps {
 
 type TimelineFeedItemProps = TimelineFeedItemShellProps & {
   streamId: PostStreamId;
+  collectionCardLayout?: CollectionCardLayout;
 };
 
 type TimelineCollectionFeedItemProps = TimelineFeedItemShellProps & {
   authorPubky: string;
   collectionPostId: string;
+  collectionCardLayout?: CollectionCardLayout;
+  seedPostDetails: NonNullable<ReturnType<typeof usePostDetails>['postDetails']>;
 };
 
 interface FeedItemArticleShellProps {
@@ -72,6 +80,8 @@ function TimelineCollectionFeedItem({
   index,
   totalCount,
   cardRef,
+  collectionCardLayout = 'default',
+  seedPostDetails,
 }: TimelineCollectionFeedItemProps) {
   const router = useRouter();
   const { ref: ttlRef } = useTtlSubscription({
@@ -83,7 +93,7 @@ function TimelineCollectionFeedItem({
     if (event.target !== event.currentTarget) return;
     if (event.key !== 'Enter' && event.key !== ' ') return;
     event.preventDefault();
-    router.push(getCollectionRoute(authorPubky, collectionPostId));
+    router.push(resolvePostHref(postId, seedPostDetails.kind));
   };
 
   return (
@@ -97,7 +107,12 @@ function TimelineCollectionFeedItem({
       }}
       onKeyDown={handleCollectionKeyDown}
     >
-      <CollectionCard authorPubky={authorPubky} postId={collectionPostId} />
+      <CollectionCard
+        authorPubky={authorPubky}
+        postId={collectionPostId}
+        layout={collectionCardLayout}
+        seedPostDetails={seedPostDetails}
+      />
     </FeedItemArticleShell>
   );
 }
@@ -106,7 +121,10 @@ function TimelineCollectionFeedItemSkeleton({
   index,
   totalCount,
   cardRef,
-}: Pick<TimelineFeedItemShellProps, 'index' | 'totalCount' | 'cardRef'>) {
+  collectionCardLayout = 'default',
+}: Pick<TimelineFeedItemShellProps, 'index' | 'totalCount' | 'cardRef'> & {
+  collectionCardLayout?: CollectionCardLayout;
+}) {
   return (
     <FeedItemArticleShell
       data-cy="collection-card-feed-item"
@@ -115,7 +133,7 @@ function TimelineCollectionFeedItemSkeleton({
       cardRef={cardRef}
       tabIndex={-1}
     >
-      <CollectionCardSkeleton />
+      <CollectionCardSkeleton layout={collectionCardLayout} />
     </FeedItemArticleShell>
   );
 }
@@ -152,18 +170,56 @@ export function TimelineFeedItem({
   totalCount,
   cardRef,
   onPostKeyDown,
+  collectionCardLayout = 'default',
 }: TimelineFeedItemProps) {
+  const router = useRouter();
   const { postDetails } = usePostDetails(postId);
   const isCollectionStream = isCollectionPostsStream(streamId);
+  const mayContainCollections = canStreamContainCollectionPosts(streamId);
   const shellProps = { postId, index, totalCount, cardRef, onPostKeyDown };
 
-  if (isCollectionStream && postDetails === undefined) {
-    return <TimelineCollectionFeedItemSkeleton index={index} totalCount={totalCount} cardRef={cardRef} />;
+  if (postDetails === undefined && mayContainCollections) {
+    return (
+      <TimelineCollectionFeedItemSkeleton
+        index={index}
+        totalCount={totalCount}
+        cardRef={cardRef}
+        collectionCardLayout={collectionCardLayout}
+      />
+    );
   }
 
   if (isCollectionStream || postDetails?.kind === 'collection') {
     const { pubky, id } = parseCompositeId(postId);
-    return <TimelineCollectionFeedItem {...shellProps} authorPubky={pubky} collectionPostId={id} />;
+
+    if (postDetails) {
+      return (
+        <TimelineCollectionFeedItem
+          {...shellProps}
+          authorPubky={pubky}
+          collectionPostId={id}
+          collectionCardLayout={collectionCardLayout}
+          seedPostDetails={postDetails}
+        />
+      );
+    }
+
+    return (
+      <FeedItemArticleShell
+        data-cy="collection-card-feed-item"
+        index={index}
+        totalCount={totalCount}
+        cardRef={cardRef}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          router.push(resolvePostHref(postId, 'collection'));
+        }}
+      >
+        <CollectionCard authorPubky={pubky} postId={id} layout={collectionCardLayout} />
+      </FeedItemArticleShell>
+    );
   }
 
   return <TimelinePostFeedItem {...shellProps} />;

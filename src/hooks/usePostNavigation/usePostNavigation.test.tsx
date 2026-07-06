@@ -37,6 +37,25 @@ describe('usePostNavigation', () => {
       expect(mockPush).toHaveBeenCalledTimes(1);
     });
 
+    it('should navigate to the collection page when kind is collection', () => {
+      const { result } = renderHook(() => usePostNavigation());
+
+      act(() => {
+        result.current.navigateToPost('author123:collection456', 'collection');
+      });
+
+      expect(mockPush).toHaveBeenCalledWith('/collections/author123/collection456');
+    });
+
+    it('getPostHref routes collections to /collections/...', () => {
+      const { result } = renderHook(() => usePostNavigation());
+
+      expect(result.current.getPostHref('author123:collection456', 'collection')).toBe(
+        '/collections/author123/collection456',
+      );
+      expect(result.current.getPostHref('author123:post456', 'short')).toBe('/post/author123/post456');
+    });
+
     it('should handle multiple navigation calls', () => {
       const { result } = renderHook(() => usePostNavigation());
       const postId1 = 'author1:post1';

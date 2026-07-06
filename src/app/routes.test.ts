@@ -16,6 +16,7 @@ import {
   matchSingleCollectionRoute,
   ONBOARDING_ROUTES,
   PROFILE_ROUTES,
+  resolvePostHref,
   SETTINGS_ROUTES,
 } from './routes';
 
@@ -176,6 +177,23 @@ describe('getCollectionRoute', () => {
 
   it('is anchored on APP_ROUTES.COLLECTIONS', () => {
     expect(getCollectionRoute(pubky, postId).startsWith(`${APP_ROUTES.COLLECTIONS}/`)).toBe(true);
+  });
+});
+
+describe('resolvePostHref', () => {
+  const pubky = 'o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy';
+  const postId = '0034BBBDFK83G';
+  const compositeId = `${pubky}:${postId}`;
+
+  it('routes collection posts to /collections/...', () => {
+    expect(resolvePostHref(compositeId, 'collection')).toBe(`/collections/${pubky}/${postId}`);
+  });
+
+  it('routes non-collection posts to /post/...', () => {
+    expect(resolvePostHref(compositeId, 'short')).toBe(`/post/${pubky}/${postId}`);
+    expect(resolvePostHref(compositeId, 'long')).toBe(`/post/${pubky}/${postId}`);
+    expect(resolvePostHref(compositeId)).toBe(`/post/${pubky}/${postId}`);
+    expect(resolvePostHref(compositeId, null)).toBe(`/post/${pubky}/${postId}`);
   });
 });
 

@@ -151,7 +151,7 @@ describe('PostPreviewCard', () => {
     const card = screen.getByTestId('card');
     fireEvent.click(card);
 
-    expect(mockNavigateToPost).toHaveBeenCalledWith('test-post-123');
+    expect(mockNavigateToPost).toHaveBeenCalledWith('test-post-123', 'short');
   });
 
   it('navigates to post page on Enter key', () => {
@@ -160,7 +160,7 @@ describe('PostPreviewCard', () => {
     const card = screen.getByTestId('card');
     fireEvent.keyDown(card, { key: 'Enter' });
 
-    expect(mockNavigateToPost).toHaveBeenCalledWith('test-post-123');
+    expect(mockNavigateToPost).toHaveBeenCalledWith('test-post-123', 'short');
   });
 
   it('navigates to post page on Space key', () => {
@@ -169,7 +169,7 @@ describe('PostPreviewCard', () => {
     const card = screen.getByTestId('card');
     fireEvent.keyDown(card, { key: ' ' });
 
-    expect(mockNavigateToPost).toHaveBeenCalledWith('test-post-123');
+    expect(mockNavigateToPost).toHaveBeenCalledWith('test-post-123', 'short');
   });
 
   it('navigates to the collection page when the original post is a collection', () => {
@@ -182,8 +182,7 @@ describe('PostPreviewCard', () => {
 
     fireEvent.click(screen.getByTestId('card'));
 
-    expect(mockPush).toHaveBeenCalledWith('/collections/author-pubky/collection-id');
-    expect(mockNavigateToPost).not.toHaveBeenCalled();
+    expect(mockNavigateToPost).toHaveBeenCalledWith('author-pubky:collection-id', 'collection');
   });
 
   it('does not navigate on other keys', () => {

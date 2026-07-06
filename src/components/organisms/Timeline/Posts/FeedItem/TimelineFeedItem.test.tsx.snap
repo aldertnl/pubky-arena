@@ -11,6 +11,8 @@ exports[`TimelineFeedItem - Snapshots > matches snapshot for a collection feed i
 >
   <div
     data-author="author-pubky"
+    data-has-seed="true"
+    data-layout="default"
     data-post-id="collection-post-id"
     data-testid="collection-card"
   />
@@ -47,12 +49,13 @@ exports[`TimelineFeedItem - Snapshots > matches snapshot while post details are 
   tabindex="-1"
 >
   <div
+    data-layout="default"
     data-testid="collection-card-skeleton"
   />
 </div>
 `;
 
-exports[`TimelineFeedItem - Snapshots > matches snapshot while post details are still loading on a non-collection stream 1`] = `
+exports[`TimelineFeedItem - Snapshots > matches snapshot while post details are still loading on a non-collection-capable stream 1`] = `
 <div
   aria-posinset="1"
   aria-setsize="1"
