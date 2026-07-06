@@ -1,11 +1,16 @@
+import { useRouter } from 'next/navigation';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
 import { PostPreviewCard } from './PostPreviewCard';
 
-// Mock hooks
 const mockNavigateToPost = vi.fn();
+const mockPush = vi.fn();
 const mockTtlRef = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(),
+}));
+
 vi.mock('@/hooks/usePostNavigation/usePostNavigation', () => ({
   usePostNavigation: () => ({
     navigateToPost: mockNavigateToPost,
@@ -92,17 +97,27 @@ vi.mock('@/atoms/Card/Card', () => {
 });
 
 const mockUsePostDetails = vi.mocked(usePostDetails);
+const mockUseRouter = vi.mocked(useRouter);
 
 // Minimal resolved post — PostHeader / PostContentBase are mocked, so only the
 // non-null `postDetails` (and `isLoading: false`) matters for the missing check.
 const resolvedPost = {
-  postDetails: { id: 'test-post-123' } as never,
+  postDetails: { id: 'test-post-123', kind: 'short' } as never,
   isLoading: false,
 };
 
 describe('PostPreviewCard', () => {
   beforeEach(() => {
     mockNavigateToPost.mockClear();
+    mockPush.mockClear();
+    mockUseRouter.mockReturnValue({
+      push: mockPush,
+      back: vi.fn(),
+      forward: vi.fn(),
+      refresh: vi.fn(),
+      replace: vi.fn(),
+      prefetch: vi.fn(),
+    } as ReturnType<typeof useRouter>);
     mockUsePostDetails.mockReturnValue(resolvedPost);
   });
 
@@ -155,6 +170,20 @@ describe('PostPreviewCard', () => {
     fireEvent.keyDown(card, { key: ' ' });
 
     expect(mockNavigateToPost).toHaveBeenCalledWith('test-post-123');
+  });
+
+  it('navigates to the collection page when the original post is a collection', () => {
+    mockUsePostDetails.mockReturnValue({
+      postDetails: { id: 'author-pubky:collection-id', kind: 'collection' } as never,
+      isLoading: false,
+    });
+
+    render(<PostPreviewCard postId="author-pubky:collection-id" />);
+
+    fireEvent.click(screen.getByTestId('card'));
+
+    expect(mockPush).toHaveBeenCalledWith('/collections/author-pubky/collection-id');
+    expect(mockNavigateToPost).not.toHaveBeenCalled();
   });
 
   it('does not navigate on other keys', () => {

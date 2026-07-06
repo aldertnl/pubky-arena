@@ -8,6 +8,7 @@ import {
   buildPostReplyStreamId,
   isAuthorStreamSkippingMuteFilter,
   isCollectionItemsStream,
+  isCollectionPostsStream,
   isSkipPaginatedStream,
 } from '@/models/stream/post/postStream.types';
 import { StreamSource } from '@/services/nexus/stream/posts/postStream.types';
@@ -95,6 +96,26 @@ describe('isCollectionItemsStream', () => {
     expect(isCollectionItemsStream(buildCollectionItemsStreamId(TEST_PUBKY, TEST_POST_ID))).toBe(true);
     expect(isCollectionItemsStream(buildAuthorCollectionsStreamId(TEST_PUBKY))).toBe(false);
     expect(isCollectionItemsStream('timeline:bookmarks:collection')).toBe(false);
+  });
+});
+
+describe('isCollectionPostsStream', () => {
+  it('returns true for timeline and popularity collection-kind streams', () => {
+    expect(isCollectionPostsStream('timeline:all:collection')).toBe(true);
+    expect(isCollectionPostsStream('timeline:following:collection')).toBe(true);
+    expect(isCollectionPostsStream('total_engagement:all:collection')).toBe(true);
+  });
+
+  it('returns true for author and bookmarked collection streams', () => {
+    expect(isCollectionPostsStream(buildAuthorCollectionsStreamId(TEST_PUBKY))).toBe(true);
+    expect(isCollectionPostsStream(buildFollowedCollectionsStreamId())).toBe(true);
+    expect(isCollectionPostsStream(buildDiscoverCollectionsStreamId())).toBe(true);
+  });
+
+  it('returns false for non-collection streams and single-collection item streams', () => {
+    expect(isCollectionPostsStream('timeline:all:all')).toBe(false);
+    expect(isCollectionPostsStream('timeline:all:short')).toBe(false);
+    expect(isCollectionPostsStream(buildCollectionItemsStreamId(TEST_PUBKY, TEST_POST_ID))).toBe(false);
   });
 });
 

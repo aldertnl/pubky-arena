@@ -4,14 +4,15 @@ import { Container } from '@/atoms/Container/Container';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll/useInfiniteScroll';
 import { usePostListKeyboard } from '@/hooks/usePostListKeyboard/usePostListKeyboard';
 import { usePostNavigation } from '@/hooks/usePostNavigation/usePostNavigation';
+import type { PostStreamId } from '@/models/stream/post/postStream.types';
 import { TimelineEndMessage } from '@/molecules/Timeline/TimelineEndMessage';
 import { TimelineError } from '@/molecules/Timeline/TimelineError';
 import { TimelineLoadingMore } from '@/molecules/Timeline/TimelineLoadingMore';
 import { TimelineStateWrapper } from '@/molecules/Timeline/TimelineStateWrapper/TimelineStateWrapper';
-import { PostMain } from '../../PostMain/PostMain';
-import { TimelinePostReplies } from '../PostReplies/PostReplies';
+import { TimelineFeedItem } from './FeedItem/TimelineFeedItem';
 
 interface TimelinePostsProps {
+  streamId: PostStreamId;
   postIds: string[];
   loading: boolean;
   loadingMore: boolean;
@@ -29,7 +30,15 @@ interface TimelinePostsProps {
  * The surface (TimelineFeedContent) wraps this in PostMainLayoutProvider so each
  * PostMain / nested reply inherits the active tags layout via context.
  */
-export function TimelinePosts({ postIds, loading, loadingMore, error, hasMore, loadMore }: TimelinePostsProps) {
+export function TimelinePosts({
+  streamId,
+  postIds,
+  loading,
+  loadingMore,
+  error,
+  hasMore,
+  loadMore,
+}: TimelinePostsProps) {
   const { sentinelRef } = useInfiniteScroll({
     onLoadMore: loadMore,
     hasMore,
@@ -52,20 +61,15 @@ export function TimelinePosts({ postIds, loading, loadingMore, error, hasMore, l
           onKeyDown={onListKeyDown}
         >
           {postIds.map((postId, index) => (
-            <Container
+            <TimelineFeedItem
               key={`main_${postId}`}
-              data-cy="post-card"
-              ref={setCardRef(index)}
-              role="article"
-              aria-posinset={index + 1}
-              aria-setsize={postIds.length}
-              tabIndex={0}
-              onKeyDown={(e) => handlePostKeyDown(postId, e)}
-              className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <PostMain postId={postId} isReply={false} />
-              <TimelinePostReplies postId={postId} />
-            </Container>
+              streamId={streamId}
+              postId={postId}
+              index={index}
+              totalCount={postIds.length}
+              cardRef={setCardRef(index)}
+              onPostKeyDown={handlePostKeyDown}
+            />
           ))}
 
           {loadingMore && <TimelineLoadingMore />}

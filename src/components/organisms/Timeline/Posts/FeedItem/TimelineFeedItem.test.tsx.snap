@@ -1,0 +1,73 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`TimelineFeedItem - Snapshots > matches snapshot for a collection feed item 1`] = `
+<div
+  aria-posinset="1"
+  aria-setsize="1"
+  class="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  data-testid="collection-card-feed-item"
+  role="article"
+  tabindex="0"
+>
+  <div
+    data-author="author-pubky"
+    data-post-id="collection-post-id"
+    data-testid="collection-card"
+  />
+</div>
+`;
+
+exports[`TimelineFeedItem - Snapshots > matches snapshot for a regular post feed item 1`] = `
+<div
+  aria-posinset="2"
+  aria-setsize="3"
+  class="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  data-testid="post-card"
+  role="article"
+  tabindex="0"
+>
+  <div
+    data-post-id="author-pubky:post-id"
+    data-testid="post-main"
+  />
+  <div
+    data-post-id="author-pubky:post-id"
+    data-testid="post-replies"
+  />
+</div>
+`;
+
+exports[`TimelineFeedItem - Snapshots > matches snapshot while post details are still loading on a collection stream 1`] = `
+<div
+  aria-posinset="1"
+  aria-setsize="1"
+  class="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  data-testid="collection-card-feed-item"
+  role="article"
+  tabindex="-1"
+>
+  <div
+    data-testid="collection-card-skeleton"
+  />
+</div>
+`;
+
+exports[`TimelineFeedItem - Snapshots > matches snapshot while post details are still loading on a non-collection stream 1`] = `
+<div
+  aria-posinset="1"
+  aria-setsize="1"
+  class="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  data-testid="post-card"
+  role="article"
+  tabindex="0"
+>
+  <div
+    data-post-id="author-pubky:post-id"
+    data-testid="post-main"
+  />
+  <div
+    data-post-id="author-pubky:post-id"
+    data-testid="post-replies"
+  />
+</div>
+`;

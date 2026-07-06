@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll/useInfiniteScroll';
+import { PostStreamTypes } from '@/models/stream/post/postStream.types';
 import { TimelinePosts } from './Posts';
 
 // Mock dependencies
@@ -72,19 +73,11 @@ vi.mock('@/molecules/Timeline/TimelineStateWrapper/TimelineStateWrapper', async 
   };
 });
 
-vi.mock('@/organisms/PostMain/PostMain', () => {
-  return {
-    PostMain: ({ postId, onClick, ...props }: { postId: string; onClick: () => void; [key: string]: unknown }) => (
-      <div data-testid={`post-${postId}`} onClick={onClick} {...props} />
-    ),
-  };
-});
-
-vi.mock('@/organisms/Timeline/PostReplies/PostReplies', () => {
-  return {
-    TimelinePostReplies: ({ postId }: { postId: string }) => <div data-testid={`replies-${postId}`} />,
-  };
-});
+vi.mock('./FeedItem/TimelineFeedItem', () => ({
+  TimelineFeedItem: ({ postId }: { postId: string }) => (
+    <div data-testid={`post-${postId}`} role="article" tabIndex={0} />
+  ),
+}));
 
 const mockPush = vi.fn();
 const mockUseLiveQuery = vi.mocked(useLiveQuery);
@@ -92,6 +85,7 @@ const mockUseRouter = vi.mocked(useRouter);
 const mockUseInfiniteScroll = vi.mocked(useInfiniteScroll);
 
 const mockPostIds = ['author1:post1', 'author2:post2', 'author3:post3'];
+const TEST_STREAM_ID = PostStreamTypes.TIMELINE_ALL_ALL;
 describe('TimelinePosts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -122,6 +116,7 @@ describe('TimelinePosts', () => {
     it('should render loading state initially', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={[]}
           loading={true}
           loadingMore={false}
@@ -137,6 +132,7 @@ describe('TimelinePosts', () => {
     it('should render posts after successful fetch', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={false}
@@ -155,6 +151,7 @@ describe('TimelinePosts', () => {
     it('should show loading more indicator when paginating', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={true}
@@ -174,6 +171,7 @@ describe('TimelinePosts', () => {
     it('should render empty state when no posts are returned', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={[]}
           loading={false}
           loadingMore={false}
@@ -195,6 +193,7 @@ describe('TimelinePosts', () => {
 
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={fewPosts}
           loading={false}
           loadingMore={false}
@@ -216,6 +215,7 @@ describe('TimelinePosts', () => {
     it('should render error state on initial fetch failure', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={[]}
           loading={false}
           loadingMore={false}
@@ -236,6 +236,7 @@ describe('TimelinePosts', () => {
     it('should show error message when pagination fails', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={false}
@@ -255,6 +256,7 @@ describe('TimelinePosts', () => {
     it('should stop loading more posts after pagination error', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={false}
@@ -275,6 +277,7 @@ describe('TimelinePosts', () => {
     it('should render all fetched posts', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={false}
@@ -294,6 +297,7 @@ describe('TimelinePosts', () => {
     it('should render PostWithReplies for each post', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={false}
@@ -312,6 +316,7 @@ describe('TimelinePosts', () => {
     it('should make all post cards individually tabbable', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={false}
@@ -334,6 +339,7 @@ describe('TimelinePosts', () => {
     it('should render posts with correct keys', async () => {
       const { container } = render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={false}
@@ -355,6 +361,7 @@ describe('TimelinePosts', () => {
       const mockLoadMore = vi.fn();
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={false}
@@ -377,6 +384,7 @@ describe('TimelinePosts', () => {
     it('should show end message when hasMore is false', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={false}
@@ -394,6 +402,7 @@ describe('TimelinePosts', () => {
     it('should show loading more indicator when loadingMore is true', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={true}
@@ -413,6 +422,7 @@ describe('TimelinePosts', () => {
     it('should render posts with provided props', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={false}
@@ -432,6 +442,7 @@ describe('TimelinePosts', () => {
       const largePostIds = Array.from({ length: largePostCount }, (_, i) => `author${i + 1}:post${i + 1}`);
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={largePostIds}
           loading={false}
           loadingMore={false}
@@ -454,6 +465,7 @@ describe('TimelinePosts', () => {
     it('should configure infinite scroll with correct parameters', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={false}
@@ -481,6 +493,7 @@ describe('TimelinePosts', () => {
 
       const { container } = render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={false}
@@ -499,6 +512,7 @@ describe('TimelinePosts', () => {
     it('should pass hasMore to infinite scroll hook', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={false}
@@ -517,6 +531,7 @@ describe('TimelinePosts', () => {
     it('should pass loadingMore to infinite scroll hook', async () => {
       render(
         <TimelinePosts
+          streamId={TEST_STREAM_ID}
           postIds={mockPostIds}
           loading={false}
           loadingMore={true}
@@ -562,7 +577,15 @@ describe('TimelinePosts - Snapshots', () => {
 
   it('should match snapshot for loading state', () => {
     const { container } = render(
-      <TimelinePosts postIds={[]} loading={true} loadingMore={false} error={null} hasMore={true} loadMore={vi.fn()} />,
+      <TimelinePosts
+        streamId={TEST_STREAM_ID}
+        postIds={[]}
+        loading={true}
+        loadingMore={false}
+        error={null}
+        hasMore={true}
+        loadMore={vi.fn()}
+      />,
     );
 
     expect(container).toMatchSnapshot();
@@ -571,6 +594,7 @@ describe('TimelinePosts - Snapshots', () => {
   it('should match snapshot for empty state', async () => {
     const { container } = render(
       <TimelinePosts
+        streamId={TEST_STREAM_ID}
         postIds={[]}
         loading={false}
         loadingMore={false}
@@ -590,6 +614,7 @@ describe('TimelinePosts - Snapshots', () => {
   it('should match snapshot for error state', async () => {
     const { container } = render(
       <TimelinePosts
+        streamId={TEST_STREAM_ID}
         postIds={[]}
         loading={false}
         loadingMore={false}
@@ -609,6 +634,7 @@ describe('TimelinePosts - Snapshots', () => {
   it('should match snapshot with posts', async () => {
     const { container } = render(
       <TimelinePosts
+        streamId={TEST_STREAM_ID}
         postIds={mockPostIds}
         loading={false}
         loadingMore={false}

@@ -242,6 +242,7 @@ function TimelineFeedContent({
             />
           ) : (
             <TimelinePosts
+              streamId={streamId}
               postIds={postIds}
               loading={loading}
               loadingMore={loadingMore}

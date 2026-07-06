@@ -160,6 +160,18 @@ export function isCollectionItemsStream(streamId: string): streamId is Collectio
 }
 
 /**
+ * Returns true when the stream only contains `kind=collection` posts (Collections
+ * content filter, profile Collections tab, discover/followed collection seeds).
+ * Used by the timeline feed to pick collection skeletons while post details load.
+ *
+ * Excludes single-collection **item** streams (`collection:<author>:<postId>`),
+ * which hold regular posts inside one collection.
+ */
+export function isCollectionPostsStream(streamId: string): boolean {
+  return streamId.endsWith(`:${StreamKind.COLLECTION}`);
+}
+
+/**
  * Single-collection item feeds (`collection:<author>:<postId>`) and the
  * bookmarks post feeds (`<sorting>:bookmarks:<kind>`) intentionally keep deleted
  * posts in the stream so the feed still renders the saved/collected slot with the
