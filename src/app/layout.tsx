@@ -10,6 +10,8 @@ import { Toaster } from '@/molecules/Toaster/Toaster';
 import { CoordinatorsManager } from '@/organisms/CoordinatorsManager/CoordinatorsManager';
 import { DialogSignIn } from '@/organisms/DialogSignIn/DialogSignIn';
 import { Header } from '@/organisms/Header/Header';
+// TODO:[Locks] #2026 — dev/staging Lock-auth test harness; remove with the real lock switch.
+import { LocksAuthTestHarness } from '@/organisms/LocksAuthTestHarness/LocksAuthTestHarness';
 import { DatabaseProvider } from '@/providers/DatabaseProvider/DatabaseProvider';
 import { ErrorBoundaryProvider } from '@/providers/ErrorBoundaryProvider/ErrorBoundaryProvider';
 import { GlobalErrorHandlerProvider } from '@/providers/GlobalErrorHandlerProvider/GlobalErrorHandlerProvider';
@@ -53,6 +55,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <Fab />
                   <Toaster />
                   <DialogSignIn />
+                  <LocksAuthTestHarness />
                 </RouteGuardProvider>
               </DatabaseProvider>
             </ErrorBoundaryProvider>

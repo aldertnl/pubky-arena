@@ -759,6 +759,27 @@
       "feedEditError": "无法更新信息流。请重试。",
       "feedDeleted": "信息流 {name} 已删除！",
       "feedDeleteError": "无法删除信息流。请重试。"
+    },
+    "locksAuth": {
+      "intro": {
+        "title": "锁定内容",
+        "description": "Pubky Locks 让你可以用付款或密码锁定内容。"
+      },
+      "enable": {
+        "title": "启用 Locks",
+        "description": "使用 <bold>Pubky Ring</bold> 授权 Locks 服务器管理你的 Locks 数据。"
+      },
+      "success": {
+        "title": "Locks 已启用",
+        "description": "你已授权 Locks 服务器管理你的 Locks 数据。"
+      },
+      "error": {
+        "title": "启用 Locks",
+        "description": "授权 Locks 服务器时出错。",
+        "fallback": "Locks 授权失败。"
+      },
+      "tryAgain": "重试",
+      "iframeTitle": "Locks 服务器授权"
     }
   },
   "sidebar": {

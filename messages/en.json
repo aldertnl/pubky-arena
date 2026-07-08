@@ -473,11 +473,8 @@
       "createInBrowser": "Create keys in browser",
       "continueWithRing": "Continue with Pubky Ring",
       "inviteCodeApplied": "Invite code applied",
-
       "invalidInviteCode": "Invalid invite code",
-
       "usedInviteCode": "Invite code already used",
-
       "verificationFailed": "Couldn't verify invite code"
     },
     "createProfile": {
@@ -762,6 +759,27 @@
       "feedEditError": "Could not update feed. Try again.",
       "feedDeleted": "Feed deleted: {name}",
       "feedDeleteError": "Could not delete feed. Try again."
+    },
+    "locksAuth": {
+      "intro": {
+        "title": "Lock Content",
+        "description": "Pubky Locks allows you to lock content with payments or passwords."
+      },
+      "enable": {
+        "title": "Enable Locks",
+        "description": "Use <bold>Pubky Ring</bold> to authorize Locks server to manage your Locks data."
+      },
+      "success": {
+        "title": "Locks Enabled",
+        "description": "You authorized the Locks server to manage your Locks data."
+      },
+      "error": {
+        "title": "Enable Locks",
+        "description": "Something went wrong while authorizing the Lock Server.",
+        "fallback": "Lock authorization failed."
+      },
+      "tryAgain": "Try again",
+      "iframeTitle": "Lock Server authorization"
     }
   },
   "sidebar": {

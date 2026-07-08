@@ -759,6 +759,27 @@
       "feedEditError": "Impossible de mettre à jour le flux. Réessayez.",
       "feedDeleted": "Flux {name} supprime !",
       "feedDeleteError": "Impossible de supprimer le flux. Réessayez."
+    },
+    "locksAuth": {
+      "intro": {
+        "title": "Verrouiller le contenu",
+        "description": "Pubky Locks vous permet de verrouiller du contenu avec des paiements ou des mots de passe."
+      },
+      "enable": {
+        "title": "Activer Locks",
+        "description": "Utilisez <bold>Pubky Ring</bold> pour autoriser le serveur Locks à gérer vos données Locks."
+      },
+      "success": {
+        "title": "Locks activé",
+        "description": "Vous avez autorisé le serveur Locks à gérer vos données Locks."
+      },
+      "error": {
+        "title": "Activer Locks",
+        "description": "Une erreur s'est produite lors de l'autorisation du serveur Locks.",
+        "fallback": "Échec de l'autorisation de Locks."
+      },
+      "tryAgain": "Réessayer",
+      "iframeTitle": "Autorisation du serveur Locks"
     }
   },
   "sidebar": {

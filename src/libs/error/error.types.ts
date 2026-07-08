@@ -28,6 +28,7 @@ export enum ErrorService {
   Exchangerate = 'exchangerate',
   Chatwoot = 'chatwoot',
   PubkyAppSpecs = 'pubky-app-specs',
+  Locks = 'locks', // Lock Server (locks-sdk) operations
   Local = 'local', // Client-side operations
   NextJsServer = 'nextjs-server', // Server-side operations
 }

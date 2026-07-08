@@ -761,6 +761,27 @@
       "feedCreateError": "Feed konnte nicht erstellt werden. Versuchen Sie es erneut.",
       "feedEditError": "Feed konnte nicht aktualisiert werden. Versuchen Sie es erneut.",
       "feedDeleteError": "Feed konnte nicht gelöscht werden. Versuchen Sie es erneut."
+    },
+    "locksAuth": {
+      "intro": {
+        "title": "Inhalt sperren",
+        "description": "Mit Pubky Locks kannst du Inhalte mit Zahlungen oder Passwörtern sperren."
+      },
+      "enable": {
+        "title": "Locks aktivieren",
+        "description": "Verwende <bold>Pubky Ring</bold>, um den Locks-Server zur Verwaltung deiner Locks-Daten zu autorisieren."
+      },
+      "success": {
+        "title": "Locks aktiviert",
+        "description": "Du hast den Locks-Server zur Verwaltung deiner Locks-Daten autorisiert."
+      },
+      "error": {
+        "title": "Locks aktivieren",
+        "description": "Beim Autorisieren des Locks-Servers ist ein Fehler aufgetreten.",
+        "fallback": "Locks-Autorisierung fehlgeschlagen."
+      },
+      "tryAgain": "Erneut versuchen",
+      "iframeTitle": "Locks-Server-Autorisierung"
     }
   },
   "sidebar": {

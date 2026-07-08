@@ -157,6 +157,9 @@ const envSchema = z.object({
 
   NEXT_PUBLIC_HOMESERVER_URL: urlValue.default(NETWORK_RUNTIME_DEFAULTS.homeserverUrl),
 
+  // TODO:[Locks] #2026 — Lock Server pubky for the dev/staging Lock-auth test trigger only.
+  NEXT_PUBLIC_LOCK_SERVER: z.string().optional(),
+
   // Server-side only admin credentials for signup token generation (dev/test only)
   // These are NOT exposed to the client bundle - only available on the server
   HOMESERVER_ADMIN_URL: z.url().default('http://localhost:6288/generate_signup_token'),
@@ -332,6 +335,8 @@ function parseEnv(): z.infer<typeof envSchema> {
     NEXT_PUBLIC_PKARR_RELAYS: process.env.NEXT_PUBLIC_PKARR_RELAYS,
     NEXT_PUBLIC_HOMESERVER: process.env.NEXT_PUBLIC_HOMESERVER,
     NEXT_PUBLIC_HOMESERVER_URL: process.env.NEXT_PUBLIC_HOMESERVER_URL,
+    // TODO:[Locks] #2026 — dev/staging Lock-auth test trigger only.
+    NEXT_PUBLIC_LOCK_SERVER: process.env.NEXT_PUBLIC_LOCK_SERVER,
     HOMESERVER_ADMIN_URL: process.env.HOMESERVER_ADMIN_URL,
     HOMESERVER_ADMIN_PASSWORD: process.env.HOMESERVER_ADMIN_PASSWORD,
     NEXT_PUBLIC_DEFAULT_HTTP_RELAY: process.env.NEXT_PUBLIC_DEFAULT_HTTP_RELAY,

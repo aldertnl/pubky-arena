@@ -761,6 +761,27 @@
       "feedEditError": "No se pudo actualizar el feed. Inténtalo de nuevo.",
       "feedDeleted": "Feed eliminado: {name}",
       "feedDeleteError": "No se pudo eliminar el feed. Inténtalo de nuevo."
+    },
+    "locksAuth": {
+      "intro": {
+        "title": "Bloquear contenido",
+        "description": "Pubky Locks te permite bloquear contenido con pagos o contraseñas."
+      },
+      "enable": {
+        "title": "Activar Locks",
+        "description": "Usa <bold>Pubky Ring</bold> para autorizar al servidor Locks a gestionar tus datos de Locks."
+      },
+      "success": {
+        "title": "Locks activado",
+        "description": "Autorizaste al servidor Locks a gestionar tus datos de Locks."
+      },
+      "error": {
+        "title": "Activar Locks",
+        "description": "Algo salió mal al autorizar el servidor Locks.",
+        "fallback": "Error al autorizar Locks."
+      },
+      "tryAgain": "Intentar de nuevo",
+      "iframeTitle": "Autorización del servidor Locks"
     }
   },
   "sidebar": {

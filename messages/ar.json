@@ -761,6 +761,27 @@
       "feedEditError": "تعذر تحديث الخلاصة. حاول مرة أخرى.",
       "feedDeleted": "تم حذف الخلاصة {name}!",
       "feedDeleteError": "تعذر حذف الخلاصة. حاول مرة أخرى."
+    },
+    "locksAuth": {
+      "intro": {
+        "title": "قفل المحتوى",
+        "description": "يتيح لك Pubky Locks قفل المحتوى بالمدفوعات أو كلمات المرور."
+      },
+      "enable": {
+        "title": "تفعيل Locks",
+        "description": "استخدم <bold>Pubky Ring</bold> للسماح لخادم Locks بإدارة بيانات Locks الخاصة بك."
+      },
+      "success": {
+        "title": "تم تفعيل Locks",
+        "description": "لقد سمحت لخادم Locks بإدارة بيانات Locks الخاصة بك."
+      },
+      "error": {
+        "title": "تفعيل Locks",
+        "description": "حدث خطأ أثناء تفويض خادم Locks.",
+        "fallback": "فشل تفويض Locks."
+      },
+      "tryAgain": "حاول مرة أخرى",
+      "iframeTitle": "تفويض خادم Locks"
     }
   },
   "sidebar": {
