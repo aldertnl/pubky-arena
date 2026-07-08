@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { IMAGE_ENCODE_QUALITY, IMAGE_MAX_DIMENSION, IMAGE_MAX_RAW_SIZE } from '@/config/images';
+import { IMAGE_ENCODE_QUALITY, IMAGE_MAX_DIMENSION } from '@/config/images';
 import { asOpaque } from '@/test-utils/type-assertions';
 import { stripImageMetadata } from './stripImageMetadata';
 
@@ -225,7 +225,7 @@ describe('stripImageMetadata', () => {
       writable: true,
     });
     const inputFile = new File([buildJpegBytes(8160, 6120)], 'pixel-high-res.jpg', { type: 'image/jpeg' });
-    Object.defineProperty(inputFile, 'size', { value: IMAGE_MAX_RAW_SIZE - 1 });
+    Object.defineProperty(inputFile, 'size', { value: 10 * 1024 * 1024 });
 
     const result = await stripImageMetadata(inputFile);
 
@@ -243,13 +243,15 @@ describe('stripImageMetadata', () => {
     expect(URL.createObjectURL).not.toHaveBeenCalled();
   });
 
-  it('rejects image files exceeding the raw image cap before decoding', async () => {
+  it('accepts large raster images without a raw-size pre-check before decoding', async () => {
     const inputFile = new File(['raw-image-bytes'], 'huge-photo.jpg', { type: 'image/jpeg' });
-    Object.defineProperty(inputFile, 'size', { value: IMAGE_MAX_RAW_SIZE + 1 });
+    Object.defineProperty(inputFile, 'size', { value: 10 * 1024 * 1024 });
 
-    await expect(stripImageMetadata(inputFile)).rejects.toThrow('Image file size exceeds upload limits');
-    expect(URL.createObjectURL).not.toHaveBeenCalled();
-    expect(mockCanvas.toBlob).not.toHaveBeenCalled();
+    const result = await stripImageMetadata(inputFile);
+
+    expect(result).toBeInstanceOf(File);
+    expect(URL.createObjectURL).toHaveBeenCalledWith(inputFile);
+    expect(mockCanvas.toBlob).toHaveBeenCalled();
   });
 
   it('detects PNG files from magic bytes when file.type is empty', async () => {

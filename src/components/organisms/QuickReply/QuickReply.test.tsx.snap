@@ -49,6 +49,7 @@ exports[`QuickReply - Mobile Snapshots > matches snapshot on mobile viewport 1`]
       <div
         attachments=""
         data-testid="post-input-attachments"
+        preparingattachmentcount="0"
       />
       <div
         data-character-count="0"
@@ -123,6 +124,7 @@ exports[`QuickReply - Snapshots > matches snapshot with default props 1`] = `
       <div
         attachments=""
         data-testid="post-input-attachments"
+        preparingattachmentcount="0"
       />
       <div
         data-character-count="0"

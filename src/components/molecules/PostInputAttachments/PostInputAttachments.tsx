@@ -1,7 +1,8 @@
 'use client';
 
 import { ChangeEvent, Dispatch, forwardRef, SetStateAction, useEffect, useMemo } from 'react';
-import { FileText, ImagePlus, Plus, Trash2 } from 'lucide-react';
+import { FileText, ImagePlus, Loader2, Plus, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Audio } from '@/atoms/Audio/Audio';
 import { Button } from '@/atoms/Button/Button';
 import { Card, CardContent } from '@/atoms/Card/Card';
@@ -16,8 +17,10 @@ import { cn } from '@/libs/utils/utils';
 type PostInputAttachmentsProps = {
   attachments: File[];
   setAttachments: Dispatch<SetStateAction<File[]>>;
-  handleFilesAdded: (files: File[]) => void;
+  handleFilesAdded: (files: File[]) => void | Promise<void>;
   isSubmitting: boolean;
+  isPreparingAttachments?: boolean;
+  preparingAttachmentCount?: number;
   isArticle?: boolean;
   handleFileClick?: () => void;
 };
@@ -34,7 +37,21 @@ const getAttachmentType = (file: File) => {
   if (file.type === 'application/pdf') return 'pdf';
 };
 export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttachmentsProps>(
-  ({ attachments, setAttachments, handleFilesAdded, isSubmitting, isArticle, handleFileClick }, ref) => {
+  (
+    {
+      attachments,
+      setAttachments,
+      handleFilesAdded,
+      isSubmitting,
+      isPreparingAttachments = false,
+      preparingAttachmentCount = 0,
+      isArticle,
+      handleFileClick,
+    },
+    ref,
+  ) => {
+    const t = useTranslations('post.file');
+    const isBusy = isSubmitting || isPreparingAttachments;
     const attachmentsWithPreviews: AttachmentWithPreview[] = useMemo(
       () =>
         attachments.map((file) => {
@@ -72,16 +89,26 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
           multiple={!isArticle}
           onChange={handleFileChange}
           className="hidden"
+          disabled={isBusy}
         />
 
-        {isArticle && !attachmentsWithPreviews.length ? (
+        {isPreparingAttachments ? (
+          <Container className="flex h-48 w-full flex-col items-center justify-center gap-2 rounded-md bg-muted">
+            <Loader2 className="size-8 animate-spin text-brand" aria-hidden="true" />
+            <Typography size="sm" className="text-muted-foreground">
+              {t('preparingImage', { count: preparingAttachmentCount })}
+            </Typography>
+          </Container>
+        ) : null}
+
+        {isArticle && !attachmentsWithPreviews.length && !isPreparingAttachments ? (
           <Card className="h-39 w-full cursor-auto items-center justify-center rounded-md">
             <CardContent className="flex flex-col items-center justify-center gap-3">
               <Container overrideDefaults className="flex size-16 items-center justify-center rounded-full bg-brand/15">
                 <ImagePlus className="size-8 text-brand" />
               </Container>
 
-              <Button variant="secondary" size="sm" onClick={handleFileClick} disabled={isSubmitting}>
+              <Button variant="secondary" size="sm" onClick={handleFileClick} disabled={isBusy}>
                 <Plus className="size-4" /> Add image
               </Button>
             </CardContent>
@@ -96,7 +123,7 @@ export const PostInputAttachments = forwardRef<HTMLInputElement, PostInputAttach
                   variant="dark"
                   size="icon"
                   onClick={() => setAttachments((prev) => prev.filter((_, index) => index !== i))}
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                   className={cn(
                     'absolute right-4 z-10 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-100',
                     a.type === 'image' || a.type === 'video' ? 'top-4 size-12' : 'top-1/2 -translate-y-1/2',

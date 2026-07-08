@@ -1,9 +1,11 @@
 import type { BlobResult, FileResult } from 'pubky-app-specs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { IMAGE_MAX_UPLOAD_SIZE } from '@/config/images';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
 import { ErrorCategory, ErrorService } from '@/libs/error/error.types';
 import { HttpMethod } from '@/libs/http/http.types';
-import { stripImageMetadata } from '@/libs/image/stripImageMetadata';
+import { isPreparedImageUpload } from '@/libs/image/prepareImageForUpload';
+import { IMAGE_EXCEEDS_UPLOAD_SIZE_ERROR, stripImageMetadata } from '@/libs/image/stripImageMetadata';
 import { FileDetailsModel } from '@/models/file/fileDetails';
 import { CompositeIdDomain, type Pubky } from '@/models/models.types';
 import { buildCompositeId, buildCompositeIdFromPubkyUri } from '@/models/models.utils';
@@ -22,6 +24,11 @@ vi.mock('pubky-app-specs', () => ({
 
 vi.mock('@/libs/image/stripImageMetadata', () => ({
   stripImageMetadata: vi.fn(),
+  IMAGE_EXCEEDS_UPLOAD_SIZE_ERROR: 'Image exceeds upload size limit',
+}));
+
+vi.mock('@/libs/image/prepareImageForUpload', () => ({
+  isPreparedImageUpload: vi.fn(),
 }));
 
 vi.mock('@/pipes/file/file.normalizer', () => ({
@@ -149,6 +156,41 @@ describe('FileApplication', () => {
         pubky: TEST_PUBKY,
       });
       expect(result).toBe(fileAttachment);
+    });
+
+    it('skips re-sanitization for prepared uploads', async () => {
+      const preparedFile = new File(['prepared'], 'photo.webp', { type: 'image/webp' });
+      const fileAttachment = {
+        blobResult: createMockBlobResult(),
+        fileResult: createMockFileResult(),
+      };
+
+      vi.mocked(isPreparedImageUpload).mockReturnValueOnce(true);
+      vi.mocked(FileNormalizer.toFileAttachment).mockReturnValueOnce(fileAttachment);
+
+      const result = await FileApplication.toFileAttachment({ file: preparedFile, pubky: TEST_PUBKY });
+
+      expect(stripImageMetadata).not.toHaveBeenCalled();
+      expect(FileNormalizer.toFileAttachment).toHaveBeenCalledWith({
+        file: preparedFile,
+        blobData: expect.any(Uint8Array),
+        pubky: TEST_PUBKY,
+      });
+      expect(result).toBe(fileAttachment);
+    });
+
+    it('rejects prepared uploads that still exceed the upload cap', async () => {
+      const oversizedPrepared = new File(['prepared'], 'photo.webp', { type: 'image/webp' });
+      Object.defineProperty(oversizedPrepared, 'size', { value: IMAGE_MAX_UPLOAD_SIZE + 1 });
+      vi.mocked(isPreparedImageUpload).mockReturnValueOnce(true);
+
+      await expect(
+        FileApplication.toFileAttachment({ file: oversizedPrepared, pubky: TEST_PUBKY }),
+      ).rejects.toMatchObject({
+        message: IMAGE_EXCEEDS_UPLOAD_SIZE_ERROR,
+      });
+      expect(stripImageMetadata).not.toHaveBeenCalled();
+      expect(FileNormalizer.toFileAttachment).not.toHaveBeenCalled();
     });
 
     it('wraps sanitization failures as AppError', async () => {

@@ -21,7 +21,8 @@ type Overrides = Partial<{
   initialName: string;
   initialDescription: string;
   coverPreviewUrl: string | null;
-  coverError: 'invalid-type' | 'too-large' | null;
+  coverError: 'invalid-type' | null;
+  isCoverPreparing?: boolean;
   onSubmit: () => void | Promise<void>;
   onOpenChange: (open: boolean) => void;
   onChooseCover: () => void;
@@ -43,6 +44,7 @@ function Harness({
   initialDescription = '',
   coverPreviewUrl = null,
   coverError = null,
+  isCoverPreparing = false,
   onSubmit = () => {},
   onOpenChange,
   onChooseCover = () => {},
@@ -58,6 +60,7 @@ function Harness({
     file: null,
     previewUrl: coverPreviewUrl,
     isCleared: false,
+    isPreparing: isCoverPreparing,
     error: coverError,
     inputRef,
     onInputChange: () => {},
@@ -197,14 +200,21 @@ describe('DialogCollectionForm', () => {
     expect(screen.getByText('collections.new.coverImageInvalid')).toBeInTheDocument();
   });
 
-  it('surfaces the too-large cover error message', () => {
-    render(<Harness coverError="too-large" />);
+  it('shows the cover preparing overlay while an image is being compressed', () => {
+    render(<Harness isCoverPreparing />);
 
-    expect(screen.getByText('collections.new.coverImageTooLarge')).toBeInTheDocument();
+    expect(screen.getByText('collections.new.coverImagePreparing')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'collections.new.addImage' })).toBeDisabled();
+  });
+
+  it('disables the save button while the cover image is being prepared', () => {
+    render(<Harness submitLabel="Save" initialName="Reading list" isCoverPreparing />);
+
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
   it('disables the save button while a cover error is showing, even with a valid name', () => {
-    render(<Harness submitLabel="Save" initialName="Reading list" coverError="too-large" />);
+    render(<Harness submitLabel="Save" initialName="Reading list" coverError="invalid-type" />);
 
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });

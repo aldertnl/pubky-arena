@@ -20,7 +20,7 @@ const translations: Record<string, string> = {
   'collections.new.addImage': 'Add image',
   'collections.new.removeImage': 'Remove image',
   'collections.new.coverImageInvalid': 'Cover image must be an image file.',
-  'collections.new.coverImageTooLarge': 'Cover image is too large.',
+  'collections.new.coverImagePreparing': 'Preparing image…',
   'collections.new.nameRequired': 'Collection title is required.',
   'collections.new.cancel': 'Cancel',
   'collections.new.save': 'Save collection',
@@ -53,6 +53,12 @@ vi.mock('@/hooks/useAuthoredCollections/useAuthoredCollections', () => ({
 
 vi.mock('@/molecules/Toaster/use-toast', () => ({
   useToast: () => ({ toast: mocks.toast }),
+}));
+
+vi.mock('@/hooks/usePrepareImageFile/usePrepareImageFile', () => ({
+  usePrepareImageFile: () => ({
+    prepare: vi.fn(async (file: File) => file),
+  }),
 }));
 
 vi.mock('@/stores/auth/auth.store', () => ({
@@ -223,10 +229,8 @@ describe('DialogNewCollection', () => {
 
   it('forwards a chosen cover image file to commitCreateCollection', async () => {
     mocks.commitCreateCollection.mockResolvedValue('current-user:collection1');
-    // jsdom doesn't implement URL.createObjectURL/revokeObjectURL out of the box.
-    const createObjectURL = vi.fn(() => 'blob:mock-cover');
-    const revokeObjectURL = vi.fn();
-    vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL });
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-cover');
+    const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
 
     render(
       <DialogNewCollection>
@@ -241,7 +245,9 @@ describe('DialogNewCollection', () => {
     const fileInput = document.getElementById('new-collection-cover-image') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    expect(screen.getByRole('button', { name: 'Remove image' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Remove image' })).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Save collection' }));
 
@@ -254,7 +260,8 @@ describe('DialogNewCollection', () => {
       });
     });
 
-    vi.unstubAllGlobals();
+    createObjectURL.mockRestore();
+    revokeObjectURL.mockRestore();
   });
 
   it('rejects non-image files for the cover image picker', () => {

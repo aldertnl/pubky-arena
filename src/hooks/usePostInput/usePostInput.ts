@@ -4,7 +4,6 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { type MDXEditorMethods, type MDXEditorProps } from '@mdxeditor/editor';
 import { useTranslations } from 'next-intl';
 import { useDebounceCallback } from 'usehooks-ts';
-import { IMAGE_MAX_RAW_SIZE } from '@/config/images';
 import {
   ARTICLE_ATTACHMENT_MAX_FILES,
   ARTICLE_SUPPORTED_ATTACHMENT_MIME_TYPES,
@@ -22,6 +21,7 @@ import { useEmojiInsert } from '@/hooks/useEmojiInsert/useEmojiInsert';
 import { useMentionAutocomplete } from '@/hooks/useMentionAutocomplete/useMentionAutocomplete';
 import { getContentWithMention } from '@/hooks/useMentionAutocomplete/useMentionAutocomplete.utils';
 import { usePost } from '@/hooks/usePost/usePost';
+import { usePrepareImageFile } from '@/hooks/usePrepareImageFile/usePrepareImageFile';
 import { useUserDetails } from '@/hooks/useUserDetails/useUserDetails';
 import { useToast } from '@/molecules/Toaster/use-toast';
 import { POST_INPUT_VARIANT } from '@/organisms/PostInput/PostInput.constants';
@@ -59,6 +59,8 @@ export function usePostInput({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isExpanded, setIsExpanded] = useState(expanded);
   const [isDragging, setIsDragging] = useState(false);
+  const [isPreparingAttachments, setIsPreparingAttachments] = useState(false);
+  const [preparingAttachmentCount, setPreparingAttachmentCount] = useState(0);
 
   // Refs
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -90,6 +92,7 @@ export function usePostInput({
   } = usePost();
   const timelineFeed = useTimelineFeedContext();
   const { toast } = useToast();
+  const { prepare: prepareImageFile } = usePrepareImageFile();
   const { deletePost } = useDeletePost();
 
   // Get original post author's name for repost toast message
@@ -181,7 +184,7 @@ export function usePostInput({
 
   // Handle submit using reply, repost, post, or edit method from hook
   const handleSubmit = useCallback(async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || isPreparingAttachments) return;
 
     // For replies and posts, require content or attachments. For reposts, content is optional. Content and title is required for articles. Content is required for edits.
     if (
@@ -249,6 +252,7 @@ export function usePostInput({
     edit,
     editPostId,
     isSubmitting,
+    isPreparingAttachments,
     onSuccess,
     timelineFeed,
     deletePost,
@@ -298,8 +302,8 @@ export function usePostInput({
 
   // File handling - shared logic for both file input and drag/drop
   const handleFilesAdded = useCallback(
-    (files: File[]) => {
-      if (isSubmitting || files.length === 0) return;
+    async (files: File[]) => {
+      if (isSubmitting || isPreparingAttachments || files.length === 0) return;
 
       const ATTACHMENT_MAX_FILES = isArticle ? ARTICLE_ATTACHMENT_MAX_FILES : POST_ATTACHMENT_MAX_FILES;
       const SUPPORTED_ATTACHMENT_MIME_TYPES = isArticle
@@ -318,16 +322,16 @@ export function usePostInput({
         return;
       }
 
-      const validFiles: File[] = [];
+      const imageCandidates: File[] = [];
+      const otherFiles: File[] = [];
       const errors: string[] = [];
 
       for (const file of files) {
-        if (validFiles.length >= availableSlots) {
+        if (imageCandidates.length + otherFiles.length >= availableSlots) {
           errors.push(tFile('maxFilesPartial', { max: ATTACHMENT_MAX_FILES }));
           break;
         }
 
-        // Check against specific supported MIME types from pubky-app-specs
         const isAcceptedType = SUPPORTED_ATTACHMENT_MIME_TYPES.includes(file.type);
         if (!isAcceptedType) {
           errors.push(tFile('unsupportedType', { name: file.name, type: file.type, formats: SUPPORTED_FILE_TYPES }));
@@ -335,20 +339,18 @@ export function usePostInput({
         }
 
         const isImage = file.type.startsWith('image/');
-        const maxImageSizeLabel = `${Math.round(IMAGE_MAX_RAW_SIZE / (1024 * 1024))}MB`;
         const maxOtherSizeLabel = `${Math.round(ATTACHMENT_MAX_OTHER_SIZE / (1024 * 1024))}MB`;
-
-        if (isImage && file.size > IMAGE_MAX_RAW_SIZE) {
-          errors.push(tFile('fileTooLarge', { name: file.name, maxSize: maxImageSizeLabel }));
-          continue;
-        }
 
         if (!isImage && file.size > ATTACHMENT_MAX_OTHER_SIZE) {
           errors.push(tFile('fileTooLarge', { name: file.name, maxSize: maxOtherSizeLabel }));
           continue;
         }
 
-        validFiles.push(file);
+        if (isImage) {
+          imageCandidates.push(file);
+        } else {
+          otherFiles.push(file);
+        }
       }
 
       if (errors.length > 0) {
@@ -358,11 +360,37 @@ export function usePostInput({
         });
       }
 
-      if (validFiles.length > 0) {
-        setAttachments((prev) => [...prev, ...validFiles]);
+      if (otherFiles.length > 0) {
+        setAttachments((prev) => [...prev, ...otherFiles]);
+      }
+
+      if (imageCandidates.length === 0) return;
+
+      setIsPreparingAttachments(true);
+      setPreparingAttachmentCount(imageCandidates.length);
+
+      try {
+        const preparedResults = await Promise.all(imageCandidates.map((file) => prepareImageFile(file)));
+        const preparedFiles = preparedResults.filter((file): file is File => file !== null);
+
+        if (preparedFiles.length > 0) {
+          setAttachments((prev) => [...prev, ...preparedFiles]);
+        }
+      } finally {
+        setIsPreparingAttachments(false);
+        setPreparingAttachmentCount(0);
       }
     },
-    [isArticle, isSubmitting, attachments.length, setAttachments, toast, tFile],
+    [
+      isArticle,
+      isSubmitting,
+      isPreparingAttachments,
+      attachments.length,
+      setAttachments,
+      toast,
+      tFile,
+      prepareImageFile,
+    ],
   );
 
   // Drag and drop handlers
@@ -482,6 +510,8 @@ export function usePostInput({
     isDragging,
     isExpanded,
     isSubmitting,
+    isPreparingAttachments,
+    preparingAttachmentCount,
     showEmojiPicker,
     setShowEmojiPicker,
 

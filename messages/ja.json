@@ -519,6 +519,11 @@
     "addImage": "画像を追加",
     "addFile": "ファイルを追加",
     "addArticle": "記事を追加",
+    "file": {
+      "preparingImage": "{count, plural, =1 {画像を準備中…} other {# 件の画像を準備中…}}",
+      "compressionFailed": "画像を5MB未満に圧縮できませんでした。より小さい画像か別の形式をお試しください。",
+      "preparationFailed": "画像をアップロード用に準備できませんでした。もう一度お試しください。"
+    },
     "posting": "投稿中...",
     "viewOriginal": "元の投稿を見る",
     "postBy": "投稿者",
@@ -1336,7 +1341,7 @@
       "addImage": "画像を追加",
       "removeImage": "画像を削除",
       "coverImageInvalid": "カバー画像は画像ファイルである必要があります。",
-      "coverImageTooLarge": "カバー画像が大きすぎます。",
+      "coverImagePreparing": "画像を準備中…",
       "nameRequired": "コレクションのタイトルは必須です。",
       "cancel": "キャンセル",
       "save": "コレクションを保存",

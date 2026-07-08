@@ -1,7 +1,7 @@
 'use client';
 
 import { type ReactNode } from 'react';
-import { Image as ImageIcon, Trash2 } from 'lucide-react';
+import { Image as ImageIcon, Loader2, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type UseFormReturn, useWatch } from 'react-hook-form';
 import { Button } from '@/atoms/Button/Button';
@@ -91,6 +91,7 @@ export function DialogCollectionForm({
   const {
     previewUrl: coverPreviewUrl,
     error: coverError,
+    isPreparing: isCoverPreparing,
     inputRef: coverInputRef,
     onInputChange: onCoverInputChange,
     choose: chooseCover,
@@ -98,18 +99,13 @@ export function DialogCollectionForm({
   } = cover;
 
   const watchedName = useWatch({ control: form.control, name: CREATE_COLLECTION_FORM_FIELDS.NAME });
-  const areInputsDisabled = isSaving || isLoading;
+  const areInputsDisabled = isSaving || isLoading || isCoverPreparing;
   // Block submit while a cover-picker error is showing — the rejected file
   // never made it into form state, so saving would commit unchanged content
   // while the user is still staring at a validation error.
   const canSubmit = !!watchedName.trim() && !areInputsDisabled && !coverError;
 
-  const coverErrorMessage =
-    coverError === 'invalid-type'
-      ? t('coverImageInvalid')
-      : coverError === 'too-large'
-        ? t('coverImageTooLarge')
-        : null;
+  const coverErrorMessage = coverError === 'invalid-type' ? t('coverImageInvalid') : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -159,6 +155,17 @@ export function DialogCollectionForm({
               style={coverPreviewUrl ? { backgroundImage: `url(${coverPreviewUrl})` } : undefined}
               data-testid={coverInputId}
             >
+              {isCoverPreparing ? (
+                <Container
+                  overrideDefaults
+                  className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black/50"
+                >
+                  <Loader2 className="size-8 animate-spin text-white" aria-hidden="true" />
+                  <Typography overrideDefaults className="text-sm font-medium text-white">
+                    {t('coverImagePreparing')}
+                  </Typography>
+                </Container>
+              ) : null}
               {coverPreviewUrl ? (
                 <Button
                   type="button"

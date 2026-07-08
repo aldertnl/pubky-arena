@@ -1,13 +1,11 @@
 'use client';
 
 import { type ChangeEvent, type RefObject, useEffect, useRef, useState } from 'react';
-import { IMAGE_MAX_RAW_SIZE } from '@/config/images';
+import { usePrepareImageFile } from '@/hooks/usePrepareImageFile/usePrepareImageFile';
 
-type CoverImagePickerError = 'invalid-type' | 'too-large';
+type CoverImagePickerError = 'invalid-type';
 
 type UseCoverImagePickerParams = {
-  /** Maximum allowed file size in bytes. Defaults to `IMAGE_MAX_RAW_SIZE`. */
-  maxSize?: number;
   /**
    * Existing cover image URL (e.g. a `pubky://` URL on edit). When set, it is
    * surfaced as `previewUrl` until the user picks a new file or removes it.
@@ -22,6 +20,8 @@ export type UseCoverImagePickerResult = {
   previewUrl: string | null;
   /** `true` when the user explicitly removed an `initialPreviewUrl` without picking a new file. */
   isCleared: boolean;
+  /** `true` while the picked image is being sanitized/compressed for upload. */
+  isPreparing: boolean;
   /** Validation error from the last `onInputChange`. Codes are translated by the consumer. */
   error: CoverImagePickerError | null;
   /** Ref to the hidden `<input type="file">` element managed by the consumer. */
@@ -38,30 +38,25 @@ export type UseCoverImagePickerResult = {
 
 /**
  * Manages the lifecycle of a cover image picker — file state, blob preview,
- * validation, and cleanup of object URLs. Designed for create/edit flows where
- * the cover image is uploaded separately and only the resulting URL is stored
- * in the collection (or post) envelope.
+ * eager image preparation, validation, and cleanup of object URLs. Designed for
+ * create/edit flows where the cover image is uploaded separately and only the
+ * resulting URL is stored in the collection envelope.
  *
- * @example
- * ```tsx
- * const cover = useCoverImagePicker();
- * <button onClick={cover.choose}>{cover.previewUrl ? 'Change' : 'Add image'}</button>
- * <input type="file" accept="image/*" ref={cover.inputRef} onChange={cover.onInputChange} hidden />
- * ```
+ * Images of any size are accepted; {@link prepareImageForUpload} runs on pick
+ * so the stored file is always within the homeserver moderation limit.
  */
 export function useCoverImagePicker({
-  maxSize = IMAGE_MAX_RAW_SIZE,
   initialPreviewUrl = null,
 }: UseCoverImagePickerParams = {}): UseCoverImagePickerResult {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
   const [isInitialCleared, setIsInitialCleared] = useState(false);
+  const [isPreparing, setIsPreparing] = useState(false);
   const [error, setError] = useState<CoverImagePickerError | null>(null);
+  const { prepare } = usePrepareImageFile();
 
-  // Revoke any blob URL we created when it changes or on unmount. We only
-  // create blob URLs in `onInputChange`, so a single guarded revoke covers
-  // the lifecycle without leaking on identity-only re-renders.
+  // Revoke any blob URL we created when it changes or on unmount.
   useEffect(() => {
     return () => {
       if (localPreviewUrl && localPreviewUrl.startsWith('blob:')) {
@@ -91,21 +86,29 @@ export function useCoverImagePicker({
 
     if (!next.type.startsWith('image/')) {
       setError('invalid-type');
+      clearNativeInput();
       return;
     }
 
-    if (next.size > maxSize) {
-      setError('too-large');
-      return;
-    }
-
-    setLocalPreviewUrl((prev) => {
-      if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(next);
-    });
-    setFile(next);
-    setIsInitialCleared(false);
     setError(null);
+    setIsPreparing(true);
+
+    void (async () => {
+      try {
+        const prepared = await prepare(next);
+        if (!prepared) return;
+
+        setLocalPreviewUrl((prev) => {
+          if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+          return URL.createObjectURL(prepared);
+        });
+        setFile(prepared);
+        setIsInitialCleared(false);
+      } finally {
+        setIsPreparing(false);
+        clearNativeInput();
+      }
+    })();
   };
 
   const remove = () => {
@@ -113,6 +116,7 @@ export function useCoverImagePicker({
     clearLocalPreview();
     setIsInitialCleared(true);
     setError(null);
+    setIsPreparing(false);
     clearNativeInput();
   };
 
@@ -121,6 +125,7 @@ export function useCoverImagePicker({
     clearLocalPreview();
     setIsInitialCleared(false);
     setError(null);
+    setIsPreparing(false);
     clearNativeInput();
   };
 
@@ -130,6 +135,7 @@ export function useCoverImagePicker({
     file,
     previewUrl,
     isCleared: isInitialCleared && !file,
+    isPreparing,
     error,
     inputRef,
     onInputChange,

@@ -1,4 +1,10 @@
-import { IMAGE_ENCODE_QUALITY, IMAGE_MAX_DIMENSION, IMAGE_MAX_RAW_SIZE } from '@/config/images';
+import {
+  IMAGE_COMPRESSION_DIMENSION_STEPS,
+  IMAGE_COMPRESSION_QUALITY_STEPS,
+  IMAGE_ENCODE_QUALITY,
+  IMAGE_MAX_DIMENSION,
+  IMAGE_MAX_UPLOAD_SIZE,
+} from '@/config/images';
 
 const IMAGE_MIME_TYPE_TO_EXTENSION: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -19,6 +25,8 @@ const IMAGE_EXTENSION_TO_MIME_TYPE: Record<string, string> = {
 
 const MIME_TYPES_WITH_CANVAS_SANITIZATION = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MIME_TYPES_WITH_LOSSY_REENCODING = new Set(['image/jpeg', 'image/webp']);
+const PNG_MIME_TYPE = 'image/png';
+const JPEG_MIME_TYPE = 'image/jpeg';
 const SVG_MIME_TYPE = 'image/svg+xml';
 const WEBP_MIME_TYPE = 'image/webp';
 const FILE_HEADER_BYTES_LENGTH = 512;
@@ -406,28 +414,69 @@ async function getImageDimensions(file: File, mimeType: string): Promise<ImageDi
   }
 }
 
-function getImageFileExtension(file: File, mimeType: string): string {
-  const mappedExtension = IMAGE_MIME_TYPE_TO_EXTENSION[mimeType];
-  if (mappedExtension) {
-    return mappedExtension;
-  }
-
-  const extension = getFileExtension(file);
-  if (extension) {
-    return extension;
-  }
-
-  return 'img';
+function getImageFileExtension(mimeType: string): string {
+  return IMAGE_MIME_TYPE_TO_EXTENSION[mimeType] ?? 'img';
 }
 
-function generateObfuscatedImageFileName(file: File, mimeType: string): string {
-  const extension = getImageFileExtension(file, mimeType);
+/**
+ * Randomized upload filename so the original picker name (which may contain PII) never
+ * reaches the homeserver. Extension matches the sanitized output MIME type.
+ */
+function generateObfuscatedImageFileName(outputMimeType: string): string {
+  const extension = getImageFileExtension(outputMimeType);
   const randomPart =
     typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
       ? crypto.randomUUID().replaceAll('-', '')
       : `${Date.now()}${Math.random().toString(36).slice(2, 10)}`;
 
   return `${randomPart}.${extension}`;
+}
+
+/** Thrown when progressive compression cannot bring an image under the moderation limit. */
+export const IMAGE_EXCEEDS_UPLOAD_SIZE_ERROR = 'Image exceeds maximum upload size (5MB) after compression';
+
+/**
+ * Ensures a blob meets the homeserver/moderation upload ceiling.
+ * @throws {Error} When `blob.size` is greater than {@link IMAGE_MAX_UPLOAD_SIZE}.
+ */
+function assertBlobWithinUploadLimit(blob: Blob): void {
+  if (blob.size > IMAGE_MAX_UPLOAD_SIZE) {
+    throw new Error(IMAGE_EXCEEDS_UPLOAD_SIZE_ERROR);
+  }
+}
+
+/**
+ * Returns lossy quality steps for JPEG/WebP, or a single `undefined` pass for lossless PNG.
+ */
+function getQualityStepsForMime(outputMimeType: string): Array<number | undefined> {
+  if (!MIME_TYPES_WITH_LOSSY_REENCODING.has(outputMimeType)) {
+    return [undefined];
+  }
+  return [...IMAGE_COMPRESSION_QUALITY_STEPS];
+}
+
+/**
+ * Output MIME types to try for a given encode pass. Large PNG inputs skip lossless PNG
+ * and go straight to WebP; smaller PNGs try PNG first, then lossy fallbacks.
+ */
+function getOutputMimeTypesForPass(sourceMimeType: string, file: File, isFirstPass: boolean): string[] {
+  if (sourceMimeType === PNG_MIME_TYPE && file.size > IMAGE_MAX_UPLOAD_SIZE) {
+    return [WEBP_MIME_TYPE];
+  }
+
+  if (!isFirstPass) {
+    return [WEBP_MIME_TYPE, JPEG_MIME_TYPE];
+  }
+
+  if (sourceMimeType === PNG_MIME_TYPE) {
+    return [PNG_MIME_TYPE, WEBP_MIME_TYPE, JPEG_MIME_TYPE];
+  }
+
+  if (sourceMimeType === WEBP_MIME_TYPE) {
+    return [WEBP_MIME_TYPE, JPEG_MIME_TYPE];
+  }
+
+  return [JPEG_MIME_TYPE, WEBP_MIME_TYPE];
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -439,14 +488,17 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-async function loadHtmlImage(file: File): Promise<LoadedRasterImage> {
+/**
+ * Decodes the full raster at natural dimensions for repeated canvas encodes during
+ * progressive compression (avoids re-reading the source file each iteration).
+ */
+async function loadRasterImageAtNaturalSize(file: File): Promise<LoadedRasterImage> {
   const objectUrl = URL.createObjectURL(file);
 
   try {
     const image = await loadImage(objectUrl);
-    const naturalWidth = image.naturalWidth || image.width;
-    const naturalHeight = image.naturalHeight || image.height;
-    const { width, height } = getScaledDimensions(naturalWidth, naturalHeight, IMAGE_MAX_DIMENSION);
+    const width = image.naturalWidth || image.width;
+    const height = image.naturalHeight || image.height;
 
     return {
       source: image,
@@ -457,6 +509,67 @@ async function loadHtmlImage(file: File): Promise<LoadedRasterImage> {
   } catch (error) {
     URL.revokeObjectURL(objectUrl);
     throw error;
+  }
+}
+
+/**
+ * Draws a loaded raster onto a canvas at the target size and encodes to a blob.
+ */
+async function encodeLoadedRasterImage(
+  loaded: LoadedRasterImage,
+  targetWidth: number,
+  targetHeight: number,
+  outputMimeType: string,
+  quality?: number,
+): Promise<Blob> {
+  const canvas = document.createElement('canvas');
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('Failed to get canvas context for metadata stripping');
+  }
+
+  context.imageSmoothingQuality = 'high';
+  context.drawImage(loaded.source, 0, 0, targetWidth, targetHeight);
+
+  const encodeQuality = quality ?? getCanvasEncodeQuality(outputMimeType);
+  return canvasToBlob(canvas, outputMimeType, encodeQuality);
+}
+
+/**
+ * Re-encodes a raster image via canvas, downscaling and/or changing format until the
+ * result is ≤ {@link IMAGE_MAX_UPLOAD_SIZE} or all dimension/quality steps are exhausted.
+ */
+async function compressRasterUntilUnderLimit(
+  file: File,
+  sourceMimeType: string,
+): Promise<{ blob: Blob; outputMimeType: string }> {
+  const loaded = await loadRasterImageAtNaturalSize(file);
+
+  try {
+    let isFirstDimensionPass = true;
+
+    for (const maxDimension of IMAGE_COMPRESSION_DIMENSION_STEPS) {
+      const { width, height } = getScaledDimensions(loaded.width, loaded.height, maxDimension);
+      const outputMimeTypes = getOutputMimeTypesForPass(sourceMimeType, file, isFirstDimensionPass);
+
+      for (const outputMimeType of outputMimeTypes) {
+        for (const quality of getQualityStepsForMime(outputMimeType)) {
+          const blob = await encodeLoadedRasterImage(loaded, width, height, outputMimeType, quality);
+          if (blob.size <= IMAGE_MAX_UPLOAD_SIZE) {
+            return { blob, outputMimeType };
+          }
+        }
+      }
+
+      isFirstDimensionPass = false;
+    }
+
+    throw new Error(IMAGE_EXCEEDS_UPLOAD_SIZE_ERROR);
+  } finally {
+    loaded.cleanup();
   }
 }
 
@@ -495,7 +608,11 @@ function getScaledDimensions(width: number, height: number, maxDimension: number
   };
 }
 
-async function loadResizedImageBitmap(file: File, mimeType: string): Promise<LoadedRasterImage | null> {
+async function loadResizedImageBitmap(
+  file: File,
+  mimeType: string,
+  maxDimension: number = IMAGE_MAX_DIMENSION,
+): Promise<LoadedRasterImage | null> {
   if (typeof createImageBitmap !== 'function') {
     return null;
   }
@@ -505,7 +622,7 @@ async function loadResizedImageBitmap(file: File, mimeType: string): Promise<Loa
     return null;
   }
 
-  const { width, height } = getScaledDimensions(dimensions.width, dimensions.height, IMAGE_MAX_DIMENSION);
+  const { width, height } = getScaledDimensions(dimensions.width, dimensions.height, maxDimension);
 
   try {
     const bitmap = await createImageBitmap(file, {
@@ -526,24 +643,35 @@ async function loadResizedImageBitmap(file: File, mimeType: string): Promise<Loa
   }
 }
 
-async function sanitizeRasterImage(file: File, mimeType: string): Promise<Blob> {
-  const image = (await loadResizedImageBitmap(file, mimeType)) ?? (await loadHtmlImage(file));
-  const canvas = document.createElement('canvas');
-  canvas.width = image.width;
-  canvas.height = image.height;
-
-  try {
-    const context = canvas.getContext('2d');
-    if (!context) {
-      throw new Error('Failed to get canvas context for metadata stripping');
+/**
+ * Fast path used when `createImageBitmap` can decode+resize in one step; falls back to
+ * {@link compressRasterUntilUnderLimit} which decodes at natural size.
+ */
+async function sanitizeRasterImage(file: File, mimeType: string): Promise<{ blob: Blob; outputMimeType: string }> {
+  const bitmapLoaded = await loadResizedImageBitmap(file, mimeType);
+  if (bitmapLoaded) {
+    try {
+      const outputMimeTypes = getOutputMimeTypesForPass(mimeType, file, true);
+      for (const outputMimeType of outputMimeTypes) {
+        for (const quality of getQualityStepsForMime(outputMimeType)) {
+          const blob = await encodeLoadedRasterImage(
+            bitmapLoaded,
+            bitmapLoaded.width,
+            bitmapLoaded.height,
+            outputMimeType,
+            quality,
+          );
+          if (blob.size <= IMAGE_MAX_UPLOAD_SIZE) {
+            return { blob, outputMimeType };
+          }
+        }
+      }
+    } finally {
+      bitmapLoaded.cleanup();
     }
-
-    context.imageSmoothingQuality = 'high';
-    context.drawImage(image.source, 0, 0, image.width, image.height);
-    return await canvasToBlob(canvas, mimeType, getCanvasEncodeQuality(mimeType));
-  } finally {
-    image.cleanup();
   }
+
+  return compressRasterUntilUnderLimit(file, mimeType);
 }
 
 function isSvgParserError(document: Document): boolean {
@@ -640,14 +768,14 @@ async function sanitizeSvgImage(file: File): Promise<Blob> {
 }
 
 /**
- * Removes sensitive metadata from supported image formats before upload.
- * - JPEG/PNG/WebP: re-encodes via canvas to strip metadata (fail-closed on errors)
- * - JPEG/WebP: encoded at configured quality to reduce upload size
- * - Oversized raster images: downscaled preserving aspect ratio
- * - Animated WebP: skips canvas (keeps frames) but strips EXIF/XMP chunks
- * - GIF and other raster types: keep bytes to avoid visual regressions
- * - SVG: best-effort XML rewrite that removes active content and risky references
- * - All image types: replace original filename with an obfuscated one
+ * Sanitizes an image for homeserver upload: strips metadata, enforces the moderation
+ * size ceiling, and obfuscates the filename.
+ *
+ * - **JPEG / WebP / PNG (static):** canvas re-encode with progressive compression until ≤ 5MB.
+ * - **PNG > 5MB input:** WebP first (skips wasteful lossless PNG pass).
+ * - **Animated WebP:** EXIF/XMP strip only; must already be ≤ 5MB.
+ * - **GIF:** bytes preserved; must already be ≤ 5MB.
+ * - **SVG:** XML sanitization; must already be ≤ 5MB.
  */
 export async function stripImageMetadata(file: File): Promise<File> {
   const imageMimeType = await detectImageMimeType(file);
@@ -655,36 +783,38 @@ export async function stripImageMetadata(file: File): Promise<File> {
     return file;
   }
 
-  if (file.size > IMAGE_MAX_RAW_SIZE) {
-    throw new Error('Image file size exceeds upload limits');
-  }
-
-  const obfuscatedName = generateObfuscatedImageFileName(file, imageMimeType);
-
   if (imageMimeType === SVG_MIME_TYPE) {
     const sanitizedBlob = await sanitizeSvgImage(file);
+    assertBlobWithinUploadLimit(sanitizedBlob);
+    const obfuscatedName = generateObfuscatedImageFileName(SVG_MIME_TYPE);
 
     return new File([sanitizedBlob], obfuscatedName, {
-      type: sanitizedBlob.type || imageMimeType,
+      type: sanitizedBlob.type || SVG_MIME_TYPE,
       lastModified: file.lastModified,
     });
   }
 
   const isAnimatedWebpUpload = imageMimeType === WEBP_MIME_TYPE && (await isAnimatedWebp(file));
   if (!MIME_TYPES_WITH_CANVAS_SANITIZATION.has(imageMimeType) || isAnimatedWebpUpload) {
-    // Animated WebP bypasses canvas re-encoding; strip its EXIF/XMP chunks so
-    // metadata (e.g. GPS) never reaches the homeserver while keeping frames.
     const body = isAnimatedWebpUpload ? stripWebpMetadataChunks(new Uint8Array(await file.arrayBuffer())) : file;
+    const byteSize = body instanceof File ? body.size : body.byteLength;
+    if (byteSize > IMAGE_MAX_UPLOAD_SIZE) {
+      throw new Error(IMAGE_EXCEEDS_UPLOAD_SIZE_ERROR);
+    }
+
+    const obfuscatedName = generateObfuscatedImageFileName(imageMimeType);
     return new File([body], obfuscatedName, {
       type: imageMimeType,
       lastModified: file.lastModified,
     });
   }
 
-  const sanitizedBlob = await sanitizeRasterImage(file, imageMimeType);
+  const { blob, outputMimeType } = await sanitizeRasterImage(file, imageMimeType);
+  assertBlobWithinUploadLimit(blob);
+  const obfuscatedName = generateObfuscatedImageFileName(outputMimeType);
 
-  return new File([sanitizedBlob], obfuscatedName, {
-    type: sanitizedBlob.type || imageMimeType,
+  return new File([blob], obfuscatedName, {
+    type: blob.type || outputMimeType,
     lastModified: file.lastModified,
   });
 }

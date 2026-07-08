@@ -36,6 +36,8 @@ function createUsePostInputReturn(options: unknown, overrides: Record<string, un
     isDragging: false,
     isExpanded: false,
     isSubmitting: false,
+    isPreparingAttachments: false,
+    preparingAttachmentCount: 0,
     showEmojiPicker: false,
     setShowEmojiPicker: vi.fn(),
     hasContent: false,

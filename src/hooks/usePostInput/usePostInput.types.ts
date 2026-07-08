@@ -53,6 +53,10 @@ export interface UsePostInputReturn {
   isDragging: boolean;
   isExpanded: boolean;
   isSubmitting: boolean;
+  /** `true` while picked images are being sanitized/compressed before attach. */
+  isPreparingAttachments: boolean;
+  /** Number of images currently being prepared (for UI feedback). */
+  preparingAttachmentCount: number;
   showEmojiPicker: boolean;
   setShowEmojiPicker: (show: boolean) => void;
 
@@ -75,7 +79,7 @@ export interface UsePostInputReturn {
   handleArticleTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleArticleBodyChange: NonNullable<MDXEditorProps['onChange']>;
   handleEmojiSelect: (emoji: { native: string }) => void;
-  handleFilesAdded: (files: File[]) => void;
+  handleFilesAdded: (files: File[]) => void | Promise<void>;
   handleFileClick: () => void;
   handleDragEnter: (e: React.DragEvent) => void;
   handleDragLeave: (e: React.DragEvent) => void;

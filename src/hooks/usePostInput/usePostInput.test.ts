@@ -1,7 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TIMELINE_FEED_VARIANT } from '@/config/feed';
-import { IMAGE_MAX_RAW_SIZE } from '@/config/images';
 import {
   ARTICLE_ATTACHMENT_MAX_FILES,
   ARTICLE_TITLE_MAX_CHARACTER_LENGTH,
@@ -98,6 +97,13 @@ vi.mock('@/organisms/Timeline/Feed/TimelineFeed/TimelineFeedContext', () => ({
   })),
 }));
 
+// Mock usePrepareImageFile
+const mockPrepareImageFile = vi.hoisted(() => vi.fn<(file: File) => Promise<File | null>>(async (file) => file));
+
+vi.mock('@/hooks/usePrepareImageFile/usePrepareImageFile', () => ({
+  usePrepareImageFile: () => ({ prepare: mockPrepareImageFile }),
+}));
+
 // Mock useToast
 const mockToast = vi.fn();
 vi.mock('@/molecules/Toaster/use-toast', () => {
@@ -125,6 +131,7 @@ global.URL.createObjectURL = mockCreateObjectURL;
 describe('usePostInput', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockPrepareImageFile.mockImplementation(async (file: File) => file);
     mockContent = '';
     mockTags = [];
     mockAttachments = [];
@@ -1572,7 +1579,7 @@ describe('usePostInput', () => {
       expect(mockSetAttachments).not.toHaveBeenCalled();
     });
 
-    it('adds valid image files', () => {
+    it('adds valid image files after preparing them', async () => {
       const { result } = renderHook(() =>
         usePostInput({
           variant: 'post',
@@ -1581,10 +1588,11 @@ describe('usePostInput', () => {
 
       const file = new File(['test'], 'test.png', { type: 'image/png' });
 
-      act(() => {
-        result.current.handleFilesAdded([file]);
+      await act(async () => {
+        await result.current.handleFilesAdded([file]);
       });
 
+      expect(mockPrepareImageFile).toHaveBeenCalledWith(file);
       expect(mockSetAttachments).toHaveBeenCalled();
     });
 
@@ -1656,46 +1664,43 @@ describe('usePostInput', () => {
       });
     });
 
-    it('accepts images exceeding 5MB but within the raw image cap so upload sanitization can compress them', () => {
+    it('prepares large images before attaching them', async () => {
       const { result } = renderHook(() =>
         usePostInput({
           variant: 'post',
         }),
       );
 
-      // Create a file object with size > 5MB
       const largeFile = new File(['test'], 'large.png', { type: 'image/png' });
       Object.defineProperty(largeFile, 'size', { value: 6 * 1024 * 1024 });
+      const preparedFile = new File(['prepared'], 'large.webp', { type: 'image/webp' });
+      mockPrepareImageFile.mockResolvedValueOnce(preparedFile);
 
-      act(() => {
-        result.current.handleFilesAdded([largeFile]);
+      await act(async () => {
+        await result.current.handleFilesAdded([largeFile]);
       });
 
+      expect(mockPrepareImageFile).toHaveBeenCalledWith(largeFile);
       expect(mockSetAttachments).toHaveBeenCalled();
       expect(mockToast).not.toHaveBeenCalled();
     });
 
-    it('rejects image files exceeding the raw image cap and shows toast', () => {
+    it('does not attach images when preparation fails', async () => {
       const { result } = renderHook(() =>
         usePostInput({
           variant: 'post',
         }),
       );
 
-      const maxImageSizeMb = Math.round(IMAGE_MAX_RAW_SIZE / (1024 * 1024));
-      const maxImageSizeLabel = `${maxImageSizeMb}MB`;
       const largeFile = new File(['test'], 'huge.png', { type: 'image/png' });
-      Object.defineProperty(largeFile, 'size', { value: IMAGE_MAX_RAW_SIZE + 1 });
+      mockPrepareImageFile.mockResolvedValueOnce(null);
 
-      act(() => {
-        result.current.handleFilesAdded([largeFile]);
+      await act(async () => {
+        await result.current.handleFilesAdded([largeFile]);
       });
 
+      expect(mockPrepareImageFile).toHaveBeenCalledWith(largeFile);
       expect(mockSetAttachments).not.toHaveBeenCalled();
-      expect(mockToast).toHaveBeenCalledWith({
-        variant: 'error',
-        description: expect.stringContaining(`exceeds the ${maxImageSizeLabel} limit`),
-      });
     });
 
     it('rejects non-image files exceeding the max size and shows toast', () => {
@@ -1723,7 +1728,7 @@ describe('usePostInput', () => {
       });
     });
 
-    it('shows toast when maximum files limit reached', () => {
+    it('shows toast when maximum files limit reached', async () => {
       // Set up POST_ATTACHMENT_MAX_FILES existing attachments
       mockAttachments = Array.from(
         { length: POST_ATTACHMENT_MAX_FILES },
@@ -1738,8 +1743,8 @@ describe('usePostInput', () => {
 
       const newFile = new File(['test'], 'test.png', { type: 'image/png' });
 
-      act(() => {
-        result.current.handleFilesAdded([newFile]);
+      await act(async () => {
+        await result.current.handleFilesAdded([newFile]);
       });
 
       expect(mockSetAttachments).not.toHaveBeenCalled();
@@ -1749,7 +1754,7 @@ describe('usePostInput', () => {
       });
     });
 
-    it('limits files added when approaching maximum', () => {
+    it('limits files added when approaching maximum', async () => {
       // Set up POST_ATTACHMENT_MAX_FILES - 1 existing attachments
       mockAttachments = Array.from(
         { length: POST_ATTACHMENT_MAX_FILES - 1 },
@@ -1766,8 +1771,8 @@ describe('usePostInput', () => {
       const file1 = new File(['test1'], 'test1.png', { type: 'image/png' });
       const file2 = new File(['test2'], 'test2.png', { type: 'image/png' });
 
-      act(() => {
-        result.current.handleFilesAdded([file1, file2]);
+      await act(async () => {
+        await result.current.handleFilesAdded([file1, file2]);
       });
 
       // Should add only 1 file and show error for the rest
@@ -1778,7 +1783,7 @@ describe('usePostInput', () => {
       });
     });
 
-    it('shows multiple errors with "Errors" title', () => {
+    it('shows errors for invalid files while still preparing valid images', async () => {
       const { result } = renderHook(() =>
         usePostInput({
           variant: 'post',
@@ -1789,14 +1794,16 @@ describe('usePostInput', () => {
       const largeFile = new File(['test'], 'large.png', { type: 'image/png' });
       Object.defineProperty(largeFile, 'size', { value: 6 * 1024 * 1024 });
 
-      act(() => {
-        result.current.handleFilesAdded([invalidFile, largeFile]);
+      await act(async () => {
+        await result.current.handleFilesAdded([invalidFile, largeFile]);
       });
 
+      expect(mockPrepareImageFile).toHaveBeenCalledWith(largeFile);
       expect(mockToast).toHaveBeenCalledWith({
         variant: 'error',
         description: expect.any(String),
       });
+      expect(mockSetAttachments).toHaveBeenCalled();
     });
   });
 
@@ -1978,7 +1985,7 @@ describe('usePostInput', () => {
         expect(dropEvent.stopPropagation).toHaveBeenCalled();
       });
 
-      it('extracts files from dataTransfer and calls handleFilesAdded', () => {
+      it('extracts files from dataTransfer and calls handleFilesAdded', async () => {
         const { result } = renderHook(() =>
           usePostInput({
             variant: 'post',
@@ -1999,8 +2006,9 @@ describe('usePostInput', () => {
           }),
         });
 
-        act(() => {
+        await act(async () => {
           result.current.handleDrop(dropEvent);
+          await Promise.resolve();
         });
 
         expect(mockSetAttachments).toHaveBeenCalled();
@@ -2085,7 +2093,7 @@ describe('usePostInput', () => {
   });
 
   describe('handleFilesAdded with article mode', () => {
-    it('uses article-specific file limits when in article mode', () => {
+    it('uses article-specific file limits when in article mode', async () => {
       mockIsArticle = true;
       // Set up ARTICLE_ATTACHMENT_MAX_FILES existing attachments (article max)
       mockAttachments = Array.from(
@@ -2101,8 +2109,8 @@ describe('usePostInput', () => {
 
       const newFile = new File(['test'], 'test.png', { type: 'image/png' });
 
-      act(() => {
-        result.current.handleFilesAdded([newFile]);
+      await act(async () => {
+        await result.current.handleFilesAdded([newFile]);
       });
 
       expect(mockSetAttachments).not.toHaveBeenCalled();
@@ -2135,7 +2143,7 @@ describe('usePostInput', () => {
       });
     });
 
-    it('accepts image files in article mode', () => {
+    it('accepts image files in article mode', async () => {
       mockIsArticle = true;
 
       const { result } = renderHook(() =>
@@ -2146,16 +2154,17 @@ describe('usePostInput', () => {
 
       const file = new File(['test'], 'test.png', { type: 'image/png' });
 
-      act(() => {
-        result.current.handleFilesAdded([file]);
+      await act(async () => {
+        await result.current.handleFilesAdded([file]);
       });
 
+      expect(mockPrepareImageFile).toHaveBeenCalledWith(file);
       expect(mockSetAttachments).toHaveBeenCalled();
     });
   });
 
   describe('handlePaste', () => {
-    it('extracts files from clipboard and adds them as attachments', () => {
+    it('extracts files from clipboard and adds them as attachments', async () => {
       const { result } = renderHook(() =>
         usePostInput({
           variant: 'post',
@@ -2170,8 +2179,9 @@ describe('usePostInput', () => {
         preventDefault: vi.fn(),
       });
 
-      act(() => {
+      await act(async () => {
         result.current.handlePaste(pasteEvent);
+        await Promise.resolve();
       });
 
       expect(pasteEvent.preventDefault).toHaveBeenCalled();
@@ -2200,7 +2210,7 @@ describe('usePostInput', () => {
       expect(mockSetAttachments).not.toHaveBeenCalled();
     });
 
-    it('handles multiple files from clipboard', () => {
+    it('handles multiple files from clipboard', async () => {
       const { result } = renderHook(() =>
         usePostInput({
           variant: 'post',
@@ -2219,8 +2229,9 @@ describe('usePostInput', () => {
         preventDefault: vi.fn(),
       });
 
-      act(() => {
+      await act(async () => {
         result.current.handlePaste(pasteEvent);
+        await Promise.resolve();
       });
 
       expect(pasteEvent.preventDefault).toHaveBeenCalled();

@@ -55,6 +55,11 @@ const triggerCropComplete = () => {
 };
 
 const mockCropImageToBlob = vi.fn();
+const mockPrepare = vi.hoisted(() => vi.fn(async (file: File) => file));
+
+vi.mock('@/hooks/usePrepareImageFile/usePrepareImageFile', () => ({
+  usePrepareImageFile: () => ({ prepare: mockPrepare }),
+}));
 
 vi.mock('@/libs/image/cropImage', () => ({
   cropImageToBlob: (...args: unknown[]) => mockCropImageToBlob(...args),
@@ -101,6 +106,7 @@ const createDefaultProps = () => ({
 afterEach(() => {
   latestCropComplete = null;
   vi.clearAllMocks();
+  mockPrepare.mockImplementation(async (file: File) => file);
 });
 
 describe('DialogCropImage', () => {
@@ -134,6 +140,7 @@ describe('DialogCropImage', () => {
 
     await waitFor(() => {
       expect(mockCropImageToBlob).toHaveBeenCalledWith(props.imageSrc, mockCroppedPixels, props.fileType);
+      expect(mockPrepare).toHaveBeenCalled();
       expect(props.onCrop).toHaveBeenCalled();
     });
 

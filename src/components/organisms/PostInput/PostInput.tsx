@@ -75,6 +75,8 @@ export function PostInput({
     isDragging,
     isExpanded,
     isSubmitting,
+    isPreparingAttachments,
+    preparingAttachmentCount,
     showEmojiPicker,
     setShowEmojiPicker,
     displayPlaceholder,
@@ -142,7 +144,14 @@ export function PostInput({
   });
 
   const isValid = () => {
-    return canSubmitPost(variant, content, attachments, isSubmitting, isArticle, articleTitle);
+    return canSubmitPost(
+      variant,
+      content,
+      attachments,
+      isSubmitting || isPreparingAttachments,
+      isArticle,
+      articleTitle,
+    );
   };
 
   const enterSubmitHandler = useEnterSubmit(isValid, handleSubmitWithAuth, {
@@ -291,6 +300,8 @@ export function PostInput({
             setAttachments={setAttachmentsWithAuth}
             handleFilesAdded={handleFilesAddedWithAuth}
             isSubmitting={isSubmitting}
+            isPreparingAttachments={isPreparingAttachments}
+            preparingAttachmentCount={preparingAttachmentCount}
             isArticle={isArticle}
             handleFileClick={handleFileClickWithAuth}
           />

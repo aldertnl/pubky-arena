@@ -521,6 +521,11 @@
     "addImage": "Bild hinzufügen",
     "addFile": "Datei hinzufügen",
     "addArticle": "Artikel hinzufügen",
+    "file": {
+      "preparingImage": "{count, plural, =1 {Bild wird vorbereitet…} other {# Bilder werden vorbereitet…}}",
+      "compressionFailed": "Das Bild konnte nicht unter 5 MB komprimiert werden. Versuche ein kleineres Bild oder ein anderes Format.",
+      "preparationFailed": "Bild konnte nicht für den Upload vorbereitet werden. Bitte erneut versuchen."
+    },
     "posting": "Wird gepostet...",
     "viewOriginal": "Originalbeitrag ansehen",
     "postBy": "Beitrag von",
@@ -1338,7 +1343,7 @@
       "addImage": "Bild hinzufügen",
       "removeImage": "Bild entfernen",
       "coverImageInvalid": "Das Coverbild muss eine Bilddatei sein.",
-      "coverImageTooLarge": "Das Coverbild ist zu groß.",
+      "coverImagePreparing": "Bild wird vorbereitet…",
       "nameRequired": "Sammlungstitel ist erforderlich.",
       "cancel": "Abbrechen",
       "save": "Sammlung speichern",

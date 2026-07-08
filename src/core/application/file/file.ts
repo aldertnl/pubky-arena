@@ -1,10 +1,12 @@
 import type { FilesListParams } from '@/application/file/file.types';
+import { IMAGE_MAX_UPLOAD_SIZE } from '@/config/images';
 import type { TGetFileUrlParams, TGetMetadataParams, TUploadFileParams } from '@/controllers/file/file.types';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
 import { Err } from '@/libs/error/error.factories';
 import { ErrorService } from '@/libs/error/error.types';
 import { HttpMethod } from '@/libs/http/http.types';
-import { stripImageMetadata } from '@/libs/image/stripImageMetadata';
+import { isPreparedImageUpload } from '@/libs/image/prepareImageForUpload';
+import { IMAGE_EXCEEDS_UPLOAD_SIZE_ERROR, stripImageMetadata } from '@/libs/image/stripImageMetadata';
 import { CompositeIdDomain, type Pubky } from '@/models/models.types';
 import { buildCompositeIdFromPubkyUri, parseCompositeId } from '@/models/models.utils';
 import { FileNormalizer } from '@/pipes/file/file.normalizer';
@@ -27,9 +29,20 @@ export class FileApplication {
   static async toFileAttachment({ file, pubky }: TUploadFileParams): Promise<TFileAttachmentResult> {
     let sanitizedFile: File;
     try {
-      sanitizedFile = await stripImageMetadata(file);
+      if (isPreparedImageUpload(file)) {
+        if (file.size > IMAGE_MAX_UPLOAD_SIZE) {
+          throw new Error(IMAGE_EXCEEDS_UPLOAD_SIZE_ERROR);
+        }
+        sanitizedFile = file;
+      } else {
+        sanitizedFile = await stripImageMetadata(file);
+      }
     } catch (error) {
-      throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'Image sanitization failed', {
+      const message =
+        error instanceof Error && error.message === IMAGE_EXCEEDS_UPLOAD_SIZE_ERROR
+          ? IMAGE_EXCEEDS_UPLOAD_SIZE_ERROR
+          : 'Image sanitization failed';
+      throw Err.validation(ValidationErrorCode.INVALID_INPUT, message, {
         service: ErrorService.Local,
         operation: 'toFileAttachment',
         cause: error,
@@ -49,7 +62,7 @@ export class FileApplication {
   }
 
   /**
-   * Uploads a file to the homeserver and persists it locally and persist it locally.
+   * Uploads a file to the homeserver and persists it locally.
    * First uploads the blob data, then creates the file record.
    *
    * @param params - Parameters for file upload

@@ -6,7 +6,7 @@
 // - A shared client layout/provider (for centralized client-side loading)
 // This prevents duplicate style inclusion and ensures consistent styling across the app.
 import 'react-easy-crop/react-easy-crop.css';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Cropper, { type Area } from 'react-easy-crop';
 import { Button } from '@/atoms/Button/Button';
 import {
@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/atoms/Dialog/Dialog';
+import { usePrepareImageFile } from '@/hooks/usePrepareImageFile/usePrepareImageFile';
 import { cropImageToBlob } from '@/libs/image/cropImage';
 import { Logger } from '@/libs/logger/logger';
 
@@ -33,6 +34,7 @@ type DialogCropImageProps = {
 const DEFAULT_FILE_NAME = 'cropped-image.png';
 
 export function DialogCropImage({ open, imageSrc, fileName, fileType, onClose, onBack, onCrop }: DialogCropImageProps) {
+  const { prepare } = usePrepareImageFile();
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -47,13 +49,13 @@ export function DialogCropImage({ open, imageSrc, fileName, fileType, onClose, o
     }
   }, [open, imageSrc]);
 
-  const handleCropComplete = useCallback((_croppedArea: Area, croppedAreaPixelsValue: Area) => {
+  const handleCropComplete = (_croppedArea: Area, croppedAreaPixelsValue: Area) => {
     setCroppedAreaPixels(croppedAreaPixelsValue);
-  }, []);
+  };
 
-  const hasImage = useMemo(() => Boolean(imageSrc), [imageSrc]);
+  const hasImage = Boolean(imageSrc);
 
-  const handleDone = useCallback(async () => {
+  const handleDone = async () => {
     if (!imageSrc || !croppedAreaPixels) return;
 
     try {
@@ -62,14 +64,17 @@ export function DialogCropImage({ open, imageSrc, fileName, fileType, onClose, o
       const blob = await cropImageToBlob(imageSrc, croppedAreaPixels, targetMimeType);
       const resolvedMimeType = blob.type || targetMimeType;
       const croppedFile = new File([blob], fileName || DEFAULT_FILE_NAME, { type: resolvedMimeType });
-      const previewUrl = URL.createObjectURL(blob);
-      onCrop(croppedFile, previewUrl);
+      const prepared = await prepare(croppedFile);
+      if (!prepared) return;
+
+      const previewUrl = URL.createObjectURL(prepared);
+      onCrop(prepared, previewUrl);
     } catch (error) {
       Logger.error('Failed to crop image', error);
     } finally {
       setIsCropping(false);
     }
-  }, [croppedAreaPixels, fileName, fileType, imageSrc, onCrop]);
+  };
 
   return (
     <Dialog

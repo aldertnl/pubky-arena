@@ -401,6 +401,8 @@ function createUsePostInputReturn(options: UsePostInputOptions, overrides: Recor
     isDragging: mockUsePostReturn.isDragging,
     isExpanded: true,
     isSubmitting: mockUsePostReturn.isSubmitting,
+    isPreparingAttachments: false,
+    preparingAttachmentCount: 0,
     showEmojiPicker: false,
     setShowEmojiPicker: vi.fn(),
     hasContent: mockUsePostReturn.content.trim().length > 0,

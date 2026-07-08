@@ -519,6 +519,11 @@
     "addImage": "Aggiungi immagine",
     "addFile": "Aggiungi file",
     "addArticle": "Aggiungi articolo",
+    "file": {
+      "preparingImage": "{count, plural, =1 {Preparazione immagine…} other {Preparazione di # immagini…}}",
+      "compressionFailed": "Impossibile comprimere l'immagine sotto 5 MB. Prova un'immagine più piccola o un altro formato.",
+      "preparationFailed": "Impossibile preparare l'immagine per il caricamento. Riprova."
+    },
     "posting": "Pubblicazione...",
     "viewOriginal": "Vedi post originale",
     "postBy": "Pubblicato da",
@@ -1336,7 +1341,7 @@
       "addImage": "Aggiungi immagine",
       "removeImage": "Rimuovi immagine",
       "coverImageInvalid": "L'immagine di copertina deve essere un file immagine.",
-      "coverImageTooLarge": "L'immagine di copertina è troppo grande.",
+      "coverImagePreparing": "Preparazione immagine…",
       "nameRequired": "Il titolo della collezione è obbligatorio.",
       "cancel": "Annulla",
       "save": "Salva raccolta",

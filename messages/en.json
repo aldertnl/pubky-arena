@@ -522,6 +522,11 @@
     "addImage": "Add image",
     "addFile": "Add file",
     "addArticle": "Add article",
+    "file": {
+      "preparingImage": "{count, plural, =1 {Preparing image…} other {Preparing # images…}}",
+      "compressionFailed": "Image could not be compressed below 5 MB. Try a smaller image or a different format.",
+      "preparationFailed": "Could not prepare image for upload. Try again."
+    },
     "posting": "Posting...",
     "viewOriginal": "View original post",
     "postBy": "Post by",
@@ -1339,7 +1344,7 @@
       "addImage": "Add image",
       "removeImage": "Remove image",
       "coverImageInvalid": "Cover image must be an image file.",
-      "coverImageTooLarge": "Cover image is too large.",
+      "coverImagePreparing": "Preparing image…",
       "nameRequired": "Collection title is required.",
       "cancel": "Cancel",
       "save": "Save collection",

@@ -22,7 +22,7 @@ const translations: Record<string, string> = {
   'collections.new.addImage': 'Add image',
   'collections.new.removeImage': 'Remove image',
   'collections.new.coverImageInvalid': 'Cover image must be an image file.',
-  'collections.new.coverImageTooLarge': 'Cover image is too large.',
+  'collections.new.coverImagePreparing': 'Preparing image…',
   'collections.new.nameRequired': 'Collection title is required.',
   'collections.new.cancel': 'Cancel',
   'collections.new.saving': 'Saving...',

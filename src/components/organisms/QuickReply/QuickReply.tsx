@@ -51,6 +51,8 @@ export function QuickReply({
     isDragging,
     isExpanded,
     isSubmitting,
+    isPreparingAttachments,
+    preparingAttachmentCount,
     showEmojiPicker,
     setShowEmojiPicker,
     displayPlaceholder,
@@ -108,7 +110,8 @@ export function QuickReply({
 
   const { ref: cardRef, height: cardHeight } = useElementHeight();
 
-  const isValid = () => canSubmitPost(POST_INPUT_VARIANT.REPLY, content, attachments, isSubmitting);
+  const isValid = () =>
+    canSubmitPost(POST_INPUT_VARIANT.REPLY, content, attachments, isSubmitting || isPreparingAttachments);
 
   const characterLimit = { count: getCharacterCount(content), max: POST_MAX_CHARACTER_LENGTH };
 
@@ -203,6 +206,8 @@ export function QuickReply({
             setAttachments={setAttachmentsWithAuth}
             handleFilesAdded={handleFilesAddedWithAuth}
             isSubmitting={isSubmitting}
+            isPreparingAttachments={isPreparingAttachments}
+            preparingAttachmentCount={preparingAttachmentCount}
           />
 
           {/* Expandable section with animation (same transition as PostInput) */}

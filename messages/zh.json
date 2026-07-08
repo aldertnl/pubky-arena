@@ -519,6 +519,11 @@
     "addImage": "添加图片",
     "addFile": "添加文件",
     "addArticle": "添加文章",
+    "file": {
+      "preparingImage": "{count, plural, =1 {正在准备图片…} other {正在准备 # 张图片…}}",
+      "compressionFailed": "无法将图片压缩到 5 MB 以下。请尝试更小的图片或其他格式。",
+      "preparationFailed": "无法准备图片上传。请重试。"
+    },
     "posting": "发布中...",
     "viewOriginal": "查看原帖",
     "postBy": "发布者",
@@ -1330,7 +1335,7 @@
       "addImage": "添加图片",
       "removeImage": "移除图片",
       "coverImageInvalid": "封面图片必须是图片文件。",
-      "coverImageTooLarge": "封面图片太大。",
+      "coverImagePreparing": "正在准备图片…",
       "nameRequired": "收藏集标题为必填项。",
       "cancel": "取消",
       "save": "保存收藏",
