@@ -1,12 +1,12 @@
 import { Logger } from '@/libs/logger/logger';
-import type { PostStreamId } from '@/models/stream/post/postStream.types';
+import { advanceCursor, isSkipPaginatedStream, type PostStreamId } from '@/models/stream/post/postStream.types';
 import { LocalPostService } from '@/services/local/post/post';
 import { TQueueEntry } from '../post.types';
 import { CollectParams, CollectResult } from './post-stream-queue.types';
 
 // Safety valve to prevent infinite loops when filters remove many posts.
-// At 20 iterations with limit=30, we scan up to 600 posts before giving up.
-// This handles extreme cases like a muted user having 500+ consecutive posts.
+// At 20 iterations with a 10-post limit we scan up to 200 raw posts before giving up.
+// This handles extreme cases like a muted user having 200+ consecutive posts.
 const MAX_FETCH_ITERATIONS = 20;
 
 /**
@@ -49,16 +49,16 @@ export class PostStreamQueue {
     const seen = new Set(posts);
     let cursor = savedQueue?.cursor ?? params.cursor;
 
-    // If queue has enough, return early with correct timestamp
+    // Serve from the overflow buffer without touching the backend cursor. Skip streams
+    // resume by the saved offset; score streams from the last served post's own score.
     if (posts.length >= limit) {
-      const timestamp = await this.getLastPostTimestamp(posts, limit);
-      // Returning from queue means we haven't reached end of stream
-      return this.finalize(streamId, posts, limit, cursor, [], timestamp, false);
+      const nextCursor = isSkipPaginatedStream(streamId) ? cursor : await this.getLastPostTimestamp(posts, limit);
+      return this.finalize(streamId, posts, limit, cursor, [], nextCursor, false);
     }
 
     // Fetch until we have enough
     const allCacheMissIds = new Set<string>();
-    let latestTimestamp: number | undefined;
+    let latestScore: number | undefined;
     let fetchCount = 0;
     let reachedEnd = false;
 
@@ -81,9 +81,10 @@ export class PostStreamQueue {
         allCacheMissIds.add(id);
       }
 
-      if (result.timestamp !== undefined) {
-        cursor = result.timestamp;
-        latestTimestamp = result.timestamp;
+      // Advance by raw ids returned, never by how many survived the filter above.
+      cursor = advanceCursor(streamId, cursor, { ids: result.nextPageIds, lastScore: result.nextCursor });
+      if (result.nextCursor != null) {
+        latestScore = result.nextCursor;
       }
 
       // Stop if we've reached end of stream (propagated from Nexus response)
@@ -95,7 +96,10 @@ export class PostStreamQueue {
       }
     }
 
-    return this.finalize(streamId, posts, limit, cursor, Array.from(allCacheMissIds), latestTimestamp, reachedEnd);
+    // Skip streams resume by raw offset; score streams by the last real score (undefined if
+    // none, so the caller keeps its cursor rather than resetting).
+    const nextCursor = isSkipPaginatedStream(streamId) ? cursor : latestScore;
+    return this.finalize(streamId, posts, limit, cursor, Array.from(allCacheMissIds), nextCursor, reachedEnd);
   }
 
   /**
@@ -130,13 +134,13 @@ export class PostStreamQueue {
     limit: number,
     cursor: number,
     cacheMissIds: string[],
-    timestamp: number | undefined,
+    nextCursor: number | undefined,
     reachedEnd: boolean,
   ): CollectResult {
     const toReturn = posts.slice(0, limit);
     const toSave = posts.slice(limit);
 
-    // Only save non-empty queues, delete entry if queue is empty
+    // Save overflow keyed by the raw backend position (`cursor`), not the returned nextCursor.
     if (toSave.length > 0) {
       this.save(streamId, toSave, cursor);
     } else {
@@ -146,8 +150,7 @@ export class PostStreamQueue {
     return {
       posts: toReturn,
       cacheMissIds,
-      cursor,
-      timestamp,
+      nextCursor,
       reachedEnd,
     };
   }

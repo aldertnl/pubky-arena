@@ -178,9 +178,9 @@ export function useReplyStream(
           break;
         }
 
-        // Advance cursor using the timestamp from this page
-        if (result.timestamp && result.timestamp !== cursor) {
-          cursor = result.timestamp;
+        // Advance cursor using the resume cursor from this page
+        if (result.nextCursor && result.nextCursor !== cursor) {
+          cursor = result.nextCursor;
         } else {
           reachedEnd = true;
           break; // No cursor advancement — stop to avoid infinite loop

@@ -9,20 +9,6 @@
 export const COLLECTIONS_SECTION_PAGE_SIZE = 20;
 
 /**
- * Safety cap for Discover's dedupe backfill loop — max number of additional
- * slices we pull per user-initiated action (initial mount or "Show more"
- * click) when post-filter visible count is below page size, before giving up
- * and rendering whatever we have.
- *
- * Why this exists: each Discover slice may have many items that get hidden
- * by the per-card filter (own collection, already bookmarked). Without
- * backfill, an unlucky page could render zero visible cards. The cap
- * prevents runaway fetching when most of the user's social graph already
- * follows everything on the feed.
- */
-export const COLLECTIONS_DISCOVER_BACKFILL_MAX_ROUNDS = 3;
-
-/**
  * Max number of unique author avatars to show in a section header's stacked
  * avatar group before collapsing the rest behind a `+N` overflow chip.
  */
