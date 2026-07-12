@@ -311,18 +311,6 @@ vi.mock('@/atoms/Typography/Typography', () => {
   };
 });
 
-// Mock env — real implementations with Env override
-vi.mock('@/libs/env/env', async () => {
-  const actual = await vi.importActual<typeof import('@/libs/env/env')>('@/libs/env/env');
-  return {
-    ...actual,
-    Env: {
-      ...actual.Env,
-      NEXT_MAX_STREAM_TAGS: 5,
-    },
-  };
-});
-
 // --- Test Helpers ---
 
 const createMockFeed = (overrides: Partial<FeedModelSchema> = {}): FeedModelSchema => ({
@@ -709,6 +697,7 @@ describe('CustomFeedDialog', () => {
     expect(within(section).getByText('All')).toBeInTheDocument();
     expect(within(section).getByText('Posts')).toBeInTheDocument();
     expect(within(section).getByText('Articles')).toBeInTheDocument();
+    expect(within(section).getByText('Collections')).toBeInTheDocument();
     expect(within(section).getByText('Images')).toBeInTheDocument();
     expect(within(section).getByText('Videos')).toBeInTheDocument();
     expect(within(section).getByText('Links')).toBeInTheDocument();
@@ -731,6 +720,7 @@ describe('CustomFeedDialog', () => {
       expect(within(section).getByText('Videos')).toBeInTheDocument();
       expect(within(section).queryByText('Posts')).not.toBeInTheDocument();
       expect(within(section).queryByText('Articles')).not.toBeInTheDocument();
+      expect(within(section).queryByText('Collections')).not.toBeInTheDocument();
       expect(within(section).queryByText('Links')).not.toBeInTheDocument();
       expect(within(section).queryByText('Files')).not.toBeInTheDocument();
     });
