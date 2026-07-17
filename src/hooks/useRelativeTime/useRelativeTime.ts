@@ -24,7 +24,7 @@ export function useRelativeTime() {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
     const diffWeeks = Math.floor(diffDays / 7);
-    const diffMonths = Math.floor(diffDays / 30);
+    const diffMonths = Math.floor(diffWeeks / 4);
 
     if (diffSeconds < 60) return t('secondsShort', { count: diffSeconds });
     if (diffMins < 60) return t('minutesShort', { count: diffMins });
