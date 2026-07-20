@@ -22,6 +22,9 @@ const mockRouterPush = vi.fn();
 const mockRouterReplace = vi.fn();
 const mockSetShowSignInDialog = vi.fn();
 const mockToast = vi.fn();
+const mockUseDialogKeyboardOrchestrator = vi.hoisted(() =>
+  vi.fn((..._args: unknown[]) => ({ contentStyle: {}, spacerHeight: 0 })),
+);
 const mockGetNavigationEntries = vi.fn(() => [
   { name: `${window.location.origin}/post/${AUTHOR_PUBKY}/post-id/reply` },
 ]);
@@ -44,6 +47,10 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/hooks/useCurrentUserProfile/useCurrentUserProfile', () => ({
   useCurrentUserProfile: vi.fn(),
+}));
+
+vi.mock('@/hooks/useDialogKeyboardOrchestrator/useDialogKeyboardOrchestrator', () => ({
+  useDialogKeyboardOrchestrator: (...args: unknown[]) => mockUseDialogKeyboardOrchestrator(...args),
 }));
 
 vi.mock('@/hooks/usePostDetails/usePostDetails', () => ({
@@ -83,16 +90,20 @@ function setupExternalBoundaries() {
     postDetails: postId ? availablePost : undefined,
     isLoading: false,
   }));
-  vi.mocked(useCurrentUserProfile).mockReturnValue({
-    currentUserPubky: AUTHOR_PUBKY,
-    userDetails: { name: 'Reply author' },
-  } as never);
-  vi.mocked(useUserDetails).mockReturnValue({
-    userDetails: { name: 'Reply author' },
-    isLoading: false,
-  } as never);
+  vi.mocked(useCurrentUserProfile).mockReturnValue(
+    asOpaque<ReturnType<typeof useCurrentUserProfile>>({
+      currentUserPubky: AUTHOR_PUBKY,
+      userDetails: { name: 'Reply author' },
+    }),
+  );
+  vi.mocked(useUserDetails).mockReturnValue(
+    asOpaque<ReturnType<typeof useUserDetails>>({
+      userDetails: { name: 'Reply author' },
+      isLoading: false,
+    }),
+  );
   vi.mocked(useTtlSubscription).mockReturnValue({ ref: vi.fn(), isVisible: false });
-  vi.mocked(useToast).mockReturnValue({ toast: mockToast } as never);
+  vi.mocked(useToast).mockReturnValue(asOpaque<ReturnType<typeof useToast>>({ toast: mockToast }));
 
   const authState = mockAuthStore({
     currentUserPubky: AUTHOR_PUBKY,
@@ -121,6 +132,10 @@ describe('ReplyPage', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Reply' });
     expect(dialog).toHaveClass('h-dvh', 'w-screen', 'bg-background');
+    expect(mockUseDialogKeyboardOrchestrator).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ enabled: true }),
+    );
     expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Write a reply...');
     expect(screen.getByText('Background action').closest('[aria-hidden="true"]')).toBeInTheDocument();
     expect(dialog).toContainElement(document.activeElement as HTMLElement);

@@ -87,7 +87,7 @@ exports[`ReplyPage - Mobile Snapshots > matches snapshot on mobile viewport 1`] 
           />
         </header>
         <div
-          class="mx-auto w-full flex-col flex min-h-0 flex-1 gap-3 overflow-x-hidden overscroll-contain reply-composer-safe-bottom px-4 py-3"
+          class="mx-auto w-full flex-col flex min-h-0 flex-1 gap-3 overflow-x-hidden overscroll-contain reply-composer-safe-bottom overflow-y-auto px-4 py-3"
           data-testid="container"
         >
           <div
@@ -762,7 +762,7 @@ exports[`ReplyPage - Snapshots > matches snapshot for the reply page 1`] = `
           />
         </header>
         <div
-          class="mx-auto w-full flex-col flex min-h-0 flex-1 gap-3 overflow-x-hidden overscroll-contain reply-composer-safe-bottom px-4 py-3"
+          class="mx-auto w-full flex-col flex min-h-0 flex-1 gap-3 overflow-x-hidden overscroll-contain reply-composer-safe-bottom overflow-y-auto px-4 py-3"
           data-testid="container"
         >
           <div

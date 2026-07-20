@@ -193,9 +193,7 @@ function ResponsiveQuickReply({
 
   const isWideLayout = useEffectiveTagsLayout() === 'side';
   // Keep both responsive surfaces mounted so SSR and hydration produce the same
-  // tree. Once the desktop editor has a draft, it stays visible below `lg` too;
-  // swapping it for the CTA would discard its local draft state.
-  const hasDesktopDraft = content.trim().length > 0 || tags.length > 0 || attachments.length > 0;
+  // tree and breakpoint changes never discard the desktop editor's local state.
 
   return (
     <Container overrideDefaults className="contents" data-testid="quick-reply" aria-busy={isSubmitting}>
@@ -203,14 +201,10 @@ function ResponsiveQuickReply({
         parentPostId={parentPostId}
         connectorVariant={connectorVariant}
         prompt={prompt}
-        className={hasDesktopDraft ? 'hidden' : 'flex lg:hidden'}
+        className="flex lg:hidden"
       />
 
-      <Container
-        overrideDefaults
-        className={cn('relative', hasDesktopDraft ? 'flex' : 'hidden lg:flex')}
-        data-testid="quick-reply-desktop"
-      >
+      <Container overrideDefaults className="relative hidden lg:flex" data-testid="quick-reply-desktop">
         <Container overrideDefaults className="-mt-4 w-3 shrink-0">
           <PostThreadConnector
             height={connectorHeight}

@@ -362,7 +362,7 @@ describe('QuickReply', () => {
     ['text', { content: 'Unsubmitted reply', isExpanded: true }],
     ['tags', { tags: ['pubky'], isExpanded: true }],
     ['attachments', { attachments: [new File(['image'], 'reply.png', { type: 'image/png' })], isExpanded: true }],
-  ])('keeps an active desktop %s draft mounted and usable across the lg breakpoint', (_kind, overrides) => {
+  ])('keeps an active desktop %s draft mounted but hidden below lg', (_kind, overrides) => {
     mockUsePostInput.mockImplementation((options: unknown) => createUsePostInputReturn(options, overrides));
     const { rerender } = render(<QuickReply parentPostId="author:post1" />);
     const textarea = screen.getByTestId('quick-reply-textarea');
@@ -372,9 +372,8 @@ describe('QuickReply', () => {
     rerender(<QuickReply parentPostId="author:post1" />);
 
     expect(screen.getByTestId('quick-reply-textarea')).toBe(textarea);
-    expect(screen.getByTestId('quick-reply-desktop')).toHaveClass('flex');
-    expect(screen.getByTestId('quick-reply-desktop')).not.toHaveClass('hidden');
-    expect(screen.getByTestId('quick-reply-mobile')).toHaveClass('hidden');
+    expect(screen.getByTestId('quick-reply-desktop')).toHaveClass('hidden', 'lg:flex');
+    expect(screen.getByTestId('quick-reply-mobile')).toHaveClass('flex', 'lg:hidden');
   });
 
   it('hydrates the same QuickReply tree on a mobile client without a recoverable mismatch', async () => {
