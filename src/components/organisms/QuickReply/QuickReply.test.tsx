@@ -22,6 +22,7 @@ const REAL_PROMPTS = [
 const mockUsePostInput = vi.fn();
 const mockUseEnterSubmit = vi.fn();
 const mockRequireAuth = vi.fn(<T,>(action: () => T) => action());
+const mockOpenReply = vi.fn();
 let mockIsAuthenticated = true;
 
 function createUsePostInputReturn(options: unknown, overrides: Record<string, unknown> = {}) {
@@ -192,6 +193,10 @@ vi.mock('@/hooks/useRequireAuth/useRequireAuth', () => ({
   }),
 }));
 
+vi.mock('@/hooks/usePostReplyAction/usePostReplyAction', () => ({
+  usePostReplyAction: () => ({ openReply: mockOpenReply }),
+}));
+
 vi.mock('@/hooks/useIsMobile/useIsMobile', () => ({
   useIsMobile: vi.fn(() => false),
 }));
@@ -342,7 +347,7 @@ describe('QuickReply', () => {
       expect(screen.getByTestId('quick-reply-textarea')).toHaveAttribute('class', 'text-xl leading-7');
     });
 
-    it('falls back to inline layout on mobile even when the inherited layout is side', () => {
+    it('renders a collapsed CTA on mobile instead of the inline editor', () => {
       mockUseIsMobile.mockReturnValue(true);
 
       render(
@@ -351,12 +356,19 @@ describe('QuickReply', () => {
         </PostMainLayoutProvider>,
       );
 
-      const inputContainer = screen.getAllByTestId('container').find((c) => c.className?.includes('rounded-md'));
-      expect(inputContainer?.className).toContain('p-4');
-      expect(inputContainer?.className).not.toContain('p-12');
+      expect(screen.getByTestId('quick-reply-mobile-cta')).toBeInTheDocument();
+      expect(screen.queryByTestId('quick-reply-textarea')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('post-input-expandable-section')).not.toBeInTheDocument();
+    });
 
-      expect(screen.getByTestId('avatar')).toHaveAttribute('data-size', 'default');
-      expect(screen.getByTestId('quick-reply-textarea')).not.toHaveAttribute('class');
+    it('opens the route-based composer from the mobile CTA', () => {
+      mockUseIsMobile.mockReturnValue(true);
+      render(<QuickReply parentPostId="author:post1" />);
+
+      fireEvent.click(screen.getByTestId('quick-reply-mobile-cta'));
+
+      expect(mockRequireAuth).toHaveBeenCalledTimes(1);
+      expect(mockOpenReply).toHaveBeenCalledTimes(1);
     });
   });
 });

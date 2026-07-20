@@ -2,6 +2,12 @@ import { act, fireEvent, render, renderHook, screen } from '@testing-library/rea
 import { describe, expect, it, vi } from 'vitest';
 import { usePostReplyRepostDialogs } from './usePostReplyRepostDialogs';
 
+vi.mock('@/hooks/usePostReplyAction/usePostReplyAction', () => ({
+  usePostReplyAction: (_postId: string, { onDesktopReply }: { onDesktopReply: () => void }) => ({
+    openReply: onDesktopReply,
+  }),
+}));
+
 vi.mock('@/organisms/DialogReply/DialogReply', () => ({
   DialogReply: ({
     postId,

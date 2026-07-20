@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { PostThreadConnector } from '@/atoms/PostThreadConnector/PostThreadConnector';
 import { POST_THREAD_CONNECTOR_VARIANTS } from '@/atoms/PostThreadConnector/PostThreadConnector.constants';
@@ -13,8 +14,11 @@ import { useCurrentUserProfile } from '@/hooks/useCurrentUserProfile/useCurrentU
 import { useEffectiveTagsLayout } from '@/hooks/useEffectiveTagsLayout/useEffectiveTagsLayout';
 import { useElementHeight } from '@/hooks/useElementHeight/useElementHeight';
 import { useEnterSubmit } from '@/hooks/useEnterSubmit/useEnterSubmit';
+import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
 import { usePostInput } from '@/hooks/usePostInput/usePostInput';
 import { usePostInputAuthHandlers } from '@/hooks/usePostInputAuthHandlers/usePostInputAuthHandlers';
+import { usePostReplyAction } from '@/hooks/usePostReplyAction/usePostReplyAction';
+import { useRequireAuth } from '@/hooks/useRequireAuth/useRequireAuth';
 import { canSubmitPost, cn, getCharacterCount } from '@/libs/utils/utils';
 import { MentionPopover } from '@/molecules/MentionPopover/MentionPopover';
 import { PostInputAttachments } from '@/molecules/PostInputAttachments/PostInputAttachments';
@@ -25,16 +29,65 @@ import { PostInputExpandableSection } from '../PostInputExpandableSection/PostIn
 import { QUICK_REPLY_CONNECTOR_SPACER_HEIGHT } from './QuickReply.constants';
 import type { QuickReplyProps } from './QuickReply.types';
 
-export function QuickReply({
-  parentPostId,
-  connectorVariant = POST_THREAD_CONNECTOR_VARIANTS.LAST,
-  onReplySubmitted,
-}: QuickReplyProps) {
+function useQuickReplyPrompt() {
   const t = useTranslations();
   const rawPrompts = t.raw('quickReply.prompts');
   const prompts = Array.isArray(rawPrompts) ? rawPrompts : ['What are your thoughts on this?'];
   const [promptIndex] = React.useState(() => Math.floor(Math.random() * prompts.length));
-  const prompt = prompts[promptIndex] || prompts[0];
+
+  return prompts[promptIndex] || prompts[0];
+}
+
+function MobileQuickReply({
+  parentPostId,
+  connectorVariant = POST_THREAD_CONNECTOR_VARIANTS.LAST,
+}: QuickReplyProps) {
+  const t = useTranslations();
+  const prompt = useQuickReplyPrompt();
+  const { userDetails, currentUserPubky } = useCurrentUserProfile();
+  const avatarUrl = useAvatarUrl(userDetails);
+  const { requireAuth } = useRequireAuth();
+  const { openReply } = usePostReplyAction(parentPostId);
+  const { ref: cardRef, height: cardHeight } = useElementHeight();
+  const connectorHeight = cardHeight ? cardHeight + QUICK_REPLY_CONNECTOR_SPACER_HEIGHT : undefined;
+
+  return (
+    <Container overrideDefaults className="relative flex" data-testid="quick-reply">
+      <Container overrideDefaults className="-mt-4 w-3 shrink-0">
+        <PostThreadConnector
+          height={connectorHeight}
+          variant={connectorVariant}
+          data-testid="quick-reply-connector"
+        />
+      </Container>
+      <Container ref={cardRef} overrideDefaults className="min-w-0 flex-1">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-auto w-full min-w-0 justify-start gap-4 rounded-md border-dashed p-4 text-left shadow-none"
+          onClick={() => requireAuth(openReply)}
+          aria-label={t('dialogs.reply.hiddenTitle')}
+          data-testid="quick-reply-mobile-cta"
+        >
+          <AvatarWithFallback
+            avatarUrl={avatarUrl}
+            name={userDetails?.name || ''}
+            fallbackSeed={currentUserPubky || userDetails?.name || 'user'}
+            size="default"
+          />
+          <Typography className="min-w-0 truncate text-muted-foreground">{prompt}</Typography>
+        </Button>
+      </Container>
+    </Container>
+  );
+}
+
+function DesktopQuickReply({
+  parentPostId,
+  connectorVariant = POST_THREAD_CONNECTOR_VARIANTS.LAST,
+  onReplySubmitted,
+}: QuickReplyProps) {
+  const prompt = useQuickReplyPrompt();
 
   const { userDetails, currentUserPubky } = useCurrentUserProfile();
   const avatarUrl = useAvatarUrl(userDetails);
@@ -224,4 +277,10 @@ export function QuickReply({
       </Container>
     </Container>
   );
+}
+
+export function QuickReply(props: QuickReplyProps) {
+  const isMobile = useIsMobile();
+
+  return isMobile ? <MobileQuickReply {...props} /> : <DesktopQuickReply {...props} />;
 }

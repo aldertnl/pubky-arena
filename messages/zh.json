@@ -662,6 +662,7 @@
     "reply": {
       "title": "回复",
       "hiddenTitle": "回复帖子",
+      "back": "返回",
       "button": "回复",
       "description": "回复对话框"
     },

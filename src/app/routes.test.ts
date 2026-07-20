@@ -4,6 +4,8 @@ import {
   AUTH_ROUTES,
   AUTHENTICATED_ROUTES,
   getCollectionRoute,
+  getPostReplyRoute,
+  getPostRoute,
   getProfileRoute,
   getUserProfileUrl,
   isCollectionsOverviewRoute,
@@ -21,6 +23,17 @@ import {
   SETTINGS_ROUTES,
   UNAUTHENTICATED_ROUTES,
 } from './routes';
+
+describe('post route builders', () => {
+  it('builds canonical post and reply routes', () => {
+    expect(getPostRoute('author', 'post-id')).toBe('/post/author/post-id');
+    expect(getPostReplyRoute('author', 'post-id')).toBe('/post/author/post-id/reply');
+  });
+
+  it('encodes dynamic route segments', () => {
+    expect(getPostReplyRoute('author name', 'post/id')).toBe('/post/author%20name/post%2Fid/reply');
+  });
+});
 
 describe('isDynamicPublicRoute', () => {
   describe('invite routes', () => {

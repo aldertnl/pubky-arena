@@ -664,6 +664,7 @@
     "reply": {
       "title": "Antwort",
       "hiddenTitle": "Auf Beitrag antworten",
+      "back": "Zurück",
       "button": "Antworten",
       "description": "Antwort-Dialog"
     },

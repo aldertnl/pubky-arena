@@ -4,6 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { VisualRow } from './TimelineFeedVisual.types';
 import { VisualTimelinePosts } from './VisualTimelinePosts';
 
+vi.mock('@/hooks/usePostReplyAction/usePostReplyAction', () => ({
+  usePostReplyAction: (_postId: string, { onDesktopReply }: { onDesktopReply: () => void }) => ({
+    openReply: onDesktopReply,
+  }),
+}));
+
 const {
   mockNavigateToPost,
   mockPostHeaderUserInfo,

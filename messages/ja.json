@@ -662,6 +662,7 @@
     "reply": {
       "title": "返信",
       "hiddenTitle": "投稿に返信",
+      "back": "戻る",
       "button": "返信",
       "description": "返信ダイアログ"
     },

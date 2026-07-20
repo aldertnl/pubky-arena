@@ -15,13 +15,15 @@ import { PostHeader } from '@/organisms/PostHeader/PostHeader';
 interface PostPreviewCardProps {
   /** Composite post ID to preview. */
   postId: string;
-  /** Optional className on the outer Card wrapper (non-collection posts only). */
+  /** Optional className on the outer preview wrapper. */
   className?: string;
   /**
    * Collection embed only: when `false`, tags are read-only and Follow/Delete
    * CTAs are hidden (share/repost dialog). Feed repost previews default to `true`.
    */
   interactiveActions?: boolean;
+  /** Whether the preview itself navigates to the original post. */
+  navigable?: boolean;
 }
 
 /**
@@ -50,7 +52,12 @@ interface PostPreviewCardProps {
  * - Share dialog: original post in `PostInput` repost variant
  * - Reply previews: post being replied to in `DialogReply` (non-collection posts only)
  */
-export function PostPreviewCard({ postId, className, interactiveActions = true }: PostPreviewCardProps) {
+export function PostPreviewCard({
+  postId,
+  className,
+  interactiveActions = true,
+  navigable = true,
+}: PostPreviewCardProps) {
   const { navigateToPost } = usePostNavigation();
   const { postDetails, isLoading } = usePostDetails(postId);
   const { ref: ttlRef } = useTtlSubscription({
@@ -66,11 +73,11 @@ export function PostPreviewCard({ postId, className, interactiveActions = true }
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigateToPost(postId);
+    if (navigable) navigateToPost(postId);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (navigable && (e.key === 'Enter' || e.key === ' ')) {
       e.stopPropagation();
       e.preventDefault();
       navigateToPost(postId);
@@ -80,12 +87,13 @@ export function PostPreviewCard({ postId, className, interactiveActions = true }
   if (postDetails?.kind === 'collection') {
     const { pubky, id } = parseCompositeId(postId);
     return (
-      <Container ref={ttlRef} data-cy="post-preview-card" overrideDefaults className="min-w-0">
+      <Container ref={ttlRef} data-cy="post-preview-card" overrideDefaults className={cn('min-w-0', className)}>
         <CollectionCard
           authorPubky={pubky}
           postId={id}
           presentation="embed"
           interactiveActions={interactiveActions}
+          navigable={navigable}
           className="w-full"
         />
       </Container>
@@ -97,14 +105,15 @@ export function PostPreviewCard({ postId, className, interactiveActions = true }
       ref={ttlRef}
       data-cy="post-preview-card"
       className={cn(
-        'w-full max-w-full min-w-0 cursor-pointer rounded-md py-0 transition-colors hover:bg-accent/50',
+        'w-full max-w-full min-w-0 rounded-md py-0',
+        navigable && 'cursor-pointer transition-colors hover:bg-accent/50',
         className,
       )}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role="link"
-      tabIndex={0}
-      aria-label="View original post"
+      onClick={navigable ? handleClick : undefined}
+      onKeyDown={navigable ? handleKeyDown : undefined}
+      role={navigable ? 'link' : undefined}
+      tabIndex={navigable ? 0 : undefined}
+      aria-label={navigable ? 'View original post' : undefined}
     >
       {isMissing ? (
         <PostMissing />
