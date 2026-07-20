@@ -664,6 +664,7 @@
     "reply": {
       "title": "رد",
       "hiddenTitle": "الرد على المنشور",
+      "back": "رجوع",
       "button": "رد",
       "description": "نافذة الرد"
     },

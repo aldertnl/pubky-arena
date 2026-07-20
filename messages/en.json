@@ -662,6 +662,7 @@
     "reply": {
       "title": "Reply",
       "hiddenTitle": "Reply to post",
+      "back": "Back",
       "button": "Reply",
       "description": "Reply dialog"
     },

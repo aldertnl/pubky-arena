@@ -22,6 +22,8 @@ interface PostPreviewCardProps {
    * CTAs are hidden (share/repost dialog). Feed repost previews default to `true`.
    */
   interactiveActions?: boolean;
+  /** Whether the preview itself navigates to the original post. */
+  navigable?: boolean;
 }
 
 /**
@@ -50,7 +52,12 @@ interface PostPreviewCardProps {
  * - Share dialog: original post in `PostInput` repost variant
  * - Reply previews: post being replied to in `DialogReply` (non-collection posts only)
  */
-export function PostPreviewCard({ postId, className, interactiveActions = true }: PostPreviewCardProps) {
+export function PostPreviewCard({
+  postId,
+  className,
+  interactiveActions = true,
+  navigable = true,
+}: PostPreviewCardProps) {
   const { navigateToPost } = usePostNavigation();
   const { postDetails, isLoading } = usePostDetails(postId);
   const { ref: ttlRef } = useTtlSubscription({
@@ -65,11 +72,13 @@ export function PostPreviewCard({ postId, className, interactiveActions = true }
   const isMissing = postDetails === null && !isLoading;
 
   const handleClick = (e: React.MouseEvent) => {
+    if (!navigable) return;
     e.stopPropagation();
     navigateToPost(postId);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!navigable) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.stopPropagation();
       e.preventDefault();
@@ -97,14 +106,15 @@ export function PostPreviewCard({ postId, className, interactiveActions = true }
       ref={ttlRef}
       data-cy="post-preview-card"
       className={cn(
-        'w-full max-w-full min-w-0 cursor-pointer rounded-md py-0 transition-colors hover:bg-accent/50',
+        'w-full max-w-full min-w-0',
+        navigable ? 'cursor-pointer rounded-md py-0 transition-colors hover:bg-accent/50' : 'rounded-md py-0',
         className,
       )}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role="link"
-      tabIndex={0}
-      aria-label="View original post"
+      onClick={navigable ? handleClick : undefined}
+      onKeyDown={navigable ? handleKeyDown : undefined}
+      role={navigable ? 'link' : undefined}
+      tabIndex={navigable ? 0 : undefined}
+      aria-label={navigable ? 'View original post' : undefined}
     >
       {isMissing ? (
         <PostMissing />

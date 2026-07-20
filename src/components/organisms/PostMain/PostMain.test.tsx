@@ -10,6 +10,10 @@ import { resetViewport, setMobileViewport } from '@/test-utils/viewport';
 import { PostMain } from './PostMain';
 import { PostMainLayoutProvider } from './PostMainLayoutContext';
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
 // Use vi.hoisted to define mock functions before vi.mock calls (which are hoisted)
 const { mockPostHeader } = vi.hoisted(() => ({
   mockPostHeader: vi.fn(

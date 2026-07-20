@@ -6,6 +6,10 @@ import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
 import type { AttachmentConstructed } from '../PostAttachments/PostAttachments.types';
 import { PostArticleDetail } from './PostArticleDetail';
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
 vi.mock('@/hooks/usePostArticle/usePostArticle', () => ({
   usePostArticle: vi.fn(),
 }));

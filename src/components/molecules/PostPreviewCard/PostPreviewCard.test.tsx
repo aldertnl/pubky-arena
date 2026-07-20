@@ -217,6 +217,19 @@ describe('PostPreviewCard', () => {
     expect(mockNavigateToPost).not.toHaveBeenCalled();
   });
 
+  it('renders noninteractive parent context when navigation is disabled', () => {
+    render(<PostPreviewCard postId="test-post-123" navigable={false} />);
+
+    const card = screen.getByTestId('card');
+    expect(card).not.toHaveAttribute('role');
+    expect(card).not.toHaveAttribute('tabindex');
+    expect(card).not.toHaveAttribute('aria-label');
+
+    fireEvent.click(card);
+    fireEvent.keyDown(card, { key: 'Enter' });
+    expect(mockNavigateToPost).not.toHaveBeenCalled();
+  });
+
   it('renders PostMissing (not header/content) when the original post is not found', () => {
     mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: false });
 

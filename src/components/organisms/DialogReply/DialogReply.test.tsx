@@ -47,8 +47,16 @@ vi.mock('@/atoms/Dialog/Dialog', () => {
         </div>
       ),
     ),
-    DialogHeader: ({ children }: { children: React.ReactNode }) => <div data-testid="dialog-header">{children}</div>,
-    DialogTitle: ({ children }: { children: React.ReactNode }) => <h2 data-testid="dialog-title">{children}</h2>,
+    DialogHeader: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+      <div data-testid="dialog-header" className={className}>
+        {children}
+      </div>
+    ),
+    DialogTitle: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+      <h2 data-testid="dialog-title" className={className}>
+        {children}
+      </h2>
+    ),
     DialogDescription: ({ children }: { children: React.ReactNode }) => (
       <p data-testid="dialog-description">{children}</p>
     ),

@@ -59,6 +59,14 @@ export enum POST_ROUTES {
   POST = '/post',
 }
 
+export function getPostRoute(authorPubky: string, postId: string): string {
+  return `${POST_ROUTES.POST}/${encodeURIComponent(authorPubky)}/${encodeURIComponent(postId)}`;
+}
+
+export function getPostReplyRoute(authorPubky: string, postId: string): string {
+  return `${getPostRoute(authorPubky, postId)}/reply`;
+}
+
 export enum COPYRIGHT_ROUTES {
   COPYRIGHT = '/copyright',
 }

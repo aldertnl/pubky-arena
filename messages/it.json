@@ -662,6 +662,7 @@
     "reply": {
       "title": "Risposta",
       "hiddenTitle": "Rispondi al post",
+      "back": "Indietro",
       "button": "Rispondi",
       "description": "Dialogo risposta"
     },

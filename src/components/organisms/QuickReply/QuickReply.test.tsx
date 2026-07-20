@@ -22,7 +22,12 @@ const REAL_PROMPTS = [
 const mockUsePostInput = vi.fn();
 const mockUseEnterSubmit = vi.fn();
 const mockRequireAuth = vi.fn(<T,>(action: () => T) => action());
+const mockRouterPush = vi.fn();
 let mockIsAuthenticated = true;
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockRouterPush }),
+}));
 
 function createUsePostInputReturn(options: unknown, overrides: Record<string, unknown> = {}) {
   return {
@@ -200,6 +205,7 @@ describe('QuickReply', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    vi.mocked(useIsMobile).mockReturnValue(false);
     mockIsAuthenticated = true;
     mockRequireAuth.mockImplementation(<T,>(action: () => T) => action());
     mockUseEnterSubmit.mockReturnValue(() => undefined);
@@ -342,7 +348,7 @@ describe('QuickReply', () => {
       expect(screen.getByTestId('quick-reply-textarea')).toHaveAttribute('class', 'text-xl leading-7');
     });
 
-    it('falls back to inline layout on mobile even when the inherited layout is side', () => {
+    it('renders a collapsed CTA instead of the inline editor on mobile', () => {
       mockUseIsMobile.mockReturnValue(true);
 
       render(
@@ -351,13 +357,32 @@ describe('QuickReply', () => {
         </PostMainLayoutProvider>,
       );
 
-      const inputContainer = screen.getAllByTestId('container').find((c) => c.className?.includes('rounded-md'));
-      expect(inputContainer?.className).toContain('p-4');
-      expect(inputContainer?.className).not.toContain('p-12');
-
+      expect(screen.getByTestId('quick-reply-mobile-cta')).toBeInTheDocument();
+      expect(screen.queryByTestId('quick-reply-textarea')).not.toBeInTheDocument();
       expect(screen.getByTestId('avatar')).toHaveAttribute('data-size', 'default');
-      expect(screen.getByTestId('quick-reply-textarea')).not.toHaveAttribute('class');
     });
+  });
+
+  it('navigates to the full reply composer from the mobile CTA after auth gating', () => {
+    vi.mocked(useIsMobile).mockReturnValue(true);
+
+    render(<QuickReply parentPostId="author:post1" />);
+    fireEvent.click(screen.getByTestId('quick-reply-mobile-cta'));
+
+    expect(mockRequireAuth).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).toHaveBeenCalledWith('/post/author/post1/reply');
+  });
+
+  it('does not open the mobile composer when auth gating rejects the action', () => {
+    vi.mocked(useIsMobile).mockReturnValue(true);
+    mockIsAuthenticated = false;
+    mockRequireAuth.mockReturnValue(undefined);
+
+    render(<QuickReply parentPostId="author:post1" />);
+    fireEvent.click(screen.getByTestId('quick-reply-mobile-cta'));
+
+    expect(mockRequireAuth).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).not.toHaveBeenCalled();
   });
 });
 

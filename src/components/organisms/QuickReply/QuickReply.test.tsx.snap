@@ -2,7 +2,6 @@
 
 exports[`QuickReply - Mobile Snapshots > matches snapshot on mobile viewport 1`] = `
 <div
-  aria-busy="false"
   class="relative flex"
   data-testid="quick-reply"
 >
@@ -17,58 +16,28 @@ exports[`QuickReply - Mobile Snapshots > matches snapshot on mobile viewport 1`]
     />
   </div>
   <div
-    class="relative w-full cursor-pointer rounded-md border border-dashed transition-colors duration-200 p-4 border-input"
+    class="min-w-0 flex-1"
     data-testid="container"
   >
-    <div
-      class="gap-2"
-      data-testid="container"
+    <button
+      aria-label="Reply to post"
+      class="inline-flex items-center whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer border hover:text-accent-foreground bg-input/30 border-input hover:bg-input/50 has-[>svg]:px-4 h-auto w-full min-w-0 justify-start gap-4 rounded-md border-dashed p-4 text-left shadow-none"
+      data-slot="button"
+      data-testid="quick-reply-mobile-cta"
+      data-variant="outline"
+      type="button"
     >
       <div
-        class="flex items-center gap-4"
-        data-testid="container"
-      >
-        <div
-          data-size="default"
-          data-testid="avatar"
-        />
-        <div
-          class="relative flex-1"
-          data-testid="container"
-        >
-          <textarea
-            aria-haspopup="listbox"
-            aria-label="Reply"
-            data-testid="quick-reply-textarea"
-            placeholder="What are your thoughts on this?"
-            rows="1"
-            variant="inline"
-          />
-        </div>
-      </div>
-      <div
-        attachments=""
-        data-testid="post-input-attachments"
+        data-size="default"
+        data-testid="avatar"
       />
-      <div
-        data-character-count="0"
-        data-character-max="2000"
-        data-disabled="false"
-        data-post-disabled="true"
-        data-testid="post-input-expandable-section"
+      <p
+        class="text-base font-medium min-w-0 truncate text-muted-foreground"
+        data-testid="typography"
       >
-        <button
-          data-testid="quick-reply-submit"
-        >
-          Submit
-        </button>
-        <button
-          data-testid="quick-reply-image"
-        >
-          Image
-        </button>
-      </div>
-    </div>
+        What are your thoughts on this?
+      </p>
+    </button>
   </div>
 </div>
 `;

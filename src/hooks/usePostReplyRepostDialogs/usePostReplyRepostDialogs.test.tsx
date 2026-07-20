@@ -1,6 +1,17 @@
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
 import { usePostReplyRepostDialogs } from './usePostReplyRepostDialogs';
+
+const mockRouterPush = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockRouterPush }),
+}));
+
+vi.mock('@/hooks/useIsMobile/useIsMobile', () => ({
+  useIsMobile: vi.fn(() => false),
+}));
 
 vi.mock('@/organisms/DialogReply/DialogReply', () => ({
   DialogReply: ({
@@ -41,6 +52,11 @@ vi.mock('@/organisms/DialogRepost/DialogRepost', () => ({
 }));
 
 describe('usePostReplyRepostDialogs', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useIsMobile).mockReturnValue(false);
+  });
+
   it('renders both dialogs closed initially', () => {
     const { result } = renderHook(() => usePostReplyRepostDialogs('author:post-id'));
 
@@ -67,12 +83,26 @@ describe('usePostReplyRepostDialogs', () => {
     const view = render(result.current.dialogs);
 
     act(() => {
-      result.current.openReplyDialog();
+      result.current.openReply();
     });
     view.rerender(result.current.dialogs);
 
     expect(screen.getByTestId('dialog-reply')).toHaveAttribute('data-open', 'true');
     expect(screen.getByTestId('dialog-repost')).toHaveAttribute('data-open', 'false');
+  });
+
+  it('navigates to the reply page instead of opening a dialog on mobile', () => {
+    vi.mocked(useIsMobile).mockReturnValue(true);
+    const { result } = renderHook(() => usePostReplyRepostDialogs('author:post-id'));
+    const view = render(result.current.dialogs);
+
+    act(() => {
+      result.current.openReply();
+    });
+    view.rerender(result.current.dialogs);
+
+    expect(mockRouterPush).toHaveBeenCalledWith('/post/author/post-id/reply');
+    expect(screen.getByTestId('dialog-reply')).toHaveAttribute('data-open', 'false');
   });
 
   it('opens only the repost dialog', () => {
@@ -93,7 +123,7 @@ describe('usePostReplyRepostDialogs', () => {
     const view = render(result.current.dialogs);
 
     act(() => {
-      result.current.openReplyDialog();
+      result.current.openReply();
       result.current.openRepostDialog();
     });
     view.rerender(result.current.dialogs);

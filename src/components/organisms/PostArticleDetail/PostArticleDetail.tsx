@@ -29,7 +29,7 @@ interface PostArticleDetailProps {
  * Displays an article post detail page with tags always visible on mobile and desktop.
  */
 export const PostArticleDetail = ({ postId, content, attachments, isBlurred }: PostArticleDetailProps) => {
-  const { openReplyDialog, openRepostDialog, dialogs } = usePostReplyRepostDialogs(postId);
+  const { openReply, openRepostDialog, dialogs } = usePostReplyRepostDialogs(postId);
   const mobileTagsPanelRef = useRef<PostTagsPanelHandle>(null);
   const desktopTagsPanelRef = useRef<PostTagsPanelHandle>(null);
 
@@ -67,7 +67,7 @@ export const PostArticleDetail = ({ postId, content, attachments, isBlurred }: P
           <PostActionsBar
             postId={postId}
             onTagClick={handleTagClick}
-            onReplyClick={openReplyDialog}
+            onReplyClick={openReply}
             onRepostClick={openRepostDialog}
             className="mt-3 mb-6"
           />
