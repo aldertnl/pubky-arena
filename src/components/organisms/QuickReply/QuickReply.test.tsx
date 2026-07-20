@@ -1,11 +1,11 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { hydrateRoot } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST_MAX_CHARACTER_LENGTH } from '@/config/posts';
-import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
 import { PostMainLayoutProvider } from '@/organisms/PostMain/PostMainLayoutContext';
 import { resetViewport, setMobileViewport } from '@/test-utils/viewport';
 import { QuickReply } from './QuickReply';
-import { QUICK_REPLY_PROMPTS_COUNT } from './QuickReply.constants';
 
 // next-intl is mocked globally in src/config/test.ts
 // The global mock uses real translations from messages/en.json
@@ -22,12 +22,8 @@ const REAL_PROMPTS = [
 const mockUsePostInput = vi.fn();
 const mockUseEnterSubmit = vi.fn();
 const mockRequireAuth = vi.fn(<T,>(action: () => T) => action());
-const mockRouterPush = vi.fn();
+const mockOpenReply = vi.fn();
 let mockIsAuthenticated = true;
-
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockRouterPush }),
-}));
 
 function createUsePostInputReturn(options: unknown, overrides: Record<string, unknown> = {}) {
   return {
@@ -197,32 +193,31 @@ vi.mock('@/hooks/useRequireAuth/useRequireAuth', () => ({
   }),
 }));
 
-vi.mock('@/hooks/useIsMobile/useIsMobile', () => ({
-  useIsMobile: vi.fn(() => false),
+vi.mock('@/hooks/usePostReplyAction/usePostReplyAction', () => ({
+  usePostReplyAction: () => ({ openReply: mockOpenReply }),
 }));
 
 describe('QuickReply', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    vi.mocked(useIsMobile).mockReturnValue(false);
     mockIsAuthenticated = true;
     mockRequireAuth.mockImplementation(<T,>(action: () => T) => action());
     mockUseEnterSubmit.mockReturnValue(() => undefined);
     mockUsePostInput.mockImplementation((options: unknown) => createUsePostInputReturn(options));
   });
 
-  it('picks a placeholder from the prompt list on mount', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0); // first prompt
+  afterEach(() => {
+    resetViewport();
+  });
+
+  it('uses the same deterministic prompt for the CTA and mounted editor', () => {
     render(<QuickReply parentPostId="author:post1" />);
 
-    expect(mockUsePostInput).toHaveBeenCalledWith(
-      expect.objectContaining({
-        placeholder: REAL_PROMPTS[0],
-      }),
-    );
+    const placeholder = screen.getByTestId('quick-reply-textarea').getAttribute('placeholder');
 
-    expect(screen.getByTestId('quick-reply-textarea')).toHaveAttribute('placeholder', REAL_PROMPTS[0]);
+    expect(REAL_PROMPTS).toContain(placeholder);
+    expect(screen.getByTestId('quick-reply-mobile-cta')).toHaveTextContent(placeholder!);
   });
 
   it('forwards clipboard paste to usePostInput handlePaste (image attachments)', () => {
@@ -288,17 +283,14 @@ describe('QuickReply', () => {
     expect(handleDrop).not.toHaveBeenCalled();
   });
 
-  it('changes the placeholder across mounts (random per mount)', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0); // first prompt
+  it('keeps the prompt stable across mounts for the same post', () => {
     render(<QuickReply parentPostId="author:post1" />);
-    expect(mockUsePostInput).toHaveBeenCalledWith(expect.objectContaining({ placeholder: REAL_PROMPTS[0] }));
+    const firstPrompt = screen.getByTestId('quick-reply-textarea').getAttribute('placeholder');
 
     cleanup();
-    vi.spyOn(Math, 'random').mockReturnValue(0.99); // last prompt
     render(<QuickReply parentPostId="author:post1" />);
-    expect(mockUsePostInput).toHaveBeenCalledWith(
-      expect.objectContaining({ placeholder: REAL_PROMPTS[QUICK_REPLY_PROMPTS_COUNT - 1] }),
-    );
+
+    expect(screen.getByTestId('quick-reply-textarea')).toHaveAttribute('placeholder', firstPrompt);
   });
 
   it('passes characterLimit to expandable section for reply mode', () => {
@@ -316,12 +308,6 @@ describe('QuickReply', () => {
   });
 
   describe('wide layout', () => {
-    const mockUseIsMobile = vi.mocked(useIsMobile);
-
-    beforeEach(() => {
-      mockUseIsMobile.mockReturnValue(false);
-    });
-
     it('uses inline padding, default avatar size, and no body class when no provider is present', () => {
       render(<QuickReply parentPostId="author:post1" />);
 
@@ -329,7 +315,7 @@ describe('QuickReply', () => {
       expect(inputContainer?.className).toContain('p-4');
       expect(inputContainer?.className).not.toContain('p-12');
 
-      expect(screen.getByTestId('avatar')).toHaveAttribute('data-size', 'default');
+      expect(screen.getAllByTestId('avatar').at(-1)).toHaveAttribute('data-size', 'default');
       expect(screen.getByTestId('quick-reply-textarea')).not.toHaveAttribute('class');
     });
 
@@ -344,13 +330,11 @@ describe('QuickReply', () => {
       expect(inputContainer?.className).toContain('p-12');
       expect(inputContainer?.className).not.toContain('p-4');
 
-      expect(screen.getByTestId('avatar')).toHaveAttribute('data-size', 'xl');
+      expect(screen.getAllByTestId('avatar').at(-1)).toHaveAttribute('data-size', 'xl');
       expect(screen.getByTestId('quick-reply-textarea')).toHaveAttribute('class', 'text-xl leading-7');
     });
 
-    it('renders a collapsed CTA instead of the inline editor on mobile', () => {
-      mockUseIsMobile.mockReturnValue(true);
-
+    it('uses CSS to show the CTA and hide the inactive editor below lg', () => {
       render(
         <PostMainLayoutProvider tagsLayout="side">
           <QuickReply parentPostId="author:post1" />
@@ -358,41 +342,66 @@ describe('QuickReply', () => {
       );
 
       expect(screen.getByTestId('quick-reply-mobile-cta')).toBeInTheDocument();
-      expect(screen.queryByTestId('quick-reply-textarea')).not.toBeInTheDocument();
-      expect(screen.getByTestId('avatar')).toHaveAttribute('data-size', 'default');
+      expect(screen.getByTestId('quick-reply-mobile')).toHaveClass('flex', 'lg:hidden');
+      expect(screen.getByTestId('quick-reply-desktop')).toHaveClass('hidden', 'lg:flex');
+      expect(screen.getByTestId('quick-reply-textarea')).toBeInTheDocument();
+      expect(mockUsePostInput).toHaveBeenCalledWith(expect.objectContaining({ expanded: false }));
+    });
+
+    it('opens the route-based composer from the mobile CTA', () => {
+      render(<QuickReply parentPostId="author:post1" />);
+
+      fireEvent.click(screen.getByTestId('quick-reply-mobile-cta'));
+
+      expect(mockRequireAuth).toHaveBeenCalledTimes(1);
+      expect(mockOpenReply).toHaveBeenCalledTimes(1);
     });
   });
 
-  it('navigates to the full reply composer from the mobile CTA after auth gating', () => {
-    vi.mocked(useIsMobile).mockReturnValue(true);
+  it.each([
+    ['text', { content: 'Unsubmitted reply', isExpanded: true }],
+    ['tags', { tags: ['pubky'], isExpanded: true }],
+    ['attachments', { attachments: [new File(['image'], 'reply.png', { type: 'image/png' })], isExpanded: true }],
+  ])('keeps an active desktop %s draft mounted and usable across the lg breakpoint', (_kind, overrides) => {
+    mockUsePostInput.mockImplementation((options: unknown) => createUsePostInputReturn(options, overrides));
+    const { rerender } = render(<QuickReply parentPostId="author:post1" />);
+    const textarea = screen.getByTestId('quick-reply-textarea');
 
-    render(<QuickReply parentPostId="author:post1" />);
-    fireEvent.click(screen.getByTestId('quick-reply-mobile-cta'));
+    setMobileViewport();
+    fireEvent(window, new Event('resize'));
+    rerender(<QuickReply parentPostId="author:post1" />);
 
-    expect(mockRequireAuth).toHaveBeenCalledTimes(1);
-    expect(mockRouterPush).toHaveBeenCalledWith('/post/author/post1/reply');
+    expect(screen.getByTestId('quick-reply-textarea')).toBe(textarea);
+    expect(screen.getByTestId('quick-reply-desktop')).toHaveClass('flex');
+    expect(screen.getByTestId('quick-reply-desktop')).not.toHaveClass('hidden');
+    expect(screen.getByTestId('quick-reply-mobile')).toHaveClass('hidden');
   });
 
-  it('does not open the mobile composer when auth gating rejects the action', () => {
-    vi.mocked(useIsMobile).mockReturnValue(true);
-    mockIsAuthenticated = false;
-    mockRequireAuth.mockReturnValue(undefined);
+  it('hydrates the same QuickReply tree on a mobile client without a recoverable mismatch', async () => {
+    const element = <QuickReply parentPostId="author:post1" />;
+    vi.stubGlobal('window', undefined);
+    let serverMarkup: string;
+    try {
+      serverMarkup = renderToString(element);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    const container = document.createElement('div');
+    container.innerHTML = serverMarkup;
+    setMobileViewport();
+    const onRecoverableError = vi.fn();
 
-    render(<QuickReply parentPostId="author:post1" />);
-    fireEvent.click(screen.getByTestId('quick-reply-mobile-cta'));
+    const root = hydrateRoot(container, element, { onRecoverableError });
+    await act(async () => undefined);
 
-    expect(mockRequireAuth).toHaveBeenCalledTimes(1);
-    expect(mockRouterPush).not.toHaveBeenCalled();
+    expect(onRecoverableError).not.toHaveBeenCalled();
+    await act(async () => root.unmount());
   });
 });
 
 describe('QuickReply - Snapshots', () => {
-  const mockUseIsMobile = vi.mocked(useIsMobile);
-
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseIsMobile.mockReturnValue(false);
-    vi.spyOn(Math, 'random').mockReturnValue(0);
     mockIsAuthenticated = true;
     mockRequireAuth.mockImplementation(<T,>(action: () => T) => action());
     mockUseEnterSubmit.mockReturnValue(() => undefined);
@@ -400,34 +409,6 @@ describe('QuickReply - Snapshots', () => {
   });
 
   it('matches snapshot with default props', () => {
-    const { container } = render(
-      <PostMainLayoutProvider tagsLayout="side">
-        <QuickReply parentPostId="author:post1" />
-      </PostMainLayoutProvider>,
-    );
-    expect(container.firstChild).toMatchSnapshot();
-  });
-});
-
-describe('QuickReply - Mobile Snapshots', () => {
-  const mockUseIsMobile = vi.mocked(useIsMobile);
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockUseIsMobile.mockReturnValue(true);
-    setMobileViewport();
-    vi.spyOn(Math, 'random').mockReturnValue(0);
-    mockIsAuthenticated = true;
-    mockRequireAuth.mockImplementation(<T,>(action: () => T) => action());
-    mockUseEnterSubmit.mockReturnValue(() => undefined);
-    mockUsePostInput.mockImplementation((options: unknown) => createUsePostInputReturn(options));
-  });
-
-  afterEach(() => {
-    resetViewport();
-  });
-
-  it('matches snapshot on mobile viewport', () => {
     const { container } = render(
       <PostMainLayoutProvider tagsLayout="side">
         <QuickReply parentPostId="author:post1" />

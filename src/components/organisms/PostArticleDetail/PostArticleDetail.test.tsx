@@ -6,8 +6,10 @@ import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
 import type { AttachmentConstructed } from '../PostAttachments/PostAttachments.types';
 import { PostArticleDetail } from './PostArticleDetail';
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+vi.mock('@/hooks/usePostReplyAction/usePostReplyAction', () => ({
+  usePostReplyAction: (_postId: string, { onDesktopReply }: { onDesktopReply: () => void }) => ({
+    openReply: onDesktopReply,
+  }),
 }));
 
 vi.mock('@/hooks/usePostArticle/usePostArticle', () => ({

@@ -60,6 +60,8 @@ interface CollectionCardProps {
    * default (`true`).
    */
   interactiveActions?: boolean;
+  /** Whether the card wrapper can navigate to the collection detail route. */
+  navigable?: boolean;
   /** Show the owner Delete action. Opt in only from the My Collections overview. */
   showDeleteAction?: boolean;
 }
@@ -90,6 +92,7 @@ export function CollectionCard({
   initialIsBookmarked,
   presentation = 'landing',
   interactiveActions = true,
+  navigable = true,
   showDeleteAction = false,
 }: CollectionCardProps) {
   const compositeId = buildCompositeId({ pubky: authorPubky, id: postId });
@@ -132,6 +135,7 @@ export function CollectionCard({
       isMobile={isMobile}
       isWideLayout={isWideLayout}
       interactiveActions={interactiveActions}
+      navigable={navigable}
       showDeleteAction={showDeleteAction}
     />
   );
@@ -148,6 +152,7 @@ interface CollectionCardContentProps {
   isMobile: boolean;
   isWideLayout: boolean;
   interactiveActions: boolean;
+  navigable: boolean;
   showDeleteAction: boolean;
 }
 
@@ -162,6 +167,7 @@ function CollectionCardContent({
   isMobile,
   isWideLayout,
   interactiveActions,
+  navigable,
   showDeleteAction,
 }: CollectionCardContentProps) {
   const isEmbed = presentation === 'embed';
@@ -256,6 +262,21 @@ function CollectionCardContent({
         overrideDefaults
         href={href}
         aria-label={title}
+        aria-disabled={navigable ? undefined : true}
+        role={navigable ? undefined : 'group'}
+        tabIndex={navigable ? undefined : -1}
+        onClick={navigable ? undefined : suppressCardNavigation}
+        onAuxClick={navigable ? undefined : suppressCardNavigation}
+        onKeyDown={
+          navigable
+            ? undefined
+            : (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }
+              }
+        }
         data-cy="collection-card"
         data-presentation={presentation}
         data-interactive-actions={interactiveActions ? 'true' : 'false'}

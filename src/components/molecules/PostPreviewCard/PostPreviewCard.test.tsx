@@ -34,7 +34,7 @@ vi.mock('@/organisms/PostContentBase/PostContentBase', () => {
   return {
     PostContentBase: vi.fn(({ postId }: { postId: string }) => (
       <div data-testid="post-content-base" data-post-id={postId}>
-        PostContentBase {postId}
+        {`PostContentBase ${postId}`}
       </div>
     )),
   };
@@ -44,7 +44,7 @@ vi.mock('@/organisms/PostHeader/PostHeader', () => {
   return {
     PostHeader: vi.fn(({ postId, timeAgoPlacement }: { postId: string; timeAgoPlacement?: string }) => (
       <div data-testid="post-header" data-post-id={postId} data-time-ago-placement={timeAgoPlacement}>
-        PostHeader {postId}
+        {`PostHeader ${postId}`}
       </div>
     )),
   };
@@ -58,12 +58,14 @@ vi.mock('@/organisms/Collections/CollectionCard/CollectionCard', () => {
         postId,
         presentation,
         interactiveActions,
+        navigable,
         className,
       }: {
         authorPubky: string;
         postId: string;
         presentation?: string;
         interactiveActions?: boolean;
+        navigable?: boolean;
         className?: string;
       }) => (
         <div
@@ -72,6 +74,7 @@ vi.mock('@/organisms/Collections/CollectionCard/CollectionCard', () => {
           data-post-id={postId}
           data-presentation={presentation}
           data-interactive-actions={String(interactiveActions ?? true)}
+          data-navigable={String(navigable ?? true)}
           className={className}
         />
       ),
@@ -217,16 +220,16 @@ describe('PostPreviewCard', () => {
     expect(mockNavigateToPost).not.toHaveBeenCalled();
   });
 
-  it('renders noninteractive parent context when navigation is disabled', () => {
+  it('renders read-only context when navigation is disabled', () => {
     render(<PostPreviewCard postId="test-post-123" navigable={false} />);
 
     const card = screen.getByTestId('card');
     expect(card).not.toHaveAttribute('role');
-    expect(card).not.toHaveAttribute('tabindex');
-    expect(card).not.toHaveAttribute('aria-label');
+    expect(card).not.toHaveAttribute('tabIndex');
 
     fireEvent.click(card);
     fireEvent.keyDown(card, { key: 'Enter' });
+
     expect(mockNavigateToPost).not.toHaveBeenCalled();
   });
 
@@ -262,6 +265,7 @@ describe('PostPreviewCard', () => {
     expect(screen.getByTestId('collection-card')).toHaveAttribute('data-author-pubky', AUTHOR_PUBKY);
     expect(screen.getByTestId('collection-card')).toHaveAttribute('data-post-id', COLLECTION_POST_ID);
     expect(screen.getByTestId('collection-card')).toHaveClass('w-full');
+    expect(screen.getByTestId('container')).toHaveClass('min-w-0', 'bg-card');
     expect(screen.queryByTestId('card')).not.toBeInTheDocument();
     expect(screen.queryByTestId('post-header')).not.toBeInTheDocument();
     expect(screen.queryByTestId('post-content-base')).not.toBeInTheDocument();
@@ -270,9 +274,10 @@ describe('PostPreviewCard', () => {
   it('passes interactiveActions={false} to CollectionCard when set', () => {
     mockUsePostDetails.mockReturnValue(collectionPost);
 
-    render(<PostPreviewCard postId={COLLECTION_COMPOSITE_ID} interactiveActions={false} />);
+    render(<PostPreviewCard postId={COLLECTION_COMPOSITE_ID} interactiveActions={false} navigable={false} />);
 
     expect(screen.getByTestId('collection-card')).toHaveAttribute('data-interactive-actions', 'false');
+    expect(screen.getByTestId('collection-card')).toHaveAttribute('data-navigable', 'false');
   });
 });
 
@@ -288,6 +293,11 @@ describe('PostPreviewCard - Snapshots', () => {
 
   it('matches snapshot with extra className', () => {
     const { container } = render(<PostPreviewCard postId="snapshot-post-id" className="bg-muted" />);
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('matches snapshot for non-navigable context', () => {
+    const { container } = render(<PostPreviewCard postId="snapshot-post-id" navigable={false} />);
     expect(container.firstChild).toMatchSnapshot();
   });
 

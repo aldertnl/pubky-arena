@@ -54,6 +54,22 @@ describe('useConfirmableDialog', () => {
     expect(result.current.showConfirmDialog).toBe(true);
   });
 
+  it('exposes the current draft state for route-leave guards', () => {
+    const { result } = renderHook(() =>
+      useConfirmableDialog({
+        onClose: mockOnClose,
+      }),
+    );
+
+    expect(result.current.hasContent?.()).toBe(false);
+
+    act(() => {
+      result.current.handleContentChange('Some content', [], [], '');
+    });
+
+    expect(result.current.hasContent?.()).toBe(true);
+  });
+
   it('shows confirm dialog when closing with tags only', () => {
     const { result } = renderHook(() =>
       useConfirmableDialog({

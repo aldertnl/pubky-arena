@@ -49,7 +49,7 @@ export function PostMain({
   const { handlePostClick, handlePostAuxClick } = usePostNavigation();
 
   const { showRepostHeader, shouldShowPostHeader } = usePostHeaderVisibility(postId);
-  const { openReply, openRepostDialog, dialogs } = usePostReplyRepostDialogs(postId);
+  const { openReplyDialog, openRepostDialog, dialogs } = usePostReplyRepostDialogs(postId);
 
   const mobileTagsPanelRef = useRef<PostTagsPanelHandle>(null);
   const desktopTagsPanelRef = useRef<PostTagsPanelHandle>(null);
@@ -117,7 +117,7 @@ export function PostMain({
                             mobileTagsPanelRef.current?.focus();
                             desktopTagsPanelRef.current?.focus();
                           }}
-                          onReplyClick={openReply}
+                          onReplyClick={openReplyDialog}
                           onRepostClick={openRepostDialog}
                         />
                       </Container>
@@ -137,7 +137,7 @@ export function PostMain({
                     <PostContent postId={postId} />
                     <PostInlineTagsActions
                       postId={postId}
-                      onReplyClick={openReply}
+                      onReplyClick={openReplyDialog}
                       onRepostClick={openRepostDialog}
                       actionsClassName="w-full shrink-0 justify-start sm:w-auto md:justify-end @max-xl/grid:w-full! @max-xl/grid:justify-start!"
                     />

@@ -10,6 +10,7 @@ exports[`PostPreviewCard - Snapshots > matches snapshot for a collection origina
     class="w-full"
     data-author-pubky="o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy"
     data-interactive-actions="true"
+    data-navigable="true"
     data-post-id="0034BBBDFK83G"
     data-presentation="embed"
     data-testid="collection-card"
@@ -17,10 +18,36 @@ exports[`PostPreviewCard - Snapshots > matches snapshot for a collection origina
 </div>
 `;
 
+exports[`PostPreviewCard - Snapshots > matches snapshot for non-navigable context 1`] = `
+<div
+  class="w-full max-w-full min-w-0 rounded-md py-0"
+  data-testid="card"
+>
+  <div
+    class="flex w-full max-w-full min-w-0 flex-col gap-4 p-6"
+    data-testid="card-content"
+  >
+    <div
+      data-post-id="snapshot-post-id"
+      data-testid="post-header"
+      data-time-ago-placement="bottom-left"
+    >
+      PostHeader snapshot-post-id
+    </div>
+    <div
+      data-post-id="snapshot-post-id"
+      data-testid="post-content-base"
+    >
+      PostContentBase snapshot-post-id
+    </div>
+  </div>
+</div>
+`;
+
 exports[`PostPreviewCard - Snapshots > matches snapshot with default props 1`] = `
 <div
   aria-label="View original post"
-  class="w-full max-w-full min-w-0 cursor-pointer rounded-md py-0 transition-colors hover:bg-accent/50"
+  class="w-full max-w-full min-w-0 rounded-md py-0 cursor-pointer transition-colors hover:bg-accent/50"
   data-testid="card"
   role="link"
   tabindex="0"
@@ -34,15 +61,13 @@ exports[`PostPreviewCard - Snapshots > matches snapshot with default props 1`] =
       data-testid="post-header"
       data-time-ago-placement="bottom-left"
     >
-      PostHeader 
-      snapshot-post-id
+      PostHeader snapshot-post-id
     </div>
     <div
       data-post-id="snapshot-post-id"
       data-testid="post-content-base"
     >
-      PostContentBase 
-      snapshot-post-id
+      PostContentBase snapshot-post-id
     </div>
   </div>
 </div>
@@ -51,7 +76,7 @@ exports[`PostPreviewCard - Snapshots > matches snapshot with default props 1`] =
 exports[`PostPreviewCard - Snapshots > matches snapshot with extra className 1`] = `
 <div
   aria-label="View original post"
-  class="w-full max-w-full min-w-0 cursor-pointer rounded-md py-0 transition-colors hover:bg-accent/50 bg-muted"
+  class="w-full max-w-full min-w-0 rounded-md py-0 cursor-pointer transition-colors hover:bg-accent/50 bg-muted"
   data-testid="card"
   role="link"
   tabindex="0"
@@ -65,15 +90,13 @@ exports[`PostPreviewCard - Snapshots > matches snapshot with extra className 1`]
       data-testid="post-header"
       data-time-ago-placement="bottom-left"
     >
-      PostHeader 
-      snapshot-post-id
+      PostHeader snapshot-post-id
     </div>
     <div
       data-post-id="snapshot-post-id"
       data-testid="post-content-base"
     >
-      PostContentBase 
-      snapshot-post-id
+      PostContentBase snapshot-post-id
     </div>
   </div>
 </div>

@@ -6,11 +6,11 @@ vi.mock('@/templates/Post/Reply/ReplyPage', () => ({
 }));
 
 describe('PostReplyPage', () => {
-  it('renders the reply page for a direct route', async () => {
+  it('renders the route-backed composer for the target composite post id', async () => {
     const element = await PostReplyPage({
-      params: Promise.resolve({ userId: 'author', postId: 'post-id' }),
+      params: Promise.resolve({ userId: 'author-id', postId: 'post-id' }),
     });
 
-    expect(element.props.postId).toBe('author:post-id');
+    expect(element.props.postId).toBe('author-id:post-id');
   });
 });

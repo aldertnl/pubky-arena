@@ -304,13 +304,13 @@ function setBookmark({ isBookmarked = false, isToggling = false } = {}) {
 
 function setRepostDialogs() {
   const openRepostDialog = vi.fn();
-  const openReply = vi.fn();
+  const openReplyDialog = vi.fn();
   mockUsePostReplyRepostDialogs.mockReturnValue({
     openRepostDialog,
-    openReply,
+    openReplyDialog,
     dialogs: <div data-testid="repost-dialogs" />,
   });
-  return { openRepostDialog, openReply };
+  return { openRepostDialog, openReplyDialog };
 }
 
 function setPostCounts(uniqueTags = 3) {

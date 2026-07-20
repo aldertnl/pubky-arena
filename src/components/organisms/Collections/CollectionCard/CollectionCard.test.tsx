@@ -747,6 +747,24 @@ describe('CollectionCard', () => {
       expect(screen.queryByLabelText('post.actions.tagPost')).not.toBeInTheDocument();
       expect(document.querySelector('[data-cy="collection-card-actions"]')).not.toBeInTheDocument();
     });
+
+    it('keeps non-navigable preview context out of the tab order', () => {
+      render(
+        <CollectionCard
+          authorPubky={AUTHOR_PUBKY}
+          postId={POST_ID}
+          presentation="embed"
+          interactiveActions={false}
+          navigable={false}
+        />,
+      );
+
+      const preview = screen.getByRole('group', { name: 'Based Bitcoin' });
+      expect(preview).toHaveAttribute('aria-disabled', 'true');
+      expect(preview).toHaveAttribute('tabindex', '-1');
+
+      expect(fireEvent.click(preview)).toBe(false);
+    });
   });
 });
 
@@ -771,6 +789,19 @@ describe('CollectionCard - Snapshots', () => {
     setAuthStore('viewer-pubky');
 
     const { container } = render(<CollectionCard authorPubky={AUTHOR_PUBKY} postId={POST_ID} />);
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('matches the non-navigable embed state', () => {
+    const { container } = render(
+      <CollectionCard
+        authorPubky={AUTHOR_PUBKY}
+        postId={POST_ID}
+        presentation="embed"
+        interactiveActions={false}
+        navigable={false}
+      />,
+    );
     expect(container.firstChild).toMatchSnapshot();
   });
 

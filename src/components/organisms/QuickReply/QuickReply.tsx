@@ -1,9 +1,6 @@
 'use client';
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { getPostReplyRoute } from '@/app/routes';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { PostThreadConnector } from '@/atoms/PostThreadConnector/PostThreadConnector';
@@ -16,12 +13,11 @@ import { useCurrentUserProfile } from '@/hooks/useCurrentUserProfile/useCurrentU
 import { useEffectiveTagsLayout } from '@/hooks/useEffectiveTagsLayout/useEffectiveTagsLayout';
 import { useElementHeight } from '@/hooks/useElementHeight/useElementHeight';
 import { useEnterSubmit } from '@/hooks/useEnterSubmit/useEnterSubmit';
-import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
 import { usePostInput } from '@/hooks/usePostInput/usePostInput';
 import { usePostInputAuthHandlers } from '@/hooks/usePostInputAuthHandlers/usePostInputAuthHandlers';
+import { usePostReplyAction } from '@/hooks/usePostReplyAction/usePostReplyAction';
 import { useRequireAuth } from '@/hooks/useRequireAuth/useRequireAuth';
 import { canSubmitPost, cn, getCharacterCount } from '@/libs/utils/utils';
-import { parseCompositeId } from '@/models/models.utils';
 import { MentionPopover } from '@/molecules/MentionPopover/MentionPopover';
 import { PostInputAttachments } from '@/molecules/PostInputAttachments/PostInputAttachments';
 import { POST_INPUT_VARIANT } from '@/organisms/PostInput/PostInput.constants';
@@ -31,16 +27,85 @@ import { PostInputExpandableSection } from '../PostInputExpandableSection/PostIn
 import { QUICK_REPLY_CONNECTOR_SPACER_HEIGHT } from './QuickReply.constants';
 import type { QuickReplyProps } from './QuickReply.types';
 
-interface DesktopQuickReplyProps extends QuickReplyProps {
+function getStablePromptIndex(seed: string, promptCount: number) {
+  let hash = 0;
+
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = Math.imul(hash, 31) + seed.charCodeAt(index);
+  }
+
+  return (hash >>> 0) % promptCount;
+}
+
+function useQuickReplyPrompt(parentPostId: string) {
+  const t = useTranslations();
+  const rawPrompts = t.raw('quickReply.prompts');
+  const prompts = Array.isArray(rawPrompts) && rawPrompts.length > 0 ? rawPrompts : ['What are your thoughts on this?'];
+  const promptIndex = getStablePromptIndex(parentPostId, prompts.length);
+
+  return prompts[promptIndex] || prompts[0];
+}
+
+interface MobileQuickReplyProps extends QuickReplyProps {
+  className?: string;
   prompt: string;
 }
 
-function DesktopQuickReply({
+function MobileQuickReply({
+  parentPostId,
+  connectorVariant = POST_THREAD_CONNECTOR_VARIANTS.LAST,
+  className,
+  prompt,
+}: MobileQuickReplyProps) {
+  const t = useTranslations();
+  const { userDetails, currentUserPubky } = useCurrentUserProfile();
+  const avatarUrl = useAvatarUrl(userDetails);
+  const { requireAuth } = useRequireAuth();
+  const { openReply } = usePostReplyAction(parentPostId);
+  const { ref: cardRef, height: cardHeight } = useElementHeight();
+  const connectorHeight = cardHeight ? cardHeight + QUICK_REPLY_CONNECTOR_SPACER_HEIGHT : undefined;
+
+  return (
+    <Container overrideDefaults className={cn('relative', className)} data-testid="quick-reply-mobile">
+      <Container overrideDefaults className="-mt-4 w-3 shrink-0">
+        <PostThreadConnector
+          height={connectorHeight}
+          variant={connectorVariant}
+          data-testid="quick-reply-mobile-connector"
+        />
+      </Container>
+      <Container ref={cardRef} overrideDefaults className="min-w-0 flex-1">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-auto w-full min-w-0 justify-start gap-4 rounded-md border-dashed p-4 text-left shadow-none"
+          onClick={() => requireAuth(openReply)}
+          aria-label={t('dialogs.reply.hiddenTitle')}
+          data-testid="quick-reply-mobile-cta"
+        >
+          <AvatarWithFallback
+            avatarUrl={avatarUrl}
+            name={userDetails?.name || ''}
+            fallbackSeed={currentUserPubky || userDetails?.name || 'user'}
+            size="default"
+          />
+          <Typography className="min-w-0 truncate text-muted-foreground">{prompt}</Typography>
+        </Button>
+      </Container>
+    </Container>
+  );
+}
+
+interface ResponsiveQuickReplyProps extends QuickReplyProps {
+  prompt: string;
+}
+
+function ResponsiveQuickReply({
   parentPostId,
   connectorVariant = POST_THREAD_CONNECTOR_VARIANTS.LAST,
   onReplySubmitted,
   prompt,
-}: DesktopQuickReplyProps) {
+}: ResponsiveQuickReplyProps) {
   const { userDetails, currentUserPubky } = useCurrentUserProfile();
   const avatarUrl = useAvatarUrl(userDetails);
 
@@ -127,137 +192,25 @@ function DesktopQuickReply({
   const connectorHeight = cardHeight ? cardHeight + QUICK_REPLY_CONNECTOR_SPACER_HEIGHT : undefined;
 
   const isWideLayout = useEffectiveTagsLayout() === 'side';
+  // Keep both responsive surfaces mounted so SSR and hydration produce the same
+  // tree. Once the desktop editor has a draft, it stays visible below `lg` too;
+  // swapping it for the CTA would discard its local draft state.
+  const hasDesktopDraft = content.trim().length > 0 || tags.length > 0 || attachments.length > 0;
 
   return (
-    <Container overrideDefaults className="relative flex" data-testid="quick-reply" aria-busy={isSubmitting}>
-      <Container overrideDefaults className="-mt-4 w-3 shrink-0">
-        <PostThreadConnector height={connectorHeight} variant={connectorVariant} data-testid="quick-reply-connector" />
-      </Container>
+    <Container overrideDefaults className="contents" data-testid="quick-reply" aria-busy={isSubmitting}>
+      <MobileQuickReply
+        parentPostId={parentPostId}
+        connectorVariant={connectorVariant}
+        prompt={prompt}
+        className={hasDesktopDraft ? 'hidden' : 'flex lg:hidden'}
+      />
 
       <Container
-        ref={containerRef}
-        className={cn(
-          'relative w-full cursor-pointer rounded-md border border-dashed transition-colors duration-200',
-          isWideLayout ? 'p-12' : 'p-4',
-          isDragging ? 'border-brand' : 'border-input',
-        )}
-        onClick={handleExpandWithAuth}
-        onDragEnter={(event) => handleDragEventWithAuth(event, handleDragEnter)}
-        onDragLeave={(event) => handleDragEventWithAuth(event, handleDragLeave)}
-        onDragOver={(event) => handleDragEventWithAuth(event, handleDragOver)}
-        onDrop={(event) => handleDragEventWithAuth(event, handleDrop)}
         overrideDefaults
+        className={cn('relative', hasDesktopDraft ? 'flex' : 'hidden lg:flex')}
+        data-testid="quick-reply-desktop"
       >
-        {/* Drag overlay */}
-        {isDragging && (
-          <Container
-            className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-brand/10"
-            overrideDefaults
-          >
-            <Typography className="text-brand">Drop files here</Typography>
-          </Container>
-        )}
-
-        <Container ref={cardRef} className="gap-2" overrideDefaults>
-          {/* Collapsed header row (avatar + input) */}
-          <Container className="flex items-center gap-4" overrideDefaults>
-            <AvatarWithFallback
-              avatarUrl={avatarUrl}
-              name={userDetails?.name || ''}
-              fallbackSeed={currentUserPubky || userDetails?.name || 'user'}
-              size={isWideLayout ? 'xl' : 'default'}
-            />
-
-            <Container overrideDefaults className="relative flex-1">
-              <Textarea
-                ref={textareaRef}
-                aria-label="Reply"
-                placeholder={displayPlaceholder}
-                variant="inline"
-                className={isWideLayout ? WIDE_POST_BODY_TEXT_CLASS : undefined}
-                value={content}
-                onChange={handleChangeWithAuth}
-                onFocus={handleExpandWithAuth}
-                onKeyDown={handleKeyDown}
-                onPaste={handlePasteWithAuth}
-                rows={1}
-                disabled={isSubmitting}
-                readOnly={!isAuthenticated}
-                data-testid="quick-reply-textarea"
-                aria-haspopup="listbox"
-              />
-
-              {/* Mention autocomplete popover */}
-              {mentionIsOpen && (
-                <MentionPopover
-                  users={mentionUsers}
-                  selectedIndex={mentionSelectedIndex}
-                  onSelect={handleMentionSelect}
-                  onHover={setMentionSelectedIndex}
-                />
-              )}
-            </Container>
-          </Container>
-
-          <PostInputAttachments
-            ref={fileInputRef}
-            attachments={attachments}
-            setAttachments={setAttachmentsWithAuth}
-            handleFilesAdded={handleFilesAddedWithAuth}
-            isSubmitting={isSubmitting}
-          />
-
-          {/* Expandable section with animation (same transition as PostInput) */}
-          <PostInputExpandableSection
-            isExpanded={isExpanded}
-            content={content}
-            tags={tags}
-            isSubmitting={isSubmitting}
-            isDisabled={!isAuthenticated}
-            setTags={setTagsWithAuth}
-            onSubmit={handleSubmitWithAuth}
-            showEmojiPicker={showEmojiPicker}
-            setShowEmojiPicker={setShowEmojiPicker}
-            onEmojiSelect={handleEmojiSelectWithAuth}
-            onImageClick={handleFileClickWithAuth}
-            isPostDisabled={isAuthenticated ? !isValid() : false}
-            submitMode={POST_INPUT_VARIANT.REPLY}
-            className={isExpanded ? 'mt-4' : ''}
-            characterLimit={characterLimit}
-          />
-        </Container>
-      </Container>
-    </Container>
-  );
-}
-
-interface MobileQuickReplyProps extends QuickReplyProps {
-  prompt: string;
-}
-
-function MobileQuickReply({
-  parentPostId,
-  connectorVariant = POST_THREAD_CONNECTOR_VARIANTS.LAST,
-  prompt,
-}: MobileQuickReplyProps) {
-  const t = useTranslations();
-  const router = useRouter();
-  const { requireAuth } = useRequireAuth();
-  const { userDetails, currentUserPubky } = useCurrentUserProfile();
-  const avatarUrl = useAvatarUrl(userDetails);
-  const { ref: cardRef, height: cardHeight } = useElementHeight();
-  const connectorHeight = cardHeight ? cardHeight + QUICK_REPLY_CONNECTOR_SPACER_HEIGHT : undefined;
-
-  const openReplyComposer = () => {
-    requireAuth(() => {
-      const { pubky, id } = parseCompositeId(parentPostId);
-      router.push(getPostReplyRoute(pubky, id));
-    });
-  };
-
-  return (
-    <>
-      <Container overrideDefaults className="relative flex" data-testid="quick-reply">
         <Container overrideDefaults className="-mt-4 w-3 shrink-0">
           <PostThreadConnector
             height={connectorHeight}
@@ -265,36 +218,107 @@ function MobileQuickReply({
             data-testid="quick-reply-connector"
           />
         </Container>
-        <Container ref={cardRef} overrideDefaults className="min-w-0 flex-1">
-          <Button
-            type="button"
-            variant="outline"
-            className="h-auto w-full min-w-0 justify-start gap-4 rounded-md border-dashed p-4 text-left shadow-none"
-            onClick={openReplyComposer}
-            aria-label={t('dialogs.reply.hiddenTitle')}
-            data-testid="quick-reply-mobile-cta"
-          >
-            <AvatarWithFallback
-              avatarUrl={avatarUrl}
-              name={userDetails?.name || ''}
-              fallbackSeed={currentUserPubky || userDetails?.name || 'user'}
-              size="default"
+
+        <Container
+          ref={containerRef}
+          className={cn(
+            'relative w-full cursor-pointer rounded-md border border-dashed transition-colors duration-200',
+            isWideLayout ? 'p-12' : 'p-4',
+            isDragging ? 'border-brand' : 'border-input',
+          )}
+          onClick={handleExpandWithAuth}
+          onDragEnter={(event) => handleDragEventWithAuth(event, handleDragEnter)}
+          onDragLeave={(event) => handleDragEventWithAuth(event, handleDragLeave)}
+          onDragOver={(event) => handleDragEventWithAuth(event, handleDragOver)}
+          onDrop={(event) => handleDragEventWithAuth(event, handleDrop)}
+          overrideDefaults
+        >
+          {/* Drag overlay */}
+          {isDragging && (
+            <Container
+              className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-brand/10"
+              overrideDefaults
+            >
+              <Typography className="text-brand">Drop files here</Typography>
+            </Container>
+          )}
+
+          <Container ref={cardRef} className="gap-2" overrideDefaults>
+            {/* Collapsed header row (avatar + input) */}
+            <Container className="flex items-center gap-4" overrideDefaults>
+              <AvatarWithFallback
+                avatarUrl={avatarUrl}
+                name={userDetails?.name || ''}
+                fallbackSeed={currentUserPubky || userDetails?.name || 'user'}
+                size={isWideLayout ? 'xl' : 'default'}
+              />
+
+              <Container overrideDefaults className="relative flex-1">
+                <Textarea
+                  ref={textareaRef}
+                  aria-label="Reply"
+                  placeholder={displayPlaceholder}
+                  variant="inline"
+                  className={isWideLayout ? WIDE_POST_BODY_TEXT_CLASS : undefined}
+                  value={content}
+                  onChange={handleChangeWithAuth}
+                  onFocus={handleExpandWithAuth}
+                  onKeyDown={handleKeyDown}
+                  onPaste={handlePasteWithAuth}
+                  rows={1}
+                  disabled={isSubmitting}
+                  readOnly={!isAuthenticated}
+                  data-testid="quick-reply-textarea"
+                  aria-haspopup="listbox"
+                />
+
+                {/* Mention autocomplete popover */}
+                {mentionIsOpen && (
+                  <MentionPopover
+                    users={mentionUsers}
+                    selectedIndex={mentionSelectedIndex}
+                    onSelect={handleMentionSelect}
+                    onHover={setMentionSelectedIndex}
+                  />
+                )}
+              </Container>
+            </Container>
+
+            <PostInputAttachments
+              ref={fileInputRef}
+              attachments={attachments}
+              setAttachments={setAttachmentsWithAuth}
+              handleFilesAdded={handleFilesAddedWithAuth}
+              isSubmitting={isSubmitting}
             />
-            <Typography className="min-w-0 truncate text-muted-foreground">{prompt}</Typography>
-          </Button>
+
+            {/* Expandable section with animation (same transition as PostInput) */}
+            <PostInputExpandableSection
+              isExpanded={isExpanded}
+              content={content}
+              tags={tags}
+              isSubmitting={isSubmitting}
+              isDisabled={!isAuthenticated}
+              setTags={setTagsWithAuth}
+              onSubmit={handleSubmitWithAuth}
+              showEmojiPicker={showEmojiPicker}
+              setShowEmojiPicker={setShowEmojiPicker}
+              onEmojiSelect={handleEmojiSelectWithAuth}
+              onImageClick={handleFileClickWithAuth}
+              isPostDisabled={isAuthenticated ? !isValid() : false}
+              submitMode={POST_INPUT_VARIANT.REPLY}
+              className={isExpanded ? 'mt-4' : ''}
+              characterLimit={characterLimit}
+            />
+          </Container>
         </Container>
       </Container>
-    </>
+    </Container>
   );
 }
 
 export function QuickReply(props: QuickReplyProps) {
-  const t = useTranslations();
-  const rawPrompts = t.raw('quickReply.prompts');
-  const prompts = Array.isArray(rawPrompts) ? rawPrompts : ['What are your thoughts on this?'];
-  const [promptIndex] = React.useState(() => Math.floor(Math.random() * prompts.length));
-  const prompt = prompts[promptIndex] || prompts[0];
-  const isMobile = useIsMobile();
+  const prompt = useQuickReplyPrompt(props.parentPostId);
 
-  return isMobile ? <MobileQuickReply {...props} prompt={prompt} /> : <DesktopQuickReply {...props} prompt={prompt} />;
+  return <ResponsiveQuickReply {...props} prompt={prompt} />;
 }

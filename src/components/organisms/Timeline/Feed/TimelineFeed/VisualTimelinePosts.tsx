@@ -219,7 +219,7 @@ function VisualTimelineTileOverlay({ tile, size, onReplyClick, onRepostClick }: 
 
 function VisualTimelineTile({ tile, size, onNavigate }: VisualTimelineTileProps) {
   const isTouchDevice = useIsTouchDevice();
-  const { openReply, openRepostDialog, dialogs } = usePostReplyRepostDialogs(tile.postId);
+  const { openReplyDialog, openRepostDialog, dialogs } = usePostReplyRepostDialogs(tile.postId);
 
   const handleNavigate = React.useCallback(() => {
     onNavigate(tile.postId);
@@ -262,7 +262,7 @@ function VisualTimelineTile({ tile, size, onNavigate }: VisualTimelineTileProps)
           <VisualTimelineTileOverlay
             tile={tile}
             size={size}
-            onReplyClick={openReply}
+            onReplyClick={openReplyDialog}
             onRepostClick={openRepostDialog}
           />
         ) : null}

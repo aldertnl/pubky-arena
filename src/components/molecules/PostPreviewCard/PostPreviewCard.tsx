@@ -15,7 +15,7 @@ import { PostHeader } from '@/organisms/PostHeader/PostHeader';
 interface PostPreviewCardProps {
   /** Composite post ID to preview. */
   postId: string;
-  /** Optional className on the outer Card wrapper (non-collection posts only). */
+  /** Optional className on the outer preview wrapper. */
   className?: string;
   /**
    * Collection embed only: when `false`, tags are read-only and Follow/Delete
@@ -72,14 +72,12 @@ export function PostPreviewCard({
   const isMissing = postDetails === null && !isLoading;
 
   const handleClick = (e: React.MouseEvent) => {
-    if (!navigable) return;
     e.stopPropagation();
-    navigateToPost(postId);
+    if (navigable) navigateToPost(postId);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!navigable) return;
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (navigable && (e.key === 'Enter' || e.key === ' ')) {
       e.stopPropagation();
       e.preventDefault();
       navigateToPost(postId);
@@ -89,12 +87,13 @@ export function PostPreviewCard({
   if (postDetails?.kind === 'collection') {
     const { pubky, id } = parseCompositeId(postId);
     return (
-      <Container ref={ttlRef} data-cy="post-preview-card" overrideDefaults className="min-w-0">
+      <Container ref={ttlRef} data-cy="post-preview-card" overrideDefaults className={cn('min-w-0', className)}>
         <CollectionCard
           authorPubky={pubky}
           postId={id}
           presentation="embed"
           interactiveActions={interactiveActions}
+          navigable={navigable}
           className="w-full"
         />
       </Container>
@@ -106,8 +105,8 @@ export function PostPreviewCard({
       ref={ttlRef}
       data-cy="post-preview-card"
       className={cn(
-        'w-full max-w-full min-w-0',
-        navigable ? 'cursor-pointer rounded-md py-0 transition-colors hover:bg-accent/50' : 'rounded-md py-0',
+        'w-full max-w-full min-w-0 rounded-md py-0',
+        navigable && 'cursor-pointer transition-colors hover:bg-accent/50',
         className,
       )}
       onClick={navigable ? handleClick : undefined}
