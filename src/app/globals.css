@@ -557,6 +557,14 @@ body {
 @layer utilities {
   /* Shadow utilities */
 
+  .reply-composer-safe-top {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+
+  .reply-composer-safe-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
   /* Gradient fade effect for mobile tab menus (Profile, Settings) */
   .mobile-menu-gradient-fade::after {
     @apply pointer-events-none absolute top-full right-0 left-0 h-6 bg-linear-to-b from-background to-transparent content-[''];

@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { getPostReplyRoute, isPostRoute } from '@/app/routes';
 import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
+import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
 import { usePostNavigation } from '@/hooks/usePostNavigation/usePostNavigation';
 import { parseCompositeId } from '@/models/models.utils';
 import type { UsePostReplyActionOptions, UsePostReplyActionResult } from './usePostReplyAction.types';
@@ -21,6 +22,7 @@ export function usePostReplyAction(
   const router = useRouter();
   const isMobile = useIsMobile();
   const { navigateToPost } = usePostNavigation();
+  const { postDetails } = usePostDetails(postId);
 
   const openReply = () => {
     if (!isMobile) {
@@ -28,7 +30,10 @@ export function usePostReplyAction(
       return;
     }
 
-    if (isPostRoute(pathname)) {
+    // Collection posts are the deliberate context-first exception: `/post/...`
+    // redirects to their canonical collection detail page, which has no reply
+    // entry point. Route them straight to the composer so replying never dead-ends.
+    if (isPostRoute(pathname) || postDetails?.kind === 'collection') {
       const { pubky, id } = parseCompositeId(postId);
       router.push(getPostReplyRoute(pubky, id));
       return;

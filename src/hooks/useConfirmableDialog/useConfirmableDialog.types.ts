@@ -12,6 +12,8 @@ export interface UseConfirmableDialogReturn {
   setShowConfirmDialog: (show: boolean) => void;
   /** Key for resetting child components (e.g., PostInput) */
   resetKey: number;
+  /** Returns whether the current draft has unsaved content. */
+  hasContent?: () => boolean;
   /** Handler for content changes - tracks content, tags, attachments, article title */
   handleContentChange: (content: string, tags: string[], attachments: File[], articleTitle: string) => void;
   /** Handler for dialog open/close - shows confirm dialog if there's unsaved content */

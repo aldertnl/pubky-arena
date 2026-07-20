@@ -36,7 +36,7 @@ export function useConfirmableDialog({
   const [resetKey, setResetKey] = useState(0);
   const contentRef = useRef({ content: '', tags: [] as string[], attachments: [] as File[], articleTitle: '' });
 
-  const internalHasContent = () => {
+  const hasContent = () => {
     return (
       contentRef.current.content.trim().length > 0 ||
       contentRef.current.tags.length > 0 ||
@@ -54,7 +54,7 @@ export function useConfirmableDialog({
       setShowConfirmDialog(false);
       contentRef.current = { content: '', tags: [], attachments: [], articleTitle: '' };
     } else {
-      const contentExists = externalHasContent ? externalHasContent() : internalHasContent();
+      const contentExists = externalHasContent ? externalHasContent() : hasContent();
       if (contentExists) {
         setShowConfirmDialog(true);
       } else {
@@ -73,6 +73,7 @@ export function useConfirmableDialog({
     showConfirmDialog,
     setShowConfirmDialog,
     resetKey,
+    hasContent: externalHasContent ?? hasContent,
     handleContentChange,
     handleOpenChange,
     handleDiscard,

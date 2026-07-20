@@ -1,8 +1,8 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`ReplyComposer - Snapshots > matches snapshot for the routed page presentation 1`] = `
+exports[`ReplyComposer - Mobile Snapshots > matches snapshot on mobile viewport 1`] = `
 <div
-  class="mx-auto w-full flex-col flex min-h-0 flex-1 gap-3 overflow-x-hidden overscroll-contain px-4 py-3 pb-[max(1rem,env(safe-area-inset-bottom))]"
+  class="mx-auto w-full flex-col flex min-h-0 flex-1 gap-3 overflow-x-hidden overscroll-contain reply-composer-safe-bottom px-4 py-3"
   data-testid="container"
 >
   <div
@@ -11,21 +11,1090 @@ exports[`ReplyComposer - Snapshots > matches snapshot for the routed page presen
     inert=""
   >
     <div
-      data-interactive-actions="false"
-      data-navigable="false"
-      data-post-id="author:snapshot-post"
-      data-testid="post-preview"
-    />
+      class="flex flex-col gap-6 bg-card text-card-foreground shadow-sm w-full max-w-full min-w-0 rounded-md py-0"
+      data-cy="post-preview-card"
+      data-slot="card"
+      data-testid="card"
+    >
+      <div
+        class="flex w-full max-w-full min-w-0 flex-col gap-4 p-6"
+        data-slot="card-content"
+      >
+        <div
+          class="grid w-full max-w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3"
+          data-testid="container"
+        >
+          <div
+            class="w-full max-w-full min-w-0"
+          >
+            <div
+              class="grid w-full max-w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3"
+              data-testid="container"
+            >
+              <a
+                class="cursor-pointer hover:text-brand/80 transition-colors text-brand text-sm shrink-0"
+                href="/profile"
+              >
+                <span
+                  class="relative flex shrink-0 overflow-hidden rounded-full h-10 w-10"
+                >
+                  <span
+                    class="flex h-full w-full items-center justify-center rounded-full border border-muted-foreground bg-muted overflow-hidden border-none"
+                  >
+                    <div
+                      class="facehash h-full w-full rounded-full text-background"
+                      data-facehash=""
+                      data-interactive="true"
+                      style="width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; container-type: size; perspective: 300px; transform-style: preserve-3d; background-color: rgb(255, 0, 0);"
+                    >
+                      <div
+                        data-facehash-gradient=""
+                        style="position: absolute; inset: 0px; pointer-events: none; z-index: 1; background: radial-gradient(100% 100% at 50% 50%, rgba(255, 255, 255, 0.15) 0%, transparent 60%);"
+                      />
+                      <div
+                        data-facehash-face=""
+                        style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; transform: rotateX(15deg) rotateY(15deg) translateZ(12px); transform-style: preserve-3d; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          fill="none"
+                          style="width: 60%; height: auto; max-width: 90%; max-height: 40%;"
+                          viewBox="0 0 63 15"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <g
+                            style="animation: facehash-blink 4.4s ease-in-out 2.4s infinite; transform-origin: center center;"
+                          >
+                            <circle
+                              cx="55.2"
+                              cy="7.2"
+                              fill="currentColor"
+                              r="7.2"
+                            />
+                          </g>
+                          <g
+                            style="animation: facehash-blink 4.4s ease-in-out 2.4s infinite; transform-origin: center center;"
+                          >
+                            <circle
+                              cx="7.2"
+                              cy="7.2"
+                              fill="currentColor"
+                              r="7.2"
+                            />
+                          </g>
+                        </svg>
+                        <div
+                          data-facehash-mouth=""
+                          style="margin-top: 8%; display: flex; align-items: center; justify-content: center;"
+                        >
+                          <span
+                            data-testid="avatar-fallback-initial"
+                            style="font-size: 26cqw; line-height: 1;"
+                          >
+                            R
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </span>
+                </span>
+              </a>
+              <div
+                class="max-w-full min-w-0"
+                data-testid="container"
+              >
+                <a
+                  class="cursor-pointer hover:text-brand/80 transition-colors text-brand text-sm block w-full max-w-full min-w-0 overflow-hidden"
+                  href="/profile"
+                >
+                  <p
+                    class="block w-full max-w-full cursor-pointer truncate font-bold text-foreground text-base leading-5"
+                    data-testid="typography"
+                  >
+                    Reply author
+                  </p>
+                </a>
+                <div
+                  class="flex min-w-0 flex-wrap items-center gap-2"
+                  data-testid="container"
+                >
+                  <p
+                    class="text-xs leading-4 font-medium tracking-[0.075rem] whitespace-nowrap text-muted-foreground uppercase"
+                    data-testid="typography"
+                  >
+                    o1gg...j7dy
+                  </p>
+                  <div
+                    class="flex flex-shrink-0 items-center gap-1"
+                    data-testid="container"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="lucide lucide-clock size-4 text-muted-foreground"
+                      fill="none"
+                      height="24"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                      />
+                      <path
+                        d="M12 6v6l4 2"
+                      />
+                    </svg>
+                    <span
+                      class="text-xs leading-4 font-medium tracking-[0.075rem] whitespace-nowrap text-muted-foreground"
+                      data-testid="typography"
+                    >
+                      24M
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="mx-auto w-full flex-col flex min-w-0 gap-3"
+          data-testid="container"
+        >
+          <div
+            class="text-base leading-6 font-medium wrap-anywhere whitespace-pre-line text-secondary-foreground"
+            data-cy="post-text"
+            data-testid="container"
+          >
+            <p>
+              A replyable parent post
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   <div
     class="relative w-full min-w-0"
     data-testid="container"
   >
     <div
-      data-post-id="author:snapshot-post"
-      data-show-thread="false"
-      data-testid="post-input"
-    />
+      class="mx-auto w-full flex-col flex relative cursor-pointer rounded-md border border-dashed transition-colors duration-200 max-w-full min-w-0 p-4 border-input"
+      data-cy="reply-post-input"
+      data-testid="container"
+      id="reply-post-input"
+    >
+      <div
+        class="mx-auto w-full flex-col flex min-w-0 gap-4 contain-inline-size"
+        data-testid="container"
+      >
+        <div
+          class="grid w-full max-w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3"
+          data-testid="container"
+        >
+          <div
+            class="w-full max-w-full min-w-0"
+          >
+            <div
+              class="grid w-full max-w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3"
+              data-testid="container"
+            >
+              <a
+                class="cursor-pointer hover:text-brand/80 transition-colors text-brand text-sm shrink-0"
+                href="/profile"
+              >
+                <span
+                  class="relative flex shrink-0 overflow-hidden rounded-full h-10 w-10"
+                >
+                  <span
+                    class="flex h-full w-full items-center justify-center rounded-full border border-muted-foreground bg-muted overflow-hidden border-none"
+                  >
+                    <div
+                      class="facehash h-full w-full rounded-full text-background"
+                      data-facehash=""
+                      data-interactive="true"
+                      style="width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; container-type: size; perspective: 300px; transform-style: preserve-3d; background-color: rgb(255, 0, 0);"
+                    >
+                      <div
+                        data-facehash-gradient=""
+                        style="position: absolute; inset: 0px; pointer-events: none; z-index: 1; background: radial-gradient(100% 100% at 50% 50%, rgba(255, 255, 255, 0.15) 0%, transparent 60%);"
+                      />
+                      <div
+                        data-facehash-face=""
+                        style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; transform: rotateX(15deg) rotateY(15deg) translateZ(12px); transform-style: preserve-3d; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          fill="none"
+                          style="width: 60%; height: auto; max-width: 90%; max-height: 40%;"
+                          viewBox="0 0 63 15"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <g
+                            style="animation: facehash-blink 4.4s ease-in-out 2.4s infinite; transform-origin: center center;"
+                          >
+                            <circle
+                              cx="55.2"
+                              cy="7.2"
+                              fill="currentColor"
+                              r="7.2"
+                            />
+                          </g>
+                          <g
+                            style="animation: facehash-blink 4.4s ease-in-out 2.4s infinite; transform-origin: center center;"
+                          >
+                            <circle
+                              cx="7.2"
+                              cy="7.2"
+                              fill="currentColor"
+                              r="7.2"
+                            />
+                          </g>
+                        </svg>
+                        <div
+                          data-facehash-mouth=""
+                          style="margin-top: 8%; display: flex; align-items: center; justify-content: center;"
+                        >
+                          <span
+                            data-testid="avatar-fallback-initial"
+                            style="font-size: 26cqw; line-height: 1;"
+                          >
+                            R
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </span>
+                </span>
+              </a>
+              <div
+                class="max-w-full min-w-0"
+                data-testid="container"
+              >
+                <a
+                  class="cursor-pointer hover:text-brand/80 transition-colors text-brand text-sm block w-full max-w-full min-w-0 overflow-hidden"
+                  href="/profile"
+                >
+                  <p
+                    class="block w-full max-w-full cursor-pointer truncate font-bold text-foreground text-base leading-5"
+                    data-testid="typography"
+                  >
+                    Reply author
+                  </p>
+                </a>
+                <div
+                  class="flex min-w-0 flex-wrap items-center gap-2"
+                  data-testid="container"
+                >
+                  <p
+                    class="text-xs leading-4 font-medium tracking-[0.075rem] whitespace-nowrap text-muted-foreground uppercase"
+                    data-testid="typography"
+                  >
+                    o1gg...j7dy
+                  </p>
+                  <p
+                    class="shrink-0 text-xs leading-4 font-medium tracking-[0.075rem] whitespace-nowrap text-muted-foreground tabular-nums sm:hidden"
+                    data-cy="post-header-character-count"
+                    data-testid="typography"
+                  >
+                    0
+                    /
+                    2000
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="relative"
+          data-testid="container"
+        >
+          <textarea
+            aria-haspopup="listbox"
+            autocomplete="off"
+            class="flex field-sizing-content w-full rounded-md bg-transparent text-base wrap-anywhere outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/40 transition-[color,box-shadow] min-h-6 resize-none border-none p-0 font-medium text-secondary-foreground shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            data-slot="textarea"
+            maxlength="2000"
+            placeholder="Write a reply..."
+            rows="1"
+            style="height: 0px;"
+          />
+        </div>
+        <input
+          accept="application/javascript,application/json,application/octet-stream,application/pdf,application/x-www-form-urlencoded,application/xml,application/zip,audio/mpeg,audio/wav,image/gif,image/jpeg,image/png,image/svg+xml,image/webp,multipart/form-data,text/css,text/html,text/plain,text/xml,video/mp4,video/mpeg"
+          class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-input disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 hover:ring-0 hover:outline-none focus:ring-0 focus:ring-offset-0 focus:outline-none aria-invalid:border-destructive aria-invalid:ring-destructive/40 hidden"
+          data-testid="input"
+          multiple=""
+          type="file"
+        />
+        <div
+          class="overflow-hidden "
+          style="height: auto; opacity: 1;"
+        >
+          <div
+            class="mx-auto w-full flex-col flex gap-6"
+            data-testid="container"
+          >
+            <div
+              class="mx-auto w-full flex-col flex gap-4"
+              data-testid="container"
+            >
+              <div
+                class="flex flex-col gap-1"
+                data-testid="container"
+              >
+                <div
+                  class="flex flex-wrap items-center gap-2"
+                  data-testid="container"
+                >
+                  <div
+                    class="relative h-8 overflow-hidden rounded-md border border-dashed border-input shadow-sm"
+                    style="width: 34px; transform-origin: 0% 50% 0;"
+                  >
+                    <div
+                      class="h-full w-full absolute inset-0 inline-flex items-center justify-center"
+                      style="opacity: 1;"
+                    >
+                      <button
+                        aria-label="Add new tag"
+                        class="inline-flex items-center justify-center whitespace-nowrap text-sm disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer border hover:text-accent-foreground gap-1.5 px-3 has-[>svg]:px-3.5 relative size-8 min-w-8! rounded-md bg-transparent p-0! transition-opacity hover:bg-transparent hover:opacity-80 gap-0! px-0! has-[>svg]:px-0! border-transparent shadow-none hover:border-transparent hover:shadow-none"
+                        data-cy="post-tag-add-button"
+                        data-size="sm"
+                        data-slot="button"
+                        data-variant="outline"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="lucide lucide-plus pointer-events-none absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2 opacity-[0.32]"
+                          fill="none"
+                          height="24"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          viewBox="0 0 24 24"
+                          width="24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M5 12h14"
+                          />
+                          <path
+                            d="M12 5v14"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="flex w-full flex-col justify-between gap-4 sm:flex-row sm:items-center"
+                data-testid="container"
+              >
+                <div
+                  class="flex items-center gap-2"
+                  data-testid="container"
+                >
+                  <button
+                    aria-label="Add emoji"
+                    class="inline-flex items-center justify-center whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-8 gap-1.5 px-3 has-[>svg]:px-3.5"
+                    data-cy="post-input-action-bar-add-emoji"
+                    data-size="sm"
+                    data-slot="button"
+                    data-variant="secondary"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="lucide lucide-smile size-4 text-secondary-foreground"
+                      fill="none"
+                      height="24"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                      />
+                      <path
+                        d="M8 14s1.5 2 4 2 4-2 4-2"
+                      />
+                      <line
+                        x1="9"
+                        x2="9.01"
+                        y1="9"
+                        y2="9"
+                      />
+                      <line
+                        x1="15"
+                        x2="15.01"
+                        y1="9"
+                        y2="9"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    aria-label="Add image"
+                    class="inline-flex items-center justify-center whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-8 gap-1.5 px-3 has-[>svg]:px-3.5"
+                    data-cy="post-input-action-bar-add-image"
+                    data-size="sm"
+                    data-slot="button"
+                    data-variant="secondary"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="lucide lucide-image size-4 text-secondary-foreground"
+                      fill="none"
+                      height="24"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <rect
+                        height="18"
+                        rx="2"
+                        ry="2"
+                        width="18"
+                        x="3"
+                        y="3"
+                      />
+                      <circle
+                        cx="9"
+                        cy="9"
+                        r="2"
+                      />
+                      <path
+                        d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div
+                  class="flex items-center justify-end gap-2"
+                  data-testid="container"
+                >
+                  <p
+                    class="hidden shrink-0 text-xs leading-4 font-medium tracking-[0.075rem] whitespace-nowrap text-muted-foreground tabular-nums sm:block"
+                    data-cy="post-input-action-bar-character-count"
+                    data-testid="typography"
+                  >
+                    0
+                    /
+                    2000
+                  </p>
+                  <button
+                    aria-label="Reply"
+                    class="inline-flex items-center justify-center whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-brand/16 text-brand hover:!bg-brand/30 border-brand h-10 gap-1 px-4 py-2 has-[>svg]:px-4 w-full flex-1 sm:flex-auto"
+                    data-cy="post-input-action-bar-reply"
+                    data-size="default"
+                    data-slot="button"
+                    data-variant="default"
+                    disabled=""
+                  >
+                    <div
+                      class="flex items-center gap-2"
+                      data-testid="container"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="lucide lucide-message-circle size-4 text-brand"
+                        fill="none"
+                        height="24"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"
+                        />
+                      </svg>
+                      <span
+                        class="text-sm font-medium text-brand"
+                        data-testid="typography"
+                      >
+                        Reply
+                      </span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`ReplyComposer - Snapshots > matches snapshot for the routed page presentation 1`] = `
+<div
+  class="mx-auto w-full flex-col flex min-h-0 flex-1 gap-3 overflow-x-hidden overscroll-contain reply-composer-safe-bottom px-4 py-3"
+  data-testid="container"
+>
+  <div
+    class="max-h-40 shrink-0 overflow-hidden rounded-md"
+    data-testid="container"
+    inert=""
+  >
+    <div
+      class="flex flex-col gap-6 bg-card text-card-foreground shadow-sm w-full max-w-full min-w-0 rounded-md py-0"
+      data-cy="post-preview-card"
+      data-slot="card"
+      data-testid="card"
+    >
+      <div
+        class="flex w-full max-w-full min-w-0 flex-col gap-4 p-6"
+        data-slot="card-content"
+      >
+        <div
+          class="grid w-full max-w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3"
+          data-testid="container"
+        >
+          <div
+            class="w-full max-w-full min-w-0"
+          >
+            <div
+              class="grid w-full max-w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3"
+              data-testid="container"
+            >
+              <a
+                class="cursor-pointer hover:text-brand/80 transition-colors text-brand text-sm shrink-0"
+                href="/profile"
+              >
+                <span
+                  class="relative flex shrink-0 overflow-hidden rounded-full h-10 w-10"
+                >
+                  <span
+                    class="flex h-full w-full items-center justify-center rounded-full border border-muted-foreground bg-muted overflow-hidden border-none"
+                  >
+                    <div
+                      class="facehash h-full w-full rounded-full text-background"
+                      data-facehash=""
+                      data-interactive="true"
+                      style="width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; container-type: size; perspective: 300px; transform-style: preserve-3d; background-color: rgb(255, 0, 0);"
+                    >
+                      <div
+                        data-facehash-gradient=""
+                        style="position: absolute; inset: 0px; pointer-events: none; z-index: 1; background: radial-gradient(100% 100% at 50% 50%, rgba(255, 255, 255, 0.15) 0%, transparent 60%);"
+                      />
+                      <div
+                        data-facehash-face=""
+                        style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; transform: rotateX(15deg) rotateY(15deg) translateZ(12px); transform-style: preserve-3d; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          fill="none"
+                          style="width: 60%; height: auto; max-width: 90%; max-height: 40%;"
+                          viewBox="0 0 63 15"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <g
+                            style="animation: facehash-blink 4.4s ease-in-out 2.4s infinite; transform-origin: center center;"
+                          >
+                            <circle
+                              cx="55.2"
+                              cy="7.2"
+                              fill="currentColor"
+                              r="7.2"
+                            />
+                          </g>
+                          <g
+                            style="animation: facehash-blink 4.4s ease-in-out 2.4s infinite; transform-origin: center center;"
+                          >
+                            <circle
+                              cx="7.2"
+                              cy="7.2"
+                              fill="currentColor"
+                              r="7.2"
+                            />
+                          </g>
+                        </svg>
+                        <div
+                          data-facehash-mouth=""
+                          style="margin-top: 8%; display: flex; align-items: center; justify-content: center;"
+                        >
+                          <span
+                            data-testid="avatar-fallback-initial"
+                            style="font-size: 26cqw; line-height: 1;"
+                          >
+                            R
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </span>
+                </span>
+              </a>
+              <div
+                class="max-w-full min-w-0"
+                data-testid="container"
+              >
+                <a
+                  class="cursor-pointer hover:text-brand/80 transition-colors text-brand text-sm block w-full max-w-full min-w-0 overflow-hidden"
+                  href="/profile"
+                >
+                  <p
+                    class="block w-full max-w-full cursor-pointer truncate font-bold text-foreground text-base leading-5"
+                    data-testid="typography"
+                  >
+                    Reply author
+                  </p>
+                </a>
+                <div
+                  class="flex min-w-0 flex-wrap items-center gap-2"
+                  data-testid="container"
+                >
+                  <p
+                    class="text-xs leading-4 font-medium tracking-[0.075rem] whitespace-nowrap text-muted-foreground uppercase"
+                    data-testid="typography"
+                  >
+                    o1gg...j7dy
+                  </p>
+                  <div
+                    class="flex flex-shrink-0 items-center gap-1"
+                    data-testid="container"
+                  >
+                    <span
+                      class="flex flex-shrink-0 items-center gap-1"
+                      data-state="closed"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="lucide lucide-clock size-4 text-muted-foreground"
+                        fill="none"
+                        height="24"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="10"
+                        />
+                        <path
+                          d="M12 6v6l4 2"
+                        />
+                      </svg>
+                      <span
+                        class="text-xs leading-4 font-medium tracking-[0.075rem] whitespace-nowrap text-muted-foreground"
+                        data-testid="typography"
+                      >
+                        24M
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="mx-auto w-full flex-col flex min-w-0 gap-3"
+          data-testid="container"
+        >
+          <div
+            class="text-base leading-6 font-medium wrap-anywhere whitespace-pre-line text-secondary-foreground"
+            data-cy="post-text"
+            data-testid="container"
+          >
+            <p>
+              A replyable parent post
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    class="relative w-full min-w-0"
+    data-testid="container"
+  >
+    <div
+      class="mx-auto w-full flex-col flex relative cursor-pointer rounded-md border border-dashed transition-colors duration-200 max-w-full min-w-0 p-4 border-input"
+      data-cy="reply-post-input"
+      data-testid="container"
+      id="reply-post-input"
+    >
+      <div
+        class="mx-auto w-full flex-col flex min-w-0 gap-4 contain-inline-size"
+        data-testid="container"
+      >
+        <div
+          class="grid w-full max-w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3"
+          data-testid="container"
+        >
+          <div
+            class="w-full max-w-full min-w-0"
+          >
+            <div
+              class="grid w-full max-w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3"
+              data-testid="container"
+            >
+              <a
+                class="cursor-pointer hover:text-brand/80 transition-colors text-brand text-sm shrink-0"
+                href="/profile"
+              >
+                <span
+                  class="relative flex shrink-0 overflow-hidden rounded-full h-10 w-10"
+                >
+                  <span
+                    class="flex h-full w-full items-center justify-center rounded-full border border-muted-foreground bg-muted overflow-hidden border-none"
+                  >
+                    <div
+                      class="facehash h-full w-full rounded-full text-background"
+                      data-facehash=""
+                      data-interactive="true"
+                      style="width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; container-type: size; perspective: 300px; transform-style: preserve-3d; background-color: rgb(255, 0, 0);"
+                    >
+                      <div
+                        data-facehash-gradient=""
+                        style="position: absolute; inset: 0px; pointer-events: none; z-index: 1; background: radial-gradient(100% 100% at 50% 50%, rgba(255, 255, 255, 0.15) 0%, transparent 60%);"
+                      />
+                      <div
+                        data-facehash-face=""
+                        style="position: absolute; inset: 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; transform: rotateX(15deg) rotateY(15deg) translateZ(12px); transform-style: preserve-3d; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          fill="none"
+                          style="width: 60%; height: auto; max-width: 90%; max-height: 40%;"
+                          viewBox="0 0 63 15"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <g
+                            style="animation: facehash-blink 4.4s ease-in-out 2.4s infinite; transform-origin: center center;"
+                          >
+                            <circle
+                              cx="55.2"
+                              cy="7.2"
+                              fill="currentColor"
+                              r="7.2"
+                            />
+                          </g>
+                          <g
+                            style="animation: facehash-blink 4.4s ease-in-out 2.4s infinite; transform-origin: center center;"
+                          >
+                            <circle
+                              cx="7.2"
+                              cy="7.2"
+                              fill="currentColor"
+                              r="7.2"
+                            />
+                          </g>
+                        </svg>
+                        <div
+                          data-facehash-mouth=""
+                          style="margin-top: 8%; display: flex; align-items: center; justify-content: center;"
+                        >
+                          <span
+                            data-testid="avatar-fallback-initial"
+                            style="font-size: 26cqw; line-height: 1;"
+                          >
+                            R
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </span>
+                </span>
+              </a>
+              <div
+                class="max-w-full min-w-0"
+                data-testid="container"
+              >
+                <a
+                  class="cursor-pointer hover:text-brand/80 transition-colors text-brand text-sm block w-full max-w-full min-w-0 overflow-hidden"
+                  href="/profile"
+                >
+                  <p
+                    class="block w-full max-w-full cursor-pointer truncate font-bold text-foreground text-base leading-5"
+                    data-testid="typography"
+                  >
+                    Reply author
+                  </p>
+                </a>
+                <div
+                  class="flex min-w-0 flex-wrap items-center gap-2"
+                  data-testid="container"
+                >
+                  <p
+                    class="text-xs leading-4 font-medium tracking-[0.075rem] whitespace-nowrap text-muted-foreground uppercase"
+                    data-testid="typography"
+                  >
+                    o1gg...j7dy
+                  </p>
+                  <p
+                    class="shrink-0 text-xs leading-4 font-medium tracking-[0.075rem] whitespace-nowrap text-muted-foreground tabular-nums sm:hidden"
+                    data-cy="post-header-character-count"
+                    data-testid="typography"
+                  >
+                    0
+                    /
+                    2000
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="relative"
+          data-testid="container"
+        >
+          <textarea
+            aria-haspopup="listbox"
+            autocomplete="off"
+            class="flex field-sizing-content w-full rounded-md bg-transparent text-base wrap-anywhere outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/40 transition-[color,box-shadow] min-h-6 resize-none border-none p-0 font-medium text-secondary-foreground shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            data-slot="textarea"
+            maxlength="2000"
+            placeholder="Write a reply..."
+            rows="1"
+            style="height: 0px;"
+          />
+        </div>
+        <input
+          accept="application/javascript,application/json,application/octet-stream,application/pdf,application/x-www-form-urlencoded,application/xml,application/zip,audio/mpeg,audio/wav,image/gif,image/jpeg,image/png,image/svg+xml,image/webp,multipart/form-data,text/css,text/html,text/plain,text/xml,video/mp4,video/mpeg"
+          class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-input disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 hover:ring-0 hover:outline-none focus:ring-0 focus:ring-offset-0 focus:outline-none aria-invalid:border-destructive aria-invalid:ring-destructive/40 hidden"
+          data-testid="input"
+          multiple=""
+          type="file"
+        />
+        <div
+          class="overflow-hidden "
+          style="height: auto; opacity: 1;"
+        >
+          <div
+            class="mx-auto w-full flex-col flex gap-6"
+            data-testid="container"
+          >
+            <div
+              class="mx-auto w-full flex-col flex gap-4"
+              data-testid="container"
+            >
+              <div
+                class="flex flex-col gap-1"
+                data-testid="container"
+              >
+                <div
+                  class="flex flex-wrap items-center gap-2"
+                  data-testid="container"
+                >
+                  <div
+                    class="relative h-8 overflow-hidden rounded-md border border-dashed border-input shadow-sm"
+                    style="width: 34px; transform-origin: 0% 50% 0;"
+                  >
+                    <div
+                      class="h-full w-full absolute inset-0 inline-flex items-center justify-center"
+                      style="opacity: 1;"
+                    >
+                      <button
+                        aria-label="Add new tag"
+                        class="inline-flex items-center justify-center whitespace-nowrap text-sm disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer border hover:text-accent-foreground gap-1.5 px-3 has-[>svg]:px-3.5 relative size-8 min-w-8! rounded-md bg-transparent p-0! transition-opacity hover:bg-transparent hover:opacity-80 gap-0! px-0! has-[>svg]:px-0! border-transparent shadow-none hover:border-transparent hover:shadow-none"
+                        data-cy="post-tag-add-button"
+                        data-size="sm"
+                        data-slot="button"
+                        data-variant="outline"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="lucide lucide-plus pointer-events-none absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2 opacity-[0.32]"
+                          fill="none"
+                          height="24"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          viewBox="0 0 24 24"
+                          width="24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M5 12h14"
+                          />
+                          <path
+                            d="M12 5v14"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="flex w-full flex-col justify-between gap-4 sm:flex-row sm:items-center"
+                data-testid="container"
+              >
+                <div
+                  class="flex items-center gap-2"
+                  data-testid="container"
+                >
+                  <button
+                    aria-label="Add emoji"
+                    class="inline-flex items-center justify-center whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-8 gap-1.5 px-3 has-[>svg]:px-3.5"
+                    data-cy="post-input-action-bar-add-emoji"
+                    data-size="sm"
+                    data-slot="button"
+                    data-variant="secondary"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="lucide lucide-smile size-4 text-secondary-foreground"
+                      fill="none"
+                      height="24"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                      />
+                      <path
+                        d="M8 14s1.5 2 4 2 4-2 4-2"
+                      />
+                      <line
+                        x1="9"
+                        x2="9.01"
+                        y1="9"
+                        y2="9"
+                      />
+                      <line
+                        x1="15"
+                        x2="15.01"
+                        y1="9"
+                        y2="9"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    aria-label="Add image"
+                    class="inline-flex items-center justify-center whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-secondary text-secondary-foreground hover:bg-accent h-8 gap-1.5 px-3 has-[>svg]:px-3.5"
+                    data-cy="post-input-action-bar-add-image"
+                    data-size="sm"
+                    data-slot="button"
+                    data-variant="secondary"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="lucide lucide-image size-4 text-secondary-foreground"
+                      fill="none"
+                      height="24"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <rect
+                        height="18"
+                        rx="2"
+                        ry="2"
+                        width="18"
+                        x="3"
+                        y="3"
+                      />
+                      <circle
+                        cx="9"
+                        cy="9"
+                        r="2"
+                      />
+                      <path
+                        d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div
+                  class="flex items-center justify-end gap-2"
+                  data-testid="container"
+                >
+                  <p
+                    class="hidden shrink-0 text-xs leading-4 font-medium tracking-[0.075rem] whitespace-nowrap text-muted-foreground tabular-nums sm:block"
+                    data-cy="post-input-action-bar-character-count"
+                    data-testid="typography"
+                  >
+                    0
+                    /
+                    2000
+                  </p>
+                  <button
+                    aria-label="Reply"
+                    class="inline-flex items-center justify-center whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer rounded-full border shadow-xs bg-brand/16 text-brand hover:!bg-brand/30 border-brand h-8 gap-1.5 px-3 has-[>svg]:px-3.5 w-full flex-1 sm:flex-auto"
+                    data-cy="post-input-action-bar-reply"
+                    data-size="sm"
+                    data-slot="button"
+                    data-variant="default"
+                    disabled=""
+                  >
+                    <div
+                      class="flex items-center gap-2"
+                      data-testid="container"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="lucide lucide-message-circle size-4 text-brand"
+                        fill="none"
+                        height="24"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"
+                        />
+                      </svg>
+                      <span
+                        class="text-sm font-medium text-brand"
+                        data-testid="typography"
+                      >
+                        Reply
+                      </span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 `;

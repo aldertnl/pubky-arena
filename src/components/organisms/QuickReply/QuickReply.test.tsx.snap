@@ -1,115 +1,117 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`QuickReply - Mobile Snapshots > matches snapshot on mobile viewport 1`] = `
-<div
-  class="relative flex"
-  data-testid="quick-reply"
->
-  <div
-    class="-mt-4 w-3 shrink-0"
-    data-testid="container"
-  >
-    <div
-      data-testid="quick-reply-connector"
-      height="189"
-      variant="last"
-    />
-  </div>
-  <div
-    class="min-w-0 flex-1"
-    data-testid="container"
-  >
-    <button
-      aria-label="Reply to post"
-      class="inline-flex items-center whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer border hover:text-accent-foreground bg-input/30 border-input hover:bg-input/50 has-[>svg]:px-4 h-auto w-full min-w-0 justify-start gap-4 rounded-md border-dashed p-4 text-left shadow-none"
-      data-slot="button"
-      data-testid="quick-reply-mobile-cta"
-      data-variant="outline"
-      type="button"
-    >
-      <div
-        data-size="default"
-        data-testid="avatar"
-      />
-      <p
-        class="text-base font-medium min-w-0 truncate text-muted-foreground"
-        data-testid="typography"
-      >
-        What are your thoughts on this?
-      </p>
-    </button>
-  </div>
-</div>
-`;
-
 exports[`QuickReply - Snapshots > matches snapshot with default props 1`] = `
 <div
   aria-busy="false"
-  class="relative flex"
+  class="contents"
   data-testid="quick-reply"
 >
   <div
-    class="-mt-4 w-3 shrink-0"
-    data-testid="container"
+    class="relative flex lg:hidden"
+    data-testid="quick-reply-mobile"
   >
     <div
-      data-testid="quick-reply-connector"
-      height="189"
-      variant="last"
-    />
-  </div>
-  <div
-    class="relative w-full cursor-pointer rounded-md border border-dashed transition-colors duration-200 p-12 border-input"
-    data-testid="container"
-  >
-    <div
-      class="gap-2"
+      class="-mt-4 w-3 shrink-0"
       data-testid="container"
     >
       <div
-        class="flex items-center gap-4"
+        data-testid="quick-reply-mobile-connector"
+        height="189"
+        variant="last"
+      />
+    </div>
+    <div
+      class="min-w-0 flex-1"
+      data-testid="container"
+    >
+      <button
+        aria-label="Reply to post"
+        class="inline-flex items-center whitespace-nowrap text-sm transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\\"size-\\"])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive font-semibold cursor-pointer border hover:text-accent-foreground bg-input/30 border-input hover:bg-input/50 has-[>svg]:px-4 h-auto w-full min-w-0 justify-start gap-4 rounded-md border-dashed p-4 text-left shadow-none"
+        data-slot="button"
+        data-testid="quick-reply-mobile-cta"
+        data-variant="outline"
+        type="button"
+      >
+        <div
+          data-size="default"
+          data-testid="avatar"
+        />
+        <p
+          class="text-base font-medium min-w-0 truncate text-muted-foreground"
+          data-testid="typography"
+        >
+          What are your thoughts on this?
+        </p>
+      </button>
+    </div>
+  </div>
+  <div
+    class="relative hidden lg:flex"
+    data-testid="quick-reply-desktop"
+  >
+    <div
+      class="-mt-4 w-3 shrink-0"
+      data-testid="container"
+    >
+      <div
+        data-testid="quick-reply-connector"
+        height="189"
+        variant="last"
+      />
+    </div>
+    <div
+      class="relative w-full cursor-pointer rounded-md border border-dashed transition-colors duration-200 p-12 border-input"
+      data-testid="container"
+    >
+      <div
+        class="gap-2"
         data-testid="container"
       >
         <div
-          data-size="xl"
-          data-testid="avatar"
-        />
-        <div
-          class="relative flex-1"
+          class="flex items-center gap-4"
           data-testid="container"
         >
-          <textarea
-            aria-haspopup="listbox"
-            aria-label="Reply"
-            class="text-xl leading-7"
-            data-testid="quick-reply-textarea"
-            placeholder="What are your thoughts on this?"
-            rows="1"
-            variant="inline"
+          <div
+            data-size="xl"
+            data-testid="avatar"
           />
+          <div
+            class="relative flex-1"
+            data-testid="container"
+          >
+            <textarea
+              aria-haspopup="listbox"
+              aria-label="Reply"
+              class="text-xl leading-7"
+              data-testid="quick-reply-textarea"
+              placeholder="What are your thoughts on this?"
+              rows="1"
+              variant="inline"
+            />
+          </div>
         </div>
-      </div>
-      <div
-        attachments=""
-        data-testid="post-input-attachments"
-      />
-      <div
-        data-character-count="0"
-        data-character-max="2000"
-        data-disabled="false"
-        data-post-disabled="true"
-        data-testid="post-input-expandable-section"
-      >
-        <button
-          data-testid="quick-reply-submit"
+        <div
+          attachments=""
+          data-testid="post-input-attachments"
+        />
+        <div
+          data-character-count="0"
+          data-character-max="2000"
+          data-disabled="false"
+          data-post-disabled="true"
+          data-testid="post-input-expandable-section"
         >
-          Submit
-        </button>
-        <button
-          data-testid="quick-reply-image"
-        >
-          Image
-        </button>
+          <button
+            data-testid="quick-reply-submit"
+          >
+            Submit
+          </button>
+          <button
+            data-testid="quick-reply-image"
+          >
+            Image
+          </button>
+        </div>
       </div>
     </div>
   </div>
