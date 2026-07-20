@@ -5,7 +5,8 @@ export interface UsePostReplyActionOptions {
 
 export interface UsePostReplyActionResult {
   /**
-   * Desktop: invoke the supplied dialog action.
+   * Desktop: invoke the supplied dialog action when available; otherwise use
+   * the mobile policy so a CSS-visible mobile entry can never become a no-op.
    * Mobile feed: open the post thread first.
    * Mobile collection: open the composer directly because the canonical
    * collection detail route has no reply entry point.
