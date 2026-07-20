@@ -4,7 +4,7 @@ import { usePostReplyRepostDialogs } from './usePostReplyRepostDialogs';
 
 vi.mock('@/hooks/usePostReplyAction/usePostReplyAction', () => ({
   usePostReplyAction: (_postId: string, { onDesktopReply }: { onDesktopReply: () => void }) => ({
-    openReply: onDesktopReply,
+    openReply: (_targetPostId?: string) => onDesktopReply(),
   }),
 }));
 
@@ -79,6 +79,19 @@ describe('usePostReplyRepostDialogs', () => {
 
     expect(screen.getByTestId('dialog-reply')).toHaveAttribute('data-open', 'true');
     expect(screen.getByTestId('dialog-repost')).toHaveAttribute('data-open', 'false');
+  });
+
+  it('opens the reply dialog for an explicitly targeted post', () => {
+    const { result } = renderHook(() => usePostReplyRepostDialogs('author:post-id'));
+    const view = render(result.current.dialogs);
+
+    act(() => {
+      result.current.openReplyDialog('original-author:original-post');
+    });
+    view.rerender(result.current.dialogs);
+
+    expect(screen.getByTestId('dialog-reply')).toHaveAttribute('data-post-id', 'original-author:original-post');
+    expect(screen.getByTestId('dialog-reply')).toHaveAttribute('data-open', 'true');
   });
 
   it('opens only the repost dialog', () => {

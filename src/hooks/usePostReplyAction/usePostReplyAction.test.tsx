@@ -37,4 +37,13 @@ describe('usePostReplyAction', () => {
 
     expect(mockPush).toHaveBeenCalledWith('/post/author/post-id/reply');
   });
+
+  it('opens the composer for an explicitly targeted post', () => {
+    vi.mocked(useIsMobile).mockReturnValue(true);
+    const { result } = renderHook(() => usePostReplyAction('author:post-id'));
+
+    act(() => result.current.openReply('original-author:original-post'));
+
+    expect(mockPush).toHaveBeenCalledWith('/post/original-author/original-post/reply');
+  });
 });

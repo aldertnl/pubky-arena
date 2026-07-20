@@ -19,13 +19,13 @@ export function usePostReplyAction(
   const router = useRouter();
   const isMobile = useIsMobile();
 
-  const openReply = () => {
+  const openReply = (targetPostId = postId) => {
     if (!isMobile) {
       onDesktopReply?.();
       return;
     }
 
-    const { pubky, id } = parseCompositeId(postId);
+    const { pubky, id } = parseCompositeId(targetPostId);
     router.push(getPostReplyRoute(pubky, id));
   };
 
