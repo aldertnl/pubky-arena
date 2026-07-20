@@ -24,7 +24,7 @@ export function usePostReplyAction(
   const { navigateToPost } = usePostNavigation();
   const { postDetails } = usePostDetails(postId);
 
-  const openReply = () => {
+  const openReply = (targetPostId = postId) => {
     if (!isMobile) {
       onDesktopReply?.();
       return;
@@ -32,14 +32,15 @@ export function usePostReplyAction(
 
     // Collection posts are the deliberate context-first exception: `/post/...`
     // redirects to their canonical collection detail page, which has no reply
-    // entry point. Route them straight to the composer so replying never dead-ends.
-    if (isPostRoute(pathname) || postDetails?.kind === 'collection') {
-      const { pubky, id } = parseCompositeId(postId);
+    // entry point. A list row may also target an original post rather than the
+    // card's post, so route that explicit target directly and avoid a dead end.
+    if (isPostRoute(pathname) || targetPostId !== postId || postDetails?.kind === 'collection') {
+      const { pubky, id } = parseCompositeId(targetPostId);
       router.push(getPostReplyRoute(pubky, id));
       return;
     }
 
-    navigateToPost(postId);
+    navigateToPost(targetPostId);
   };
 
   return { openReply };

@@ -9,7 +9,8 @@ export interface UsePostReplyActionResult {
    * Mobile feed: open the post thread first.
    * Mobile collection: open the composer directly because the canonical
    * collection detail route has no reply entry point.
+   * Mobile explicit list-row target: open that target's composer directly.
    * Mobile thread: open the full-screen reply route.
    */
-  openReply: () => void;
+  openReply: (targetPostId?: string) => void;
 }

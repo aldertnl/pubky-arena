@@ -3,6 +3,7 @@ import { renderToString } from 'react-dom/server';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST_MAX_CHARACTER_LENGTH } from '@/config/posts';
+import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
 import { PostMainLayoutProvider } from '@/organisms/PostMain/PostMainLayoutContext';
 import { resetViewport, setMobileViewport } from '@/test-utils/viewport';
 import { QuickReply } from './QuickReply';
@@ -180,6 +181,10 @@ vi.mock('@/hooks/useElementHeight/useElementHeight', () => ({
 
 vi.mock('@/hooks/useEnterSubmit/useEnterSubmit', () => ({
   useEnterSubmit: (...args: unknown[]) => mockUseEnterSubmit(...args),
+}));
+
+vi.mock('@/hooks/useIsMobile/useIsMobile', () => ({
+  useIsMobile: vi.fn(() => false),
 }));
 
 vi.mock('@/hooks/usePostInput/usePostInput', () => ({
@@ -395,6 +400,29 @@ describe('QuickReply', () => {
 
     expect(onRecoverableError).not.toHaveBeenCalled();
     await act(async () => root.unmount());
+  });
+
+  describe('list layout', () => {
+    const mockUseIsMobile = vi.mocked(useIsMobile);
+
+    beforeEach(() => {
+      mockUseIsMobile.mockReturnValue(false);
+    });
+
+    it('applies compact padding, md avatar, and text-base body when inheriting list layout', () => {
+      render(
+        <PostMainLayoutProvider tagsLayout="list">
+          <QuickReply parentPostId="author:post1" />
+        </PostMainLayoutProvider>,
+      );
+
+      const inputContainer = screen.getAllByTestId('container').find((c) => c.className?.includes('rounded-md'));
+      expect(inputContainer?.className).toContain('p-4');
+      expect(inputContainer?.className).not.toContain('p-12');
+
+      expect(screen.getAllByTestId('avatar').at(-1)).toHaveAttribute('data-size', 'md');
+      expect(screen.getByTestId('quick-reply-textarea')).toHaveAttribute('class', 'text-base font-medium leading-5');
+    });
   });
 });
 

@@ -93,4 +93,14 @@ describe('usePostReplyAction', () => {
     expect(mockPush).toHaveBeenCalledWith('/post/author/collection-id/reply');
     expect(mockNavigateToPost).not.toHaveBeenCalled();
   });
+
+  it('opens an explicitly targeted list-row post directly', () => {
+    vi.mocked(useIsMobile).mockReturnValue(true);
+    const { result } = renderHook(() => usePostReplyAction('author:repost-id'));
+
+    act(() => result.current.openReply('original-author:original-post'));
+
+    expect(mockPush).toHaveBeenCalledWith('/post/original-author/original-post/reply');
+    expect(mockNavigateToPost).not.toHaveBeenCalled();
+  });
 });
