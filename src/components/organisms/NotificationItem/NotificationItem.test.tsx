@@ -52,6 +52,9 @@ vi.mock('@/services/local/post/post', () => ({
 }));
 vi.mock('@/controllers/post/post', () => ({
   PostController: {
+    get fetch() {
+      return mockFetch;
+    },
     get getOrFetch() {
       return mockGetOrFetch;
     },
@@ -89,6 +92,7 @@ vi.mock('@/organisms/AvatarWithFallback/AvatarWithFallback', () => {
 
 // Mock molecules
 const mockToast = vi.fn();
+const mockFetch = vi.fn<() => Promise<{ kind: string; content: string } | null>>(() => Promise.resolve(null));
 const mockGetOrFetch = vi.fn<() => Promise<{ kind: string; content: string } | null>>(() => Promise.resolve(null));
 vi.mock('@/molecules/NotificationIcon/NotificationIcon', () => {
   return {
@@ -178,6 +182,8 @@ describe('NotificationItem', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockToast.mockClear();
+    mockFetch.mockClear();
+    mockFetch.mockResolvedValue(null);
     mockGetOrFetch.mockClear();
     mockGetOrFetch.mockResolvedValue(null);
     vi.mocked(useUserProfile).mockReturnValue({
@@ -581,12 +587,45 @@ describe('NotificationItem', () => {
     }
   });
 
+  it('refreshes an edited post and uses its collection kind for copy and navigation', async () => {
+    mockFetch.mockResolvedValue({
+      kind: 'collection',
+      content: JSON.stringify({ name: 'Ferraris', description: 'Red is the best color', items: [] }),
+    });
+
+    const editedNotification = {
+      id: 'post_edited:123:collection-owner',
+      type: NotificationType.PostEdited,
+      timestamp: Date.now() - 1000 * 60 * 30,
+      edit_source: PostChangedSource.Repost,
+      edited_by: 'collection-owner',
+      edited_uri: 'pubky://collection-owner/pub/pubky.app/posts/collection-id',
+      linked_uri: 'pubky://viewer/pub/pubky.app/posts/repost-id',
+    } satisfies FlatNotification;
+
+    render(<NotificationItem notification={editedNotification} isUnread={false} />);
+
+    const collectionRoute = '/collections/collection-owner/collection-id';
+    await vi.waitFor(() => {
+      expect(screen.getByText('updated collection').closest('a')).toHaveAttribute('href', collectionRoute);
+    });
+    expect(screen.getByTestId('notification-icon')).toHaveAttribute('data-post-kind', 'collection');
+    expect(mockFetch).toHaveBeenCalledWith({
+      compositeId: 'collection-owner:collection-id',
+      viewerId: 'test-user-pubky',
+    });
+    expect(mockGetOrFetch).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getAllByTestId('container')[0]);
+    expect(mockPush).toHaveBeenCalledWith(collectionRoute);
+  });
+
   it('hides the muted collection preview below the sm breakpoint', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-07-16T12:00:00Z'));
 
     try {
-      mockGetOrFetch.mockResolvedValue({
+      mockFetch.mockResolvedValue({
         kind: 'collection',
         content: JSON.stringify({ name: 'Based Bitcoin', description: '', items: [] }),
       });
@@ -608,7 +647,7 @@ describe('NotificationItem', () => {
         const preview = screen.getByText("'Based Bitcoin'");
         expect(preview).toHaveClass('hidden', 'sm:block', 'text-muted-foreground');
       });
-      expect(mockGetOrFetch).toHaveBeenCalledWith({
+      expect(mockFetch).toHaveBeenCalledWith({
         compositeId: 'collection-owner:collection-id',
         viewerId: 'test-user-pubky',
       });
@@ -757,6 +796,7 @@ describe('NotificationItem', () => {
 describe('NotificationItem - Snapshots', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.mockResolvedValue(null);
     mockGetOrFetch.mockResolvedValue(null);
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-07-16T12:00:00Z'));
@@ -803,7 +843,7 @@ describe('NotificationItem - Snapshots', () => {
   });
 
   it('matches snapshot for an edited collection with a title preview', async () => {
-    mockGetOrFetch.mockResolvedValue({
+    mockFetch.mockResolvedValue({
       kind: 'collection',
       content: JSON.stringify({ name: 'Based Bitcoin', description: '', items: [] }),
     });
@@ -820,7 +860,7 @@ describe('NotificationItem - Snapshots', () => {
 
     render(<NotificationItem notification={notification} isUnread={false} />);
     await act(async () => {
-      await mockGetOrFetch.mock.results[0]?.value;
+      await mockFetch.mock.results[0]?.value;
     });
 
     expect(screen.getByText("'Based Bitcoin'")).toMatchSnapshot();

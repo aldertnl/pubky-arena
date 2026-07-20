@@ -68,6 +68,21 @@ describe('NotificationItem utilities', () => {
     expect(getNotificationLink(notification).notificationLink).toBe(expectedRoute);
   });
 
+  it('uses an authoritatively resolved collection kind when notification metadata is missing', () => {
+    const notification = {
+      id: 'post_edited:123:owner',
+      type: NotificationType.PostEdited,
+      timestamp: 123,
+      edit_source: PostChangedSource.Repost,
+      edited_by: 'owner',
+      edited_uri: 'pubky://owner/pub/pubky.app/posts/collection-id',
+      linked_uri: 'pubky://viewer/pub/pubky.app/posts/repost-id',
+    } satisfies FlatNotification;
+
+    expect(getNotificationActionKey(notification, 'collection')).toBe('updatedCollection');
+    expect(getNotificationLink(notification, 'collection').notificationLink).toBe('/collections/owner/collection-id');
+  });
+
   it.each([
     {
       label: 'tagged collection',

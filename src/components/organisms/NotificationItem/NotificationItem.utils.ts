@@ -42,13 +42,11 @@ const KIND_SPECIFIC_NOTIFICATION_ACTION_KEY: KindSpecificNotificationAction = {
  * Get notification action translation key (without the username) based on type
  * Returns the i18n key to be used with useTranslations('notifications.actions')
  */
-export function getNotificationActionKey(notification: FlatNotification): string {
-  if ('post_kind' in notification) {
-    const postKind = notification.post_kind;
-    if (postKind === 'collection' || postKind === 'long') {
-      const actionKey = KIND_SPECIFIC_NOTIFICATION_ACTION_KEY[notification.type]?.[postKind];
-      if (actionKey) return actionKey;
-    }
+export function getNotificationActionKey(notification: FlatNotification, resolvedPostKind?: string): string {
+  const postKind = resolvedPostKind ?? ('post_kind' in notification ? notification.post_kind : undefined);
+  if (postKind === 'collection' || postKind === 'long') {
+    const actionKey = KIND_SPECIFIC_NOTIFICATION_ACTION_KEY[notification.type]?.[postKind];
+    if (actionKey) return actionKey;
   }
 
   return NOTIFICATION_ACTION_KEY[notification.type] ?? 'fallback';
@@ -121,7 +119,7 @@ function uriToRouteParams(uri: string | undefined): { authorPubky: string; postI
  * Get the appropriate post link for a notification based on its type
  * Uses TypeScript's discriminated union type narrowing for type safety
  */
-function getPostLink(notification: FlatNotification): string | null {
+function getPostLink(notification: FlatNotification, resolvedPostKind?: string): string | null {
   let uri: string | undefined;
   let targetIsSubject = false;
 
@@ -171,7 +169,8 @@ function getPostLink(notification: FlatNotification): string | null {
   const routeParams = uriToRouteParams(uri);
   if (!routeParams) return null;
 
-  if (targetIsSubject && 'post_kind' in notification && notification.post_kind === 'collection') {
+  const postKind = resolvedPostKind ?? ('post_kind' in notification ? notification.post_kind : undefined);
+  if (targetIsSubject && postKind === 'collection') {
     return getCollectionRoute(routeParams.authorPubky, routeParams.postId);
   }
 
@@ -199,7 +198,7 @@ function shouldUsePrimaryUserLink(notification: FlatNotification): boolean {
  * @param notification - The notification to process
  * @returns Object with notificationLink and userProfileLink
  */
-export function getNotificationLink(notification: FlatNotification) {
+export function getNotificationLink(notification: FlatNotification, resolvedPostKind?: string) {
   // Get user ID to create profile link
   const userId = getUserIdFromNotification(notification);
   const userProfileLink = userId ? getUserProfileLink(userId) : null;
@@ -207,7 +206,7 @@ export function getNotificationLink(notification: FlatNotification) {
   // Determine the main notification link
   // For user-centric notifications (follow/unfollow/friend), use profile link
   // For post-centric notifications, use post link
-  const postLink = getPostLink(notification);
+  const postLink = getPostLink(notification, resolvedPostKind);
   const usePrimaryUserLink = shouldUsePrimaryUserLink(notification);
   const notificationLink = usePrimaryUserLink ? userProfileLink : postLink;
 

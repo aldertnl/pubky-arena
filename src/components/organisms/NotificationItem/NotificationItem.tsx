@@ -42,7 +42,7 @@ export function NotificationItem({ notification, isUnread }: NotificationItemPro
 
   // Extract the user ID from the notification (the actor who triggered it)
   const actorUserId = getUserIdFromNotification(notification);
-  const postKind = 'post_kind' in notification ? notification.post_kind : undefined;
+  const notificationPostKind = 'post_kind' in notification ? notification.post_kind : undefined;
 
   // Extract post composite ID for notifications with post content (memoized to avoid recalculation)
   const postCompositeId = useMemo(() => {
@@ -52,6 +52,8 @@ export function NotificationItem({ notification, isUnread }: NotificationItemPro
 
   // State for post content (fetched via controller)
   const [postContent, setPostContent] = useState<string | null>(null);
+  const [resolvedPostKind, setResolvedPostKind] = useState<{ compositeId: string; kind: string } | null>(null);
+  const postKind = resolvedPostKind?.compositeId === postCompositeId ? resolvedPostKind.kind : notificationPostKind;
 
   // Use existing hook for user profile data
   const { profile } = useUserProfile(actorUserId || '');
@@ -65,13 +67,21 @@ export function NotificationItem({ notification, isUnread }: NotificationItemPro
 
     let isCancelled = false;
 
-    // PostController.getOrFetch handles the caching strategy:
-    // 1. Check local DB first
-    // 2. If missing, fetch from Nexus
-    // 3. Write to local DB
-    PostController.getOrFetch({ compositeId: postCompositeId, viewerId })
+    // An edit notification means any cached post details may predate the edit.
+    // Force-refresh edited posts so their kind, content, and destination are
+    // authoritative; other notification types keep the normal local-first read.
+    const postRequest =
+      notification.type === NotificationType.PostEdited
+        ? PostController.fetch({ compositeId: postCompositeId, viewerId })
+        : PostController.getOrFetch({ compositeId: postCompositeId, viewerId });
+
+    postRequest
       .then(async (post) => {
-        if (!isCancelled && post?.content) {
+        if (!isCancelled && post) {
+          setResolvedPostKind({ compositeId: postCompositeId, kind: post.kind });
+
+          if (!post.content) return;
+
           if (isPostDeleted(post.content)) {
             setPostContent(tPost('deleted'));
           } else if (post.kind === 'long') {
@@ -103,14 +113,14 @@ export function NotificationItem({ notification, isUnread }: NotificationItemPro
       isCancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- toast is an external side-effect, not a dependency
-  }, [postCompositeId]);
+  }, [notification.type, postCompositeId]);
 
   // Get user name and avatar from profile hook
   const userName = profile?.name || tCommon('user');
   const avatarUrl = profile?.avatarUrl;
 
   // Get notification action text (without username, for separate rendering)
-  const actionKey = getNotificationActionKey(notification);
+  const actionKey = getNotificationActionKey(notification, postKind);
   const actionText = t(actionKey);
 
   // Get post preview text
@@ -121,7 +131,7 @@ export function NotificationItem({ notification, isUnread }: NotificationItemPro
   const timestampLong = formatNotificationTime(notification.timestamp, true);
 
   // Calculate notification links (business logic separated in pure function)
-  const { notificationLink, userProfileLink } = getNotificationLink(notification);
+  const { notificationLink, userProfileLink } = getNotificationLink(notification, postKind);
 
   // Handle tag click - navigate to search with the tag
   const handleTagClick = (tagLabel: string) => (e: React.MouseEvent) => {
