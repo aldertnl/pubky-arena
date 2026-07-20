@@ -20,8 +20,8 @@ export function usePostReplyAction(
   const isMobile = useIsMobile();
 
   const openReply = (targetPostId = postId) => {
-    if (!isMobile) {
-      onDesktopReply?.();
+    if (!isMobile && onDesktopReply) {
+      onDesktopReply();
       return;
     }
 

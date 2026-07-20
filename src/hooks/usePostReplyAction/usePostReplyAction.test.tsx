@@ -29,6 +29,15 @@ describe('usePostReplyAction', () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
+  it('uses the route fallback when the CSS-mobile entry is visible before viewport state updates', () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+    const { result } = renderHook(() => usePostReplyAction('author:post-id'));
+
+    act(() => result.current.openReply());
+
+    expect(mockPush).toHaveBeenCalledWith('/post/author/post-id/reply');
+  });
+
   it('opens the full-screen composer directly on mobile', () => {
     vi.mocked(useIsMobile).mockReturnValue(true);
     const { result } = renderHook(() => usePostReplyAction('author:post-id'));
