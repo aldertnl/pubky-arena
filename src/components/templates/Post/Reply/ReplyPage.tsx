@@ -130,6 +130,7 @@ export function ReplyPage({ postId }: ReplyPageProps) {
   return (
     <Dialog open onOpenChange={handleOpenChange}>
       <DialogContent
+        avoidKeyboard
         overrideDefaults
         showCloseButton={false}
         className="m-0 flex h-dvh max-h-none w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 bg-background p-0 shadow-none sm:m-0 sm:max-w-none"

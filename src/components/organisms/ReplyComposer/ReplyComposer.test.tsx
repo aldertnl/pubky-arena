@@ -87,16 +87,20 @@ function renderComposer(ui: ReactElement) {
 function setupExternalBoundaries() {
   vi.clearAllMocks();
   setParentPost(availablePost);
-  vi.mocked(useCurrentUserProfile).mockReturnValue({
-    currentUserPubky: AUTHOR_PUBKY,
-    userDetails: { name: 'Reply author' },
-  } as never);
-  vi.mocked(useUserDetails).mockReturnValue({
-    userDetails: { name: 'Reply author' },
-    isLoading: false,
-  } as never);
+  vi.mocked(useCurrentUserProfile).mockReturnValue(
+    asOpaque<ReturnType<typeof useCurrentUserProfile>>({
+      currentUserPubky: AUTHOR_PUBKY,
+      userDetails: { name: 'Reply author' },
+    }),
+  );
+  vi.mocked(useUserDetails).mockReturnValue(
+    asOpaque<ReturnType<typeof useUserDetails>>({
+      userDetails: { name: 'Reply author' },
+      isLoading: false,
+    }),
+  );
   vi.mocked(useTtlSubscription).mockReturnValue({ ref: vi.fn(), isVisible: false });
-  vi.mocked(useToast).mockReturnValue({ toast: mockToast } as never);
+  vi.mocked(useToast).mockReturnValue(asOpaque<ReturnType<typeof useToast>>({ toast: mockToast }));
   const authState = mockAuthStore({
     currentUserPubky: AUTHOR_PUBKY,
     setShowSignInDialog: mockSetShowSignInDialog,
@@ -127,6 +131,7 @@ describe('ReplyComposer', () => {
   it('bounds and disables the parent preview in page presentation', () => {
     const { container } = renderPageComposer();
 
+    expect(container.firstChild).toHaveClass('overflow-y-auto');
     const parentPreview = container.querySelector('[inert]');
     expect(parentPreview).toHaveClass('max-h-40', 'overflow-hidden');
     expect(screen.queryByRole('link', { name: 'View original post' })).not.toBeInTheDocument();
@@ -160,6 +165,13 @@ describe('ReplyComposer', () => {
 describe('ReplyComposer - Snapshots', () => {
   beforeEach(() => {
     setupExternalBoundaries();
+  });
+
+  it('matches snapshot for the dialog presentation', () => {
+    const { container } = renderComposer(
+      <ReplyComposer postId={PARENT_POST_ID} resetKey={0} onSuccess={vi.fn()} onContentChange={vi.fn()} />,
+    );
+    expect(container.firstChild).toMatchSnapshot();
   });
 
   it('matches snapshot for the routed page presentation', () => {

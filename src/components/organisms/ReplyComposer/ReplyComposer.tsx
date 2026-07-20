@@ -23,7 +23,7 @@ export function ReplyComposer({
     <Container
       className={cn(
         'min-h-0 flex-1 gap-3 overflow-x-hidden overscroll-contain',
-        isPage ? 'reply-composer-safe-bottom px-4 py-3' : 'pr-1',
+        isPage ? 'reply-composer-safe-bottom overflow-y-auto px-4 py-3' : 'pr-1',
       )}
     >
       {isPage ? (
