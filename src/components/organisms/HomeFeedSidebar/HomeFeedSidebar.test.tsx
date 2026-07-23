@@ -236,7 +236,7 @@ describe('HomeFeedSidebar', () => {
     expect(screen.getByTestId('filter-profile-tags')).toHaveAttribute('data-input-disabled', 'true');
   });
 
-  it('keeps Network selected when logged out because it aliases the public All stream', () => {
+  it('falls back to All when logged out with Network persisted', () => {
     mockCurrentUserPubky.value = null;
     mockUseHomeStore.mockReturnValue({
       layout: 'columns',
@@ -256,7 +256,7 @@ describe('HomeFeedSidebar', () => {
 
     render(<HomeFeedSidebar />);
 
-    expect(screen.getByTestId('filter-reach')).toHaveAttribute('data-selected-tab', 'network');
+    expect(screen.getByTestId('filter-reach')).toHaveAttribute('data-selected-tab', 'all');
     expect(screen.getByTestId('filter-profile-tags')).toHaveAttribute('data-hidden', 'false');
     expect(screen.getByTestId('filter-profile-tags')).toHaveAttribute('data-input-disabled', 'true');
   });

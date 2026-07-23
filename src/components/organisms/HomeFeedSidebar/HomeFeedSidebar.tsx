@@ -53,13 +53,13 @@ function HomeFeedFilters({
   const currentUserPubky = useAuthStore((state) => state.currentUserPubky);
   const { requireAuth } = useRequireAuth();
   const isAuthenticated = Boolean(currentUserPubky);
-  const effectiveReach = isAuthenticated || reach === REACH.NETWORK ? reach : REACH.ALL;
+  const effectiveReach = isAuthenticated ? reach : REACH.ALL;
   const showProfileTags = effectiveReach !== REACH.ME;
   const { isPhoneViewport, isVisualActive } = useFeedLayoutResolution(feedVariant);
 
-  // ALL and its temporary NETWORK alias are public. Personalized reaches require an account.
+  // ALL is public. Personalized reaches require an account.
   const handleReachChange = (value: ReachType) => {
-    if (value === REACH.ALL || value === REACH.NETWORK) {
+    if (value === REACH.ALL) {
       setReach(value);
       return;
     }

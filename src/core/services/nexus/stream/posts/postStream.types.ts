@@ -13,6 +13,7 @@ export enum StreamSource {
   FOLLOWING = 'following',
   FOLLOWERS = 'followers',
   FRIENDS = 'friends',
+  WOT = 'wot',
   WOT_DOMAIN = 'wot_domain',
   BOOKMARKS = 'bookmarks',
   REPLIES = 'post_replies',

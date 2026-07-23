@@ -123,13 +123,13 @@ describe('useStreamIdFromFilters', () => {
     expect(result.current).toBe('author:viewer-pubky');
   });
 
-  it('should use the All stream for Network reach', () => {
+  it('should use the WoT stream for Network reach', () => {
     const { result: setReach } = renderHook(() => useHomeStore((state) => state.setReach));
     setReach.current(REACH.NETWORK);
 
     const { result } = renderHook(() => useStreamIdFromFilters());
 
-    expect(result.current).toBe(PostStreamTypes.TIMELINE_ALL_ALL);
+    expect(result.current).toBe('timeline:wot:all');
   });
 
   it('uses WoT scope depth, Sort, Content, and profile tags while Nexus applies its default Reach', () => {
@@ -269,7 +269,7 @@ describe('useStreamIdFromFilters', () => {
       { reach: REACH.ME, expected: 'author:viewer-pubky' },
       { reach: REACH.FRIENDS, expected: 'timeline:friends:all' },
       { reach: REACH.FOLLOWING, expected: 'timeline:following:all' },
-      { reach: REACH.NETWORK, expected: 'timeline:all:all' },
+      { reach: REACH.NETWORK, expected: 'timeline:wot:all' },
       { reach: REACH.ALL, expected: 'timeline:all:all' },
     ];
 

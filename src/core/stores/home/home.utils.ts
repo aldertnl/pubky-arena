@@ -1,8 +1,8 @@
 import type { Pubky } from '@/models/models.types';
 import {
   buildWotDomainStreamId,
+  type PostStreamId,
   type PostStreamKindSegment,
-  type PostStreamTypes,
   type WotDomainDepth,
 } from '@/models/stream/post/postStream.types';
 import { StreamSorting } from '@/services/nexus/nexus.types';
@@ -42,6 +42,7 @@ const SORTING_TO_SORT = reverseMapping(SORT_TO_SORTING);
 /** Maps REACH filter to streamId SOURCE part */
 const REACH_TO_SOURCE = {
   [REACH.ALL]: 'all',
+  [REACH.NETWORK]: 'wot',
   [REACH.FOLLOWING]: 'following',
   [REACH.FRIENDS]: 'friends',
 } as const;
@@ -49,15 +50,11 @@ const REACH_TO_SOURCE = {
 type NexusReachType = keyof typeof REACH_TO_SOURCE;
 
 /**
- * NETWORK is a temporary alias for ALL until Nexus exposes an official stream.
  * ME is resolved to an author stream by the feed hooks; callers without an
  * authenticated author safely fall back to ALL.
  */
 function toNexusReach(reach: ReachType): NexusReachType {
-  if (reach === REACH.FOLLOWING || reach === REACH.FRIENDS) {
-    return reach;
-  }
-  return REACH.ALL;
+  return reach === REACH.ME ? REACH.ALL : reach;
 }
 
 /** Maps streamId SOURCE part to REACH filter (auto-generated) */
@@ -89,7 +86,7 @@ const KIND_TO_CONTENT = reverseMapping(CONTENT_TO_KIND);
  *
  * Pattern breakdown:
  * - SORTING: timeline (recent), total_engagement (popularity)
- * - SOURCE: all, following, friends (NETWORK and unresolved ME normalize to all)
+ * - SOURCE: all, wot, following, friends (unresolved ME normalizes to all)
  * - KIND: all, short (posts), long (articles), collection, image, video, link, file
  *
  * @example
@@ -106,20 +103,17 @@ export function getStreamIdFromFilters(sort: SortType, reach: ReachType, content
 }
 
 /**
- * Type-safe version that returns PostStreamTypes enum for all valid filter combinations
- *
- * Since PostStreamTypes enum values are the actual streamId strings, we can cast directly.
+ * Type-safe version that returns a supported post stream ID.
  *
  * @example
  * getStreamId('recent', 'all', 'all') // => PostStreamTypes.TIMELINE_ALL_ALL
  * getStreamId('recent', 'following', 'images') // => PostStreamTypes.TIMELINE_FOLLOWING_IMAGE
  * getStreamId('popularity', 'friends', 'videos') // => PostStreamTypes.POPULARITY_FRIENDS_VIDEO
  */
-export function getStreamId(sort: SortType, reach: ReachType, content: ContentType): PostStreamTypes {
+export function getStreamId(sort: SortType, reach: ReachType, content: ContentType): PostStreamId {
   const streamId = getStreamIdFromFilters(sort, reach, content);
 
-  // The streamId string matches the enum value exactly, so we can cast directly
-  return streamId as PostStreamTypes;
+  return streamId as PostStreamId;
 }
 
 export function getHomeStreamIdFromFilters(
@@ -143,7 +137,7 @@ export function getHomeStreamIdFromFilters(
     );
   }
 
-  const effectiveReach = currentUserPubky || reach === REACH.NETWORK ? reach : REACH.ALL;
+  const effectiveReach = currentUserPubky ? reach : REACH.ALL;
   return getStreamId(sort, effectiveReach, content);
 }
 

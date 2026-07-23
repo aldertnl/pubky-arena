@@ -45,6 +45,8 @@ function callStreamEndpoint(
       return postStreamApi.followers(params as TStreamWithObserverParams);
     case 'friends':
       return postStreamApi.friends(params as TStreamWithObserverParams);
+    case 'wot':
+      return postStreamApi.wot(params as TStreamWithObserverParams);
     case 'bookmarks':
       return postStreamApi.bookmarks(params as TStreamWithObserverParams);
     case 'post_replies':
@@ -110,6 +112,12 @@ describe('Stream API URL Generation', () => {
         endpoint: 'friends' as const,
         params: { observer_id: mockObserverId, tags: 'dev,opensource', kind: StreamKind.SHORT },
         expectedInUrl: ['source=friends', `observer_id=${mockObserverId}`, 'tags=dev%2Copensource', 'kind=short'],
+      },
+      {
+        name: 'wot',
+        endpoint: 'wot' as const,
+        params: { observer_id: mockObserverId, depth: 2 as const, sorting: StreamSorting.TIMELINE },
+        expectedInUrl: ['source=wot', `observer_id=${mockObserverId}`, 'depth=2', 'sorting=timeline'],
       },
       {
         name: 'bookmarks',
@@ -362,6 +370,7 @@ describe('Stream API URL Generation', () => {
         'following',
         'followers',
         'friends',
+        'wot',
         'wot_domain',
         'bookmarks',
         'post_replies',
@@ -416,6 +425,23 @@ describe('createPostStreamParams', () => {
       expect(result.params.kind).toBe(StreamKind.IMAGE);
       expect(result.params.depth).toBe(2);
       expect(result.params.domain_tags).toBe('artist,bitcoin');
+      expect(result.params.viewer_id).toBe(mockViewerId);
+    });
+  });
+
+  describe('WoT streams', () => {
+    it('uses the Nexus Network depth for a plain WoT stream', () => {
+      const result = createPostStreamParams({
+        streamId: 'timeline:wot:all',
+        streamTail: 0,
+        streamHead: 0,
+        limit: 20,
+        viewerId: mockViewerId,
+      });
+
+      expect(result.invokeEndpoint).toBe(StreamSource.WOT);
+      expect(result.params.sorting).toBe(StreamSorting.TIMELINE);
+      expect(result.params.depth).toBe(2);
       expect(result.params.viewer_id).toBe(mockViewerId);
     });
   });
@@ -858,6 +884,13 @@ describe('NexusPostStreamService', () => {
         expectedInUrl: ['source=friends', 'observer_id=viewer-pubky-id', 'tags=tech%2Cdev'],
       },
       {
+        name: 'WOT',
+        invokeEndpoint: StreamSource.WOT,
+        params: { limit: 15, viewer_id: mockViewerId, depth: 2 as const },
+        extraParams: {},
+        expectedInUrl: ['source=wot', 'observer_id=viewer-pubky-id', 'depth=2'],
+      },
+      {
         name: 'WOT_DOMAIN',
         invokeEndpoint: StreamSource.WOT_DOMAIN,
         params: {
@@ -953,6 +986,13 @@ describe('NexusPostStreamService', () => {
         name: 'FRIENDS requires viewer_id',
         invokeEndpoint: StreamSource.FRIENDS,
         params: { limit: 10 }, // Missing viewer_id
+        extraParams: {},
+        expectedError: 'Viewer ID is required',
+      },
+      {
+        name: 'WOT requires viewer_id',
+        invokeEndpoint: StreamSource.WOT,
+        params: { limit: 10 },
         extraParams: {},
         expectedError: 'Viewer ID is required',
       },

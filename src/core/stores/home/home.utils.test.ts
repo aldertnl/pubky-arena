@@ -37,8 +37,8 @@ describe('filters.utils', () => {
       ).toBe('total_engagement:wot_domain:2:image:artist');
     });
 
-    it('keeps the existing untagged Network alias and ignores tags without a viewer', () => {
-      expect(getHomeStreamIdFromFilters(SORT.TIMELINE, REACH.NETWORK, CONTENT.ALL, viewer)).toBe('timeline:all:all');
+    it('uses the Network WoT stream and ignores tags without a viewer', () => {
+      expect(getHomeStreamIdFromFilters(SORT.TIMELINE, REACH.NETWORK, CONTENT.ALL, viewer)).toBe('timeline:wot:all');
       expect(getHomeStreamIdFromFilters(SORT.TIMELINE, REACH.NETWORK, CONTENT.ALL, null, ['bitcoin'])).toBe(
         'timeline:all:all',
       );
@@ -103,9 +103,9 @@ describe('filters.utils', () => {
         expect(streamId).toBe('timeline:friends:all');
       });
 
-      it('should normalize "network" reach to "all"', () => {
+      it('should map "network" reach to "wot"', () => {
         const streamId = getStreamIdFromFilters(SORT.TIMELINE, REACH.NETWORK, CONTENT.ALL);
-        expect(streamId).toBe('timeline:all:all');
+        expect(streamId).toBe('timeline:wot:all');
       });
 
       it('should safely normalize unresolved "me" reach to "all"', () => {
@@ -188,6 +188,11 @@ describe('filters.utils', () => {
       expect(streamId).toBe('timeline:friends:all');
     });
 
+    it('should return the Network WoT stream', () => {
+      const streamId = getStreamId(SORT.TIMELINE, REACH.NETWORK, CONTENT.ALL);
+      expect(streamId).toBe('timeline:wot:all');
+    });
+
     it('should return PostStreamTypes.TIMELINE_ALL_IMAGE', () => {
       const streamId = getStreamId(SORT.TIMELINE, REACH.ALL, CONTENT.IMAGES);
       expect(streamId).toBe(PostStreamTypes.TIMELINE_ALL_IMAGE);
@@ -211,6 +216,7 @@ describe('filters.utils', () => {
     it('should return true for matching filters', () => {
       expect(matchesFilters('timeline:all:all', SORT.TIMELINE, REACH.ALL, CONTENT.ALL)).toBe(true);
       expect(matchesFilters('timeline:following:all', SORT.TIMELINE, REACH.FOLLOWING, CONTENT.ALL)).toBe(true);
+      expect(matchesFilters('timeline:wot:all', SORT.TIMELINE, REACH.NETWORK, CONTENT.ALL)).toBe(true);
       expect(matchesFilters('total_engagement:friends:image', SORT.ENGAGEMENT, REACH.FRIENDS, CONTENT.IMAGES)).toBe(
         true,
       );

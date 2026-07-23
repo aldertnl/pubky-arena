@@ -11,8 +11,8 @@ import { getHomeStreamIdFromFilters } from '@/stores/home/home.utils';
  * This hook reads the current filter state from the filters store and
  * generates the appropriate streamId following the pattern: sorting:source:kind
  *
- * Standard reaches map to PostStreamTypes values. ME reuses the existing
- * author/profile stream, while NETWORK resolves through the ALL mapping.
+ * Standard reaches map to Nexus post streams. ME reuses the existing
+ * author/profile stream, while NETWORK resolves through the WoT stream.
  *
  * @returns The current post stream ID
  *

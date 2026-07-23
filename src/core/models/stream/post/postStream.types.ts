@@ -102,6 +102,7 @@ export type AuthorStreamCompositeId = `${StreamSource.AUTHOR}:${string}`;
 export type AuthorRepliesStreamCompositeId = `${StreamSource.AUTHOR_REPLIES}:${string}`;
 export type PostStreamKindSegment = 'all' | StreamKind;
 export type WotDomainDepth = 0 | 1 | 2;
+export type WotStreamCompositeId = `${StreamSorting}:${StreamSource.WOT}:${PostStreamKindSegment}`;
 export type WotDomainStreamCompositeId =
   `${StreamSorting}:${StreamSource.WOT_DOMAIN}:${WotDomainDepth}:${PostStreamKindSegment}:${string}`;
 
@@ -193,6 +194,7 @@ export function isDeletedRetainingStream(streamId: string): boolean {
 
 export type PostStreamId =
   | PostStreamTypes
+  | WotStreamCompositeId
   | WotDomainStreamCompositeId
   | ReplyStreamCompositeId
   | AuthorStreamCompositeId
