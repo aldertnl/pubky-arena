@@ -86,6 +86,7 @@ describe('FilterSort', () => {
     await user.click(screen.getByRole('combobox', { name: 'Sort' }));
 
     expect(screen.getByRole('option', { name: 'Popularity' })).toHaveClass(
+      'font-medium',
       'hover:text-secondary-foreground',
       'data-[highlighted]:text-secondary-foreground',
     );

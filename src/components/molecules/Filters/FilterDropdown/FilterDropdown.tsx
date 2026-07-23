@@ -72,7 +72,7 @@ export function FilterDropdown<T extends string>({
               disabled={disabled}
               aria-label={label}
               data-cy={itemDataCy}
-              className="py-2 transition-colors hover:text-secondary-foreground hover:**:text-secondary-foreground data-[highlighted]:text-secondary-foreground data-[highlighted]:**:text-secondary-foreground data-[state=checked]:font-bold"
+              className="py-2 font-medium transition-colors hover:text-secondary-foreground hover:**:text-secondary-foreground data-[highlighted]:text-secondary-foreground data-[highlighted]:**:text-secondary-foreground data-[state=checked]:font-bold"
             >
               <span className="flex items-center gap-2">
                 <span className="flex size-5 shrink-0 items-center justify-center [&>svg]:size-full">

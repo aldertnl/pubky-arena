@@ -28,6 +28,8 @@ export const PROFILE_TAG_SCOPE = {
   ME: 'me',
 } as const;
 
+export const HOME_NETWORK_REACH_MIN_FOLLOWING = 3;
+
 // Nexus domain_tags API limit.
 export const HOME_PROFILE_TAGS_MAX_SELECTED = 5;
 
