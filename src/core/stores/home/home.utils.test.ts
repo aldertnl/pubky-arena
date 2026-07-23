@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { PostStreamTypes } from '@/models/stream/post/postStream.types';
-import { CONTENT, ContentType, REACH, ReachType, SORT, SortType } from './home.types';
+import { CONTENT, ContentType, PROFILE_TAG_SCOPE, REACH, ReachType, SORT, SortType } from './home.types';
 import {
+  getHomeStreamIdFromFilters,
   getStreamId,
   getStreamIdFromFilters,
   matchesFilters,
@@ -10,6 +11,69 @@ import {
 } from './home.utils';
 
 describe('filters.utils', () => {
+  describe('getHomeStreamIdFromFilters', () => {
+    const viewer = 'viewer-pubky';
+
+    it.each([
+      { scope: PROFILE_TAG_SCOPE.NETWORK, depth: 2 },
+      { scope: PROFILE_TAG_SCOPE.FOLLOWING, depth: 1 },
+      { scope: PROFILE_TAG_SCOPE.ME, depth: 0 },
+    ])('builds a wot_domain stream for $scope profile-tag scope', ({ scope, depth }) => {
+      expect(
+        getHomeStreamIdFromFilters(SORT.TIMELINE, REACH.ALL, CONTENT.ALL, viewer, ['nostr', 'bitcoin'], scope),
+      ).toBe(`timeline:wot_domain:${depth}:all:bitcoin,nostr`);
+    });
+
+    it('preserves Sort and Content while Nexus applies its default WoT Reach', () => {
+      expect(
+        getHomeStreamIdFromFilters(
+          SORT.ENGAGEMENT,
+          REACH.FOLLOWING,
+          CONTENT.IMAGES,
+          viewer,
+          ['artist'],
+          PROFILE_TAG_SCOPE.NETWORK,
+        ),
+      ).toBe('total_engagement:wot_domain:2:image:artist');
+    });
+
+    it('keeps the existing untagged Network alias and ignores tags without a viewer', () => {
+      expect(getHomeStreamIdFromFilters(SORT.TIMELINE, REACH.NETWORK, CONTENT.ALL, viewer)).toBe('timeline:all:all');
+      expect(getHomeStreamIdFromFilters(SORT.TIMELINE, REACH.NETWORK, CONTENT.ALL, null, ['bitcoin'])).toBe(
+        'timeline:all:all',
+      );
+    });
+
+    it.each([REACH.ALL, REACH.NETWORK, REACH.FOLLOWING, REACH.FRIENDS])(
+      'uses the same Nexus-default WoT request while Reach remains visually %s',
+      (reach) => {
+        expect(
+          getHomeStreamIdFromFilters(
+            SORT.TIMELINE,
+            reach,
+            CONTENT.ALL,
+            viewer,
+            ['bitcoin'],
+            PROFILE_TAG_SCOPE.FOLLOWING,
+          ),
+        ).toBe('timeline:wot_domain:1:all:bitcoin');
+      },
+    );
+
+    it('ignores profile tags for Me Reach so the profile feed can be used', () => {
+      expect(
+        getHomeStreamIdFromFilters(
+          SORT.TIMELINE,
+          REACH.ME,
+          CONTENT.ALL,
+          viewer,
+          ['bitcoin'],
+          PROFILE_TAG_SCOPE.NETWORK,
+        ),
+      ).toBe('timeline:all:all');
+    });
+  });
+
   describe('getStreamIdFromFilters', () => {
     describe('SORT mapping', () => {
       it('should map "recent" to "timeline"', () => {
@@ -37,6 +101,16 @@ describe('filters.utils', () => {
       it('should map "friends" reach', () => {
         const streamId = getStreamIdFromFilters(SORT.TIMELINE, REACH.FRIENDS, CONTENT.ALL);
         expect(streamId).toBe('timeline:friends:all');
+      });
+
+      it('should normalize "network" reach to "all"', () => {
+        const streamId = getStreamIdFromFilters(SORT.TIMELINE, REACH.NETWORK, CONTENT.ALL);
+        expect(streamId).toBe('timeline:all:all');
+      });
+
+      it('should safely normalize unresolved "me" reach to "all"', () => {
+        const streamId = getStreamIdFromFilters(SORT.TIMELINE, REACH.ME, CONTENT.ALL);
+        expect(streamId).toBe('timeline:all:all');
       });
     });
 

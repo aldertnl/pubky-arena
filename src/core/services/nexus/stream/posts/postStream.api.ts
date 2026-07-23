@@ -51,6 +51,9 @@ export const postStreamApi = {
   friends: (params: TStreamWithObserverParams) =>
     buildPostStreamUrl(params, StreamSource.FRIENDS, STREAM_PREFIX.POSTS_KEYS),
 
+  wot_domain: (params: TStreamWithObserverParams) =>
+    buildPostStreamUrl(params, StreamSource.WOT_DOMAIN, STREAM_PREFIX.POSTS_KEYS),
+
   bookmarks: (params: TStreamWithObserverParams) =>
     buildPostStreamUrl(params, StreamSource.BOOKMARKS, STREAM_PREFIX.POSTS_KEYS),
 

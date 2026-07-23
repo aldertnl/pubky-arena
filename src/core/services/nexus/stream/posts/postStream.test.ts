@@ -362,6 +362,7 @@ describe('Stream API URL Generation', () => {
         'following',
         'followers',
         'friends',
+        'wot_domain',
         'bookmarks',
         'post_replies',
         'author',
@@ -397,6 +398,25 @@ describe('createPostStreamParams', () => {
       expect(result.params.viewer_id).toBe(mockViewerId);
       expect(result.params.limit).toBe(20);
       expect(result.invokeEndpoint).toBe(StreamSource.BOOKMARKS);
+    });
+  });
+
+  describe('WoT domain streams', () => {
+    it('maps depth and profile tags while preserving sorting and content kind', () => {
+      const result = createPostStreamParams({
+        streamId: 'total_engagement:wot_domain:2:image:artist,bitcoin' as PostStreamId,
+        streamTail: 0,
+        streamHead: 0,
+        limit: 20,
+        viewerId: mockViewerId,
+      });
+
+      expect(result.invokeEndpoint).toBe(StreamSource.WOT_DOMAIN);
+      expect(result.params.sorting).toBe(StreamSorting.ENGAGEMENT);
+      expect(result.params.kind).toBe(StreamKind.IMAGE);
+      expect(result.params.depth).toBe(2);
+      expect(result.params.domain_tags).toBe('artist,bitcoin');
+      expect(result.params.viewer_id).toBe(mockViewerId);
     });
   });
 
@@ -713,6 +733,21 @@ describe('createPostStreamParams', () => {
 });
 
 describe('breakDownStreamId', () => {
+  describe('WoT domain pattern', () => {
+    it('parses sorting, depth, kind, and profile tags', () => {
+      const result = breakDownStreamId('timeline:wot_domain:1:long:bitcoin,writer' as PostStreamId);
+
+      expect(result).toEqual(['timeline', StreamSource.WOT_DOMAIN, 'long', undefined, 1, 'bitcoin,writer']);
+    });
+
+    it('supports the depth-zero Me trust set', () => {
+      const result = breakDownStreamId('timeline:wot_domain:0:all:developer' as PostStreamId);
+
+      expect(result[4]).toBe(0);
+      expect(result[5]).toBe('developer');
+    });
+  });
+
   describe('Timeline pattern', () => {
     it('should parse timeline:endpoint:kind:tags', () => {
       const result = breakDownStreamId('timeline:bookmarks:all:tech,ai' as PostStreamId);
@@ -821,6 +856,25 @@ describe('NexusPostStreamService', () => {
         params: { limit: 15, viewer_id: mockViewerId, tags: 'tech,dev' },
         extraParams: {},
         expectedInUrl: ['source=friends', 'observer_id=viewer-pubky-id', 'tags=tech%2Cdev'],
+      },
+      {
+        name: 'WOT_DOMAIN',
+        invokeEndpoint: StreamSource.WOT_DOMAIN,
+        params: {
+          limit: 15,
+          viewer_id: mockViewerId,
+          depth: 2 as const,
+          domain_tags: 'artist,bitcoin',
+          kind: StreamKind.IMAGE,
+        },
+        extraParams: {},
+        expectedInUrl: [
+          'source=wot_domain',
+          'observer_id=viewer-pubky-id',
+          'depth=2',
+          'domain_tags=artist%2Cbitcoin',
+          'kind=image',
+        ],
       },
       {
         name: 'BOOKMARKS',
