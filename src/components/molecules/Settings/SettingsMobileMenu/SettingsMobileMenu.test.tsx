@@ -13,13 +13,18 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('SettingsMobileMenu', () => {
+  it('does not render a language settings button', () => {
+    render(<SettingsMobileMenu />);
+
+    expect(screen.queryByLabelText('Language')).not.toBeInTheDocument();
+  });
+
   it('renders all menu buttons', () => {
     render(<SettingsMobileMenu />);
     expect(screen.getByLabelText('Account')).toBeInTheDocument();
     expect(screen.getByLabelText('Notifications')).toBeInTheDocument();
     expect(screen.getByLabelText('Privacy & Safety')).toBeInTheDocument();
     expect(screen.getByLabelText('Muted Users')).toBeInTheDocument();
-    expect(screen.getByLabelText('Language')).toBeInTheDocument();
     expect(screen.getByLabelText('Help')).toBeInTheDocument();
   });
 

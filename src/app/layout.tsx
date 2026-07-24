@@ -32,7 +32,7 @@ export function generateMetadata() {
   });
 }
 
-// Force dynamic rendering since we use cookies for locale detection
+// Runtime config is serialized into the HTML per request so one build can serve different deployments.
 export const dynamic = 'force-dynamic';
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

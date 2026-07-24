@@ -2,7 +2,7 @@ import { hasHttpStatus } from '@/libs/error/error.utils';
 import { HttpMethod, HttpStatusCode } from '@/libs/http/http.types';
 import { Logger } from '@/libs/logger/logger';
 import type { Pubky } from '@/models/models.types';
-import { type SettingsJson, SettingsNormalizer } from '@/pipes/settings/settings.normalizer';
+import { type SettingsJsonInput, SettingsNormalizer } from '@/pipes/settings/settings.normalizer';
 import { HomeserverService } from '@/services/homeserver/homeserver';
 import type { SettingsState } from '@/stores/settings/settings.types';
 
@@ -48,7 +48,7 @@ export class SettingsApplication {
     Logger.info('[Settings] Pulling from homeserver', { url });
 
     try {
-      const settingsJson = await HomeserverService.request<SettingsJson>({ method: HttpMethod.GET, url });
+      const settingsJson = await HomeserverService.request<SettingsJsonInput>({ method: HttpMethod.GET, url });
 
       if (!settingsJson) {
         Logger.info('[Settings] Pull complete, no settings found');

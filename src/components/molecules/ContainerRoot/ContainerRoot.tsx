@@ -1,7 +1,6 @@
 import { Inter_Tight } from 'next/font/google';
 import Script from 'next/script';
 import { Container } from '@/atoms/Container/Container';
-import { isRtlLocale } from '@/i18n/constants';
 import {
   getPlausibleDomain,
   getPlausibleScriptUrl,
@@ -20,12 +19,11 @@ interface RootContainerProps {
 }
 
 export function RootContainer({ children, locale = 'en' }: RootContainerProps) {
-  const dir = isRtlLocale(locale) ? 'rtl' : 'ltr';
   const plausibleDomain = getPlausibleDomain();
   const plausibleScriptUrl = getPlausibleScriptUrl();
 
   return (
-    <Container as="html" lang={locale} dir={dir}>
+    <Container as="html" lang={locale} dir="ltr">
       <Container as="body" className={`${interTight.variable} antialiased`}>
         {/*
           Publish runtime config before any Next.js bundle executes. This must stay a RAW

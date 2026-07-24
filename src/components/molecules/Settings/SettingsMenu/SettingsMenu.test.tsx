@@ -13,6 +13,12 @@ describe('SettingsMenu', () => {
     expect(screen.getByText('Settings')).toBeInTheDocument();
   });
 
+  it('does not render language settings', () => {
+    render(<SettingsMenu />);
+
+    expect(screen.queryByText('Language')).not.toBeInTheDocument();
+  });
+
   it('renders all menu items', () => {
     render(<SettingsMenu />);
 
@@ -20,7 +26,6 @@ describe('SettingsMenu', () => {
     expect(screen.getByText('Notifications')).toBeInTheDocument();
     expect(screen.getByText('Privacy & Safety')).toBeInTheDocument();
     expect(screen.getByText('Muted Users')).toBeInTheDocument();
-    expect(screen.getByText('Language')).toBeInTheDocument();
     expect(screen.getByText('Help')).toBeInTheDocument();
   });
 });

@@ -3,12 +3,12 @@ import { defineRouting } from 'next-intl/routing';
 /**
  * i18n Routing Configuration
  *
- * Defines supported locales and routing behavior.
- * Uses 'never' for localePrefix to avoid locale in URLs.
- * Language is determined via cookie instead.
+ * Keeps next-intl routing in place while English is the only supported locale.
+ * Locale prefixes stay out of URLs so additional locales can be restored later
+ * without changing the current route structure.
  */
 export const routing = defineRouting({
-  locales: ['en', 'pt-BR', 'de', 'fr', 'it', 'zh', 'ja', 'ar', 'es'],
+  locales: ['en'],
   defaultLocale: 'en',
   localePrefix: 'never',
   localeDetection: false,

@@ -17,7 +17,6 @@ import {
 export interface SettingsJson {
   notifications: NotificationPreferences;
   privacy: PrivacyPreferences;
-  language: string;
   updatedAt: number;
   version: number;
 }
@@ -30,6 +29,7 @@ export interface SettingsJson {
 export interface SettingsJsonInput {
   notifications?: Partial<NotificationPreferences>;
   privacy?: Partial<PrivacyPreferences>;
+  /** Legacy field accepted for backwards-compatible reads and intentionally ignored. */
   language?: string;
   updatedAt?: number;
   version?: number;
@@ -63,7 +63,6 @@ export class SettingsNormalizer {
       notifications: store.notifications,
       privacy: store.privacy,
       muted: store.muted,
-      language: store.language,
       updatedAt: store.updatedAt,
       version: store.version,
     };
@@ -90,7 +89,6 @@ export class SettingsNormalizer {
     const settingsJson: SettingsJson = {
       notifications: settings.notifications,
       privacy: settings.privacy,
-      language: settings.language,
       updatedAt: settings.updatedAt,
       version: settings.version,
     };
@@ -123,7 +121,6 @@ export class SettingsNormalizer {
         ...json.privacy,
       },
       muted: [], // Muted is not synced to homeserver, always defaults to empty
-      language: json.language ?? 'en',
       updatedAt: json.updatedAt ?? Date.now(),
       version: json.version ?? 1,
     };
