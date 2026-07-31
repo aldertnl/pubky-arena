@@ -60,9 +60,13 @@ vi.mock('@/atoms/Dialog/Dialog', () => {
 
 // Mock router
 const mockPush = vi.fn();
+const mockReplace = vi.fn();
+const mockUsePathname = vi.fn();
 vi.mock('next/navigation', () => ({
+  usePathname: () => mockUsePathname(),
   useRouter: () => ({
     push: mockPush,
+    replace: mockReplace,
   }),
 }));
 
@@ -141,6 +145,29 @@ vi.mock('@/molecules/Toaster/use-toast', () => {
   };
 });
 
+vi.mock('@/organisms/IconPickerDialog/IconPickerDialog', () => ({
+  IconPickerDialog: ({
+    children,
+    value,
+    onSelect,
+    title,
+    description,
+  }: {
+    children: React.ReactNode;
+    value?: string | null;
+    onSelect: (iconName: string) => void;
+    title?: string;
+    description?: string;
+  }) => (
+    <div data-testid="icon-picker-dialog" data-value={value} data-title={title} data-description={description}>
+      {children}
+      <button type="button" data-testid="choose-mountain-icon" onClick={() => onSelect('mountain')}>
+        Mountain
+      </button>
+    </div>
+  ),
+}));
+
 // Mock dependencies
 const mockCommitCreate = vi.fn();
 const mockCommitUpdate = vi.fn();
@@ -163,6 +190,8 @@ vi.mock('@/atoms/Button/Button', () => {
       onClick,
       disabled,
       className,
+      type,
+      'aria-label': ariaLabel,
       'data-testid': dataTestId,
     }: {
       children: React.ReactNode;
@@ -171,6 +200,8 @@ vi.mock('@/atoms/Button/Button', () => {
       onClick?: () => void;
       disabled?: boolean;
       className?: string;
+      type?: 'button' | 'submit' | 'reset';
+      'aria-label'?: string;
       'data-testid'?: string;
     }) => (
       <button
@@ -180,6 +211,8 @@ vi.mock('@/atoms/Button/Button', () => {
         onClick={onClick}
         disabled={disabled}
         className={className}
+        type={type}
+        aria-label={ariaLabel}
       >
         {children}
       </button>
@@ -314,6 +347,7 @@ vi.mock('@/atoms/Typography/Typography', () => {
 const createMockFeed = (overrides: Partial<FeedModelSchema> = {}): FeedModelSchema => ({
   id: 'feed-abc123',
   name: 'Bitcoin News',
+  icon: 'activity',
   tags: ['bitcoin', 'lightning'],
   reach: PubkyAppFeedReach.Following,
   sort: PubkyAppFeedSort.Popularity,
@@ -334,6 +368,7 @@ describe('CustomFeedDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseCustomFeed.mockReturnValue(undefined);
+    mockUsePathname.mockReturnValue('/feed/feed-abc123');
   });
 
   // -- Sanity / Rendering --
@@ -386,6 +421,45 @@ describe('CustomFeedDialog', () => {
     const input = screen.getByTestId('feed-name-input');
     expect(input).toBeInTheDocument();
     expect(input).toHaveAttribute('placeholder', 'Not your keys...');
+  });
+
+  it('renders the generic icon picker with the default feed icon', () => {
+    render(
+      <CustomFeedDialog mode="create">
+        <button>Create Feed</button>
+      </CustomFeedDialog>,
+    );
+
+    expect(screen.getByTestId('feed-icon-picker-trigger')).toHaveTextContent('Select icon');
+    expect(screen.getByTestId('icon-picker-dialog')).toHaveAttribute('data-value', 'activity');
+    expect(screen.getByTestId('icon-picker-dialog')).toHaveAttribute('data-title', 'Feed Icon');
+    expect(screen.getByTestId('icon-picker-dialog')).toHaveAttribute(
+      'data-description',
+      'Choose a custom icon for your new feed.',
+    );
+  });
+
+  it('uses the selected icon when creating a feed', async () => {
+    mockCommitCreate.mockResolvedValue(createMockFeed({ id: 'new-feed-123', icon: 'mountain' }));
+
+    render(
+      <CustomFeedDialog mode="create">
+        <button>Create Feed</button>
+      </CustomFeedDialog>,
+    );
+
+    fireEvent.click(screen.getByTestId('choose-mountain-icon'));
+    fireEvent.change(screen.getByTestId('feed-name-input'), { target: { value: 'Mountain Feed' } });
+    fireEvent.change(screen.getByTestId('tag-input-field'), { target: { value: 'hiking' } });
+    fireEvent.click(screen.getByTestId('save-feed-button'));
+
+    await waitFor(() => {
+      expect(mockCommitCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          icon: 'mountain',
+        }),
+      );
+    });
   });
 
   it('renders feed name input as enabled in edit mode when customFeed is defined', () => {
@@ -817,6 +891,38 @@ describe('CustomFeedDialog', () => {
     expect(screen.getByTestId('feed-name-input')).toHaveValue('Bitcoin News');
   });
 
+  it('uses an explicitly supplied feed when editing from another route', () => {
+    const mockFeed = createMockFeed({ id: 'feed-explicit', name: 'Explicit Feed', icon: 'mountain' });
+    mockUseCustomFeed.mockReturnValue(undefined);
+
+    render(
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
+        <button>Edit Feed</button>
+      </CustomFeedDialog>,
+    );
+
+    expect(screen.getByTestId('feed-name-input')).toHaveValue('Explicit Feed');
+    expect(screen.getByTestId('icon-picker-dialog')).toHaveAttribute('data-value', 'mountain');
+    expect(screen.getByTestId('icon-picker-dialog')).toHaveAttribute(
+      'data-description',
+      'Choose a custom icon for your feed.',
+    );
+    expect(screen.getByTestId('custom-feed-dialog-trigger')).toHaveAttribute('data-disabled', 'false');
+  });
+
+  it('falls back to the default icon for a legacy feed without an icon', () => {
+    const mockFeed = createMockFeed({ icon: undefined });
+    mockUseCustomFeed.mockReturnValue(mockFeed);
+
+    render(
+      <CustomFeedDialog mode="edit">
+        <button>Edit Feed</button>
+      </CustomFeedDialog>,
+    );
+
+    expect(screen.getByTestId('icon-picker-dialog')).toHaveAttribute('data-value', 'activity');
+  });
+
   it('populates reach select from customFeed in edit mode', () => {
     const mockFeed = createMockFeed({ reach: PubkyAppFeedReach.Friends });
     mockUseCustomFeed.mockReturnValue(mockFeed);
@@ -895,6 +1001,7 @@ describe('CustomFeedDialog', () => {
     await waitFor(() => {
       expect(mockCommitCreate).toHaveBeenCalledWith({
         name: 'My Feed',
+        icon: 'activity',
         reach: PubkyAppFeedReach.All,
         sort: PubkyAppFeedSort.Recent,
         layout: PubkyAppFeedLayout.Columns,
@@ -1029,6 +1136,7 @@ describe('CustomFeedDialog', () => {
         feedId: 'feed-abc123',
         changes: {
           name: 'Bitcoin News',
+          icon: 'activity',
           reach: PubkyAppFeedReach.Following,
           sort: PubkyAppFeedSort.Popularity,
           layout: PubkyAppFeedLayout.Wide,
@@ -1039,7 +1147,32 @@ describe('CustomFeedDialog', () => {
     });
   });
 
-  it('shows success toast and navigates after successful edit', async () => {
+  it('persists a newly selected icon when editing a feed', async () => {
+    const mockFeed = createMockFeed({ icon: 'activity' });
+    mockUseCustomFeed.mockReturnValue(mockFeed);
+    mockCommitUpdate.mockResolvedValue(createMockFeed({ icon: 'mountain' }));
+
+    render(
+      <CustomFeedDialog mode="edit">
+        <button>Edit Feed</button>
+      </CustomFeedDialog>,
+    );
+
+    fireEvent.click(screen.getByTestId('choose-mountain-icon'));
+    fireEvent.click(screen.getByTestId('save-feed-button'));
+
+    await waitFor(() => {
+      expect(mockCommitUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          changes: expect.objectContaining({
+            icon: 'mountain',
+          }),
+        }),
+      );
+    });
+  });
+
+  it('shows success toast without navigating when the feed id is unchanged', async () => {
     const mockFeed = createMockFeed();
     mockUseCustomFeed.mockReturnValue(mockFeed);
 
@@ -1059,7 +1192,46 @@ describe('CustomFeedDialog', () => {
       expect(mockToast).toHaveBeenCalledWith({
         title: 'Feed updated: Bitcoin News',
       });
-      expect(mockPush).toHaveBeenCalledWith('/feed/feed-abc123');
+      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
+  });
+
+  it('replaces the stale active route when an edit changes the feed id', async () => {
+    const mockFeed = createMockFeed();
+    mockUseCustomFeed.mockReturnValue(mockFeed);
+    mockCommitUpdate.mockResolvedValue(createMockFeed({ id: 'feed-updated' }));
+
+    render(
+      <CustomFeedDialog mode="edit">
+        <button>Edit Feed</button>
+      </CustomFeedDialog>,
+    );
+
+    fireEvent.click(screen.getByTestId('save-feed-button'));
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/feed/feed-updated');
+    });
+  });
+
+  it('stays on the current route when editing an inactive explicitly supplied feed', async () => {
+    const mockFeed = createMockFeed({ id: 'feed-inactive' });
+    mockUsePathname.mockReturnValue('/home');
+    mockCommitUpdate.mockResolvedValue(createMockFeed({ id: 'feed-updated' }));
+
+    render(
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
+        <button>Edit Feed</button>
+      </CustomFeedDialog>,
+    );
+
+    fireEvent.click(screen.getByTestId('save-feed-button'));
+
+    await waitFor(() => {
+      expect(mockCommitUpdate).toHaveBeenCalledWith(expect.objectContaining({ feedId: 'feed-inactive' }));
+      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockReplace).not.toHaveBeenCalled();
     });
   });
 
@@ -1130,7 +1302,7 @@ describe('CustomFeedDialog', () => {
     });
   });
 
-  it('shows success toast and navigates to home after successful delete', async () => {
+  it('shows success toast and replaces the active route with home after successful delete', async () => {
     const mockFeed = createMockFeed();
     mockUseCustomFeed.mockReturnValue(mockFeed);
     mockCommitDelete.mockResolvedValue(undefined);
@@ -1147,7 +1319,27 @@ describe('CustomFeedDialog', () => {
       expect(mockToast).toHaveBeenCalledWith({
         title: 'Feed deleted: Bitcoin News',
       });
-      expect(mockPush).toHaveBeenCalledWith('/home');
+      expect(mockReplace).toHaveBeenCalledWith('/home');
+    });
+  });
+
+  it('stays on the current route after deleting an inactive explicitly supplied feed', async () => {
+    const mockFeed = createMockFeed({ id: 'feed-inactive' });
+    mockUsePathname.mockReturnValue('/home');
+    mockCommitDelete.mockResolvedValue(undefined);
+
+    render(
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
+        <button>Edit Feed</button>
+      </CustomFeedDialog>,
+    );
+
+    fireEvent.click(screen.getByTestId('delete-feed-button'));
+
+    await waitFor(() => {
+      expect(mockCommitDelete).toHaveBeenCalledWith({ feedId: 'feed-inactive' });
+      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockReplace).not.toHaveBeenCalled();
     });
   });
 
@@ -1191,6 +1383,7 @@ describe('CustomFeedDialog - Snapshots', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseCustomFeed.mockReturnValue(undefined);
+    mockUsePathname.mockReturnValue('/feed/feed-abc123');
   });
 
   it('matches snapshot for create mode default state', () => {

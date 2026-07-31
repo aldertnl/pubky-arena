@@ -14,6 +14,7 @@ const testData = {
 
 const createFeedParams = (overrides: Partial<TFeedCreateParams> = {}): TFeedCreateParams => ({
   name: 'Bitcoin News',
+  icon: 'activity',
   tags: ['bitcoin', 'lightning'],
   reach: PubkyAppFeedReach.All,
   sort: PubkyAppFeedSort.Recent,

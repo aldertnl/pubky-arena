@@ -1,5 +1,6 @@
 import { baseUriBuilder, feedUriBuilder } from 'pubky-app-specs';
 import type { TFeedPersistCreateParams, TFeedPersistDeleteParams } from '@/application/feed/feed.types';
+import { DEFAULT_CUSTOM_FEED_ICON } from '@/config/feed';
 import type { TFeedCreateParams, TFeedIdParam, TFeedUpdateParams } from '@/controllers/feed/feed.types';
 import { db } from '@/database/franky/franky';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
@@ -54,6 +55,7 @@ export class FeedApplication {
     const feedSchema: FeedModelSchema = {
       id: newId,
       name: feed.name,
+      icon: feed.icon ?? DEFAULT_CUSTOM_FEED_ICON,
       tags: tags ?? [],
       reach,
       sort,
@@ -113,12 +115,14 @@ export class FeedApplication {
    * Fields present in `changes` override the existing values; omitted fields keep their current value.
    * The result is passed to FeedNormalizer which recomputes the HashId — if any config field
    * (tags, reach, sort, content, layout) changed, the feed will get a new ID.
+   * Presentation fields (`name` and `icon`) do not affect the ID.
    */
   static async prepareUpdateParams({ feedId, changes }: TFeedUpdateParams): Promise<TFeedCreateParams> {
     const existing = await LocalFeedService.read({ feedId });
 
     return {
       name: changes.name ?? existing.name,
+      icon: changes.icon ?? existing.icon ?? DEFAULT_CUSTOM_FEED_ICON,
       tags: changes.tags ?? existing.tags,
       reach: changes.reach ?? existing.reach,
       sort: changes.sort ?? existing.sort,
@@ -182,6 +186,7 @@ export class FeedApplication {
       return {
         id: feedMeta.id,
         name: feed.name,
+        icon: feed.icon ?? DEFAULT_CUSTOM_FEED_ICON,
         tags: tags ?? [],
         reach,
         sort,
@@ -215,7 +220,16 @@ export class FeedApplication {
     const { tags, domain_tags, reach, layout, sort, content } = remoteFeed.feed;
     const normalizedTags = Array.isArray(tags) ? tags : [];
     const normalizedDomainTags = Array.isArray(domain_tags) ? domain_tags : undefined;
-    return builder.createFeed(normalizedTags, reach, layout, sort, content, remoteFeed.name, normalizedDomainTags);
+    return builder.createFeed({
+      tags: normalizedTags,
+      reach,
+      layout,
+      sort,
+      content: content ?? undefined,
+      name: remoteFeed.name,
+      domainTags: normalizedDomainTags,
+      icon: remoteFeed.icon ?? DEFAULT_CUSTOM_FEED_ICON,
+    });
   }
 
   /**

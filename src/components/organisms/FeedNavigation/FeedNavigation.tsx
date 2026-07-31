@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { APP_ROUTES } from '@/app/routes';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
+import { DynamicLucideIcon } from '@/atoms/DynamicLucideIcon/DynamicLucideIcon';
 import { Heading } from '@/atoms/Heading/Heading';
 import { Link } from '@/atoms/Link/Link';
 import { Typography } from '@/atoms/Typography/Typography';
@@ -49,57 +50,90 @@ export const FeedNavigation = ({ className }: FeedNavigationProps) => {
     [isAuthenticated],
     isAuthenticated ? cachedFeeds : [],
   );
-  const customFeedsMapped = customFeeds.map((f) => ({
-    name: f.name,
-    icon: <Pencil className="size-5 shrink-0" />,
-    href: APP_ROUTES.FEED + '/' + f.id,
-  }));
-  const feeds = [
-    {
-      name: tHeader('home'),
-      icon: <Home className="size-5 shrink-0" />,
-      href: APP_ROUTES.HOME,
-    },
-    ...customFeedsMapped,
-  ];
   return (
     <Container className={cn('overflow-x-auto lg:flex-row', className)}>
       <Heading level={2} size="lg" className="mb-2 font-light text-muted-foreground lg:hidden">
         {tHeader('feed')}
       </Heading>
 
-      {feeds.map((f) => (
-        <Link
-          overrideDefaults
-          key={f.href}
-          href={f.href}
-          onClick={(event) =>
-            handleFeedNavClick(event, {
-              isActive: pathname === f.href,
-              smoothScrollWhenActive: f.href === APP_ROUTES.HOME,
-            })
-          }
-          className={cn(
-            'flex min-h-12 w-full min-w-40 items-center gap-x-2 border-b transition-colors hover:text-white lg:justify-center',
-            pathname === f.href ? 'border-white text-white' : 'border-border text-muted-foreground',
-          )}
-        >
-          {f.href !== APP_ROUTES.HOME && f.href === pathname ? (
-            <CustomFeedDialog mode="edit">
-              <Button overrideDefaults className="cursor-pointer">
-                {f.icon}
+      <Link
+        overrideDefaults
+        href={APP_ROUTES.HOME}
+        aria-current={pathname === APP_ROUTES.HOME ? 'page' : undefined}
+        onClick={(event) =>
+          handleFeedNavClick(event, {
+            isActive: pathname === APP_ROUTES.HOME,
+            smoothScrollWhenActive: true,
+          })
+        }
+        className={cn(
+          'flex min-h-12 w-full min-w-40 items-center gap-x-2 border-b transition-colors hover:text-white lg:justify-center',
+          pathname === APP_ROUTES.HOME ? 'border-white text-white' : 'border-border text-muted-foreground',
+        )}
+      >
+        <Home className="size-5 shrink-0" />
+
+        <Typography overrideDefaults className="font-medium lg:text-sm">
+          {tHeader('home')}
+        </Typography>
+      </Link>
+
+      {customFeeds.map((feed) => {
+        const href = `${APP_ROUTES.FEED}/${feed.id}`;
+        const isActive = pathname === href;
+
+        return (
+          <Container
+            overrideDefaults
+            key={feed.id}
+            className={cn('group relative flex w-full min-w-40', isActive ? 'text-white' : 'text-muted-foreground')}
+            data-testid="custom-feed-tab"
+          >
+            <Link
+              overrideDefaults
+              href={href}
+              aria-current={isActive ? 'page' : undefined}
+              onClick={(event) =>
+                handleFeedNavClick(event, {
+                  isActive,
+                  smoothScrollWhenActive: false,
+                })
+              }
+              className={cn(
+                'flex min-h-12 w-full min-w-40 items-center gap-x-2 border-b pr-12 transition-colors hover:text-white lg:justify-center lg:pl-12',
+                isActive ? 'border-white text-white' : 'border-border text-muted-foreground',
+              )}
+            >
+              <DynamicLucideIcon name={feed.icon} className="size-5 shrink-0" />
+
+              <Typography overrideDefaults className="truncate font-medium lg:text-sm">
+                {feed.name}
+              </Typography>
+            </Link>
+
+            <CustomFeedDialog mode="edit" feed={feed}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={tDialog('editFeedLabel', {
+                  name: feed.name,
+                })}
+                className="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 opacity-100 transition-opacity focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
+                data-testid={`edit-feed-${feed.id}`}
+              >
+                <Pencil className="size-4" />
               </Button>
             </CustomFeedDialog>
-          ) : (
-            f.icon
-          )}
+          </Container>
+        );
+      })}
 
-          <Typography overrideDefaults className="font-medium lg:text-sm">
-            {f.name}
-          </Typography>
-        </Link>
-      ))}
-
+      {/*
+        The edit trigger is deliberately a sibling of each feed link. This keeps
+        the tab and edit action independently keyboard-accessible and avoids
+        nesting a button inside a link.
+      */}
       {isAuthenticated ? (
         <CustomFeedDialog mode="create">
           <Button

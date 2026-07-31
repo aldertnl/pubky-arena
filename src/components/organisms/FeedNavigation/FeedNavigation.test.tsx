@@ -42,21 +42,29 @@ vi.mock('@/atoms/Button/Button', () => {
       className,
       overrideDefaults,
       onClick,
+      type,
+      'aria-label': ariaLabel,
+      'data-testid': dataTestId,
     }: {
       children: React.ReactNode;
       variant?: string;
       size?: string;
       className?: string;
       overrideDefaults?: boolean;
-      onClick?: () => void;
+      onClick?: React.MouseEventHandler<HTMLButtonElement>;
+      type?: 'button' | 'submit' | 'reset';
+      'aria-label'?: string;
+      'data-testid'?: string;
     }) => (
       <button
-        data-testid="button"
+        data-testid={dataTestId ?? 'button'}
         data-variant={variant}
         data-size={size}
         className={className}
         data-override-defaults={overrideDefaults}
         onClick={onClick}
+        type={type}
+        aria-label={ariaLabel}
       >
         {children}
       </button>
@@ -66,8 +74,16 @@ vi.mock('@/atoms/Button/Button', () => {
 
 vi.mock('@/atoms/Container/Container', () => {
   return {
-    Container: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-      <div data-testid="container" className={className}>
+    Container: ({
+      children,
+      className,
+      'data-testid': dataTestId,
+    }: {
+      children: React.ReactNode;
+      className?: string;
+      'data-testid'?: string;
+    }) => (
+      <div data-testid={dataTestId ?? 'container'} className={className}>
         {children}
       </div>
     ),
@@ -101,13 +117,24 @@ vi.mock('@/atoms/Link/Link', () => {
       href,
       className,
       overrideDefaults,
+      onClick,
+      'aria-current': ariaCurrent,
     }: {
       children: React.ReactNode;
       href?: string;
       className?: string;
       overrideDefaults?: boolean;
+      onClick?: React.MouseEventHandler<HTMLAnchorElement>;
+      'aria-current'?: React.AriaAttributes['aria-current'];
     }) => (
-      <a data-testid="link" href={href} className={className} data-override-defaults={overrideDefaults}>
+      <a
+        data-testid="link"
+        href={href}
+        className={className}
+        data-override-defaults={overrideDefaults}
+        onClick={onClick}
+        aria-current={ariaCurrent}
+      >
         {children}
       </a>
     ),
@@ -135,8 +162,18 @@ vi.mock('@/atoms/Typography/Typography', () => {
 // Mock @/organisms — CustomFeedDialog is a complex component; mock it as a transparent wrapper
 vi.mock('@/organisms/CustomFeedDialog/CustomFeedDialog', () => {
   return {
-    CustomFeedDialog: ({ children, mode }: { children: React.ReactNode; mode: string }) => (
-      <div data-testid={`custom-feed-dialog-${mode}`}>{children}</div>
+    CustomFeedDialog: ({
+      children,
+      mode,
+      feed,
+    }: {
+      children: React.ReactNode;
+      mode: string;
+      feed?: FeedModelSchema;
+    }) => (
+      <div data-testid={`custom-feed-dialog-${mode}`} data-feed-id={feed?.id}>
+        {children}
+      </div>
     ),
   };
 });
@@ -163,6 +200,7 @@ vi.mock('@/hooks/useRequireAuth/useRequireAuth', () => ({
 const createMockFeed = (overrides: Partial<FeedModelSchema> = {}): FeedModelSchema => ({
   id: 'feed-abc123',
   name: 'Bitcoin News',
+  icon: 'activity',
   tags: ['bitcoin', 'lightning'],
   reach: PubkyAppFeedReach.All,
   sort: PubkyAppFeedSort.Recent,
@@ -300,9 +338,9 @@ describe('FeedNavigation', () => {
     expect(inactiveLink).toHaveClass('text-muted-foreground');
   });
 
-  // ── Edit dialog for active custom feed ──────────────────────────────────
+  // ── Edit dialog for custom feeds ────────────────────────────────────────
 
-  it('wraps custom feed icon in edit dialog when feed is active', () => {
+  it('renders a separate edit action for an active custom feed', () => {
     mockCustomFeeds = [createMockFeed({ id: 'feed-edit', name: 'Editable Feed' })];
     mockUsePathname.mockReturnValue('/feed/feed-edit');
 
@@ -310,20 +348,39 @@ describe('FeedNavigation', () => {
 
     const editDialog = screen.getByTestId('custom-feed-dialog-edit');
     expect(editDialog).toBeInTheDocument();
+    expect(editDialog).toHaveAttribute('data-feed-id', 'feed-edit');
 
-    // The edit dialog should contain a button with the pencil icon
-    const editButton = editDialog.querySelector('[data-testid="button"]');
+    const editButton = screen.getByTestId('edit-feed-feed-edit');
     expect(editButton).toBeInTheDocument();
+    expect(editButton).toHaveAttribute('aria-label', 'Edit Editable Feed');
+    expect(editButton).toHaveClass('right-2');
   });
 
-  it('does not show edit dialog for inactive custom feed', () => {
+  it('renders an edit action for an inactive custom feed without nesting it in the link', () => {
     mockCustomFeeds = [createMockFeed({ id: 'feed-noedit', name: 'No Edit Feed' })];
     mockUsePathname.mockReturnValue('/home');
 
     render(<FeedNavigation />);
 
-    // There should be a create dialog but no edit dialog
-    expect(screen.queryByTestId('custom-feed-dialog-edit')).not.toBeInTheDocument();
+    const editDialog = screen.getByTestId('custom-feed-dialog-edit');
+    const editButton = screen.getByTestId('edit-feed-feed-noedit');
+    const feedLink = screen.getAllByTestId('link').find((link) => link.getAttribute('href') === '/feed/feed-noedit');
+
+    expect(editDialog).toHaveAttribute('data-feed-id', 'feed-noedit');
+    expect(editButton.closest('a')).toBeNull();
+    expect(editDialog.parentElement).toBe(feedLink?.parentElement);
+  });
+
+  it('shows the edit action on mobile and reveals it on desktop hover or focus', () => {
+    mockCustomFeeds = [createMockFeed({ id: 'feed-edit', name: 'Editable Feed' })];
+
+    render(<FeedNavigation />);
+
+    const editButton = screen.getByTestId('edit-feed-feed-edit');
+    expect(editButton).toHaveClass('opacity-100');
+    expect(editButton).toHaveClass('lg:opacity-0');
+    expect(editButton).toHaveClass('lg:group-hover:opacity-100');
+    expect(editButton).toHaveClass('lg:group-focus-within:opacity-100');
   });
 
   it('does not show edit dialog for Home feed even when active', () => {
@@ -332,6 +389,15 @@ describe('FeedNavigation', () => {
     render(<FeedNavigation />);
 
     expect(screen.queryByTestId('custom-feed-dialog-edit')).not.toBeInTheDocument();
+  });
+
+  it('renders a fallback icon for a legacy custom feed without an icon', () => {
+    mockCustomFeeds = [createMockFeed({ id: 'legacy-feed', icon: undefined })];
+
+    render(<FeedNavigation />);
+
+    const legacyLink = screen.getAllByTestId('link').find((link) => link.getAttribute('href') === '/feed/legacy-feed');
+    expect(legacyLink?.querySelector('svg')).toHaveClass('lucide-activity');
   });
 
   // ── Create Feed button ──────────────────────────────────────────────────

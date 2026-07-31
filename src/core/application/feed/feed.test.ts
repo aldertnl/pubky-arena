@@ -70,6 +70,7 @@ describe('FeedApplication', () => {
     asOpaque<FeedResult>({
       feed: {
         name: 'Bitcoin News',
+        icon: 'activity',
         feed: {
           tags: ['bitcoin', 'lightning'],
           reach: PubkyAppFeedReach.All,
@@ -79,6 +80,7 @@ describe('FeedApplication', () => {
         },
         toJson: () => ({
           name: 'Bitcoin News',
+          icon: 'activity',
           feed: { tags: ['bitcoin', 'lightning'], reach: 'all', sort: 'recent', layout: 'columns', content: null },
         }),
       },
@@ -100,6 +102,7 @@ describe('FeedApplication', () => {
   const createMockFeedSchema = (overrides: Partial<FeedModelSchema> = {}): FeedModelSchema => ({
     id: 'feed123',
     name: 'Bitcoin News',
+    icon: 'activity',
     tags: ['bitcoin', 'lightning'],
     reach: PubkyAppFeedReach.All,
     sort: PubkyAppFeedSort.Recent,
@@ -160,13 +163,14 @@ describe('FeedApplication', () => {
         expect.objectContaining({
           id: 'feed123',
           name: 'Bitcoin News',
+          icon: 'activity',
           tags: ['bitcoin', 'lightning'],
         }),
       );
       expect(requestSpy).toHaveBeenCalledWith({
         method: HttpMethod.PUT,
         url: expect.stringContaining('pubky://'),
-        bodyJson: expect.any(Object),
+        bodyJson: expect.objectContaining({ icon: 'activity' }),
       });
       expect(result).toBeTruthy();
       expect(result!.id).toBe('feed123');
@@ -349,6 +353,7 @@ describe('FeedApplication', () => {
       });
 
       expect(result.name).toBe('Updated Name');
+      expect(result.icon).toBe('activity');
       expect(result.tags).toEqual(['bitcoin', 'lightning']);
     });
 
@@ -362,7 +367,26 @@ describe('FeedApplication', () => {
       });
 
       expect(result.name).toBe('Original Name');
+      expect(result.icon).toBe('activity');
       expect(result.tags).toEqual(['new-tag']);
+    });
+
+    it('should apply an icon-only update without changing the other feed fields', async () => {
+      const { readSpy } = setupMocks();
+      readSpy.mockResolvedValue(createMockFeedSchema({ icon: 'activity' }));
+
+      const result = await FeedApplication.prepareUpdateParams({
+        feedId: 'feed123',
+        changes: { icon: 'mountain' },
+      });
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          name: 'Bitcoin News',
+          icon: 'mountain',
+          tags: ['bitcoin', 'lightning'],
+        }),
+      );
     });
   });
 
@@ -485,15 +509,16 @@ describe('FeedApplication', () => {
         method: HttpMethod.GET,
         url: feedUri1,
       });
-      expect(mockBuilder.createFeed).toHaveBeenCalledWith(
-        ['bitcoin'],
-        'all',
-        'columns',
-        'recent',
-        null,
-        'Bitcoin News',
-        undefined,
-      );
+      expect(mockBuilder.createFeed).toHaveBeenCalledWith({
+        tags: ['bitcoin'],
+        reach: 'all',
+        layout: 'columns',
+        sort: 'recent',
+        content: undefined,
+        name: 'Bitcoin News',
+        domainTags: undefined,
+        icon: 'activity',
+      });
       expect(createOrUpdateManySpy).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
@@ -515,15 +540,31 @@ describe('FeedApplication', () => {
 
       await FeedApplication.fetchFeeds(testUserId);
 
-      expect(mockBuilder.createFeed).toHaveBeenCalledWith(
-        ['bitcoin'],
-        'all',
-        'columns',
-        'recent',
-        null,
-        'Network Feed',
-        ['synonym'],
-      );
+      expect(mockBuilder.createFeed).toHaveBeenCalledWith({
+        tags: ['bitcoin'],
+        reach: 'all',
+        layout: 'columns',
+        sort: 'recent',
+        content: undefined,
+        name: 'Network Feed',
+        domainTags: ['synonym'],
+        icon: 'activity',
+      });
+    });
+
+    it('passes a remote icon through specs validation', async () => {
+      const { listSpy, requestSpy, createOrUpdateManySpy, mockBuilder } = setupFetchMocks();
+
+      listSpy.mockResolvedValue([feedUri1]);
+      requestSpy.mockResolvedValue({
+        ...createRemoteFeedJson('Outdoor Feed'),
+        icon: 'mountain',
+      });
+      createOrUpdateManySpy.mockImplementation((feeds) => Promise.resolve(feeds));
+
+      await FeedApplication.fetchFeeds(testUserId);
+
+      expect(mockBuilder.createFeed).toHaveBeenCalledWith(expect.objectContaining({ icon: 'mountain' }));
     });
 
     it('should handle multiple feeds', async () => {

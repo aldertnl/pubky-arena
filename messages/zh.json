@@ -743,11 +743,21 @@
       "urlPlaceholder": "https://twitter.com/satoshi",
       "saveButton": "保存链接"
     },
+    "iconPicker": {
+      "title": "选择图标",
+      "searchPlaceholder": "搜索图标",
+      "emptyMessage": "未找到图标"
+    },
     "customFeed": {
       "createTitle": "创建信息流",
       "editTitle": "编辑信息流",
       "feedName": "信息流名称",
       "feedNamePlaceholder": "不是你的密钥...",
+      "feedIcon": "信息流图标",
+      "chooseIcon": "选择图标",
+      "feedIconCreateDescription": "为你的新信息流选择一个自定义图标。",
+      "feedIconEditDescription": "为你的信息流选择一个自定义图标。",
+      "editFeedLabel": "编辑{name}",
       "reach": "范围",
       "reachPlaceholder": "选择范围",
       "sort": "排序",

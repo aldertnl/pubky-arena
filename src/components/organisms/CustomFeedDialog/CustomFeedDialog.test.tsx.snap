@@ -46,6 +46,56 @@ exports[`CustomFeedDialog - Snapshots > matches snapshot for create mode default
       />
     </div>
     <div
+      class="gap-y-2"
+      data-testid="container"
+    >
+      <label
+        class="text-xs tracking-wide text-muted-foreground uppercase"
+        data-testid="label"
+      >
+        Feed Icon
+      </label>
+      <div
+        data-description="Choose a custom icon for your new feed."
+        data-testid="icon-picker-dialog"
+        data-title="Feed Icon"
+        data-value="activity"
+      >
+        <button
+          aria-label="Select icon"
+          class="w-fit gap-2 border-transparent px-4 shadow-none"
+          data-testid="feed-icon-picker-trigger"
+          data-variant="secondary"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-activity size-4 shrink-0"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"
+            />
+          </svg>
+          Select icon
+        </button>
+        <button
+          data-testid="choose-mountain-icon"
+          type="button"
+        >
+          Mountain
+        </button>
+      </div>
+    </div>
+    <div
       class="flex-wrap gap-x-8 gap-y-4 sm:flex-row"
       data-testid="container"
     >
@@ -839,6 +889,56 @@ exports[`CustomFeedDialog - Snapshots > matches snapshot for create mode with di
       />
     </div>
     <div
+      class="gap-y-2"
+      data-testid="container"
+    >
+      <label
+        class="text-xs tracking-wide text-muted-foreground uppercase"
+        data-testid="label"
+      >
+        Feed Icon
+      </label>
+      <div
+        data-description="Choose a custom icon for your new feed."
+        data-testid="icon-picker-dialog"
+        data-title="Feed Icon"
+        data-value="activity"
+      >
+        <button
+          aria-label="Select icon"
+          class="w-fit gap-2 border-transparent px-4 shadow-none"
+          data-testid="feed-icon-picker-trigger"
+          data-variant="secondary"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-activity size-4 shrink-0"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"
+            />
+          </svg>
+          Select icon
+        </button>
+        <button
+          data-testid="choose-mountain-icon"
+          type="button"
+        >
+          Mountain
+        </button>
+      </div>
+    </div>
+    <div
       class="flex-wrap gap-x-8 gap-y-4 sm:flex-row"
       data-testid="container"
     >
@@ -1628,6 +1728,56 @@ exports[`CustomFeedDialog - Snapshots > matches snapshot for edit mode with cust
         required=""
         value="Bitcoin News"
       />
+    </div>
+    <div
+      class="gap-y-2"
+      data-testid="container"
+    >
+      <label
+        class="text-xs tracking-wide text-muted-foreground uppercase"
+        data-testid="label"
+      >
+        Feed Icon
+      </label>
+      <div
+        data-description="Choose a custom icon for your feed."
+        data-testid="icon-picker-dialog"
+        data-title="Feed Icon"
+        data-value="activity"
+      >
+        <button
+          aria-label="Select icon"
+          class="w-fit gap-2 border-transparent px-4 shadow-none"
+          data-testid="feed-icon-picker-trigger"
+          data-variant="secondary"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-activity size-4 shrink-0"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"
+            />
+          </svg>
+          Select icon
+        </button>
+        <button
+          data-testid="choose-mountain-icon"
+          type="button"
+        >
+          Mountain
+        </button>
+      </div>
     </div>
     <div
       class="flex-wrap gap-x-8 gap-y-4 sm:flex-row"
@@ -2488,6 +2638,56 @@ exports[`CustomFeedDialog - Snapshots > matches snapshot for edit mode with null
       />
     </div>
     <div
+      class="gap-y-2"
+      data-testid="container"
+    >
+      <label
+        class="text-xs tracking-wide text-muted-foreground uppercase"
+        data-testid="label"
+      >
+        Feed Icon
+      </label>
+      <div
+        data-description="Choose a custom icon for your feed."
+        data-testid="icon-picker-dialog"
+        data-title="Feed Icon"
+        data-value="activity"
+      >
+        <button
+          aria-label="Select icon"
+          class="w-fit gap-2 border-transparent px-4 shadow-none"
+          data-testid="feed-icon-picker-trigger"
+          data-variant="secondary"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-activity size-4 shrink-0"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"
+            />
+          </svg>
+          Select icon
+        </button>
+        <button
+          data-testid="choose-mountain-icon"
+          type="button"
+        >
+          Mountain
+        </button>
+      </div>
+    </div>
+    <div
       class="flex-wrap gap-x-8 gap-y-4 sm:flex-row"
       data-testid="container"
     >
@@ -3329,6 +3529,57 @@ exports[`CustomFeedDialog - Snapshots > matches snapshot for edit mode without c
         required=""
         value=""
       />
+    </div>
+    <div
+      class="gap-y-2"
+      data-testid="container"
+    >
+      <label
+        class="text-xs tracking-wide text-muted-foreground uppercase"
+        data-testid="label"
+      >
+        Feed Icon
+      </label>
+      <div
+        data-description="Choose a custom icon for your feed."
+        data-testid="icon-picker-dialog"
+        data-title="Feed Icon"
+        data-value="activity"
+      >
+        <button
+          aria-label="Select icon"
+          class="w-fit gap-2 border-transparent px-4 shadow-none"
+          data-testid="feed-icon-picker-trigger"
+          data-variant="secondary"
+          disabled=""
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-activity size-4 shrink-0"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"
+            />
+          </svg>
+          Select icon
+        </button>
+        <button
+          data-testid="choose-mountain-icon"
+          type="button"
+        >
+          Mountain
+        </button>
+      </div>
     </div>
     <div
       class="flex-wrap gap-x-8 gap-y-4 sm:flex-row"

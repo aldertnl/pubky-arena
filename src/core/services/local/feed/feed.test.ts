@@ -9,6 +9,7 @@ describe('LocalFeedService', () => {
   const createFeedSchema = (overrides: Partial<FeedModelSchema> = {}): FeedModelSchema => ({
     id: 'feed-default',
     name: 'Bitcoin News',
+    icon: 'activity',
     tags: ['bitcoin', 'lightning'],
     reach: PubkyAppFeedReach.All,
     sort: PubkyAppFeedSort.Recent,

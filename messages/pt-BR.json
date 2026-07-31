@@ -743,11 +743,21 @@
       "urlPlaceholder": "https://twitter.com/satoshi",
       "saveButton": "Salvar link"
     },
+    "iconPicker": {
+      "title": "Escolher ícone",
+      "searchPlaceholder": "Buscar um ícone",
+      "emptyMessage": "Nenhum ícone encontrado"
+    },
     "customFeed": {
       "createTitle": "Criar Feed",
       "editTitle": "Editar Feed",
       "feedName": "Nome do Feed",
       "feedNamePlaceholder": "Nao sao suas chaves...",
+      "feedIcon": "Ícone do Feed",
+      "chooseIcon": "Selecionar ícone",
+      "feedIconCreateDescription": "Escolha um ícone personalizado para seu novo feed.",
+      "feedIconEditDescription": "Escolha um ícone personalizado para seu feed.",
+      "editFeedLabel": "Editar {name}",
       "reach": "Alcance",
       "reachPlaceholder": "Selecione um alcance",
       "sort": "Ordenar",

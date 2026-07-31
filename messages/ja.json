@@ -743,11 +743,21 @@
       "urlPlaceholder": "https://twitter.com/satoshi",
       "saveButton": "リンクを保存"
     },
+    "iconPicker": {
+      "title": "アイコンを選択",
+      "searchPlaceholder": "アイコンを検索",
+      "emptyMessage": "アイコンが見つかりません"
+    },
     "customFeed": {
       "createTitle": "フィードを作成",
       "editTitle": "フィードを編集",
       "feedName": "フィード名",
       "feedNamePlaceholder": "あなたの鍵ではない...",
+      "feedIcon": "フィードアイコン",
+      "chooseIcon": "アイコンを選択",
+      "feedIconCreateDescription": "新しいフィード用のカスタムアイコンを選択してください。",
+      "feedIconEditDescription": "フィード用のカスタムアイコンを選択してください。",
+      "editFeedLabel": "{name}を編集",
       "reach": "範囲",
       "reachPlaceholder": "範囲を選択",
       "sort": "並べ替え",

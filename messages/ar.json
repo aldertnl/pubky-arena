@@ -745,11 +745,21 @@
       "urlPlaceholder": "https://twitter.com/satoshi",
       "saveButton": "حفظ الرابط"
     },
+    "iconPicker": {
+      "title": "اختر أيقونة",
+      "searchPlaceholder": "ابحث عن أيقونة",
+      "emptyMessage": "لم يتم العثور على أيقونات"
+    },
     "customFeed": {
       "createTitle": "إنشاء خلاصة",
       "editTitle": "تعديل الخلاصة",
       "feedName": "اسم الخلاصة",
       "feedNamePlaceholder": "ليست مفاتيحك...",
+      "feedIcon": "أيقونة الخلاصة",
+      "chooseIcon": "تحديد أيقونة",
+      "feedIconCreateDescription": "اختر أيقونة مخصصة لخلاصتك الجديدة.",
+      "feedIconEditDescription": "اختر أيقونة مخصصة لخلاصتك.",
+      "editFeedLabel": "تعديل {name}",
       "reach": "النطاق",
       "reachPlaceholder": "اختر نطاقاً",
       "sort": "الترتيب",

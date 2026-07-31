@@ -743,11 +743,21 @@
       "urlPlaceholder": "https://twitter.com/satoshi",
       "saveButton": "Enregistrer le lien"
     },
+    "iconPicker": {
+      "title": "Choisir une icône",
+      "searchPlaceholder": "Rechercher une icône",
+      "emptyMessage": "Aucune icône trouvée"
+    },
     "customFeed": {
       "createTitle": "Creer un flux",
       "editTitle": "Modifier le flux",
       "feedName": "Nom du flux",
       "feedNamePlaceholder": "Pas vos cles...",
+      "feedIcon": "Icône du flux",
+      "chooseIcon": "Sélectionner une icône",
+      "feedIconCreateDescription": "Choisissez une icône personnalisée pour votre nouveau flux.",
+      "feedIconEditDescription": "Choisissez une icône personnalisée pour votre flux.",
+      "editFeedLabel": "Modifier {name}",
       "reach": "Portee",
       "reachPlaceholder": "Selectionner une portee",
       "sort": "Trier",

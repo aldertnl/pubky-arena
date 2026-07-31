@@ -1,9 +1,7 @@
 'use client';
 
 import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
-  Activity,
   CirclePlay,
   Columns3,
   Delete,
@@ -24,37 +22,74 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { PubkyAppFeedLayout, PubkyAppFeedReach, PubkyAppFeedSort, PubkyAppPostKind } from 'pubky-app-specs';
-import { APP_ROUTES } from '@/app/routes';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/atoms/Dialog/Dialog';
+import { DynamicLucideIcon } from '@/atoms/DynamicLucideIcon/DynamicLucideIcon';
 import { Input } from '@/atoms/Input/Input';
 import { Label } from '@/atoms/Label/Label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/atoms/Select/Select';
-import { FeedController } from '@/controllers/feed/feed';
+import { DEFAULT_CUSTOM_FEED_ICON } from '@/config/feed';
 import { useCustomFeed } from '@/hooks/useCustomFeed/useCustomFeed';
+import { useCustomFeedForm } from '@/hooks/useCustomFeedForm/useCustomFeedForm';
 import { UsersRound2 } from '@/icons';
 import { getMaxStreamTags } from '@/libs/runtime-config/runtime-config';
+import { isLucideIconName } from '@/libs/utils/lucideIcons';
+import type { FeedModelSchema } from '@/models/feed/feed.schema';
 import { PostTag } from '@/molecules/PostTag/PostTag';
 import { TagInput } from '@/molecules/TagInput/TagInput';
-import { useToast } from '@/molecules/Toaster/use-toast';
+import { IconPickerDialog } from '@/organisms/IconPickerDialog/IconPickerDialog';
 
-type CustomFeedDialogProps = {
-  mode: 'create' | 'edit';
-  children: ReactNode;
-};
+type CustomFeedDialogProps =
+  | {
+      mode: 'create';
+      children: ReactNode;
+      feed?: never;
+    }
+  | {
+      mode: 'edit';
+      children: ReactNode;
+      feed?: FeedModelSchema;
+    };
 type CustomFeedDialogContent = PubkyAppPostKind | 'ALL';
 function isVisualCustomFeedContentSupported(content?: CustomFeedDialogContent): boolean {
   return content === 'ALL' || content === PubkyAppPostKind.Image || content === PubkyAppPostKind.Video;
 }
-export const CustomFeedDialog = ({ mode, children }: CustomFeedDialogProps) => {
-  const router = useRouter();
-  const { toast } = useToast();
-  const customFeed = useCustomFeed();
+
+export const CustomFeedDialog = (props: CustomFeedDialogProps) => {
+  if (props.mode === 'edit' && !props.feed) {
+    return <RouteCustomFeedDialog>{props.children}</RouteCustomFeedDialog>;
+  }
+
+  return <CustomFeedDialogForm {...props} />;
+};
+
+const RouteCustomFeedDialog = ({ children }: { children: ReactNode }) => {
+  const routeFeed = useCustomFeed();
+
+  return (
+    <CustomFeedDialogForm mode="edit" feed={routeFeed}>
+      {children}
+    </CustomFeedDialogForm>
+  );
+};
+
+type CustomFeedDialogFormProps = {
+  mode: 'create' | 'edit';
+  children: ReactNode;
+  feed?: FeedModelSchema;
+};
+
+const CustomFeedDialogForm = ({ mode, children, feed: customFeed }: CustomFeedDialogFormProps) => {
+  const { loading, submit, deleteFeed } = useCustomFeedForm({
+    mode,
+    feed: customFeed,
+  });
   const tFilter = useTranslations('filters');
   const tDialog = useTranslations('dialogs.customFeed');
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
+  const [icon, setIcon] = useState(DEFAULT_CUSTOM_FEED_ICON);
   const [reach, setReach] = useState<PubkyAppFeedReach | undefined>(
     mode === 'create' ? PubkyAppFeedReach.All : undefined,
   );
@@ -66,12 +101,12 @@ export const CustomFeedDialog = ({ mode, children }: CustomFeedDialogProps) => {
   );
   const [content, setContent] = useState<CustomFeedDialogContent | undefined>(mode === 'create' ? 'ALL' : undefined);
   const [tags, setTags] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
   const disabled = loading || (mode === 'edit' && !customFeed);
   useEffect(() => {
     if (open) return;
     if (mode === 'create') {
       setName('');
+      setIcon(DEFAULT_CUSTOM_FEED_ICON);
       setReach(PubkyAppFeedReach.All);
       setSort(PubkyAppFeedSort.Recent);
       setLayout(PubkyAppFeedLayout.Columns);
@@ -79,6 +114,7 @@ export const CustomFeedDialog = ({ mode, children }: CustomFeedDialogProps) => {
       setTags([]);
     } else if (mode === 'edit') {
       setName(customFeed?.name ?? '');
+      setIcon(customFeed?.icon && isLucideIconName(customFeed.icon) ? customFeed.icon : DEFAULT_CUSTOM_FEED_ICON);
       setReach(customFeed?.reach);
       setSort(customFeed?.sort);
       setLayout(customFeed?.layout);
@@ -205,86 +241,23 @@ export const CustomFeedDialog = ({ mode, children }: CustomFeedDialogProps) => {
   };
   const handleSaveFeed = async () => {
     if (reach === undefined || sort === undefined || layout === undefined || content === undefined) return;
-    if (mode === 'create') {
-      try {
-        setLoading(true);
-        const feed = await FeedController.commitCreate({
-          name,
-          reach,
-          sort,
-          layout,
-          content: content === 'ALL' ? null : content,
-          tags,
-        });
-        setOpen(false);
-        toast({
-          title: tDialog('feedCreated', {
-            name: feed.name,
-          }),
-        });
-        router.push(`${APP_ROUTES.FEED}/${feed.id}`);
-      } catch {
-        toast({
-          variant: 'error',
-          description: tDialog('feedCreateError'),
-        });
-      } finally {
-        setLoading(false);
-      }
-    } else if (mode === 'edit') {
-      if (!customFeed) return;
-      try {
-        setLoading(true);
-        const feed = await FeedController.commitUpdate({
-          feedId: customFeed.id,
-          changes: {
-            name,
-            reach,
-            sort,
-            layout,
-            content: content === 'ALL' ? null : content,
-            tags,
-          },
-        });
-        setOpen(false);
-        toast({
-          title: tDialog('feedEdited', {
-            name: feed.name,
-          }),
-        });
-        router.push(`${APP_ROUTES.FEED}/${feed.id}`);
-      } catch {
-        toast({
-          variant: 'error',
-          description: tDialog('feedEditError'),
-        });
-      } finally {
-        setLoading(false);
-      }
-    }
+
+    const saved = await submit({
+      name,
+      icon,
+      reach,
+      sort,
+      layout,
+      content,
+      tags,
+    });
+
+    if (saved) setOpen(false);
   };
   const handleDeleteFeed = async () => {
-    if (!customFeed) return;
-    try {
-      setLoading(true);
-      await FeedController.commitDelete({
-        feedId: customFeed.id,
-      });
-      setOpen(false);
-      toast({
-        title: tDialog('feedDeleted', {
-          name: customFeed.name,
-        }),
-      });
-      router.push(APP_ROUTES.HOME);
-    } catch {
-      toast({
-        variant: 'error',
-        description: tDialog('feedDeleteError'),
-      });
-    } finally {
-      setLoading(false);
-    }
+    const deleted = await deleteFeed();
+
+    if (deleted) setOpen(false);
   };
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -316,6 +289,29 @@ export const CustomFeedDialog = ({ mode, children }: CustomFeedDialogProps) => {
             className="h-14 border-dashed"
             data-testid="feed-name-input"
           />
+        </Container>
+
+        <Container className="gap-y-2">
+          <Label className="text-xs tracking-wide text-muted-foreground uppercase">{tDialog('feedIcon')}</Label>
+
+          <IconPickerDialog
+            value={icon}
+            onSelect={setIcon}
+            title={tDialog('feedIcon')}
+            description={mode === 'create' ? tDialog('feedIconCreateDescription') : tDialog('feedIconEditDescription')}
+          >
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-fit gap-2 border-transparent px-4 shadow-none"
+              aria-label={tDialog('chooseIcon')}
+              disabled={disabled}
+              data-testid="feed-icon-picker-trigger"
+            >
+              <DynamicLucideIcon name={icon} className="size-4 shrink-0" />
+              {tDialog('chooseIcon')}
+            </Button>
+          </IconPickerDialog>
         </Container>
 
         <Container className="flex-wrap gap-x-8 gap-y-4 sm:flex-row">
@@ -454,7 +450,7 @@ export const CustomFeedDialog = ({ mode, children }: CustomFeedDialogProps) => {
             className="h-15 w-full"
             data-testid="save-feed-button"
           >
-            <Activity className="size-4" />
+            <DynamicLucideIcon name={icon} className="size-4" />
             {tDialog('saveFeed')}
           </Button>
 
