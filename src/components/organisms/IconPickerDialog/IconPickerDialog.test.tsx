@@ -1,18 +1,36 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LUCIDE_ICON_NAMES } from '@/libs/utils/lucideIcons';
+import { resetViewport, setMobileViewport } from '@/test-utils/viewport';
 import { IconPickerDialog } from './IconPickerDialog';
 
 const TEST_ICONS = ['activity', 'airplay', 'mountain'] as const;
+const VIRTUAL_GRID_SNAPSHOT_ICONS = LUCIDE_ICON_NAMES.slice(0, 8);
+
+async function finishOpeningAnimation() {
+  fireEvent.animationEnd(screen.getByTestId('icon-picker-dialog-content'));
+  await waitFor(() => {
+    if (screen.queryByTestId('icon-picker-loading')) {
+      throw new Error('Icon grid is still waiting for the opening animation');
+    }
+  });
+}
 
 describe('IconPickerDialog', () => {
   it('renders a searchable icon grid with visible SVGs when open', async () => {
     render(<IconPickerDialog open onSelect={() => {}} icons={TEST_ICONS} />);
 
     expect(screen.getByRole('searchbox', { name: 'Search for icon' })).toBeInTheDocument();
+    expect(screen.getByTestId('icon-picker-scroll-area')).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByTestId('icon-picker-loading')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'activity' })).not.toBeInTheDocument();
+
+    await finishOpeningAnimation();
+
     expect(screen.getByRole('button', { name: 'activity' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'airplay' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'mountain' })).toBeInTheDocument();
+    expect(screen.getByTestId('icon-picker-scroll-area')).not.toHaveAttribute('aria-busy');
     expect(screen.getByTestId('icon-picker-dialog-content')).toHaveClass('flex-col', 'gap-6');
     expect(screen.getByTestId('icon-picker-dialog-content')).toHaveClass('h-110');
     expect(screen.getByRole('searchbox', { name: 'Search for icon' })).toHaveClass('border-dashed');
@@ -27,8 +45,9 @@ describe('IconPickerDialog', () => {
     });
   });
 
-  it('filters icons by their kebab-case names', () => {
+  it('filters icons by their kebab-case names', async () => {
     render(<IconPickerDialog open onSelect={() => {}} icons={TEST_ICONS} />);
+    await finishOpeningAnimation();
 
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search for icon' }), {
       target: { value: 'mount' },
@@ -38,8 +57,9 @@ describe('IconPickerDialog', () => {
     expect(screen.queryByRole('button', { name: 'activity' })).not.toBeInTheDocument();
   });
 
-  it('normalizes spaces in search queries', () => {
+  it('normalizes spaces in search queries', async () => {
     render(<IconPickerDialog open onSelect={() => {}} icons={['circle-alert', 'activity']} />);
+    await finishOpeningAnimation();
 
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search for icon' }), {
       target: { value: 'circle alert' },
@@ -49,12 +69,13 @@ describe('IconPickerDialog', () => {
     expect(screen.queryByRole('button', { name: 'activity' })).not.toBeInTheDocument();
   });
 
-  it('returns the selected icon and closes the dialog', () => {
+  it('returns the selected icon and closes the dialog', async () => {
     const onSelect = vi.fn();
     const onOpenChange = vi.fn();
     render(
       <IconPickerDialog open onOpenChange={onOpenChange} onSelect={onSelect} value="activity" icons={TEST_ICONS} />,
     );
+    await finishOpeningAnimation();
 
     expect(screen.getByRole('button', { name: 'activity' })).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'mountain' }));
@@ -69,22 +90,26 @@ describe('IconPickerDialog', () => {
     expect(screen.getByText('No icons found')).toBeInTheDocument();
   });
 
-  it('loads the icon catalog in bounded batches while scrolling', () => {
+  it('only mounts the virtualized rows around the scroll viewport', async () => {
     const icons = LUCIDE_ICON_NAMES.slice(0, 110);
     const initiallyHiddenIcon = icons[100];
+    const initiallyVisibleIcon = icons[0];
     render(<IconPickerDialog open onSelect={() => {}} icons={icons} />);
+    await finishOpeningAnimation();
 
     expect(screen.queryByTestId(`icon-picker-option-${initiallyHiddenIcon}`)).not.toBeInTheDocument();
+    expect(screen.getByTestId(`icon-picker-option-${initiallyVisibleIcon}`)).toBeInTheDocument();
 
     const scrollArea = screen.getByTestId('icon-picker-scroll-area');
     Object.defineProperties(scrollArea, {
-      clientHeight: { configurable: true, value: 200 },
-      scrollHeight: { configurable: true, value: 400 },
-      scrollTop: { configurable: true, value: 180 },
+      clientHeight: { configurable: true, value: 208 },
+      scrollTop: { configurable: true, value: 400 },
     });
     fireEvent.scroll(scrollArea);
 
     expect(screen.getByTestId(`icon-picker-option-${initiallyHiddenIcon}`)).toBeInTheDocument();
+    expect(screen.queryByTestId(`icon-picker-option-${initiallyVisibleIcon}`)).not.toBeInTheDocument();
+    expect(screen.getByTestId('icon-picker-virtual-space')).toHaveStyle({ height: '504px' });
   });
 
   it('supports context-specific accessible copy', () => {
@@ -118,13 +143,14 @@ describe('IconPickerDialog', () => {
     expect(screen.getByRole('dialog', { name: 'Choose icon' })).toBeInTheDocument();
   });
 
-  it('stops selection clicks from reaching a clickable ancestor', () => {
+  it('stops selection clicks from reaching a clickable ancestor', async () => {
     const ancestorClick = vi.fn();
     render(
       <div onClick={ancestorClick}>
         <IconPickerDialog open onSelect={() => {}} icons={TEST_ICONS} />
       </div>,
     );
+    await finishOpeningAnimation();
 
     fireEvent.click(screen.getByRole('button', { name: 'activity' }));
 
@@ -135,6 +161,42 @@ describe('IconPickerDialog', () => {
 describe('IconPickerDialog - Snapshots', () => {
   it('matches snapshot for the empty state', () => {
     const { baseElement } = render(<IconPickerDialog open onSelect={() => {}} icons={[]} />);
+
+    expect(baseElement).toMatchSnapshot();
+  });
+
+  it('matches snapshot for a virtualized desktop grid', async () => {
+    const { baseElement } = render(<IconPickerDialog open onSelect={() => {}} icons={VIRTUAL_GRID_SNAPSHOT_ICONS} />);
+    await finishOpeningAnimation();
+
+    await waitFor(() => {
+      if (!screen.getByRole('button', { name: 'a arrow down' }).querySelector('svg')) {
+        throw new Error('Icon SVG is still loading');
+      }
+    });
+
+    expect(baseElement).toMatchSnapshot();
+  });
+});
+
+describe('IconPickerDialog - Mobile Snapshots', () => {
+  beforeEach(() => {
+    setMobileViewport();
+  });
+
+  afterEach(() => {
+    resetViewport();
+  });
+
+  it('matches snapshot for a virtualized mobile grid', async () => {
+    const { baseElement } = render(<IconPickerDialog open onSelect={() => {}} icons={VIRTUAL_GRID_SNAPSHOT_ICONS} />);
+    await finishOpeningAnimation();
+
+    await waitFor(() => {
+      if (!screen.getByRole('button', { name: 'a arrow down' }).querySelector('svg')) {
+        throw new Error('Icon SVG is still loading');
+      }
+    });
 
     expect(baseElement).toMatchSnapshot();
   });
