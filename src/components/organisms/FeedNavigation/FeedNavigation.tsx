@@ -119,10 +119,10 @@ export const FeedNavigation = ({ className }: FeedNavigationProps) => {
                 aria-label={tDialog('editFeedLabel', {
                   name: feed.name,
                 })}
-                className="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 opacity-100 transition-opacity focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
+                className="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 rounded-none bg-transparent opacity-100 shadow-none transition-opacity duration-200 ease-out hover:bg-transparent focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
                 data-testid={`edit-feed-${feed.id}`}
               >
-                <Pencil className="size-4" />
+                <Pencil className="size-2.5" />
               </Button>
             </CustomFeedDialog>
           </Container>

@@ -381,6 +381,12 @@ describe('FeedNavigation', () => {
     expect(editButton).toHaveClass('lg:opacity-0');
     expect(editButton).toHaveClass('lg:group-hover:opacity-100');
     expect(editButton).toHaveClass('lg:group-focus-within:opacity-100');
+    expect(editButton).toHaveClass('rounded-none');
+    expect(editButton).toHaveClass('bg-transparent');
+    expect(editButton).toHaveClass('hover:bg-transparent');
+    expect(editButton).toHaveClass('transition-opacity');
+    expect(editButton).toHaveClass('duration-200');
+    expect(editButton.querySelector('svg')).toHaveClass('size-2.5');
   });
 
   it('does not show edit dialog for Home feed even when active', () => {

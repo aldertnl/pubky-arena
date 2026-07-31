@@ -89,7 +89,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with custom feed active (
     >
       <button
         aria-label="Edit Active Feed"
-        class="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 opacity-100 transition-opacity focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
+        class="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 rounded-none bg-transparent opacity-100 shadow-none transition-opacity duration-200 ease-out hover:bg-transparent focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
         data-size="icon"
         data-testid="edit-feed-feed-active"
         data-variant="ghost"
@@ -97,7 +97,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with custom feed active (
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-pencil size-4"
+          class="lucide lucide-pencil size-2.5"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -252,7 +252,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with custom feeds and Hom
     >
       <button
         aria-label="Edit Bitcoin News"
-        class="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 opacity-100 transition-opacity focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
+        class="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 rounded-none bg-transparent opacity-100 shadow-none transition-opacity duration-200 ease-out hover:bg-transparent focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
         data-size="icon"
         data-testid="edit-feed-feed-1"
         data-variant="ghost"
@@ -260,7 +260,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with custom feeds and Hom
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-pencil size-4"
+          class="lucide lucide-pencil size-2.5"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -322,7 +322,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with custom feeds and Hom
     >
       <button
         aria-label="Edit Lightning Network"
-        class="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 opacity-100 transition-opacity focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
+        class="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 rounded-none bg-transparent opacity-100 shadow-none transition-opacity duration-200 ease-out hover:bg-transparent focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
         data-size="icon"
         data-testid="edit-feed-feed-2"
         data-variant="ghost"
@@ -330,7 +330,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with custom feeds and Hom
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-pencil size-4"
+          class="lucide lucide-pencil size-2.5"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -484,7 +484,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with multiple custom feed
     >
       <button
         aria-label="Edit Bitcoin"
-        class="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 opacity-100 transition-opacity focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
+        class="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 rounded-none bg-transparent opacity-100 shadow-none transition-opacity duration-200 ease-out hover:bg-transparent focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
         data-size="icon"
         data-testid="edit-feed-feed-1"
         data-variant="ghost"
@@ -492,7 +492,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with multiple custom feed
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-pencil size-4"
+          class="lucide lucide-pencil size-2.5"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -555,7 +555,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with multiple custom feed
     >
       <button
         aria-label="Edit Lightning"
-        class="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 opacity-100 transition-opacity focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
+        class="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 rounded-none bg-transparent opacity-100 shadow-none transition-opacity duration-200 ease-out hover:bg-transparent focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
         data-size="icon"
         data-testid="edit-feed-feed-2"
         data-variant="ghost"
@@ -563,7 +563,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with multiple custom feed
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-pencil size-4"
+          class="lucide lucide-pencil size-2.5"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -625,7 +625,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with multiple custom feed
     >
       <button
         aria-label="Edit Nostr"
-        class="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 opacity-100 transition-opacity focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
+        class="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 rounded-none bg-transparent opacity-100 shadow-none transition-opacity duration-200 ease-out hover:bg-transparent focus-visible:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
         data-size="icon"
         data-testid="edit-feed-feed-3"
         data-variant="ghost"
@@ -633,7 +633,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with multiple custom feed
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-pencil size-4"
+          class="lucide lucide-pencil size-2.5"
           fill="none"
           height="24"
           stroke="currentColor"
