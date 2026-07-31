@@ -14,6 +14,7 @@ import type { FeedModelSchema } from '@/models/feed/feed.schema';
 import type { Pubky } from '@/models/models.types';
 import { PostStreamModel } from '@/models/stream/post/tables/postStream';
 import { UnreadPostStreamModel } from '@/models/stream/post/tables/postStream.unread';
+import { FeedValidators } from '@/pipes/feed/feed.validators';
 import { PubkySpecsSingleton } from '@/pipes/pipes.builder';
 import { HomeserverService } from '@/services/homeserver/homeserver';
 import { LocalFeedService } from '@/services/local/feed/feed';
@@ -122,7 +123,7 @@ export class FeedApplication {
 
     return {
       name: changes.name ?? existing.name,
-      icon: changes.icon ?? existing.icon ?? DEFAULT_CUSTOM_FEED_ICON,
+      icon: FeedValidators.sanitizeIcon(changes.icon ?? existing.icon),
       tags: changes.tags ?? existing.tags,
       reach: changes.reach ?? existing.reach,
       sort: changes.sort ?? existing.sort,
@@ -228,7 +229,7 @@ export class FeedApplication {
       content: content ?? undefined,
       name: remoteFeed.name,
       domainTags: normalizedDomainTags,
-      icon: remoteFeed.icon ?? DEFAULT_CUSTOM_FEED_ICON,
+      icon: FeedValidators.sanitizeIcon(remoteFeed.icon),
     });
   }
 

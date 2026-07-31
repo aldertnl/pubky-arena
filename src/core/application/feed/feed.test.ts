@@ -567,6 +567,28 @@ describe('FeedApplication', () => {
       expect(mockBuilder.createFeed).toHaveBeenCalledWith(expect.objectContaining({ icon: 'mountain' }));
     });
 
+    // A remote icon specs would reject (empty, or over the length limit) used to
+    // throw inside createFeed, get caught per-feed, and silently drop the whole
+    // feed from the user's list. It must fall back to the default instead.
+    it.each([
+      ['an empty icon', ''],
+      ['an over-long icon', 'x'.repeat(200)],
+    ])('keeps a feed that arrives with %s', async (_label, icon) => {
+      const { listSpy, requestSpy, createOrUpdateManySpy, mockBuilder } = setupFetchMocks();
+
+      listSpy.mockResolvedValue([feedUri1]);
+      requestSpy.mockResolvedValue({
+        ...createRemoteFeedJson('Salvageable Feed'),
+        icon,
+      });
+      createOrUpdateManySpy.mockImplementation((feeds) => Promise.resolve(feeds));
+
+      const result = await FeedApplication.fetchFeeds(testUserId);
+
+      expect(mockBuilder.createFeed).toHaveBeenCalledWith(expect.objectContaining({ icon: 'activity' }));
+      expect(result).toHaveLength(1);
+    });
+
     it('should handle multiple feeds', async () => {
       const { listSpy, requestSpy, createOrUpdateManySpy } = setupFetchMocks();
 

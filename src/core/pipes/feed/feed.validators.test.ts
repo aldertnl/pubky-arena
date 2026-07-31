@@ -1,0 +1,37 @@
+import validationLimits from 'pubky-app-specs/validationLimits.json';
+import { describe, expect, it } from 'vitest';
+import { DEFAULT_CUSTOM_FEED_ICON } from '@/config/feed';
+import { FeedValidators } from './feed.validators';
+
+describe('FeedValidators.sanitizeIcon', () => {
+  // Specs rejects an empty icon and one over `feedIconMaxLength`, and
+  // `createFeed` throws on rejection — during bootstrap that throw is caught
+  // per-feed, so an unusable icon would drop the whole feed from the nav.
+  it.each([
+    ['undefined', undefined],
+    ['null', null],
+    ['an empty string', ''],
+    ['whitespace only', '   '],
+    ['a name over the specs length limit', 'x'.repeat(validationLimits.feedIconMaxLength + 1)],
+  ])('falls back to the default icon for %s', (_label, input) => {
+    expect(FeedValidators.sanitizeIcon(input)).toBe(DEFAULT_CUSTOM_FEED_ICON);
+  });
+
+  it('keeps a valid icon name', () => {
+    expect(FeedValidators.sanitizeIcon('mountain')).toBe('mountain');
+  });
+
+  it('trims surrounding whitespace', () => {
+    expect(FeedValidators.sanitizeIcon('  mountain  ')).toBe('mountain');
+  });
+
+  it('keeps a name at exactly the length limit', () => {
+    const atLimit = 'x'.repeat(validationLimits.feedIconMaxLength);
+
+    expect(FeedValidators.sanitizeIcon(atLimit)).toBe(atLimit);
+  });
+
+  it("passes through a name we do not recognise so another client's icon set survives a round-trip", () => {
+    expect(FeedValidators.sanitizeIcon('some-other-client-icon')).toBe('some-other-client-icon');
+  });
+});

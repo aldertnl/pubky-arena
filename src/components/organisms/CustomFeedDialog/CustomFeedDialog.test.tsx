@@ -70,12 +70,6 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
-// Mock hooks
-const mockUseCustomFeed = vi.fn();
-vi.mock('@/hooks/useCustomFeed/useCustomFeed', () => ({
-  useCustomFeed: () => mockUseCustomFeed(),
-}));
-
 // Mock toast
 const mockToast = vi.fn();
 vi.mock('@/molecules/PostTag/PostTag', () => {
@@ -367,7 +361,6 @@ const changeSelectValue = (testId: string, value: string | number) => {
 describe('CustomFeedDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseCustomFeed.mockReturnValue(undefined);
     mockUsePathname.mockReturnValue('/feed/feed-abc123');
   });
 
@@ -399,10 +392,9 @@ describe('CustomFeedDialog', () => {
 
   it('renders dialog title with translated title for edit', () => {
     const mockFeed = createMockFeed();
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
@@ -451,6 +443,8 @@ describe('CustomFeedDialog', () => {
     fireEvent.click(screen.getByTestId('choose-mountain-icon'));
     fireEvent.change(screen.getByTestId('feed-name-input'), { target: { value: 'Mountain Feed' } });
     fireEvent.change(screen.getByTestId('tag-input-field'), { target: { value: 'hiking' } });
+    await waitFor(() => expect(screen.getByTestId('save-feed-button')).toBeEnabled());
+
     fireEvent.click(screen.getByTestId('save-feed-button'));
 
     await waitFor(() => {
@@ -464,29 +458,15 @@ describe('CustomFeedDialog', () => {
 
   it('renders feed name input as enabled in edit mode when customFeed is defined', () => {
     const mockFeed = createMockFeed();
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
 
     const input = screen.getByTestId('feed-name-input');
     expect(input).not.toBeDisabled();
-  });
-
-  it('renders feed name input as disabled in edit mode when customFeed is undefined', () => {
-    mockUseCustomFeed.mockReturnValue(undefined);
-
-    render(
-      <CustomFeedDialog mode="edit">
-        <button>Edit Feed</button>
-      </CustomFeedDialog>,
-    );
-
-    const input = screen.getByTestId('feed-name-input');
-    expect(input).toBeDisabled();
   });
 
   it('renders feed name input as enabled in create mode', () => {
@@ -547,10 +527,9 @@ describe('CustomFeedDialog', () => {
 
   it('renders Delete Feed button in edit mode', () => {
     const mockFeed = createMockFeed();
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
@@ -572,29 +551,16 @@ describe('CustomFeedDialog', () => {
 
   // -- Trigger disabled state --
 
-  it('disables dialog trigger in edit mode when customFeed is undefined', () => {
-    mockUseCustomFeed.mockReturnValue(undefined);
-
-    render(
-      <CustomFeedDialog mode="edit">
-        <button>Edit Feed</button>
-      </CustomFeedDialog>,
-    );
-
-    expect(screen.getByTestId('custom-feed-dialog-trigger')).toHaveAttribute('data-disabled', 'true');
-  });
-
   it('does not disable dialog trigger in edit mode when customFeed is defined', () => {
     const mockFeed = createMockFeed();
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
 
-    expect(screen.getByTestId('custom-feed-dialog-trigger')).toHaveAttribute('data-disabled', 'false');
+    expect(screen.getByTestId('custom-feed-dialog-trigger')).not.toHaveAttribute('data-disabled', 'true');
   });
 
   it('does not disable dialog trigger in create mode', () => {
@@ -604,7 +570,7 @@ describe('CustomFeedDialog', () => {
       </CustomFeedDialog>,
     );
 
-    expect(screen.getByTestId('custom-feed-dialog-trigger')).toHaveAttribute('data-disabled', 'false');
+    expect(screen.getByTestId('custom-feed-dialog-trigger')).not.toHaveAttribute('data-disabled', 'true');
   });
 
   // -- Save button disabled state --
@@ -629,18 +595,6 @@ describe('CustomFeedDialog', () => {
     // Type a name but don't add tags
     const input = screen.getByTestId('feed-name-input');
     fireEvent.change(input, { target: { value: 'My Feed' } });
-
-    expect(screen.getByTestId('save-feed-button')).toBeDisabled();
-  });
-
-  it('disables Save Feed button in edit mode when customFeed is undefined', () => {
-    mockUseCustomFeed.mockReturnValue(undefined);
-
-    render(
-      <CustomFeedDialog mode="edit">
-        <button>Edit Feed</button>
-      </CustomFeedDialog>,
-    );
 
     expect(screen.getByTestId('save-feed-button')).toBeDisabled();
   });
@@ -693,10 +647,9 @@ describe('CustomFeedDialog', () => {
 
   it('displays existing tags from customFeed in edit mode', () => {
     const mockFeed = createMockFeed({ tags: ['bitcoin', 'lightning'] });
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
@@ -707,10 +660,9 @@ describe('CustomFeedDialog', () => {
 
   it('shows close buttons on tags when not disabled', () => {
     const mockFeed = createMockFeed({ tags: ['bitcoin'] });
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
@@ -880,10 +832,9 @@ describe('CustomFeedDialog', () => {
 
   it('populates feed name input from customFeed in edit mode', () => {
     const mockFeed = createMockFeed({ name: 'Bitcoin News' });
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
@@ -893,7 +844,6 @@ describe('CustomFeedDialog', () => {
 
   it('uses an explicitly supplied feed when editing from another route', () => {
     const mockFeed = createMockFeed({ id: 'feed-explicit', name: 'Explicit Feed', icon: 'mountain' });
-    mockUseCustomFeed.mockReturnValue(undefined);
 
     render(
       <CustomFeedDialog mode="edit" feed={mockFeed}>
@@ -907,15 +857,14 @@ describe('CustomFeedDialog', () => {
       'data-description',
       'Choose a custom icon for your feed.',
     );
-    expect(screen.getByTestId('custom-feed-dialog-trigger')).toHaveAttribute('data-disabled', 'false');
+    expect(screen.getByTestId('custom-feed-dialog-trigger')).not.toHaveAttribute('data-disabled', 'true');
   });
 
   it('falls back to the default icon for a legacy feed without an icon', () => {
     const mockFeed = createMockFeed({ icon: undefined });
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
@@ -925,10 +874,9 @@ describe('CustomFeedDialog', () => {
 
   it('populates reach select from customFeed in edit mode', () => {
     const mockFeed = createMockFeed({ reach: PubkyAppFeedReach.Friends });
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
@@ -938,10 +886,9 @@ describe('CustomFeedDialog', () => {
 
   it('maps null content from customFeed to ALL in edit mode', () => {
     const mockFeed = createMockFeed({ content: null });
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
@@ -951,10 +898,9 @@ describe('CustomFeedDialog', () => {
 
   it('populates visual layout from customFeed in edit mode', () => {
     const mockFeed = createMockFeed({ layout: PubkyAppFeedLayout.Visual, content: PubkyAppPostKind.Video });
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
@@ -964,10 +910,9 @@ describe('CustomFeedDialog', () => {
 
   it('normalizes unsupported visual content from customFeed to ALL in edit mode', async () => {
     const mockFeed = createMockFeed({ layout: PubkyAppFeedLayout.Visual, content: PubkyAppPostKind.Short });
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
@@ -996,6 +941,8 @@ describe('CustomFeedDialog', () => {
     fireEvent.change(screen.getByTestId('tag-input-field'), { target: { value: 'bitcoin' } });
 
     // Click save
+    await waitFor(() => expect(screen.getByTestId('save-feed-button')).toBeEnabled());
+
     fireEvent.click(screen.getByTestId('save-feed-button'));
 
     await waitFor(() => {
@@ -1023,6 +970,8 @@ describe('CustomFeedDialog', () => {
 
     fireEvent.change(screen.getByTestId('feed-name-input'), { target: { value: 'My Feed' } });
     fireEvent.change(screen.getByTestId('tag-input-field'), { target: { value: 'bitcoin' } });
+    await waitFor(() => expect(screen.getByTestId('save-feed-button')).toBeEnabled());
+
     fireEvent.click(screen.getByTestId('save-feed-button'));
 
     await waitFor(() => {
@@ -1044,6 +993,8 @@ describe('CustomFeedDialog', () => {
 
     fireEvent.change(screen.getByTestId('feed-name-input'), { target: { value: 'My Feed' } });
     fireEvent.change(screen.getByTestId('tag-input-field'), { target: { value: 'bitcoin' } });
+    await waitFor(() => expect(screen.getByTestId('save-feed-button')).toBeEnabled());
+
     fireEvent.click(screen.getByTestId('save-feed-button'));
 
     await waitFor(() => {
@@ -1066,6 +1017,8 @@ describe('CustomFeedDialog', () => {
 
     fireEvent.change(screen.getByTestId('feed-name-input'), { target: { value: 'My Feed' } });
     fireEvent.change(screen.getByTestId('tag-input-field'), { target: { value: 'bitcoin' } });
+    await waitFor(() => expect(screen.getByTestId('save-feed-button')).toBeEnabled());
+
     fireEvent.click(screen.getByTestId('save-feed-button'));
 
     await waitFor(() => {
@@ -1100,6 +1053,8 @@ describe('CustomFeedDialog', () => {
       expect(screen.getByTestId('layout-select')).toHaveAttribute('data-value', String(PubkyAppFeedLayout.Visual));
     });
 
+    await waitFor(() => expect(screen.getByTestId('save-feed-button')).toBeEnabled());
+
     fireEvent.click(screen.getByTestId('save-feed-button'));
 
     await waitFor(() => {
@@ -1116,19 +1071,20 @@ describe('CustomFeedDialog', () => {
 
   it('calls FeedController.commitUpdate with correct params on save in edit mode', async () => {
     const mockFeed = createMockFeed();
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     const mockUpdatedFeed = createMockFeed({ id: 'feed-abc123', name: 'Bitcoin News' });
     mockCommitUpdate.mockResolvedValue(mockUpdatedFeed);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
 
     // Add a new tag (existing tags are populated from customFeed)
     fireEvent.change(screen.getByTestId('tag-input-field'), { target: { value: 'crypto' } });
+    await waitFor(() => expect(screen.getByTestId('save-feed-button')).toBeEnabled());
+
     fireEvent.click(screen.getByTestId('save-feed-button'));
 
     await waitFor(() => {
@@ -1149,16 +1105,17 @@ describe('CustomFeedDialog', () => {
 
   it('persists a newly selected icon when editing a feed', async () => {
     const mockFeed = createMockFeed({ icon: 'activity' });
-    mockUseCustomFeed.mockReturnValue(mockFeed);
     mockCommitUpdate.mockResolvedValue(createMockFeed({ icon: 'mountain' }));
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
 
     fireEvent.click(screen.getByTestId('choose-mountain-icon'));
+    await waitFor(() => expect(screen.getByTestId('save-feed-button')).toBeEnabled());
+
     fireEvent.click(screen.getByTestId('save-feed-button'));
 
     await waitFor(() => {
@@ -1174,18 +1131,19 @@ describe('CustomFeedDialog', () => {
 
   it('shows success toast without navigating when the feed id is unchanged', async () => {
     const mockFeed = createMockFeed();
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     const mockUpdatedFeed = createMockFeed({ id: 'feed-abc123', name: 'Bitcoin News' });
     mockCommitUpdate.mockResolvedValue(mockUpdatedFeed);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
 
     fireEvent.change(screen.getByTestId('tag-input-field'), { target: { value: 'crypto' } });
+    await waitFor(() => expect(screen.getByTestId('save-feed-button')).toBeEnabled());
+
     fireEvent.click(screen.getByTestId('save-feed-button'));
 
     await waitFor(() => {
@@ -1199,14 +1157,15 @@ describe('CustomFeedDialog', () => {
 
   it('replaces the stale active route when an edit changes the feed id', async () => {
     const mockFeed = createMockFeed();
-    mockUseCustomFeed.mockReturnValue(mockFeed);
     mockCommitUpdate.mockResolvedValue(createMockFeed({ id: 'feed-updated' }));
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
+
+    await waitFor(() => expect(screen.getByTestId('save-feed-button')).toBeEnabled());
 
     fireEvent.click(screen.getByTestId('save-feed-button'));
 
@@ -1226,6 +1185,8 @@ describe('CustomFeedDialog', () => {
       </CustomFeedDialog>,
     );
 
+    await waitFor(() => expect(screen.getByTestId('save-feed-button')).toBeEnabled());
+
     fireEvent.click(screen.getByTestId('save-feed-button'));
 
     await waitFor(() => {
@@ -1237,16 +1198,17 @@ describe('CustomFeedDialog', () => {
 
   it('shows error toast when edit fails', async () => {
     const mockFeed = createMockFeed();
-    mockUseCustomFeed.mockReturnValue(mockFeed);
     mockCommitUpdate.mockRejectedValue(new Error('Network error'));
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
 
     fireEvent.change(screen.getByTestId('tag-input-field'), { target: { value: 'crypto' } });
+    await waitFor(() => expect(screen.getByTestId('save-feed-button')).toBeEnabled());
+
     fireEvent.click(screen.getByTestId('save-feed-button'));
 
     await waitFor(() => {
@@ -1259,16 +1221,17 @@ describe('CustomFeedDialog', () => {
 
   it('sends content kind value when content is not ALL on edit', async () => {
     const mockFeed = createMockFeed({ content: PubkyAppPostKind.Image });
-    mockUseCustomFeed.mockReturnValue(mockFeed);
     mockCommitUpdate.mockResolvedValue(createMockFeed());
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
 
     fireEvent.change(screen.getByTestId('tag-input-field'), { target: { value: 'photo' } });
+    await waitFor(() => expect(screen.getByTestId('save-feed-button')).toBeEnabled());
+
     fireEvent.click(screen.getByTestId('save-feed-button'));
 
     await waitFor(() => {
@@ -1286,11 +1249,10 @@ describe('CustomFeedDialog', () => {
 
   it('calls FeedController.commitDelete when delete button is clicked', async () => {
     const mockFeed = createMockFeed();
-    mockUseCustomFeed.mockReturnValue(mockFeed);
     mockCommitDelete.mockResolvedValue(undefined);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
@@ -1304,11 +1266,10 @@ describe('CustomFeedDialog', () => {
 
   it('shows success toast and replaces the active route with home after successful delete', async () => {
     const mockFeed = createMockFeed();
-    mockUseCustomFeed.mockReturnValue(mockFeed);
     mockCommitDelete.mockResolvedValue(undefined);
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
@@ -1345,11 +1306,10 @@ describe('CustomFeedDialog', () => {
 
   it('shows error toast when delete fails', async () => {
     const mockFeed = createMockFeed();
-    mockUseCustomFeed.mockReturnValue(mockFeed);
     mockCommitDelete.mockRejectedValue(new Error('Delete failed'));
 
     render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
@@ -1363,18 +1323,6 @@ describe('CustomFeedDialog', () => {
       });
     });
   });
-
-  it('disables delete button when customFeed is undefined', () => {
-    mockUseCustomFeed.mockReturnValue(undefined);
-
-    render(
-      <CustomFeedDialog mode="edit">
-        <button>Edit Feed</button>
-      </CustomFeedDialog>,
-    );
-
-    expect(screen.getByTestId('delete-feed-button')).toBeDisabled();
-  });
 });
 
 // --- Snapshot Tests ---
@@ -1382,7 +1330,6 @@ describe('CustomFeedDialog', () => {
 describe('CustomFeedDialog - Snapshots', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseCustomFeed.mockReturnValue(undefined);
     mockUsePathname.mockReturnValue('/feed/feed-abc123');
   });
 
@@ -1397,21 +1344,9 @@ describe('CustomFeedDialog - Snapshots', () => {
 
   it('matches snapshot for edit mode with custom feed', () => {
     const mockFeed = createMockFeed();
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     const { container } = render(
-      <CustomFeedDialog mode="edit">
-        <button>Edit Feed</button>
-      </CustomFeedDialog>,
-    );
-    expect(container.firstChild).toMatchSnapshot();
-  });
-
-  it('matches snapshot for edit mode without custom feed (disabled)', () => {
-    mockUseCustomFeed.mockReturnValue(undefined);
-
-    const { container } = render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );
@@ -1420,10 +1355,9 @@ describe('CustomFeedDialog - Snapshots', () => {
 
   it('matches snapshot for edit mode with null content feed', () => {
     const mockFeed = createMockFeed({ content: null, tags: ['bitcoin'] });
-    mockUseCustomFeed.mockReturnValue(mockFeed);
 
     const { container } = render(
-      <CustomFeedDialog mode="edit">
+      <CustomFeedDialog mode="edit" feed={mockFeed}>
         <button>Edit Feed</button>
       </CustomFeedDialog>,
     );

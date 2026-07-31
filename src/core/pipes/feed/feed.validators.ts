@@ -5,15 +5,38 @@ import {
   type TFeedPersistDeleteParams,
   type TFeedPersistParams,
 } from '@/application/feed/feed.types';
+import { DEFAULT_CUSTOM_FEED_ICON } from '@/config/feed';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
 import { Err } from '@/libs/error/error.factories';
 import { ErrorService } from '@/libs/error/error.types';
 
 const MIN_TAGS = 1;
 const MAX_TAGS = validationLimits.feedTagsMaxCount;
+const MAX_ICON_LENGTH = validationLimits.feedIconMaxLength;
 
 export class FeedValidators {
   private constructor() {}
+
+  /**
+   * Coerces an icon coming from storage or a remote payload into a value
+   * `PubkySpecsBuilder.createFeed` will accept.
+   *
+   * Specs rejects both an empty icon and one longer than `feedIconMaxLength`,
+   * and `createFeed` throws on rejection — during bootstrap that throw is
+   * caught per-feed, so an unusable icon would silently drop the whole feed
+   * from the user's list. Falling back to the default keeps the feed.
+   *
+   * Names that are merely unknown to us (another client's icon set) pass
+   * through untouched so a round-trip through this app does not overwrite
+   * them; the UI already renders a fallback for names it cannot resolve.
+   */
+  static sanitizeIcon(icon: string | undefined | null): string {
+    const trimmed = icon?.trim();
+
+    if (!trimmed || trimmed.length > MAX_ICON_LENGTH) return DEFAULT_CUSTOM_FEED_ICON;
+
+    return trimmed;
+  }
 
   /**
    * Validates and normalizes tags for a feed.
