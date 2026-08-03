@@ -270,7 +270,6 @@
       "blockedDescription": "Este número de telefone não pode ser usado para verificação.",
       "tooManyAttempts": "Muitas tentativas de verificação",
       "tooManyAttemptsDescription": "Muitas tentativas de verificação",
-      "sendFailed": "Falha ao enviar código SMS",
       "sendFailedDescription": "Não foi possível enviar o código de verificação. Tente mais tarde.",
       "rateLimitedWithRetry": "Muitas tentativas de verificação. Tente novamente em {seconds}s.",
       "weeklyLimitReached": "Muitas tentativas de verificação",
@@ -290,7 +289,6 @@
       "verify": "Verificar Código",
       "valid": "Código de Verificacao Válido",
       "invalid": "Código de Verificacao Inválido. Tente novamente.",
-      "verifyFailed": "Falha ao verificar código SMS",
       "verifyFailedDescription": "Não foi possível verificar o código. Tente mais tarde."
     },
     "lightning": {
@@ -1370,6 +1368,7 @@
       "layoutLabel": "Layout",
       "layoutGrid": "Grade",
       "layoutList": "Lista",
+      "layoutVisual": "Visual",
       "addImage": "Adicionar imagem",
       "removeImage": "Remover imagem",
       "coverImageInvalid": "A imagem de capa deve ser um arquivo de imagem.",
@@ -1436,6 +1435,8 @@
       "layout": "Layout",
       "layoutGrid": "Grade",
       "layoutList": "Lista",
+      "layoutVisual": "Visual",
+      "hiddenItemsNotice": "Alguns itens desta coleção estão ocultos devido ao tipo de layout selecionado.",
       "empty": "Esta coleção está vazia.",
       "notFound": {
         "title": "Coleção não encontrada",

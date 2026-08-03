@@ -276,7 +276,6 @@
       "yearlyLimitReached": "Too many verification attempts",
       "yearlyLimitDescription": "Too many verification attempts",
       "verificationFailed": "Phone verification failed. Try again.",
-      "sendFailed": "Failed to send SMS code",
       "sendFailedDescription": "Could not send verification code. Try again later."
     },
     "phoneCode": {
@@ -290,7 +289,6 @@
       "verify": "Verify Code",
       "valid": "Verification code valid",
       "invalid": "Verification Code Invalid. Try again.",
-      "verifyFailed": "Failed to verify sms code",
       "verifyFailedDescription": "Could not verify code. Try again later."
     },
     "lightning": {
@@ -1370,6 +1368,7 @@
       "layoutLabel": "Layout",
       "layoutGrid": "Grid",
       "layoutList": "List",
+      "layoutVisual": "Visual",
       "addImage": "Add image",
       "removeImage": "Remove image",
       "coverImageInvalid": "Cover image must be an image file.",
@@ -1436,6 +1435,8 @@
       "layout": "Layout",
       "layoutGrid": "Grid",
       "layoutList": "List",
+      "layoutVisual": "Visual",
+      "hiddenItemsNotice": "Some items in this collection are hidden due to the selected layout type.",
       "empty": "This collection is empty.",
       "notFound": {
         "title": "Collection Not Found",

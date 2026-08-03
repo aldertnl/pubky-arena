@@ -272,7 +272,6 @@
       "blockedDescription": "Diese Telefonnummer kann nicht zur Verifizierung verwendet werden.",
       "tooManyAttempts": "Zu viele Verifizierungsversuche",
       "tooManyAttemptsDescription": "Zu viele Verifizierungsversuche",
-      "sendFailed": "SMS-Code konnte nicht gesendet werden",
       "sendFailedDescription": "Verifizierungscode konnte nicht gesendet werden. Versuchen Sie es später erneut.",
       "rateLimitedWithRetry": "Zu viele Verifizierungsversuche. Erneut versuchen in {seconds}s.",
       "weeklyLimitReached": "Zu viele Verifizierungsversuche",
@@ -292,7 +291,6 @@
       "verify": "Code verifizieren",
       "valid": "Verifizierungscode gültig",
       "invalid": "Verifizierungscode ungültig. Versuchen Sie es erneut.",
-      "verifyFailed": "SMS-Code konnte nicht verifiziert werden",
       "verifyFailedDescription": "Code konnte nicht verifiziert werden. Versuchen Sie es später erneut."
     },
     "lightning": {
@@ -1372,6 +1370,7 @@
       "layoutLabel": "Layout",
       "layoutGrid": "Raster",
       "layoutList": "Liste",
+      "layoutVisual": "Visuell",
       "addImage": "Bild hinzufügen",
       "removeImage": "Bild entfernen",
       "coverImageInvalid": "Das Coverbild muss eine Bilddatei sein.",
@@ -1438,6 +1437,8 @@
       "layout": "Layout",
       "layoutGrid": "Raster",
       "layoutList": "Liste",
+      "layoutVisual": "Visuell",
+      "hiddenItemsNotice": "Einige Elemente in dieser Sammlung sind aufgrund des ausgewählten Layout-Typs ausgeblendet.",
       "empty": "Diese Sammlung ist leer.",
       "notFound": {
         "title": "Sammlung nicht gefunden",
