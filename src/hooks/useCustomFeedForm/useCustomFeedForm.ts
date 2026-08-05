@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
+import { PubkyAppFeedReach } from 'pubky-app-specs';
 import { useForm, type UseFormReturn } from 'react-hook-form';
 import { APP_ROUTES } from '@/app/routes';
 import { FeedController } from '@/controllers/feed/feed';
+import { TAGGED_AS_FILTER_KEY } from '@/molecules/Filters/FilterReach/FilterReach';
 import { useToast } from '@/molecules/Toaster/use-toast';
 import {
   CUSTOM_FEED_CONTENT_ALL,
@@ -78,9 +80,12 @@ export function useCustomFeedForm(params: UseCustomFeedFormParams): UseCustomFee
 
       // `null` is the feed record's "no content filter"; the form carries a
       // sentinel instead because a Select cannot hold null as an option value.
+      // Tagged as is a UI-only reach: persist as WoT + the form's domain_tags.
+      const { reach: formReach, content: formContent, ...rest } = data;
       const changes = {
-        ...data,
-        content: data.content === CUSTOM_FEED_CONTENT_ALL ? null : data.content,
+        ...rest,
+        reach: formReach === TAGGED_AS_FILTER_KEY ? PubkyAppFeedReach.Wot : formReach,
+        content: formContent === CUSTOM_FEED_CONTENT_ALL ? null : formContent,
       };
 
       try {

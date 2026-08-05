@@ -13,6 +13,7 @@ export class FeedModel extends RecordModelBase<string, FeedModelSchema> implemen
   name: string;
   icon?: string;
   tags: string[];
+  domain_tags: string[];
   reach: PubkyAppFeedReach;
   sort: PubkyAppFeedSort;
   content: PubkyAppPostKind | null;
@@ -25,6 +26,7 @@ export class FeedModel extends RecordModelBase<string, FeedModelSchema> implemen
     this.name = feed.name;
     this.icon = feed.icon;
     this.tags = feed.tags;
+    this.domain_tags = feed.domain_tags;
     this.reach = feed.reach;
     this.sort = feed.sort;
     this.content = feed.content;

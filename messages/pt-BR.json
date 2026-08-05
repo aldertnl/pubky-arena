@@ -514,6 +514,7 @@
       "tagPost": "Marcar post ({count})"
     },
     "deleted": "Este post foi excluido pelo autor.",
+    "remove": "Remover",
     "missing": "Post não encontrado.",
     "dropFiles": "Solte os arquivos aqui",
     "articleTitle": "Titulo do Artigo",
@@ -766,6 +767,10 @@
       "content": "Conteudo",
       "contentPlaceholder": "Selecione um conteudo",
       "filterTags": "Filtrar por Tags de Conteudo",
+      "postTags": "Tags de posts",
+      "postTagsDescription": "Filtre pelo assunto dos posts.",
+      "profileTags": "Tags de perfil",
+      "profileTagsDescription": "Filtre por como as pessoas são marcadas.",
       "saveFeed": "Salvar Feed",
       "deleteFeed": "Excluir Feed",
       "feedCreated": "Feed {name} criado!",
@@ -1035,6 +1040,8 @@
       "removed": "Bookmark removido",
       "addFailed": "Não foi possível adicionar o favorito",
       "removeFailed": "Não foi possível remover o favorito",
+      "removedSyncFailed": "Bookmark removido neste dispositivo, mas a sincronização falhou.",
+      "addedSyncFailed": "Bookmark adicionado neste dispositivo, mas a sincronização falhou.",
       "loginRequired": "Entre para salvar publicações"
     },
     "collection": {
@@ -1176,8 +1183,15 @@
     "reach": {
       "title": "Alcance",
       "all": "Todos",
+      "network": "Minha rede",
+      "taggedAs": "Marcado como",
       "following": "Seguindo",
-      "friends": "Amigos"
+      "friends": "Amigos",
+      "me": "Eu",
+      "profileTag": "tag de perfil",
+      "profileTagLimitReached": "maximo {max} tags",
+      "taggedAsTag": "“{tag}”",
+      "taggedAsHeadline": "Publicações de pessoas que minha rede marcou como {tags}"
     },
     "sort": {
       "title": "Ordenar",
@@ -1490,6 +1504,7 @@
     "addedToCollection": "Publicação adicionada à coleção.",
     "removedFromCollection": "Publicação removida da coleção.",
     "updateCollectionFailed": "Falha ao atualizar a coleção.",
+    "removedFromCollectionSyncFailed": "Publicação removida da coleção neste dispositivo, mas a sincronização falhou.",
     "collectionCreated": "Coleção criada e publicação salva.",
     "createCollectionFailed": "Falha ao criar a coleção."
   },

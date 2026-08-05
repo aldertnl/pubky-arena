@@ -19,6 +19,9 @@ import {
   Rows4,
   SquareAsterisk,
   StickyNote,
+  Tags,
+  UserRound,
+  Waypoints,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { PubkyAppFeedLayout, PubkyAppFeedReach, PubkyAppFeedSort, PubkyAppPostKind } from 'pubky-app-specs';
@@ -30,18 +33,22 @@ import { DynamicLucideIcon } from '@/atoms/DynamicLucideIcon/DynamicLucideIcon';
 import { Input } from '@/atoms/Input/Input';
 import { Label } from '@/atoms/Label/Label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/atoms/Select/Select';
+import { Typography } from '@/atoms/Typography/Typography';
 import { useCustomFeedForm } from '@/hooks/useCustomFeedForm/useCustomFeedForm';
 import {
   CUSTOM_FEED_CONTENT_ALL,
   CUSTOM_FEED_FORM_FIELDS,
   type CustomFeedFormContent,
+  type CustomFeedFormReach,
 } from '@/hooks/useCustomFeedForm/useCustomFeedForm.types';
 import { UsersRound2 } from '@/icons';
 import { getMaxStreamTags } from '@/libs/runtime-config/runtime-config';
 import type { FeedModelSchema } from '@/models/feed/feed.schema';
+import { TAGGED_AS_FILTER_KEY } from '@/molecules/Filters/FilterReach/FilterReach';
 import { PostTag } from '@/molecules/PostTag/PostTag';
 import { TagInput } from '@/molecules/TagInput/TagInput';
 import { IconPickerDialog } from '@/organisms/IconPickerDialog/IconPickerDialog';
+import { HOME_PROFILE_TAGS_MAX_SELECTED } from '@/stores/home/home.types';
 
 type CustomFeedDialogProps =
   | {
@@ -61,6 +68,10 @@ function isVisualCustomFeedContentSupported(content?: CustomFeedFormContent): bo
   );
 }
 
+function parseReachValue(value: string): CustomFeedFormReach {
+  return value === TAGGED_AS_FILTER_KEY ? TAGGED_AS_FILTER_KEY : (Number(value) as PubkyAppFeedReach);
+}
+
 export const CustomFeedDialog = (props: CustomFeedDialogProps) => {
   const { mode, children } = props;
   const [open, setOpen] = useState(false);
@@ -76,12 +87,22 @@ export const CustomFeedDialog = (props: CustomFeedDialogProps) => {
   const layout = form.watch(CUSTOM_FEED_FORM_FIELDS.LAYOUT);
   const content = form.watch(CUSTOM_FEED_FORM_FIELDS.CONTENT);
   const icon = form.watch(CUSTOM_FEED_FORM_FIELDS.ICON);
+  const reach = form.watch(CUSTOM_FEED_FORM_FIELDS.REACH);
+  const domainTags = form.watch(CUSTOM_FEED_FORM_FIELDS.DOMAIN_TAGS);
+
+  const isTaggedAsReach = reach === TAGGED_AS_FILTER_KEY;
+  const isAtProfileTagLimit = domainTags.length >= HOME_PROFILE_TAGS_MAX_SELECTED;
 
   const reachFilters = [
     {
-      value: PubkyAppFeedReach.All,
-      label: tFilter('reach.all'),
-      icon: Radio,
+      value: PubkyAppFeedReach.Wot,
+      label: tFilter('reach.network'),
+      icon: Waypoints,
+    },
+    {
+      value: TAGGED_AS_FILTER_KEY,
+      label: tFilter('reach.taggedAs'),
+      icon: Tags,
     },
     {
       value: PubkyAppFeedReach.Following,
@@ -92,6 +113,16 @@ export const CustomFeedDialog = (props: CustomFeedDialogProps) => {
       value: PubkyAppFeedReach.Friends,
       label: tFilter('reach.friends'),
       icon: HeartHandshake,
+    },
+    {
+      value: PubkyAppFeedReach.Me,
+      label: tFilter('reach.me'),
+      icon: UserRound,
+    },
+    {
+      value: PubkyAppFeedReach.All,
+      label: tFilter('reach.all'),
+      icon: Radio,
     },
   ];
   const sortFilters = [
@@ -196,6 +227,35 @@ export const CustomFeedDialog = (props: CustomFeedDialogProps) => {
     }
   };
 
+  const handleReachChange = (value: string, onChange: (next: CustomFeedFormReach) => void) => {
+    const nextReach = parseReachValue(value);
+    onChange(nextReach);
+    // Profile tags are authored only via Tagged as. Leaving that surface (or
+    // any other explicit reach pick) drops legacy domain tags so they cannot
+    // silently persist on an unsupported reach after save.
+    if (nextReach !== TAGGED_AS_FILTER_KEY) {
+      form.setValue(CUSTOM_FEED_FORM_FIELDS.DOMAIN_TAGS, [], { shouldValidate: true });
+    } else {
+      form.trigger();
+    }
+  };
+
+  const handleDomainTagAdd = (tag: string) => {
+    const normalizedTag = tag.trim().toLowerCase();
+    if (
+      !isTaggedAsReach ||
+      !normalizedTag ||
+      domainTags.length >= HOME_PROFILE_TAGS_MAX_SELECTED ||
+      domainTags.some((existingTag) => existingTag.toLowerCase() === normalizedTag)
+    ) {
+      return;
+    }
+    form.setValue(CUSTOM_FEED_FORM_FIELDS.DOMAIN_TAGS, [...domainTags, normalizedTag], {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  };
+
   const handleSaveFeed = async () => {
     const saved = await submit();
 
@@ -287,7 +347,7 @@ export const CustomFeedDialog = (props: CustomFeedDialogProps) => {
               render={({ field }) => (
                 <Select
                   value={String(field.value)}
-                  onValueChange={(v) => field.onChange(Number(v))}
+                  onValueChange={(v) => handleReachChange(v, field.onChange)}
                   disabled={loading}
                   data-testid="reach-select"
                 >
@@ -396,7 +456,11 @@ export const CustomFeedDialog = (props: CustomFeedDialogProps) => {
         </Container>
 
         <Container className="gap-y-2">
-          <Label className="text-xs tracking-wide text-muted-foreground uppercase">{tDialog('filterTags')}</Label>
+          <Label className="text-xs tracking-wide text-muted-foreground uppercase">{tDialog('postTags')}</Label>
+
+          <Typography overrideDefaults className="text-base leading-6 font-medium text-secondary-foreground">
+            {tDialog('postTagsDescription')}
+          </Typography>
 
           <Controller
             name={CUSTOM_FEED_FORM_FIELDS.TAGS}
@@ -435,6 +499,56 @@ export const CustomFeedDialog = (props: CustomFeedDialogProps) => {
             )}
           />
         </Container>
+
+        {(isTaggedAsReach || domainTags.length > 0) && (
+          <Container className="gap-y-2" data-testid="profile-tags-section">
+            <Label className="text-xs tracking-wide text-muted-foreground uppercase">{tDialog('profileTags')}</Label>
+
+            <Typography overrideDefaults className="text-base leading-6 font-medium text-secondary-foreground">
+              {tDialog('profileTagsDescription')}
+            </Typography>
+
+            {isTaggedAsReach && (
+              <TagInput
+                onTagAdd={handleDomainTagAdd}
+                placeholder={tFilter('reach.profileTag')}
+                existingTags={domainTags.map((label) => ({ label }))}
+                viewerTags={domainTags.map((label) => ({ label }))}
+                disabled={loading}
+                maxTags={HOME_PROFILE_TAGS_MAX_SELECTED}
+                currentTagsCount={domainTags.length}
+                limitReachedPlaceholder={tFilter('reach.profileTagLimitReached', {
+                  max: HOME_PROFILE_TAGS_MAX_SELECTED,
+                })}
+                showEmojiButton={!isAtProfileTagLimit}
+                enableApiSuggestions
+                excludeFromApiSuggestions={domainTags}
+                addOnSuggestionClick
+                className="w-48"
+                data-testid="feed-profile-tag-input"
+              />
+            )}
+
+            {domainTags.length > 0 && (
+              <Container className="flex-row flex-wrap gap-2">
+                {domainTags.map((tag, index) => (
+                  <PostTag
+                    key={`${tag}-${index}`}
+                    label={tag}
+                    showClose={isTaggedAsReach && !loading}
+                    onClose={() =>
+                      form.setValue(
+                        CUSTOM_FEED_FORM_FIELDS.DOMAIN_TAGS,
+                        domainTags.filter((_, i) => i !== index),
+                        { shouldValidate: true, shouldDirty: true },
+                      )
+                    }
+                  />
+                ))}
+              </Container>
+            )}
+          </Container>
+        )}
 
         <DialogFooter>
           <Button

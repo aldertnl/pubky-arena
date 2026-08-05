@@ -4,6 +4,7 @@ export type TFeedCreateParams = {
   name: string;
   icon: string;
   tags: string[];
+  domain_tags: string[];
   reach: PubkyAppFeedReach;
   sort: PubkyAppFeedSort;
   content: PubkyAppPostKind | null;

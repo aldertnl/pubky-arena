@@ -516,6 +516,7 @@
       "tagPost": "Etiquetar publicación ({count})"
     },
     "deleted": "Esta publicación ha sido eliminada por su autor.",
+    "remove": "Quitar",
     "missing": "Publicación no encontrada.",
     "dropFiles": "Suelta los archivos aqui",
     "articleTitle": "Titulo del articulo",
@@ -768,6 +769,10 @@
       "content": "Contenido",
       "contentPlaceholder": "Selecciona un contenido",
       "filterTags": "Filtrar por etiquetas de contenido",
+      "postTags": "Etiquetas de publicaciones",
+      "postTagsDescription": "Filtra por el tema de las publicaciones.",
+      "profileTags": "Etiquetas de perfil",
+      "profileTagsDescription": "Filtra según cómo están etiquetadas las personas.",
       "saveFeed": "Guardar Feed",
       "deleteFeed": "Eliminar Feed",
       "feedCreated": "¡Feed {name} creado!",
@@ -1037,6 +1042,8 @@
       "removed": "Publicación eliminada de marcadores",
       "addFailed": "No se pudo agregar el marcador",
       "removeFailed": "No se pudo eliminar el marcador",
+      "removedSyncFailed": "Se eliminó de marcadores en este dispositivo, pero falló la sincronización.",
+      "addedSyncFailed": "Se guardó en marcadores en este dispositivo, pero falló la sincronización.",
       "loginRequired": "Inicia sesión para guardar publicaciones"
     },
     "collection": {
@@ -1178,8 +1185,15 @@
     "reach": {
       "title": "Alcance",
       "all": "Todos",
+      "network": "Mi red",
+      "taggedAs": "Etiquetado como",
       "following": "Siguiendo",
-      "friends": "Amigos"
+      "friends": "Amigos",
+      "me": "Yo",
+      "profileTag": "etiqueta de perfil",
+      "profileTagLimitReached": "máximo {max} etiquetas",
+      "taggedAsTag": "«{tag}»",
+      "taggedAsHeadline": "Publicaciones de personas que mi red etiquetó como {tags}"
     },
     "sort": {
       "title": "Ordenar",
@@ -1494,6 +1508,7 @@
     "addedToCollection": "Publicación añadida a la colección.",
     "removedFromCollection": "Publicación eliminada de la colección.",
     "updateCollectionFailed": "No se pudo actualizar la colección.",
+    "removedFromCollectionSyncFailed": "Se eliminó de la colección en este dispositivo, pero falló la sincronización.",
     "collectionCreated": "Colección creada y publicación guardada.",
     "createCollectionFailed": "No se pudo crear la colección."
   },

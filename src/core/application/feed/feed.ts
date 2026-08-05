@@ -1,6 +1,6 @@
 import { baseUriBuilder, feedUriBuilder } from 'pubky-app-specs';
 import type { TFeedPersistCreateParams, TFeedPersistDeleteParams } from '@/application/feed/feed.types';
-import { DEFAULT_CUSTOM_FEED_ICON } from '@/config/feed';
+import { DEFAULT_CUSTOM_FEED_ICON, isProfileTagReachSupported } from '@/config/feed';
 import type { TFeedCreateParams, TFeedIdParam, TFeedUpdateParams } from '@/controllers/feed/feed.types';
 import { db } from '@/database/franky/franky';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
@@ -9,7 +9,7 @@ import { ErrorService } from '@/libs/error/error.types';
 import { HttpMethod } from '@/libs/http/http.types';
 import { Logger } from '@/libs/logger/logger';
 import { FeedModel } from '@/models/feed/feed';
-import { buildFeedStreamId } from '@/models/feed/feed.helpers';
+import { buildFeedStreamId, reachToString } from '@/models/feed/feed.helpers';
 import type { FeedModelSchema } from '@/models/feed/feed.schema';
 import type { Pubky } from '@/models/models.types';
 import { PostStreamModel } from '@/models/stream/post/tables/postStream';
@@ -51,13 +51,14 @@ export class FeedApplication {
       ? (await LocalFeedService.read({ feedId: existingId }).catch(() => ({ created_at: now }))).created_at
       : now;
 
-    const { tags, reach, sort, content, layout } = feed.feed;
+    const { tags, domain_tags, reach, sort, content, layout } = feed.feed;
 
     const feedSchema: FeedModelSchema = {
       id: newId,
       name: feed.name,
       icon: feed.icon ?? DEFAULT_CUSTOM_FEED_ICON,
       tags: tags ?? [],
+      domain_tags: domain_tags ?? [],
       reach,
       sort,
       content: content ?? null,
@@ -66,7 +67,7 @@ export class FeedApplication {
       updated_at: now,
     };
 
-    // When config fields (tags, reach, layout, sort, content) change, the HashId-derived
+    // When config fields (tags, domain_tags, reach, layout, sort, content) change, the HashId-derived
     // ID changes too. Migration flow is:
     // 1) create new homeserver resource, 2) atomically swap local feed records,
     // 3) best-effort delete old homeserver resource.
@@ -77,7 +78,7 @@ export class FeedApplication {
 
       await HomeserverService.request({ method: HttpMethod.PUT, url: newFeedUrl, bodyJson: newFeedJson });
 
-      const persistedNewFeed = await this.migrateLocalFeedAtomically({ existingId, feedSchema, oldFeed });
+      const persistedNewFeed = await this.migrateLocalFeedAtomically({ userId, existingId, feedSchema, oldFeed });
 
       // Best-effort cleanup of old homeserver feed. Keep local new feed as source of truth if cleanup fails.
       const oldFeedUrl = feedUriBuilder(userId, existingId);
@@ -100,7 +101,14 @@ export class FeedApplication {
     const feedUrl = feedUriBuilder(userId, feedId);
 
     const feed = await LocalFeedService.read({ feedId }).catch(() => null);
-    const streamId = feed ? buildFeedStreamId(feed) : null;
+    let streamId: ReturnType<typeof buildFeedStreamId> | null = null;
+    if (feed) {
+      try {
+        streamId = buildFeedStreamId(feed, userId);
+      } catch {
+        // Cache cleanup is ancillary; malformed legacy rows must remain deletable.
+      }
+    }
 
     await Promise.all([
       LocalFeedService.delete({ feedId }),
@@ -115,7 +123,7 @@ export class FeedApplication {
    * Merges partial update changes with the existing feed to produce a full TFeedCreateParams.
    * Fields present in `changes` override the existing values; omitted fields keep their current value.
    * The result is passed to FeedNormalizer which recomputes the HashId — if any config field
-   * (tags, reach, sort, content, layout) changed, the feed will get a new ID.
+   * (tags, domain_tags, reach, sort, content, layout) changed, the feed will get a new ID.
    * Presentation fields (`name` and `icon`) do not affect the ID.
    */
   static async prepareUpdateParams({ feedId, changes }: TFeedUpdateParams): Promise<TFeedCreateParams> {
@@ -125,6 +133,7 @@ export class FeedApplication {
       name: changes.name ?? existing.name,
       icon: FeedValidators.sanitizeIcon(changes.icon ?? existing.icon),
       tags: changes.tags ?? existing.tags,
+      domain_tags: changes.domain_tags ?? existing.domain_tags,
       reach: changes.reach ?? existing.reach,
       sort: changes.sort ?? existing.sort,
       content: changes.content !== undefined ? changes.content : existing.content,
@@ -182,13 +191,22 @@ export class FeedApplication {
   private static normalizeRemoteFeed({ userId, remoteFeed }: RemoteFeedParams): FeedModelSchema | null {
     try {
       const { feed, meta: feedMeta } = this.validateRemoteFeedWithSpecs({ userId, remoteFeed });
-      const { tags, reach, sort, layout, content } = feed.feed;
+      const { tags, domain_tags, reach, sort, layout, content } = feed.feed;
+
+      if (domain_tags && domain_tags.length > 0 && !isProfileTagReachSupported(reachToString(reach))) {
+        Logger.warn('Skipping unsupported profile-tag feed during bootstrap fetch', {
+          reach: reachToString(reach),
+          domainTags: domain_tags,
+        });
+        return null;
+      }
 
       return {
         id: feedMeta.id,
         name: feed.name,
         icon: feed.icon ?? DEFAULT_CUSTOM_FEED_ICON,
         tags: tags ?? [],
+        domain_tags: domain_tags ?? [],
         reach,
         sort,
         content: content ?? null,
@@ -219,7 +237,8 @@ export class FeedApplication {
     const builder = PubkySpecsSingleton.get(userId);
 
     const { tags, domain_tags, reach, layout, sort, content } = remoteFeed.feed;
-    const normalizedTags = Array.isArray(tags) ? tags : [];
+    // Replay absent tags as `undefined` (not `[]`) so foreign HashIds stay stable.
+    const normalizedTags = Array.isArray(tags) ? tags : undefined;
     const normalizedDomainTags = Array.isArray(domain_tags) ? domain_tags : undefined;
     return builder.createFeed({
       tags: normalizedTags,
@@ -253,6 +272,7 @@ export class FeedApplication {
    * This prevents transient duplicate/empty states in reactive local queries.
    */
   private static async migrateLocalFeedAtomically({
+    userId,
     existingId,
     feedSchema,
     oldFeed,
@@ -262,9 +282,16 @@ export class FeedApplication {
       await FeedModel.deleteById(existingId);
 
       if (oldFeed) {
-        const oldStreamId = buildFeedStreamId(oldFeed);
-        await PostStreamModel.deleteById(oldStreamId);
-        await UnreadPostStreamModel.deleteById(oldStreamId);
+        let oldStreamId: ReturnType<typeof buildFeedStreamId> | null = null;
+        try {
+          oldStreamId = buildFeedStreamId(oldFeed, userId);
+        } catch {
+          // Cache cleanup is ancillary; the edit can canonicalize a malformed legacy row.
+        }
+        if (oldStreamId) {
+          await PostStreamModel.deleteById(oldStreamId);
+          await UnreadPostStreamModel.deleteById(oldStreamId);
+        }
       }
 
       return FeedModel.findByIdOrThrow(feedSchema.id);

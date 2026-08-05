@@ -516,6 +516,7 @@
       "tagPost": "Beitrag taggen ({count})"
     },
     "deleted": "Dieser Beitrag wurde vom Autor gelöscht.",
+    "remove": "Entfernen",
     "missing": "Beitrag nicht gefunden.",
     "dropFiles": "Dateien hier ablegen",
     "articleTitle": "Artikeltitel",
@@ -768,6 +769,10 @@
       "content": "Inhalt",
       "contentPlaceholder": "Inhalt auswählen",
       "filterTags": "Nach Inhalts-Tags filtern",
+      "postTags": "Beitrags-Tags",
+      "postTagsDescription": "Filtere danach, worum es in Beiträgen geht.",
+      "profileTags": "Profil-Tags",
+      "profileTagsDescription": "Filtere danach, wie Personen markiert sind.",
       "saveFeed": "Feed speichern",
       "deleteFeed": "Feed löschen",
       "feedCreated": "Feed {name} erstellt!",
@@ -1037,6 +1042,8 @@
       "removed": "Lesezeichen entfernt",
       "addFailed": "Lesezeichen konnte nicht hinzugefügt werden",
       "removeFailed": "Lesezeichen konnte nicht entfernt werden",
+      "removedSyncFailed": "Auf diesem Gerät aus den Lesezeichen entfernt, aber die Synchronisierung ist fehlgeschlagen.",
+      "addedSyncFailed": "Auf diesem Gerät zu den Lesezeichen hinzugefügt, aber die Synchronisierung ist fehlgeschlagen.",
       "loginRequired": "Melden Sie sich an, um Beiträge zu speichern"
     },
     "collection": {
@@ -1178,8 +1185,15 @@
     "reach": {
       "title": "Reichweite",
       "all": "Alle",
+      "network": "Mein Netzwerk",
+      "taggedAs": "Markiert als",
       "following": "Folge ich",
-      "friends": "Freunde"
+      "friends": "Freunde",
+      "me": "Ich",
+      "profileTag": "Profil-Tag",
+      "profileTagLimitReached": "Max. {max} Tags",
+      "taggedAsTag": "„{tag}“",
+      "taggedAsHeadline": "Beiträge von Personen, die mein Netzwerk als {tags} markiert hat"
     },
     "sort": {
       "title": "Sortieren",
@@ -1492,6 +1506,7 @@
     "addedToCollection": "Beitrag zur Sammlung hinzugefügt.",
     "removedFromCollection": "Beitrag aus der Sammlung entfernt.",
     "updateCollectionFailed": "Sammlung konnte nicht aktualisiert werden.",
+    "removedFromCollectionSyncFailed": "Auf diesem Gerät aus der Sammlung entfernt, aber die Synchronisierung ist fehlgeschlagen.",
     "collectionCreated": "Sammlung erstellt und Beitrag gespeichert.",
     "createCollectionFailed": "Sammlung konnte nicht erstellt werden."
   },

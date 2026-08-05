@@ -200,6 +200,7 @@ const defaultPaginationResult = {
   prependPosts: mockPrependPosts,
   prependOptimisticPosts: mockPrependOptimisticPosts,
   removePosts: vi.fn(),
+  removePostsOptimistically: vi.fn(() => ({ commit: vi.fn(), rollback: vi.fn() })),
 };
 
 const visualLayoutResolution = {
@@ -242,6 +243,7 @@ function setupTimelineFeedSnapshotMocks() {
     id: 'test-feed',
     name: 'Test Feed',
     tags: ['all'],
+    domain_tags: [],
     reach: PubkyAppFeedReach.All,
     sort: PubkyAppFeedSort.Recent,
     content: null,
@@ -274,6 +276,7 @@ describe('TimelineFeed', () => {
       id: 'test-feed',
       name: 'Test Feed',
       tags: ['all'],
+      domain_tags: [],
       reach: PubkyAppFeedReach.All,
       sort: PubkyAppFeedSort.Recent,
       content: null,

@@ -218,6 +218,7 @@ const createMockFeed = (overrides: Partial<FeedModelSchema> = {}): FeedModelSche
   name: 'Bitcoin News',
   icon: 'activity',
   tags: ['bitcoin', 'lightning'],
+  domain_tags: [],
   reach: PubkyAppFeedReach.All,
   sort: PubkyAppFeedSort.Recent,
   content: null,

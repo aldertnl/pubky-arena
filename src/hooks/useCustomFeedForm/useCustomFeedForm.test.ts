@@ -59,6 +59,7 @@ const createFeed = (overrides: Partial<FeedModelSchema> = {}): FeedModelSchema =
   name: 'Bitcoin News',
   icon: 'mountain',
   tags: ['bitcoin'],
+  domain_tags: [],
   reach: PubkyAppFeedReach.All,
   sort: PubkyAppFeedSort.Recent,
   layout: PubkyAppFeedLayout.Columns,
@@ -95,6 +96,7 @@ describe('useCustomFeedForm', () => {
         [CUSTOM_FEED_FORM_FIELDS.LAYOUT]: PubkyAppFeedLayout.Columns,
         [CUSTOM_FEED_FORM_FIELDS.CONTENT]: CUSTOM_FEED_CONTENT_ALL,
         [CUSTOM_FEED_FORM_FIELDS.TAGS]: [],
+        [CUSTOM_FEED_FORM_FIELDS.DOMAIN_TAGS]: [],
       });
     });
 

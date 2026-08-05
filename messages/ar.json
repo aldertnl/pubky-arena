@@ -516,6 +516,7 @@
       "tagPost": "وسم المنشور ({count})"
     },
     "deleted": "تم حذف هذا المنشور من قبل صاحبه.",
+    "remove": "إزالة",
     "missing": "المنشور غير موجود.",
     "dropFiles": "اسقط الملفات هنا",
     "articleTitle": "عنوان المقال",
@@ -768,6 +769,10 @@
       "content": "المحتوى",
       "contentPlaceholder": "اختر محتوى",
       "filterTags": "تصفية حسب وسوم المحتوى",
+      "postTags": "وسوم المنشورات",
+      "postTagsDescription": "صفِّ حسب موضوع المنشورات.",
+      "profileTags": "وسوم الملفات الشخصية",
+      "profileTagsDescription": "صفِّ حسب كيفية وسم الأشخاص.",
       "saveFeed": "حفظ الخلاصة",
       "deleteFeed": "حذف الخلاصة",
       "feedCreated": "تم إنشاء الخلاصة {name}!",
@@ -1037,6 +1042,8 @@
       "removed": "تمت ازالة المفضلة",
       "addFailed": "تعذر إضافة الإشارة المرجعية",
       "removeFailed": "تعذر إزالة الإشارة المرجعية",
+      "removedSyncFailed": "تمت الإزالة من الإشارات المرجعية على هذا الجهاز، لكن فشلت المزامنة.",
+      "addedSyncFailed": "تمت الإضافة إلى الإشارات المرجعية على هذا الجهاز، لكن فشلت المزامنة.",
       "loginRequired": "سجّل الدخول لحفظ المنشورات"
     },
     "collection": {
@@ -1172,8 +1179,15 @@
     "reach": {
       "title": "النطاق",
       "all": "الكل",
+      "network": "شبكتي",
+      "taggedAs": "موسوم كـ",
       "following": "المتابَعون",
-      "friends": "الاصدقاء"
+      "friends": "الاصدقاء",
+      "me": "انا",
+      "profileTag": "وسم الملف الشخصي",
+      "profileTagLimitReached": "{max} وسوم كحد اقصى",
+      "taggedAsTag": "«{tag}»",
+      "taggedAsHeadline": "منشورات من أشخاص وسمتهم شبكتي كـ {tags}"
     },
     "sort": {
       "title": "الترتيب",
@@ -1486,6 +1500,7 @@
     "addedToCollection": "تمت إضافة المنشور إلى المجموعة.",
     "removedFromCollection": "تمت إزالة المنشور من المجموعة.",
     "updateCollectionFailed": "فشل تحديث المجموعة.",
+    "removedFromCollectionSyncFailed": "تمت إزالة المنشور من المجموعة على هذا الجهاز، لكن فشلت المزامنة.",
     "collectionCreated": "تم إنشاء المجموعة وحفظ المنشور.",
     "createCollectionFailed": "فشل إنشاء المجموعة."
   },
