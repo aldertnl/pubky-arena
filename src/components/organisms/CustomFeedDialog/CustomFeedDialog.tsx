@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { PubkyAppFeedLayout, PubkyAppFeedReach, PubkyAppFeedSort, PubkyAppPostKind } from 'pubky-app-specs';
-import { Controller } from 'react-hook-form';
+import { Controller, useWatch } from 'react-hook-form';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/atoms/Dialog/Dialog';
@@ -84,11 +84,11 @@ export const CustomFeedDialog = (props: CustomFeedDialogProps) => {
   const tDialog = useTranslations('dialogs.customFeed');
 
   const { control } = form;
-  const layout = form.watch(CUSTOM_FEED_FORM_FIELDS.LAYOUT);
-  const content = form.watch(CUSTOM_FEED_FORM_FIELDS.CONTENT);
-  const icon = form.watch(CUSTOM_FEED_FORM_FIELDS.ICON);
-  const reach = form.watch(CUSTOM_FEED_FORM_FIELDS.REACH);
-  const domainTags = form.watch(CUSTOM_FEED_FORM_FIELDS.DOMAIN_TAGS);
+  const layout = useWatch({ control, name: CUSTOM_FEED_FORM_FIELDS.LAYOUT });
+  const content = useWatch({ control, name: CUSTOM_FEED_FORM_FIELDS.CONTENT });
+  const icon = useWatch({ control, name: CUSTOM_FEED_FORM_FIELDS.ICON });
+  const reach = useWatch({ control, name: CUSTOM_FEED_FORM_FIELDS.REACH });
+  const domainTags = useWatch({ control, name: CUSTOM_FEED_FORM_FIELDS.DOMAIN_TAGS }) ?? [];
 
   const isTaggedAsReach = reach === TAGGED_AS_FILTER_KEY;
   const isAtProfileTagLimit = domainTags.length >= HOME_PROFILE_TAGS_MAX_SELECTED;
@@ -227,16 +227,19 @@ export const CustomFeedDialog = (props: CustomFeedDialogProps) => {
     }
   };
 
-  const handleReachChange = (value: string, onChange: (next: CustomFeedFormReach) => void) => {
+  const handleReachChange = (value: string) => {
     const nextReach = parseReachValue(value);
-    onChange(nextReach);
+    // setValue (not only Controller.onChange) so useWatch subscribers reliably
+    // re-render — needed to reveal the profile-tags section for Tagged as.
+    form.setValue(CUSTOM_FEED_FORM_FIELDS.REACH, nextReach, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
     // Profile tags are authored only via Tagged as. Leaving that surface (or
     // any other explicit reach pick) drops legacy domain tags so they cannot
     // silently persist on an unsupported reach after save.
     if (nextReach !== TAGGED_AS_FILTER_KEY) {
       form.setValue(CUSTOM_FEED_FORM_FIELDS.DOMAIN_TAGS, [], { shouldValidate: true });
-    } else {
-      form.trigger();
     }
   };
 
@@ -347,7 +350,7 @@ export const CustomFeedDialog = (props: CustomFeedDialogProps) => {
               render={({ field }) => (
                 <Select
                   value={String(field.value)}
-                  onValueChange={(v) => handleReachChange(v, field.onChange)}
+                  onValueChange={handleReachChange}
                   disabled={loading}
                   data-testid="reach-select"
                 >
