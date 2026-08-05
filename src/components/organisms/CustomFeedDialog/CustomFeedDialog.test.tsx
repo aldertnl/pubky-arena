@@ -748,6 +748,24 @@ describe('CustomFeedDialog', () => {
     expect(screen.queryByTestId('feed-profile-tag-input')).not.toBeInTheDocument();
   });
 
+  it('caps profile tags at five and hides the emoji selector at the limit', () => {
+    render(
+      <CustomFeedDialog mode="create">
+        <button>Create Feed</button>
+      </CustomFeedDialog>,
+    );
+
+    changeSelectValue('reach-select', TAGGED_AS_FILTER_KEY);
+    const profileTagInput = screen.getByTestId('profile-tag-input-field');
+    for (const tag of ['one', 'two', 'three', 'four', 'five', 'six']) {
+      fireEvent.change(profileTagInput, { target: { value: tag } });
+    }
+
+    expect(screen.getByTestId('feed-profile-tag-input')).toHaveAttribute('data-current-tags-count', '5');
+    expect(screen.getByTestId('feed-profile-tag-input')).toHaveAttribute('data-show-emoji-button', 'false');
+    expect(screen.queryByTestId('post-tag-six')).not.toBeInTheDocument();
+  });
+
   it('creates a profile-only Tagged-as feed as Wot plus domain tags', async () => {
     mockCommitCreate.mockResolvedValue(
       createMockFeed({ id: 'profile-feed', reach: PubkyAppFeedReach.Wot, tags: [], domain_tags: ['🔥'] }),
