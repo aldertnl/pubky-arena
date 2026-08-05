@@ -2,6 +2,8 @@
 
 import { useCallback, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { ToastAction } from '@/atoms/Toast/Toast';
+import { getModerationId } from '@/config/moderation';
 import { UserController } from '@/controllers/user/user';
 import { HttpMethod } from '@/libs/http/http.types';
 import { Logger } from '@/libs/logger/logger';
@@ -68,9 +70,42 @@ export function useFollowUser(): UseFollowUserResult {
           followee: userId,
         });
 
-        toast({
-          title: isCurrentlyFollowing ? t('unfollowed', { username }) : t('followed', { username }),
-        });
+        const unfollowedModerationAccount = isCurrentlyFollowing && userId === getModerationId();
+
+        if (unfollowedModerationAccount) {
+          const toastInstance = toast({
+            variant: 'warning',
+            title: t('unfollowed', { username }),
+            description: t('moderationUnfollowedDescription'),
+            action: (
+              <ToastAction
+                variant="warning"
+                altText={t('undo')}
+                onClick={async () => {
+                  toastInstance.dismiss();
+
+                  try {
+                    await UserController.commitFollow(HttpMethod.PUT, {
+                      follower: currentUserPubky,
+                      followee: userId,
+                    });
+                    toast({ title: t('followed', { username }) });
+                  } catch (err) {
+                    const message = t('followFailed', { username });
+                    toast({ variant: 'error', description: message });
+                    Logger.error('[useFollowUser] Failed to undo moderation account unfollow:', err);
+                  }
+                }}
+              >
+                {t('undo')}
+              </ToastAction>
+            ),
+          });
+        } else {
+          toast({
+            title: isCurrentlyFollowing ? t('unfollowed', { username }) : t('followed', { username }),
+          });
+        }
 
         Logger.debug(`[useFollowUser] Successfully ${isCurrentlyFollowing ? 'unfollowed' : 'followed'} user`, {
           userId,

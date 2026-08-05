@@ -3,15 +3,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpMethod } from '@/libs/http/http.types';
 import { useFollowUser } from './useFollowUser';
 
-const { mockUseAuthStore, mockCommitFollow, mockGetDetails, mockLogger, mockToast } = vi.hoisted(() => ({
-  mockUseAuthStore: vi.fn(),
-  mockCommitFollow: vi.fn(),
-  mockGetDetails: vi.fn(),
-  mockLogger: {
-    debug: vi.fn(),
-    error: vi.fn(),
-  },
-  mockToast: vi.fn(),
+const { mockUseAuthStore, mockCommitFollow, mockGetDetails, mockGetModerationId, mockLogger, mockToast } = vi.hoisted(
+  () => ({
+    mockUseAuthStore: vi.fn(),
+    mockCommitFollow: vi.fn(),
+    mockGetDetails: vi.fn(),
+    mockGetModerationId: vi.fn(),
+    mockLogger: {
+      debug: vi.fn(),
+      error: vi.fn(),
+    },
+    mockToast: vi.fn(),
+  }),
+);
+
+vi.mock('@/config/moderation', () => ({
+  getModerationId: () => mockGetModerationId(),
 }));
 
 vi.mock('@/stores/auth/auth.store', () => ({
@@ -39,6 +46,10 @@ vi.mock('next-intl', () => ({
     if (key === 'unfollowed') return `Unfollowed ${values?.username ?? ''}`;
     if (key === 'followFailed') return `Failed to follow ${values?.username ?? ''}`;
     if (key === 'unfollowFailed') return `Failed to unfollow ${values?.username ?? ''}`;
+    if (key === 'moderationUnfollowedDescription') {
+      return 'Posts labeled by this moderation account may no longer be blurred.';
+    }
+    if (key === 'undo') return 'Undo';
     return key;
   },
 }));
@@ -49,6 +60,8 @@ describe('useFollowUser', () => {
     mockUseAuthStore.mockReturnValue({ currentUserPubky: 'current-user' });
     mockCommitFollow.mockResolvedValue(undefined);
     mockGetDetails.mockResolvedValue(null);
+    mockGetModerationId.mockReturnValue('moderation-user');
+    mockToast.mockReturnValue({ dismiss: vi.fn() });
   });
 
   it('sets error when user not authenticated', async () => {
@@ -107,6 +120,68 @@ describe('useFollowUser', () => {
     expect(mockToast).toHaveBeenCalledWith({
       title: 'Unfollowed Alice',
     });
+  });
+
+  it('warns when the runtime-configured moderation account is unfollowed and allows undo', async () => {
+    const { result } = renderHook(() => useFollowUser());
+
+    await act(async () => {
+      await result.current.toggleFollow('moderation-user', true, 'Moderator');
+    });
+
+    expect(mockCommitFollow).toHaveBeenCalledWith(HttpMethod.DELETE, {
+      follower: 'current-user',
+      followee: 'moderation-user',
+    });
+    expect(mockToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variant: 'warning',
+        title: 'Unfollowed Moderator',
+        description: 'Posts labeled by this moderation account may no longer be blurred.',
+        action: expect.anything(),
+      }),
+    );
+
+    const warningToast = mockToast.mock.calls[0]?.[0] as {
+      action: { props: { altText: string; children: string; onClick: () => Promise<void> } };
+    };
+    expect(warningToast.action.props.altText).toBe('Undo');
+    expect(warningToast.action.props.children).toBe('Undo');
+
+    await act(async () => {
+      await warningToast.action.props.onClick();
+    });
+
+    expect(mockCommitFollow).toHaveBeenNthCalledWith(2, HttpMethod.PUT, {
+      follower: 'current-user',
+      followee: 'moderation-user',
+    });
+    expect(mockToast).toHaveBeenLastCalledWith({ title: 'Following Moderator' });
+  });
+
+  it('shows an error toast when undoing the moderation-account unfollow fails', async () => {
+    mockCommitFollow.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('Undo failed'));
+    const { result } = renderHook(() => useFollowUser());
+
+    await act(async () => {
+      await result.current.toggleFollow('moderation-user', true, 'Moderator');
+    });
+
+    const warningToast = mockToast.mock.calls[0]?.[0] as {
+      action: { props: { onClick: () => Promise<void> } };
+    };
+    await act(async () => {
+      await warningToast.action.props.onClick();
+    });
+
+    expect(mockToast).toHaveBeenLastCalledWith({
+      variant: 'error',
+      description: 'Failed to follow Moderator',
+    });
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      '[useFollowUser] Failed to undo moderation account unfollow:',
+      expect.any(Error),
+    );
   });
 
   it('resolves display name from profile when not provided', async () => {

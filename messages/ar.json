@@ -1047,6 +1047,8 @@
     "follow": {
       "followed": "تتابع {username}",
       "unfollowed": "ألغيت متابعة {username}",
+      "moderationUnfollowedDescription": "قد لا يتم تمويه المنشورات المصنّفة بواسطة حساب الإشراف هذا بعد الآن.",
+      "undo": "تراجع",
       "followFailed": "تعذر متابعة {username}",
       "unfollowFailed": "تعذر إلغاء متابعة {username}"
     },

@@ -1047,6 +1047,8 @@
     "follow": {
       "followed": "Siguiendo a {username}",
       "unfollowed": "Dejaste de seguir a {username}",
+      "moderationUnfollowedDescription": "Es posible que las publicaciones etiquetadas por esta cuenta de moderación ya no se difuminen.",
+      "undo": "Deshacer",
       "followFailed": "No se pudo seguir a {username}",
       "unfollowFailed": "No se pudo dejar de seguir a {username}"
     },

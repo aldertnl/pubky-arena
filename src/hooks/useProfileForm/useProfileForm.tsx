@@ -5,12 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 import { HOME_ROUTES, PROFILE_ROUTES, SETTINGS_ROUTES } from '@/app/routes';
+import { getModerationId } from '@/config/moderation';
 import { USER_BIO_MAX_LENGTH, USER_NAME_MAX_LENGTH, USER_NAME_MIN_LENGTH } from '@/config/user';
 import { AuthController } from '@/controllers/auth/auth';
 import { FileController } from '@/controllers/file/file';
 import { ProfileController } from '@/controllers/profile/profile';
+import { UserController } from '@/controllers/user/user';
 import { AppError } from '@/libs/error/error';
 import { isAuthError, requiresLogin } from '@/libs/error/error.utils';
+import { HttpMethod } from '@/libs/http/http.types';
 import { getImageUploadSizeLimitToastMessage } from '@/libs/image/imageUploadSizeLimit';
 import { Logger } from '@/libs/logger/logger';
 import { safeExternalUrlSchema } from '@/libs/utils/safeExternalUrl';
@@ -279,6 +282,13 @@ export function useProfileForm(props: UseProfileFormProps): UseProfileFormReturn
       if (!user) {
         setSubmitTextKey(mode === 'create' ? 'finish' : 'saveProfile');
         return;
+      }
+
+      if (mode === 'create') {
+        await UserController.commitFollow(HttpMethod.PUT, {
+          follower: pubky,
+          followee: getModerationId(),
+        });
       }
 
       // Handle avatar upload

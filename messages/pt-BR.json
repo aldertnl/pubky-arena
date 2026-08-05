@@ -1045,6 +1045,8 @@
     "follow": {
       "followed": "Seguindo {username}",
       "unfollowed": "Deixou de seguir {username}",
+      "moderationUnfollowedDescription": "As publicações sinalizadas por esta conta de moderação podem deixar de ser desfocadas.",
+      "undo": "Desfazer",
       "followFailed": "Não foi possível seguir {username}",
       "unfollowFailed": "Não foi possível deixar de seguir {username}"
     },

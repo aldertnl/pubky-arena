@@ -27,13 +27,20 @@ const SENTRY_ENV_INPUT = {
   sentryReplaysOnErrorSampleRate: '1',
 };
 
+const VALID_MODERATION_ID = '68rkfi1d78baobycj6w4b7dga43o8qtnuhubban5at6qywrieb5y';
+const INVALID_MODERATION_IDS = [
+  VALID_MODERATION_ID.slice(0, -1),
+  `0${VALID_MODERATION_ID.slice(1)}`,
+  `pubky:${VALID_MODERATION_ID}`,
+];
+
 const APP_ENV_INPUT = {
   notificationPollIntervalMs: '1234',
   notificationPollOnStart: 'false',
   streamFetchLimit: '25',
   maxStreamTags: '7',
   ttlPostMs: '45000',
-  moderationId: 'moderation-key',
+  moderationId: VALID_MODERATION_ID,
   moderatedTags: '["spam","nudity"]',
   exchangeRateApi: 'https://rates.example.com/btc',
   plausibleDomain: 'example.com',
@@ -129,6 +136,14 @@ describe('runtimeEnvInputSchema', () => {
     expect(parsed.defaultUrl).toBe('https://app.example.com');
   });
 
+  it('rejects invalid supplied moderation IDs', () => {
+    for (const moderationId of INVALID_MODERATION_IDS) {
+      expect(() => runtimeEnvInputSchema.parse({ ...VALID_ENV_INPUT, moderationId })).toThrow(
+        'Expected a raw 52-character z-base-32 Pubky ID',
+      );
+    }
+  });
+
   it('accepts an empty MODERATED_TAGS JSON array as no moderated tags', () => {
     const parsed = runtimeEnvInputSchema.parse({ ...VALID_ENV_INPUT, moderatedTags: '[]' });
 
@@ -184,6 +199,14 @@ describe('runtimeConfigValueSchema', () => {
     expect(parsed.sentryDsn).toBe('https://abc123@o123.ingest.example.com/456');
     expect(parsed.sentryEnvironment).toBe('production');
     expect(parsed.sentryTracesSampleRate).toBe(0.2);
+  });
+
+  it('rejects invalid already-parsed moderation IDs', () => {
+    for (const moderationId of INVALID_MODERATION_IDS) {
+      expect(() => runtimeConfigValueSchema.parse({ ...NETWORK_RUNTIME_DEFAULTS, moderationId })).toThrow(
+        'Expected a raw 52-character z-base-32 Pubky ID',
+      );
+    }
   });
 
   it('rejects raw string inputs (proves the env/value schema split is necessary)', () => {

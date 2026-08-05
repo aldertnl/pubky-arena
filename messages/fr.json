@@ -1045,6 +1045,8 @@
     "follow": {
       "followed": "Vous suivez {username}",
       "unfollowed": "Vous ne suivez plus {username}",
+      "moderationUnfollowedDescription": "Les publications signalées par ce compte de modération pourraient ne plus être floutées.",
+      "undo": "Annuler",
       "followFailed": "Impossible de suivre {username}",
       "unfollowFailed": "Impossible de ne plus suivre {username}"
     },

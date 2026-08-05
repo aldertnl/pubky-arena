@@ -1045,6 +1045,8 @@
     "follow": {
       "followed": "正在关注 {username}",
       "unfollowed": "已取消关注 {username}",
+      "moderationUnfollowedDescription": "由此审核账号标记的帖子可能不再被模糊处理。",
+      "undo": "撤销",
       "followFailed": "无法关注 {username}",
       "unfollowFailed": "无法取消关注 {username}"
     },

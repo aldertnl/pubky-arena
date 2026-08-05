@@ -34,6 +34,9 @@ const testnetValue = z.boolean();
 const sampleRateValue = z.number().min(0).max(1);
 const positiveIntValue = z.number().int().positive();
 const nonEmptyStringValue = z.string().min(1);
+const rawPubkyValue = z
+  .string()
+  .regex(/^[ybndrfg8ejkmcpqxot1uwisza345h769]{52}$/, 'Expected a raw 52-character z-base-32 Pubky ID');
 
 /** Parse a JSON-array-of-strings env value into a string[]. Throws on malformed input. */
 function parseJsonStringArray(val: string, label = 'value'): string[] {
@@ -231,7 +234,7 @@ export const runtimeConfigValueSchema = networkConfigValueSchema.extend({
   ttlPostMaxBatchSize: positiveIntValue.default(APP_RUNTIME_DEFAULTS.ttlPostMaxBatchSize),
   ttlUserMaxBatchSize: positiveIntValue.default(APP_RUNTIME_DEFAULTS.ttlUserMaxBatchSize),
   ttlRetryDelayMs: positiveIntValue.default(APP_RUNTIME_DEFAULTS.ttlRetryDelayMs),
-  moderationId: nonEmptyStringValue.default(APP_RUNTIME_DEFAULTS.moderationId),
+  moderationId: rawPubkyValue.default(APP_RUNTIME_DEFAULTS.moderationId),
   moderatedTags: z.array(nonEmptyStringValue).default([...APP_RUNTIME_DEFAULTS.moderatedTags]),
   exchangeRateApi: urlValue.default(APP_RUNTIME_DEFAULTS.exchangeRateApi),
   preludeSdkKey: nonEmptyStringValue.optional(),

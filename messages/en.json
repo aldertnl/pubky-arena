@@ -1045,6 +1045,8 @@
     "follow": {
       "followed": "Following {username}",
       "unfollowed": "Unfollowed {username}",
+      "moderationUnfollowedDescription": "Posts labeled by this moderation account may no longer be blurred.",
+      "undo": "Undo",
       "followFailed": "Failed to follow {username}",
       "unfollowFailed": "Failed to unfollow {username}"
     },

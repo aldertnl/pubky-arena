@@ -1047,6 +1047,8 @@
     "follow": {
       "followed": "Folge {username}",
       "unfollowed": "{username} entfolgt",
+      "moderationUnfollowedDescription": "Von diesem Moderationskonto markierte Beiträge werden möglicherweise nicht mehr unkenntlich gemacht.",
+      "undo": "Rückgängig",
       "followFailed": "{username} konnte nicht gefolgt werden",
       "unfollowFailed": "{username} konnte nicht entfolgt werden"
     },

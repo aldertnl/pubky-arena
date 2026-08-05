@@ -1045,6 +1045,8 @@
     "follow": {
       "followed": "{username}をフォロー中",
       "unfollowed": "{username}のフォローを解除しました",
+      "moderationUnfollowedDescription": "このモデレーションアカウントがラベル付けした投稿は、ぼかされなくなる可能性があります。",
+      "undo": "元に戻す",
       "followFailed": "{username}をフォローできませんでした",
       "unfollowFailed": "{username}のフォローを解除できませんでした"
     },
