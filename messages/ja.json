@@ -756,6 +756,7 @@
       "feedIconCreateDescription": "新しいフィード用のカスタムアイコンを選択してください。",
       "feedIconEditDescription": "フィード用のカスタムアイコンを選択してください。",
       "editFeedLabel": "{name}を編集",
+      "moreFeeds": "その他のフィード",
       "reach": "範囲",
       "reachPlaceholder": "範囲を選択",
       "sort": "並べ替え",

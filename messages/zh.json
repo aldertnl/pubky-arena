@@ -756,6 +756,7 @@
       "feedIconCreateDescription": "为你的新信息流选择一个自定义图标。",
       "feedIconEditDescription": "为你的信息流选择一个自定义图标。",
       "editFeedLabel": "编辑{name}",
+      "moreFeeds": "更多信息流",
       "reach": "范围",
       "reachPlaceholder": "选择范围",
       "sort": "排序",

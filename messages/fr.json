@@ -756,6 +756,7 @@
       "feedIconCreateDescription": "Choisissez une icône personnalisée pour votre nouveau flux.",
       "feedIconEditDescription": "Choisissez une icône personnalisée pour votre flux.",
       "editFeedLabel": "Modifier {name}",
+      "moreFeeds": "Plus de flux",
       "reach": "Portee",
       "reachPlaceholder": "Selectionner une portee",
       "sort": "Trier",

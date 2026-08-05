@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { PubkyAppFeedLayout, PubkyAppFeedReach, PubkyAppFeedSort } from 'pubky-app-specs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FeedModelSchema } from '@/models/feed/feed.schema';
+import { resetViewport, setMobileViewport } from '@/test-utils/viewport';
 import { FeedNavigation } from './FeedNavigation';
 
 // Mock next/navigation
@@ -13,6 +14,7 @@ vi.mock('next/navigation', () => ({
 // Mock dexie-react-hooks — allow controlling useLiveQuery return value per test
 let mockCustomFeeds: FeedModelSchema[];
 let mockIsAuthenticated = true;
+let mockViewport: 'small' | 'medium' | 'large' = 'large';
 const mockRequireAuth = vi.fn((action: () => unknown) => action());
 vi.mock('dexie-react-hooks', () => ({
   useLiveQuery: vi.fn(
@@ -77,10 +79,12 @@ vi.mock('@/atoms/Container/Container', () => {
     Container: ({
       children,
       className,
+      overrideDefaults: _overrideDefaults,
       'data-testid': dataTestId,
     }: {
       children: React.ReactNode;
       className?: string;
+      overrideDefaults?: boolean;
       'data-testid'?: string;
     }) => (
       <div data-testid={dataTestId ?? 'container'} className={className}>
@@ -193,6 +197,18 @@ vi.mock('@/hooks/useRequireAuth/useRequireAuth', () => ({
   }),
 }));
 
+vi.mock('@/hooks/useIsMobile/useIsMobile', () => ({
+  useIsMobile: ({ breakpoint }: { breakpoint?: string } = {}) => {
+    if (breakpoint === 'lg') return mockViewport === 'small';
+    if (breakpoint === 'xl') return mockViewport !== 'large';
+    return mockViewport !== 'large';
+  },
+}));
+
+vi.mock('@/hooks/useIsTouchDevice/useIsTouchDevice', () => ({
+  useIsTouchDevice: () => false,
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -220,6 +236,7 @@ describe('FeedNavigation', () => {
     vi.clearAllMocks();
     mockCustomFeeds = [];
     mockIsAuthenticated = true;
+    mockViewport = 'large';
     mockRequireAuth.mockImplementation((action: () => unknown) => action());
     mockUsePathname.mockReturnValue('/home');
     mockGetList.mockResolvedValue([]);
@@ -322,7 +339,7 @@ describe('FeedNavigation', () => {
 
     const links = screen.getAllByTestId('link');
     const activeLink = links.find((link) => link.getAttribute('href') === '/feed/feed-active');
-    expect(activeLink).toHaveClass('border-white');
+    expect(activeLink?.parentElement).toHaveClass('border-white');
     expect(activeLink).toHaveClass('text-white');
   });
 
@@ -334,7 +351,7 @@ describe('FeedNavigation', () => {
 
     const links = screen.getAllByTestId('link');
     const inactiveLink = links.find((link) => link.getAttribute('href') === '/feed/feed-inactive');
-    expect(inactiveLink).toHaveClass('border-border');
+    expect(inactiveLink?.parentElement).toHaveClass('border-border');
     expect(inactiveLink).toHaveClass('text-muted-foreground');
   });
 
@@ -353,7 +370,8 @@ describe('FeedNavigation', () => {
     const editButton = screen.getByTestId('edit-feed-feed-edit');
     expect(editButton).toBeInTheDocument();
     expect(editButton).toHaveAttribute('aria-label', 'Edit Editable Feed');
-    expect(editButton).toHaveClass('right-2');
+    expect(editButton).toHaveClass('shrink-0');
+    expect(editButton).not.toHaveClass('absolute');
   });
 
   it('renders an edit action for an inactive custom feed without nesting it in the link', () => {
@@ -377,6 +395,8 @@ describe('FeedNavigation', () => {
     render(<FeedNavigation />);
 
     const editButton = screen.getByTestId('edit-feed-feed-edit');
+    const feedLink = screen.getAllByTestId('link').find((link) => link.getAttribute('href') === '/feed/feed-edit');
+    const feedTab = feedLink?.parentElement;
     expect(editButton).toHaveClass('opacity-100');
     expect(editButton).toHaveClass('lg:opacity-0');
     expect(editButton).toHaveClass('lg:group-hover:opacity-100');
@@ -386,7 +406,13 @@ describe('FeedNavigation', () => {
     expect(editButton).toHaveClass('hover:bg-transparent');
     expect(editButton).toHaveClass('transition-opacity');
     expect(editButton).toHaveClass('duration-200');
+    expect(editButton.parentElement?.parentElement).toHaveClass('gap-x-2');
+    expect(editButton).not.toHaveClass('mr-2');
     expect(editButton.querySelector('svg')).toHaveClass('size-2.5');
+    expect(feedLink).toHaveClass('flex-1');
+    expect(feedLink).toHaveClass('lg:flex-none');
+    expect(feedTab).not.toHaveClass('justify-center');
+    expect(feedTab).toHaveClass('lg:justify-center');
   });
 
   it('does not show edit dialog for Home feed even when active', () => {
@@ -414,6 +440,91 @@ describe('FeedNavigation', () => {
     const createDialog = screen.getByTestId('custom-feed-dialog-create');
     expect(createDialog).toBeInTheDocument();
     expect(createDialog).toHaveTextContent('Create Feed');
+  });
+
+  it('shows Create Feed label on mobile and keeps it screen-reader only on desktop', () => {
+    render(<FeedNavigation />);
+
+    const createLabel = screen.getByText('Create Feed');
+    expect(createLabel).toHaveClass('font-medium');
+    expect(createLabel).toHaveClass('lg:sr-only');
+  });
+
+  it('keeps Create Feed button outside the feed tabs', () => {
+    render(<FeedNavigation />);
+
+    const createDialog = screen.getByTestId('custom-feed-dialog-create');
+    const tabs = screen.getByTestId('feed-navigation-tabs');
+    const createButton = createDialog.querySelector('button');
+
+    expect(createButton).toHaveClass('shrink-0');
+    expect(tabs.contains(createDialog)).toBe(false);
+  });
+
+  it('shows at most five feeds on large screens and puts the rest in a popover', () => {
+    mockCustomFeeds = Array.from({ length: 6 }, (_, index) =>
+      createMockFeed({ id: `feed-${index + 1}`, name: `Feed ${index + 1}` }),
+    );
+
+    render(<FeedNavigation />);
+
+    expect(screen.getAllByTestId('custom-feed-tab')).toHaveLength(4);
+    expect(screen.getByText('Feed 4')).toBeInTheDocument();
+    expect(screen.queryByText('Feed 5')).not.toBeInTheDocument();
+    const overflowTrigger = screen.getByTestId('feed-navigation-overflow-trigger');
+    expect(overflowTrigger).toHaveAttribute('aria-label', 'More feeds');
+    expect(overflowTrigger.querySelector('svg')).toHaveClass('lucide-chevrons-right');
+
+    fireEvent.click(overflowTrigger);
+
+    const overflowItems = screen.getAllByTestId('overflow-feed-item');
+    expect(screen.getByTestId('popover-content')).toHaveClass('w-42');
+    expect(overflowItems).toHaveLength(2);
+    overflowItems.forEach((item) => expect(item).not.toHaveClass('border-b'));
+    overflowItems.forEach((item) => expect(item.querySelector('a')).toHaveClass('flex-1'));
+    expect(screen.getByTestId('edit-feed-feed-5')).toBeInTheDocument();
+    expect(screen.getByTestId('edit-feed-feed-6')).toBeInTheDocument();
+    expect(overflowItems[0].querySelector('a svg')).toHaveClass('size-4');
+    expect(screen.getByTestId('edit-feed-feed-5').querySelector('svg')).toHaveClass('size-2.5');
+    expect(screen.getByTestId('edit-feed-feed-5').closest('a')).toBeNull();
+    expect(screen.getByText('Feed 5')).toBeInTheDocument();
+    expect(screen.getByText('Feed 6')).toBeInTheDocument();
+  });
+
+  it('limits desktop rows but renders every feed in the mobile drawer', () => {
+    mockCustomFeeds = Array.from({ length: 5 }, (_, index) =>
+      createMockFeed({ id: `feed-${index + 1}`, name: `Feed ${index + 1}` }),
+    );
+    mockViewport = 'medium';
+
+    const { rerender } = render(<FeedNavigation />);
+
+    expect(screen.getAllByTestId('custom-feed-tab')).toHaveLength(3);
+
+    mockViewport = 'small';
+    rerender(<FeedNavigation />);
+
+    expect(screen.getAllByTestId('custom-feed-tab')).toHaveLength(5);
+    expect(screen.queryByTestId('feed-navigation-overflow-trigger')).not.toBeInTheDocument();
+  });
+
+  it('keeps a selected overflow feed visible with its edit action', () => {
+    mockCustomFeeds = Array.from({ length: 5 }, (_, index) =>
+      createMockFeed({ id: `feed-${index + 1}`, name: `Feed ${index + 1}` }),
+    );
+    mockUsePathname.mockReturnValue('/feed/feed-5');
+
+    render(<FeedNavigation />);
+
+    const activeLink = screen.getAllByTestId('link').find((link) => link.getAttribute('href') === '/feed/feed-5');
+    expect(activeLink).toHaveAttribute('aria-current', 'page');
+    expect(activeLink?.parentElement).toHaveClass('border-white');
+    expect(screen.getByTestId('edit-feed-feed-5')).toBeInTheDocument();
+    expect(screen.queryByText('Feed 4')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('feed-navigation-overflow-trigger'));
+
+    expect(screen.getByText('Feed 4')).toBeInTheDocument();
   });
 
   it('renders Create Feed button with PlusCircle icon', () => {
@@ -462,21 +573,27 @@ describe('FeedNavigation', () => {
 
   // ── Container and layout ────────────────────────────────────────────────
 
-  it('renders container with flex-row and overflow-x-auto classes', () => {
+  it('renders a clipped tab region without scrolling or a scroll fade', () => {
     render(<FeedNavigation />);
 
     const container = screen.getByTestId('container');
+    const tabs = screen.getByTestId('feed-navigation-tabs');
     expect(container).toHaveClass('lg:flex-row');
-    expect(container).toHaveClass('overflow-x-auto');
+    expect(container).toHaveClass('overflow-hidden');
+    expect(tabs).toHaveClass('overflow-hidden');
+    expect(tabs).not.toHaveClass('overflow-x-auto');
+    expect(tabs).not.toHaveClass('scroll-fade-s');
+    expect(tabs).toHaveClass('min-w-0');
+    expect(tabs).toHaveClass('flex-1');
   });
 
-  it('renders all links with min-w-40 and h-12 classes', () => {
+  it('renders all links with min-w-0 and h-12 classes', () => {
     mockCustomFeeds = [createMockFeed({ id: 'feed-1', name: 'Test Feed' })];
     render(<FeedNavigation />);
 
     const links = screen.getAllByTestId('link');
     links.forEach((link) => {
-      expect(link).toHaveClass('min-w-40');
+      expect(link).toHaveClass('min-w-0');
       expect(link).toHaveClass('min-h-12');
     });
   });
@@ -491,12 +608,22 @@ describe('FeedNavigation - Snapshots', () => {
     vi.clearAllMocks();
     mockCustomFeeds = [];
     mockIsAuthenticated = true;
+    mockViewport = 'large';
     mockRequireAuth.mockImplementation((action: () => unknown) => action());
     mockUsePathname.mockReturnValue('/home');
     mockGetList.mockResolvedValue([]);
   });
 
   it('matches snapshot with no custom feeds and Home active', () => {
+    const { container } = render(<FeedNavigation />);
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('matches snapshot with the large-screen feed limit', () => {
+    mockCustomFeeds = Array.from({ length: 4 }, (_, index) =>
+      createMockFeed({ id: `feed-${index + 1}`, name: `Feed ${index + 1}` }),
+    );
+
     const { container } = render(<FeedNavigation />);
     expect(container.firstChild).toMatchSnapshot();
   });
@@ -527,6 +654,30 @@ describe('FeedNavigation - Snapshots', () => {
     ];
     mockUsePathname.mockReturnValue('/feed/feed-2');
 
+    const { container } = render(<FeedNavigation />);
+    expect(container.firstChild).toMatchSnapshot();
+  });
+});
+
+describe('FeedNavigation - Mobile Snapshots', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCustomFeeds = Array.from({ length: 4 }, (_, index) =>
+      createMockFeed({ id: `feed-${index + 1}`, name: `Feed ${index + 1}` }),
+    );
+    mockIsAuthenticated = true;
+    mockViewport = 'small';
+    mockRequireAuth.mockImplementation((action: () => unknown) => action());
+    mockUsePathname.mockReturnValue('/home');
+    mockGetList.mockResolvedValue([]);
+    setMobileViewport();
+  });
+
+  afterEach(() => {
+    resetViewport();
+  });
+
+  it('matches snapshot with all feeds in the mobile drawer', () => {
     const { container } = render(<FeedNavigation />);
     expect(container.firstChild).toMatchSnapshot();
   });

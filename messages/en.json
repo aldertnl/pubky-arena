@@ -756,6 +756,7 @@
       "feedIconCreateDescription": "Choose a custom icon for your new feed.",
       "feedIconEditDescription": "Choose a custom icon for your feed.",
       "editFeedLabel": "Edit {name}",
+      "moreFeeds": "More feeds",
       "reach": "Reach",
       "reachPlaceholder": "Select a reach",
       "sort": "Sort",

@@ -756,6 +756,7 @@
       "feedIconCreateDescription": "Scegli un'icona personalizzata per il tuo nuovo feed.",
       "feedIconEditDescription": "Scegli un'icona personalizzata per il tuo feed.",
       "editFeedLabel": "Modifica {name}",
+      "moreFeeds": "Altri feed",
       "reach": "Portata",
       "reachPlaceholder": "Seleziona una portata",
       "sort": "Ordina",

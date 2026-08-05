@@ -758,6 +758,7 @@
       "feedIconCreateDescription": "Elige un icono personalizado para tu nuevo feed.",
       "feedIconEditDescription": "Elige un icono personalizado para tu feed.",
       "editFeedLabel": "Editar {name}",
+      "moreFeeds": "Más feeds",
       "reach": "Alcance",
       "reachPlaceholder": "Selecciona un alcance",
       "sort": "Ordenar",
