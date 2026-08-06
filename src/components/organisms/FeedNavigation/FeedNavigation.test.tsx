@@ -480,9 +480,16 @@ describe('FeedNavigation', () => {
 
     const overflowItems = screen.getAllByTestId('overflow-feed-item');
     expect(screen.getByTestId('popover-content')).toHaveClass('w-42');
+    expect(screen.getByTestId('feed-navigation-overflow-list')).toHaveClass('gap-2.5');
     expect(overflowItems).toHaveLength(2);
-    overflowItems.forEach((item) => expect(item).not.toHaveClass('border-b'));
-    overflowItems.forEach((item) => expect(item.querySelector('a')).toHaveClass('flex-1'));
+    overflowItems.forEach((item) => {
+      expect(item).not.toHaveClass('border-b');
+      expect(item).not.toHaveClass('hover:bg-accent');
+    });
+    overflowItems.forEach((item) => {
+      expect(item.querySelector('a')).toHaveClass('flex-1');
+      expect(item.querySelector('a')).not.toHaveClass('min-h-12');
+    });
     expect(screen.getByTestId('edit-feed-feed-5')).toBeInTheDocument();
     expect(screen.getByTestId('edit-feed-feed-6')).toBeInTheDocument();
     expect(overflowItems[0].querySelector('a svg')).toHaveClass('size-4');

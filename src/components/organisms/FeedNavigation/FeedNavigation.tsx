@@ -56,7 +56,7 @@ const CustomFeedNavigationItem = ({
       className={cn(
         'group relative flex w-full min-w-0',
         isOverflow
-          ? cn('shrink-0 items-center gap-x-2 px-4 hover:bg-accent', isActive ? 'text-white' : 'text-muted-foreground')
+          ? cn('shrink-0 items-center gap-x-2 px-4', isActive ? 'text-white' : 'text-muted-foreground')
           : cn(
               'items-center gap-x-2 border-b lg:flex-1 lg:justify-center',
               isActive ? 'border-white text-white' : 'border-border text-muted-foreground',
@@ -76,8 +76,10 @@ const CustomFeedNavigationItem = ({
           });
         }}
         className={cn(
-          'flex min-h-12 max-w-full min-w-0 shrink items-center gap-x-2 transition-colors hover:text-white',
-          isOverflow ? 'flex-1' : 'flex-1 lg:flex-none',
+          isOverflow
+            ? 'flex max-w-full min-w-0 flex-1 items-center gap-x-2 transition-colors hover:text-white'
+            : 'flex min-h-12 max-w-full min-w-0 shrink items-center gap-x-2 transition-colors hover:text-white',
+          !isOverflow && 'flex-1 lg:flex-none',
           isActive ? 'text-white' : 'text-muted-foreground',
         )}
       >
@@ -216,7 +218,7 @@ export const FeedNavigation = ({ className }: FeedNavigationProps) => {
             sideOffset={8}
             className="max-h-[min(24rem,var(--radix-popover-content-available-height))] w-42 overflow-y-auto p-0"
           >
-            <Container overrideDefaults className="flex flex-col" data-testid="feed-navigation-overflow-list">
+            <Container overrideDefaults className="flex flex-col gap-2.5" data-testid="feed-navigation-overflow-list">
               {overflowFeeds.map((feed) => (
                 <CustomFeedNavigationItem
                   key={feed.id}
