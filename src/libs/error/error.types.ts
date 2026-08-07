@@ -17,10 +17,7 @@ export enum ErrorCategory {
   Database = 'database', // Local storage failures (Dexie/IndexedDB)
 }
 
-/**
- * Services that can produce errors.
- * Used for logging context, NOT for error handling decisions.
- */
+/** Services that can produce errors. */
 export enum ErrorService {
   Nexus = 'nexus',
   Homeserver = 'homeserver',
@@ -28,6 +25,7 @@ export enum ErrorService {
   Exchangerate = 'exchangerate',
   Chatwoot = 'chatwoot',
   PubkyAppSpecs = 'pubky-app-specs',
+  Locks = 'locks', // Lock Server (locks-sdk) operations
   Local = 'local', // Client-side operations
   NextJsServer = 'nextjs-server', // Server-side operations
 }

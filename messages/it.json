@@ -656,6 +656,30 @@
       "newPost": "Nuovo post",
       "description": "Dialogo {title}"
     },
+    "lockContent": {
+      "title": "Blocca contenuto",
+      "tabs": {
+        "password": "Password",
+        "payment": "Pagamento"
+      },
+      "password": {
+        "description": "Imposta una password per questo contenuto. Chiunque abbia la password potrà sbloccarlo. Le prime parole saranno visibili a tutti.",
+        "label": "Password",
+        "repeatLabel": "Ripeti password",
+        "mismatch": "Le password non corrispondono.",
+        "rules": {
+          "length": "Almeno 8 caratteri",
+          "number": "Almeno 1 numero",
+          "special": "Almeno 1 carattere speciale"
+        }
+      },
+      "payment": {
+        "toBeDeveloped": "In sviluppo"
+      },
+      "appliedToast": "Contenuto bloccato",
+      "cancel": "Annulla",
+      "apply": "Applica blocco"
+    },
     "reply": {
       "title": "Risposta",
       "hiddenTitle": "Rispondi al post",
@@ -759,6 +783,27 @@
       "feedEditError": "Impossibile aggiornare il feed. Riprova.",
       "feedDeleted": "Feed {name} eliminato!",
       "feedDeleteError": "Impossibile eliminare il feed. Riprova."
+    },
+    "locksAuth": {
+      "intro": {
+        "title": "Blocca contenuto",
+        "description": "Pubky Locks ti permette di bloccare i contenuti con pagamenti o password."
+      },
+      "enable": {
+        "title": "Abilita Locks",
+        "description": "Usa <bold>Pubky Ring</bold> per autorizzare il server Locks a gestire i tuoi dati Locks."
+      },
+      "success": {
+        "title": "Locks abilitato",
+        "description": "Hai autorizzato il server Locks a gestire i tuoi dati Locks."
+      },
+      "error": {
+        "title": "Abilita Locks",
+        "description": "Si è verificato un errore durante l'autorizzazione del server Locks.",
+        "fallback": "Autorizzazione Locks non riuscita."
+      },
+      "tryAgain": "Riprova",
+      "iframeTitle": "Autorizzazione del server Locks"
     }
   },
   "sidebar": {

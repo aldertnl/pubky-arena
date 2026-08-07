@@ -656,6 +656,30 @@
       "newPost": "Novo Post",
       "description": "Dialogo de {title}"
     },
+    "lockContent": {
+      "title": "Bloquear conteúdo",
+      "tabs": {
+        "password": "Senha",
+        "payment": "Pagamento"
+      },
+      "password": {
+        "description": "Defina uma senha para este conteúdo. Qualquer pessoa com a senha poderá desbloqueá-lo. As primeiras palavras ficarão visíveis para todos.",
+        "label": "Senha",
+        "repeatLabel": "Repetir senha",
+        "mismatch": "As senhas não coincidem.",
+        "rules": {
+          "length": "Pelo menos 8 caracteres",
+          "number": "Pelo menos 1 número",
+          "special": "Pelo menos 1 caractere especial"
+        }
+      },
+      "payment": {
+        "toBeDeveloped": "Em desenvolvimento"
+      },
+      "appliedToast": "Conteúdo bloqueado",
+      "cancel": "Cancelar",
+      "apply": "Aplicar bloqueio"
+    },
     "reply": {
       "title": "Resposta",
       "hiddenTitle": "Responder ao post",
@@ -759,6 +783,27 @@
       "feedEditError": "Não foi possível atualizar o feed. Tente novamente.",
       "feedDeleted": "Feed {name} excluido!",
       "feedDeleteError": "Não foi possível excluir o feed. Tente novamente."
+    },
+    "locksAuth": {
+      "intro": {
+        "title": "Bloquear conteúdo",
+        "description": "O Pubky Locks permite bloquear conteúdo com pagamentos ou senhas."
+      },
+      "enable": {
+        "title": "Ativar Locks",
+        "description": "Use o <bold>Pubky Ring</bold> para autorizar o servidor Locks a gerenciar seus dados do Locks."
+      },
+      "success": {
+        "title": "Locks ativado",
+        "description": "Você autorizou o servidor Locks a gerenciar seus dados do Locks."
+      },
+      "error": {
+        "title": "Ativar Locks",
+        "description": "Algo deu errado ao autorizar o servidor Locks.",
+        "fallback": "Falha na autorização do Locks."
+      },
+      "tryAgain": "Tentar novamente",
+      "iframeTitle": "Autorização do servidor Locks"
     }
   },
   "sidebar": {

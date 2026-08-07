@@ -87,7 +87,14 @@ export class PostNormalizer {
         attachments = post.attachments.map((attachment) => attachment.fileResult.meta.url);
       }
 
-      return builder.createPost(post.content, post.kind, post.parentUri ?? null, embedObject, attachments);
+      return builder.createPost(
+        post.content,
+        post.kind,
+        post.parentUri ?? null,
+        embedObject,
+        attachments,
+        post.lock ?? null,
+      );
     } catch (error) {
       if (error instanceof AppError) {
         throw error;
@@ -150,6 +157,9 @@ export class PostNormalizer {
       }
     }
 
+    // TODO:[Locks] #2312 — this drops `lock`: the constructor cannot carry it (only the static
+    // `new_with_lock` can) and the local model never persisted it. Editing a lock announcement
+    // therefore unlinks its guarded content for good. Needs the `lock` field the reader adds (#2027).
     const originalPost = new PubkyAppPost(
       postDetails.content,
       this.mapKindToEnum(postDetails.kind),

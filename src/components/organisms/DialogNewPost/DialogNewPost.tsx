@@ -23,10 +23,21 @@ interface DialogNewPostProps {
 export function DialogNewPost({ open, onOpenChangeAction, onPostCreated }: DialogNewPostProps) {
   const t = useTranslations('dialogs.newPost');
   const [isArticle, setIsArticle] = useState(false);
-  const title = isArticle ? t('newArticle') : t('newPost');
+  const [isLockEnabled, setIsLockEnabled] = useState(false);
+  // A locked post is never an article, so the lock title wins.
+  let titleKey = 'newPost';
+  if (isLockEnabled) {
+    titleKey = 'newLockedPost';
+  } else if (isArticle) {
+    titleKey = 'newArticle';
+  }
+  const title = t(titleKey);
   const { showConfirmDialog, setShowConfirmDialog, resetKey, handleContentChange, handleOpenChange, handleDiscard } =
     useConfirmableDialog({
       onClose: () => onOpenChangeAction(false),
+      // With the lock switch on, the written body is held in lock state and the composer only shows
+      // the (possibly empty) teaser — flag it so closing still prompts before discarding the draft.
+      hasContent: () => isLockEnabled,
     });
 
   const handlePostSuccess = (createdPostId: string) => {
@@ -50,6 +61,7 @@ export function DialogNewPost({ open, onOpenChangeAction, onPostCreated }: Dialo
             expanded={true}
             onContentChange={handleContentChange}
             onArticleModeChange={setIsArticle}
+            onLockModeChange={setIsLockEnabled}
           />
         </Container>
         {/* Nested inside parent dialog to avoid mobile touch event issues with sibling portals */}

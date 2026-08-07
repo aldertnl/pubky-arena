@@ -513,6 +513,12 @@
     "missing": "Post not found.",
     "dropFiles": "Drop files here",
     "articleTitle": "Article Title",
+    "lock": {
+      "unlock": "Unlock",
+      "defaultTitle": "Locked post",
+      "titlePlaceholder": "Title",
+      "teaserPlaceholder": "Write a short announcement to tease your content."
+    },
     "addTag": "add tag",
     "limitReached": "limit reached",
     "addEmoji": "Add emoji",
@@ -654,7 +660,31 @@
     "newPost": {
       "newArticle": "New Article",
       "newPost": "New Post",
+      "newLockedPost": "New Locked Post",
       "description": "{title} dialog"
+    },
+    "lockContent": {
+      "title": "Lock Content",
+      "tabs": {
+        "password": "Password",
+        "payment": "Payment"
+      },
+      "password": {
+        "description": "Set the password people need to enter to unlock your content.",
+        "label": "Password",
+        "repeatLabel": "Repeat Password",
+        "mismatch": "Passwords do not match.",
+        "rules": {
+          "length": "At least 8 characters",
+          "number": "At least 1 number",
+          "special": "At least 1 special character"
+        }
+      },
+      "payment": {
+        "toBeDeveloped": "To be developed"
+      },
+      "cancel": "Cancel",
+      "apply": "Apply Lock"
     },
     "reply": {
       "title": "Reply",
@@ -759,6 +789,28 @@
       "feedEditError": "Could not update feed. Try again.",
       "feedDeleted": "Feed deleted: {name}",
       "feedDeleteError": "Could not delete feed. Try again."
+    },
+    "locksAuth": {
+      "intro": {
+        "title": "Lock Content",
+        "description": "Pubky Locks allows you to lock content with payments or passwords."
+      },
+      "enable": {
+        "title": "Enable Locks",
+        "description": "Use <bold>Pubky Ring</bold> to authorize Locks server to manage your Locks data."
+      },
+      "success": {
+        "title": "Locks Enabled",
+        "description": "You authorized the Locks server to manage your Locks data."
+      },
+      "error": {
+        "title": "Enable Locks",
+        "description": "Something went wrong while authorizing the Lock Server.",
+        "fallback": "Lock authorization failed."
+      },
+      "tryAgain": "Try again",
+      "iframeTitle": "Lock Server authorization",
+      "serverUnavailable": "The Lock Server is unavailable right now. Please try again later."
     }
   },
   "sidebar": {
@@ -987,6 +1039,7 @@
       "replyFailed": "Could not post reply. Try again.",
       "postCreated": "Post published",
       "postFailed": "Could not create post. Try again.",
+      "lockError": "Something went wrong. Try again.",
       "repostSuccess": "Reposted {author}'s post",
       "repostSuccessFallback": "Reposted",
       "repostUndo": "Undo",

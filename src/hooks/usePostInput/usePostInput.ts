@@ -58,6 +58,7 @@ export function usePostInput({
   expanded = false,
   onContentChange,
   onArticleModeChange,
+  hasExternalContent,
 }: UsePostInputOptions): UsePostInputReturn {
   // State
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -150,8 +151,19 @@ export function usePostInput({
       const dialogContent = document.querySelector('[data-slot="dialog-content"]');
       if (dialogContent?.contains(target)) return;
 
-      // Collapse only if there's no content
-      if (!content.trim() && tags.length === 0 && attachments.length === 0 && !articleTitle.trim()) {
+      // The lock-title input renders just above the composer container but belongs to it: focusing it
+      // must not collapse the composer. `closest` on the target (not a document query) so multiple
+      // mounted composers cannot shadow each other.
+      if (target instanceof Element && target.closest('[data-lock-title-input]')) return;
+
+      // An empty composer is not always idle — the lock flow holds the draft outside it.
+      const isInProgress =
+        Boolean(content.trim()) ||
+        tags.length > 0 ||
+        attachments.length > 0 ||
+        Boolean(articleTitle.trim()) ||
+        Boolean(hasExternalContent?.());
+      if (!isInProgress) {
         setIsExpanded(false);
         setIsArticle(false);
       }
@@ -161,7 +173,7 @@ export function usePostInput({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [expanded, content, tags, attachments, setIsArticle, articleTitle]);
+  }, [expanded, content, tags, attachments, setIsArticle, articleTitle, hasExternalContent]);
 
   // Handle expand on interaction
   const handleExpand = useCallback(() => {

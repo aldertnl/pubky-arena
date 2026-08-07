@@ -656,6 +656,30 @@
       "newPost": "新しい投稿",
       "description": "{title}ダイアログ"
     },
+    "lockContent": {
+      "title": "コンテンツをロック",
+      "tabs": {
+        "password": "パスワード",
+        "payment": "支払い"
+      },
+      "password": {
+        "description": "このコンテンツにパスワードを設定してください。パスワードを知っている人は誰でもコンテンツのロックを解除できます。最初の数語はすべての人に表示されます。",
+        "label": "パスワード",
+        "repeatLabel": "パスワードを再入力",
+        "mismatch": "パスワードが一致しません。",
+        "rules": {
+          "length": "8文字以上",
+          "number": "数字を1つ以上",
+          "special": "特殊文字を1つ以上"
+        }
+      },
+      "payment": {
+        "toBeDeveloped": "開発中"
+      },
+      "appliedToast": "コンテンツをロックしました",
+      "cancel": "キャンセル",
+      "apply": "ロックを適用"
+    },
     "reply": {
       "title": "返信",
       "hiddenTitle": "投稿に返信",
@@ -759,6 +783,27 @@
       "feedEditError": "フィードを更新できませんでした。もう一度お試しください。",
       "feedDeleted": "フィード {name} を削除しました！",
       "feedDeleteError": "フィードを削除できませんでした。もう一度お試しください。"
+    },
+    "locksAuth": {
+      "intro": {
+        "title": "コンテンツをロック",
+        "description": "Pubky Locks を使うと、支払いやパスワードでコンテンツをロックできます。"
+      },
+      "enable": {
+        "title": "Locks を有効化",
+        "description": "<bold>Pubky Ring</bold> を使って、Locks サーバーがあなたの Locks データを管理することを承認します。"
+      },
+      "success": {
+        "title": "Locks を有効化しました",
+        "description": "Locks サーバーによるあなたの Locks データの管理を承認しました。"
+      },
+      "error": {
+        "title": "Locks を有効化",
+        "description": "Locks サーバーの承認中にエラーが発生しました。",
+        "fallback": "Locks の承認に失敗しました。"
+      },
+      "tryAgain": "再試行",
+      "iframeTitle": "Locks サーバーの承認"
     }
   },
   "sidebar": {
