@@ -171,7 +171,6 @@
       "notifications": "Notifications",
       "privacySafety": "Privacy & Safety",
       "mutedUsers": "Muted Users",
-      "language": "Language",
       "help": "Help"
     },
     "account": {
@@ -217,11 +216,6 @@
       "title": "Muted users",
       "description": "Here is an overview of all users you muted. You can choose to unmute users if you want."
     },
-    "language": {
-      "title": "Language",
-      "description": "Choose your preferred language for the Pubky interface.",
-      "displayLanguage": "Display language"
-    },
     "backup": {
       "title": "Backup",
       "dialogTitle": "Back up your pubky",
@@ -235,9 +229,6 @@
       "alertShort": "Back up now",
       "alertFull": "Back up now to avoid losing your account!"
     }
-  },
-  "language": {
-    "displayLanguage": "Display language"
   },
   "onboarding": {
     "steps": {
@@ -1046,7 +1037,9 @@
     },
     "collection": {
       "collectionDeleted": "Your collection has been deleted",
-      "deleteFailed": "Failed to delete collection. Please try again."
+      "deleteFailed": "Failed to delete collection. Please try again.",
+      "orderSaved": "Collection order saved",
+      "orderSaveFailed": "Failed to save the new order. Please try again."
     },
     "copy": {
       "pubkyCopied": "Pubky copied to clipboard",
@@ -1443,6 +1436,9 @@
       "shareTitle": "Share Collection",
       "edit": "Edit",
       "delete": "Delete",
+      "reorder": "Reorder",
+      "saveOrder": "Save order",
+      "cancelReorder": "Cancel",
       "follow": "Follow",
       "unfollow": "Unfollow",
       "content": "Add Post",
