@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { within } from '@testing-library/react';
 import { PubkyAppFeedLayout, PubkyAppFeedReach, PubkyAppFeedSort, PubkyAppPostKind } from 'pubky-app-specs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { loadLucideIconNode } from '@/libs/utils/lucideIcons';
 import type { FeedModelSchema } from '@/models/feed/feed.schema';
 import { TAGGED_AS_FILTER_KEY } from '@/molecules/Filters/FilterReach/FilterReach';
 import { CustomFeedDialog } from './CustomFeedDialog';
@@ -1533,6 +1534,12 @@ describe('CustomFeedDialog', () => {
 // --- Snapshot Tests ---
 
 describe('CustomFeedDialog - Snapshots', () => {
+  // Warm the dialog's icons so DynamicLucideIcon renders them synchronously
+  // and snapshots capture the resolved svg regardless of test order.
+  beforeAll(async () => {
+    await loadLucideIconNode('activity');
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockUsePathname.mockReturnValue('/feed/feed-abc123');

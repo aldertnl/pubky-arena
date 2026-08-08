@@ -16,6 +16,21 @@ async function finishOpeningAnimation() {
   });
 }
 
+// DynamicLucideIcon renders an empty svg while its chunk loads, so gate on the
+// svg having children (via childElementCount — jsdom's querySelector misses
+// svg descendants). Snapshots must wait for every icon they capture — the
+// module-level cache makes a partial wait nondeterministic across test order.
+async function waitForResolvedIcons(names: readonly string[]) {
+  await waitFor(() => {
+    for (const iconName of names) {
+      const button = screen.getByRole('button', { name: iconName.replaceAll('-', ' ') });
+      if (!(button.querySelector('svg')?.childElementCount ?? 0)) {
+        throw new Error(`Icon ${iconName} is still loading`);
+      }
+    }
+  });
+}
+
 describe('IconPickerDialog', () => {
   it('renders a searchable icon grid with visible SVGs when open', async () => {
     render(<IconPickerDialog open onSelect={() => {}} icons={TEST_ICONS} />);
@@ -38,11 +53,28 @@ describe('IconPickerDialog', () => {
     expect(screen.getByRole('searchbox', { name: 'Search for icon' })).not.toHaveClass('mt-6');
     expect(screen.getByTestId('icon-picker-scroll-area')).not.toHaveClass('mt-6');
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'activity' }).querySelector('svg')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'airplay' }).querySelector('svg')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'mountain' }).querySelector('svg')).toBeInTheDocument();
-    });
+    await waitForResolvedIcons(TEST_ICONS);
+  });
+
+  it('shows a themed clear button only while a query is present', async () => {
+    render(<IconPickerDialog open onSelect={() => {}} icons={TEST_ICONS} />);
+    await finishOpeningAnimation();
+
+    expect(screen.queryByRole('button', { name: 'Clear search' })).not.toBeInTheDocument();
+
+    const searchbox = screen.getByRole('searchbox', { name: 'Search for icon' });
+    fireEvent.change(searchbox, { target: { value: 'mount' } });
+
+    const clearButton = screen.getByRole('button', { name: 'Clear search' });
+    expect(clearButton).toHaveClass('cursor-pointer');
+    expect(clearButton).toHaveClass('text-muted-foreground');
+
+    fireEvent.click(clearButton);
+
+    expect(searchbox).toHaveValue('');
+    expect(searchbox).toHaveFocus();
+    expect(screen.queryByRole('button', { name: 'Clear search' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'activity' })).toBeInTheDocument();
   });
 
   it('filters icons by their kebab-case names', async () => {
@@ -169,11 +201,7 @@ describe('IconPickerDialog - Snapshots', () => {
     const { baseElement } = render(<IconPickerDialog open onSelect={() => {}} icons={VIRTUAL_GRID_SNAPSHOT_ICONS} />);
     await finishOpeningAnimation();
 
-    await waitFor(() => {
-      if (!screen.getByRole('button', { name: 'a arrow down' }).querySelector('svg')) {
-        throw new Error('Icon SVG is still loading');
-      }
-    });
+    await waitForResolvedIcons(VIRTUAL_GRID_SNAPSHOT_ICONS);
 
     expect(baseElement).toMatchSnapshot();
   });
@@ -192,11 +220,7 @@ describe('IconPickerDialog - Mobile Snapshots', () => {
     const { baseElement } = render(<IconPickerDialog open onSelect={() => {}} icons={VIRTUAL_GRID_SNAPSHOT_ICONS} />);
     await finishOpeningAnimation();
 
-    await waitFor(() => {
-      if (!screen.getByRole('button', { name: 'a arrow down' }).querySelector('svg')) {
-        throw new Error('Icon SVG is still loading');
-      }
-    });
+    await waitForResolvedIcons(VIRTUAL_GRID_SNAPSHOT_ICONS);
 
     expect(baseElement).toMatchSnapshot();
   });

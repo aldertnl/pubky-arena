@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ChevronsRight, Home, Pencil, PlusCircle } from 'lucide-react';
@@ -18,6 +18,7 @@ import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
 import { useRequireAuth } from '@/hooks/useRequireAuth/useRequireAuth';
 import { Logger } from '@/libs/logger/logger';
 import { handleFeedNavClick } from '@/libs/utils/feedScrollTop';
+import { preloadLucideIcons } from '@/libs/utils/lucideIcons';
 import { cn } from '@/libs/utils/utils';
 import type { FeedModelSchema } from '@/models/feed/feed.schema';
 import { CustomFeedDialog } from '../CustomFeedDialog/CustomFeedDialog';
@@ -137,6 +138,13 @@ export const FeedNavigation = ({ className }: FeedNavigationProps) => {
     [isAuthenticated],
     isAuthenticated ? cachedFeeds : [],
   );
+  // Warm every feed icon as soon as feed data is known, so tabs, the overflow
+  // popover, and the edit dialogs render icons synchronously from cache
+  // instead of flashing the loading placeholder.
+  useEffect(() => {
+    preloadLucideIcons(customFeeds.map((feed) => feed.icon));
+  }, [customFeeds]);
+
   const visibleCustomFeedLimit = isBelowDesktop
     ? customFeeds.length
     : (isMediumScreen ? MEDIUM_SCREEN_FEED_LIMIT : LARGE_SCREEN_FEED_LIMIT) - 1;

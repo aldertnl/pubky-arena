@@ -64,7 +64,7 @@ exports[`FeedNavigation - Mobile Snapshots > matches snapshot with all feeds in 
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-activity size-5 shrink-0"
+          class="lucide size-5 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -134,7 +134,7 @@ exports[`FeedNavigation - Mobile Snapshots > matches snapshot with all feeds in 
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-activity size-5 shrink-0"
+          class="lucide size-5 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -204,7 +204,7 @@ exports[`FeedNavigation - Mobile Snapshots > matches snapshot with all feeds in 
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-activity size-5 shrink-0"
+          class="lucide size-5 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -274,7 +274,7 @@ exports[`FeedNavigation - Mobile Snapshots > matches snapshot with all feeds in 
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-activity size-5 shrink-0"
+          class="lucide size-5 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -442,7 +442,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with custom feed active (
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-activity size-5 shrink-0"
+          class="lucide size-5 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -610,7 +610,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with custom feeds and Hom
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-activity size-5 shrink-0"
+          class="lucide size-5 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -680,7 +680,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with custom feeds and Hom
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-activity size-5 shrink-0"
+          class="lucide size-5 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -847,7 +847,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with multiple custom feed
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-activity size-5 shrink-0"
+          class="lucide size-5 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -918,7 +918,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with multiple custom feed
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-activity size-5 shrink-0"
+          class="lucide size-5 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -988,7 +988,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with multiple custom feed
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-activity size-5 shrink-0"
+          class="lucide size-5 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -1254,7 +1254,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with the large-screen fee
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-activity size-5 shrink-0"
+          class="lucide size-5 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -1324,7 +1324,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with the large-screen fee
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-activity size-5 shrink-0"
+          class="lucide size-5 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -1394,7 +1394,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with the large-screen fee
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-activity size-5 shrink-0"
+          class="lucide size-5 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -1464,7 +1464,7 @@ exports[`FeedNavigation - Snapshots > matches snapshot with the large-screen fee
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-activity size-5 shrink-0"
+          class="lucide size-5 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"

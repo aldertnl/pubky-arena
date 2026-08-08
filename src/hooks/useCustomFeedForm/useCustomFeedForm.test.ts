@@ -112,8 +112,15 @@ describe('useCustomFeedForm', () => {
       });
     });
 
-    it('falls back to the default icon when the stored one is not a known lucide name', () => {
-      const feed = createFeed({ icon: 'not-a-real-icon' });
+    it('keeps an icon name unknown to our Lucide set instead of coercing it', () => {
+      const feed = createFeed({ icon: 'another-clients-icon' });
+      const { result } = renderHook(() => useCustomFeedForm({ mode: 'edit', feed, open: true }));
+
+      expect(result.current.form.getValues(CUSTOM_FEED_FORM_FIELDS.ICON)).toBe('another-clients-icon');
+    });
+
+    it('falls back to the default icon only when the feed has no icon at all', () => {
+      const feed = createFeed({ icon: undefined });
       const { result } = renderHook(() => useCustomFeedForm({ mode: 'edit', feed, open: true }));
 
       expect(result.current.form.getValues(CUSTOM_FEED_FORM_FIELDS.ICON)).toBe(DEFAULT_CUSTOM_FEED_ICON);
@@ -237,6 +244,24 @@ describe('useCustomFeedForm', () => {
       });
 
       expect(mocks.replace).not.toHaveBeenCalled();
+    });
+
+    it('round-trips a foreign icon through an unrelated edit unchanged', async () => {
+      const feed = createFeed({ icon: 'another-clients-icon' });
+      mocks.pathname = APP_ROUTES.HOME;
+      mocks.commitUpdate.mockResolvedValue({ id: 'feed-abc123', name: 'Renamed' });
+
+      const { result } = renderHook(() => useCustomFeedForm({ mode: 'edit', feed, open: true }));
+
+      await act(async () => {
+        result.current.form.setValue(CUSTOM_FEED_FORM_FIELDS.NAME, 'Renamed');
+        await result.current.submit();
+      });
+
+      expect(mocks.commitUpdate).toHaveBeenCalledWith({
+        feedId: 'feed-abc123',
+        changes: expect.objectContaining({ icon: 'another-clients-icon' }),
+      });
     });
 
     it('stays put for a presentation-only edit that keeps the id', async () => {

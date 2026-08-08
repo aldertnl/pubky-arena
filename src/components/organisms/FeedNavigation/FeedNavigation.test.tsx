@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { PubkyAppFeedLayout, PubkyAppFeedReach, PubkyAppFeedSort } from 'pubky-app-specs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { loadLucideIconNode } from '@/libs/utils/lucideIcons';
 import type { FeedModelSchema } from '@/models/feed/feed.schema';
 import { resetViewport, setMobileViewport } from '@/test-utils/viewport';
 import { FeedNavigation } from './FeedNavigation';
@@ -433,6 +434,20 @@ describe('FeedNavigation', () => {
     expect(legacyLink?.querySelector('svg')).toHaveClass('lucide-activity');
   });
 
+  it('never shows the default icon while a feed icon is still loading', () => {
+    // 'wine' is never loaded by other tests in this file, so this render hits
+    // the loading path: an empty svg, not the Activity fallback.
+    mockCustomFeeds = [createMockFeed({ id: 'wine-feed', icon: 'wine' })];
+
+    render(<FeedNavigation />);
+
+    const wineLink = screen.getAllByTestId('link').find((link) => link.getAttribute('href') === '/feed/wine-feed');
+    const icon = wineLink?.querySelector('svg');
+    expect(icon).toBeTruthy();
+    expect(icon).not.toHaveClass('lucide-activity');
+    expect(icon?.childElementCount).toBe(0);
+  });
+
   // ── Create Feed button ──────────────────────────────────────────────────
 
   it('renders Create Feed button inside a create dialog', () => {
@@ -612,6 +627,12 @@ describe('FeedNavigation', () => {
 // ---------------------------------------------------------------------------
 
 describe('FeedNavigation - Snapshots', () => {
+  // Warm the mock feeds' icon so DynamicLucideIcon renders it synchronously
+  // and snapshots capture the resolved svg regardless of test order.
+  beforeAll(async () => {
+    await loadLucideIconNode('activity');
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockCustomFeeds = [];
@@ -668,6 +689,10 @@ describe('FeedNavigation - Snapshots', () => {
 });
 
 describe('FeedNavigation - Mobile Snapshots', () => {
+  beforeAll(async () => {
+    await loadLucideIconNode('activity');
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockCustomFeeds = Array.from({ length: 4 }, (_, index) =>

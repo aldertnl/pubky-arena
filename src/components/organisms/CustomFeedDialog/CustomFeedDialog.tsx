@@ -278,7 +278,13 @@ export const CustomFeedDialog = (props: CustomFeedDialogProps) => {
 
       <DialogContent
         onOpenAutoFocus={(e) => {
-          if (mode === 'edit') e.preventDefault();
+          // Edit mode skips the name input's auto-focus, but focus must still
+          // enter the modal — leaving it on the now-obscured trigger strands
+          // keyboard and screen-reader users outside the dialog.
+          if (mode === 'edit') {
+            e.preventDefault();
+            (e.currentTarget as HTMLElement | null)?.focus();
+          }
         }}
         onCloseAutoFocus={(e) => e.preventDefault()}
         className="w-3xl"

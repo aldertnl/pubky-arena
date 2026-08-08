@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode, type UIEvent, useEffect, useRef, useState } from 'react';
+import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/atoms/Button/Button';
 import {
@@ -15,15 +16,23 @@ import { DynamicLucideIcon } from '@/atoms/DynamicLucideIcon/DynamicLucideIcon';
 import { Input } from '@/atoms/Input/Input';
 import { Label } from '@/atoms/Label/Label';
 import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
-import { isLucideIconName, LUCIDE_ICON_NAMES } from '@/libs/utils/lucideIcons';
+import { isLucideIconName, LUCIDE_CANONICAL_ICON_NAMES, preloadLucideIcons } from '@/libs/utils/lucideIcons';
 import { cn } from '@/libs/utils/utils';
 
+// The virtualization math below is coupled to the grid's Tailwind classes:
+// the column counts must match `grid-cols-6 sm:grid-cols-11` (and the `sm`
+// breakpoint of useIsMobile), and the row height is the `size-9` cell (36px)
+// plus the `gap-y-4` row gap (16px). Keep them in sync when restyling.
 const MOBILE_COLUMN_COUNT = 6;
 const DESKTOP_COLUMN_COUNT = 11;
 const ICON_ROW_HEIGHT_PX = 52;
 const FALLBACK_VIEWPORT_HEIGHT_PX = 208;
 const OVERSCAN_ROW_COUNT = 1;
 const OPEN_ANIMATION_FALLBACK_MS = 250;
+// 8 desktop rows (11 columns) ≈ the first visible window plus overscan on
+// both breakpoints, warmed during the dialog's open animation so the grid's
+// first paint renders icons from cache.
+const INITIAL_ICON_PRELOAD_COUNT = 88;
 
 export interface IconPickerDialogProps {
   children?: ReactNode;
@@ -46,7 +55,7 @@ export function IconPickerDialog({
   open,
   defaultOpen = false,
   onOpenChange,
-  icons = LUCIDE_ICON_NAMES,
+  icons = LUCIDE_CANONICAL_ICON_NAMES,
   title,
   description,
   searchPlaceholder,
@@ -59,6 +68,7 @@ export function IconPickerDialog({
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(FALLBACK_VIEWPORT_HEIGHT_PX);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const isMobileGrid = useIsMobile({ breakpoint: 'sm' });
   const resolvedOpen = open ?? internalOpen;
 
@@ -77,8 +87,14 @@ export function IconPickerDialog({
   const virtualIcons = isGridReady
     ? filteredIcons.slice(firstVisibleRow * columnCount, lastVisibleRow * columnCount)
     : [];
+  // `- 16` trims the trailing `gap-y-4` after the last row.
   const virtualGridHeight = rowCount > 0 ? rowCount * ICON_ROW_HEIGHT_PX - 16 : 0;
   const virtualGridOffset = firstVisibleRow * ICON_ROW_HEIGHT_PX;
+
+  useEffect(() => {
+    if (!resolvedOpen) return;
+    preloadLucideIcons(icons.slice(0, INITIAL_ICON_PRELOAD_COUNT));
+  }, [resolvedOpen, icons]);
 
   useEffect(() => {
     if (!resolvedOpen) {
@@ -143,6 +159,11 @@ export function IconPickerDialog({
     if (scrollAreaRef.current) scrollAreaRef.current.scrollTop = 0;
   };
 
+  const handleClearQuery = () => {
+    handleQueryChange('');
+    searchInputRef.current?.focus();
+  };
+
   return (
     <Dialog open={resolvedOpen} onOpenChange={handleOpenChange}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
@@ -161,16 +182,32 @@ export function IconPickerDialog({
         <Label htmlFor="icon-picker-search" className="sr-only">
           {resolvedSearchPlaceholder}
         </Label>
-        <Input
-          id="icon-picker-search"
-          type="search"
-          value={query}
-          onChange={(event) => handleQueryChange(event.target.value)}
-          placeholder={resolvedSearchPlaceholder}
-          aria-label={resolvedSearchPlaceholder}
-          className="h-14 shrink-0 rounded-md border border-dashed border-input px-6 text-lg shadow-none"
-          data-testid="icon-picker-search"
-        />
+        <div className="relative shrink-0">
+          <Input
+            ref={searchInputRef}
+            id="icon-picker-search"
+            type="search"
+            value={query}
+            onChange={(event) => handleQueryChange(event.target.value)}
+            placeholder={resolvedSearchPlaceholder}
+            aria-label={resolvedSearchPlaceholder}
+            className="h-14 rounded-md border border-dashed border-input px-6 pr-12 text-lg shadow-none [&::-webkit-search-cancel-button]:appearance-none"
+            data-testid="icon-picker-search"
+          />
+          {query.length > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={t('clearSearch')}
+              onClick={handleClearQuery}
+              className="absolute top-1/2 right-3 size-8 -translate-y-1/2 cursor-pointer text-muted-foreground shadow-none hover:bg-transparent hover:text-foreground"
+              data-testid="icon-picker-clear-search"
+            >
+              <X className="size-4" />
+            </Button>
+          )}
+        </div>
 
         <div
           ref={scrollAreaRef}

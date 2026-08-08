@@ -736,7 +736,8 @@
     "iconPicker": {
       "title": "Choose icon",
       "searchPlaceholder": "Search for icon",
-      "emptyMessage": "No icons found"
+      "emptyMessage": "No icons found",
+      "clearSearch": "Clear search"
     },
     "customFeed": {
       "createTitle": "Create Feed",

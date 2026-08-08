@@ -1,7 +1,6 @@
 import { PubkyAppFeedLayout, PubkyAppFeedReach, PubkyAppFeedSort, PubkyAppPostKind } from 'pubky-app-specs';
 import { z } from 'zod';
 import { DEFAULT_CUSTOM_FEED_ICON } from '@/config/feed';
-import { isLucideIconName } from '@/libs/utils/lucideIcons';
 import type { FeedModelSchema } from '@/models/feed/feed.schema';
 import { TAGGED_AS_FILTER_KEY } from '@/molecules/Filters/FilterReach/FilterReach';
 
@@ -65,9 +64,11 @@ export const customFeedFormDefaults: CustomFeedFormData = {
 /**
  * Maps a stored feed onto form values for edit mode.
  *
- * An icon we cannot resolve falls back to the default so the picker trigger
- * always renders something — the stored value may come from another client
- * using its own icon set.
+ * An icon name unknown to our Lucide set is kept as-is — it may come from
+ * another client using its own icon set, and an unrelated edit must not
+ * overwrite it (`FeedValidators.sanitizeIcon` makes the same promise, and
+ * already coerced anything outside specs' charset/length at read time). The
+ * picker simply shows no selection and the trigger renders the default glyph.
  *
  * WoT + profile tags is the Tagged-as authoring surface: show the sentinel so
  * the dialog reveals the profile-tag editor. Other reaches keep any legacy
@@ -79,7 +80,7 @@ export function customFeedFormValuesFromFeed(feed: FeedModelSchema): CustomFeedF
 
   return {
     [CUSTOM_FEED_FORM_FIELDS.NAME]: feed.name,
-    [CUSTOM_FEED_FORM_FIELDS.ICON]: isLucideIconName(feed.icon) ? feed.icon : DEFAULT_CUSTOM_FEED_ICON,
+    [CUSTOM_FEED_FORM_FIELDS.ICON]: feed.icon ?? DEFAULT_CUSTOM_FEED_ICON,
     [CUSTOM_FEED_FORM_FIELDS.REACH]: isTaggedAsFeed ? TAGGED_AS_FILTER_KEY : feed.reach,
     [CUSTOM_FEED_FORM_FIELDS.SORT]: feed.sort,
     [CUSTOM_FEED_FORM_FIELDS.LAYOUT]: feed.layout,

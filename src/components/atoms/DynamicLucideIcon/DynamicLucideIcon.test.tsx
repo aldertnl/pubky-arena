@@ -1,13 +1,36 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { Library } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
+import { loadLucideIconNode } from '@/libs/utils/lucideIcons';
 import { DynamicLucideIcon } from './DynamicLucideIcon';
 
+// The icon cache is module-level and persists across tests in this file, so
+// every loading-state assertion uses an icon name no other test has loaded.
 describe('DynamicLucideIcon', () => {
-  it('renders a valid dynamic icon', async () => {
+  it('renders a valid dynamic icon once its chunk resolves', async () => {
     render(<DynamicLucideIcon name="mountain" data-testid="dynamic-icon" />);
 
-    expect(await screen.findByTestId('dynamic-icon')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId('dynamic-icon').querySelector('path')).not.toBeNull());
+  });
+
+  it('never shows the fallback while a valid icon is loading', async () => {
+    render(<DynamicLucideIcon name="anchor" data-testid="loading-icon" className="size-5" />);
+
+    const svg = screen.getByTestId('loading-icon');
+    expect(svg).toHaveClass('lucide');
+    expect(svg).toHaveClass('size-5');
+    expect(svg).not.toHaveClass('lucide-activity');
+    expect(svg.childElementCount).toBe(0);
+
+    await waitFor(() => expect(svg.querySelector('path')).not.toBeNull());
+  });
+
+  it('renders a cached icon synchronously on first paint', async () => {
+    await loadLucideIconNode('library');
+
+    render(<DynamicLucideIcon name="library" data-testid="cached-icon" />);
+
+    expect(screen.getByTestId('cached-icon').querySelector('path')).not.toBeNull();
   });
 
   it('renders the default fallback for a missing icon', () => {
