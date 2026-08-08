@@ -4,15 +4,20 @@ import { DEFAULT_CUSTOM_FEED_ICON } from '@/config/feed';
 import { FeedValidators } from './feed.validators';
 
 describe('FeedValidators.sanitizeIcon', () => {
-  // Specs rejects an empty icon and one over `feedIconMaxLength`, and
-  // `createFeed` throws on rejection — during bootstrap that throw is caught
-  // per-feed, so an unusable icon would drop the whole feed from the nav.
+  // Specs rejects an empty icon, one over `feedIconMaxLength`, and one with
+  // characters outside `[a-z0-9-]`, and `createFeed` throws on rejection —
+  // during bootstrap that throw is caught per-feed, so an unusable icon would
+  // drop the whole feed from the nav.
   it.each([
     ['undefined', undefined],
     ['null', null],
     ['an empty string', ''],
     ['whitespace only', '   '],
     ['a name over the specs length limit', 'x'.repeat(validationLimits.feedIconMaxLength + 1)],
+    ['a snake_case name outside the specs charset', 'favorite_border'],
+    ['a name with inner whitespace', 'alarm clock'],
+    ['a name with punctuation outside the specs charset', 'icon.name'],
+    ['an emoji', '🔥'],
   ])('falls back to the default icon for %s', (_label, input) => {
     expect(FeedValidators.sanitizeIcon(input)).toBe(DEFAULT_CUSTOM_FEED_ICON);
   });

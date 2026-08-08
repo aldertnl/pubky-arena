@@ -17,6 +17,9 @@ import { normalizeTagList } from './feed.utils';
 const MIN_TAGS = 1;
 const MAX_TAGS = validationLimits.feedTagsMaxCount;
 const MAX_ICON_LENGTH = validationLimits.feedIconMaxLength;
+// Mirrors the charset specs' createFeed enforces (it lowercases before
+// checking, so the case-insensitive match accepts exactly what specs accepts).
+const ICON_CHARSET = /^[a-z0-9-]+$/i;
 
 export class FeedValidators {
   private constructor() {}
@@ -25,19 +28,23 @@ export class FeedValidators {
    * Coerces an icon coming from storage or a remote payload into a value
    * `PubkySpecsBuilder.createFeed` will accept.
    *
-   * Specs rejects both an empty icon and one longer than `feedIconMaxLength`,
-   * and `createFeed` throws on rejection — during bootstrap that throw is
-   * caught per-feed, so an unusable icon would silently drop the whole feed
-   * from the user's list. Falling back to the default keeps the feed.
+   * Specs rejects an empty icon, one longer than `feedIconMaxLength`, and one
+   * with characters outside `[a-z0-9-]`, and `createFeed` throws on rejection
+   * — during bootstrap that throw is caught per-feed, so an unusable icon
+   * would silently drop the whole feed from the user's list. Falling back to
+   * the default keeps the feed.
    *
    * Names that are merely unknown to us (another client's icon set) pass
-   * through untouched so a round-trip through this app does not overwrite
-   * them; the UI already renders a fallback for names it cannot resolve.
+   * through untouched — as long as they fit specs' constraints — so a
+   * round-trip through this app does not overwrite them; the UI already
+   * renders a fallback for names it cannot resolve.
    */
   static sanitizeIcon(icon: string | undefined | null): string {
     const trimmed = icon?.trim();
 
-    if (!trimmed || trimmed.length > MAX_ICON_LENGTH) return DEFAULT_CUSTOM_FEED_ICON;
+    if (!trimmed || trimmed.length > MAX_ICON_LENGTH || !ICON_CHARSET.test(trimmed)) {
+      return DEFAULT_CUSTOM_FEED_ICON;
+    }
 
     return trimmed;
   }
