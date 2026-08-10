@@ -17,13 +17,18 @@ export const followFromPostMenu = (filterText: string, postType = PostType.Post)
 };
 
 export const searchForProfileByPubky = (pubky: string, profileName: string) => {
+  const userId = userIdFromPubky(pubky);
+
+  // intercept the request for this exact pubky to know once it
+  // has resolved and the suggestion list has stopped updating
+  cy.intercept('GET', `**/v0/search/users/by_id/${userId}*`).as('searchUserByPubky');
+
   // type pubky into search bar
   cy.get('[data-cy="header-search-input"]').should('be.visible').type(`${pubky}`);
+  cy.wait('@searchUserByPubky');
 
-  // wait for autocomplete suggestions to appear and click on the user
-  cy.get(`[data-cy="search-user-suggestion-${userIdFromPubky(pubky)}"]`)
-    .should('be.visible')
-    .click();
+  // click on the now-settled suggestion
+  cy.get(`[data-cy="search-user-suggestion-${userId}"]`).should('be.visible').click();
 
   // check that profile page is displayed
   cy.get('[data-cy="profile-username-header"]').should('have.text', profileName);
