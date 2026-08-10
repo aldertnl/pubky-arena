@@ -185,7 +185,16 @@ function collectRecoveryPhraseWords(): Cypress.Chainable<string> {
 Cypress.Commands.add('signOut', () => {
   goToProfilePageFromHeader();
 
-  cy.get('#profile-logout-btn').click();
+  // Wait until the notification counter and list have settled before clicking the logout button
+  cy.get('body').should(($body) => {
+    const hasList = $body.find('[data-cy="notifications-list"]').length > 0;
+    const hasEmpty = $body.text().includes('Nothing to see here yet');
+    expect(hasList || hasEmpty, 'notifications finished initial load').to.eq(true);
+  });
+  cy.get('[data-testid^="notification-skeleton-"]').should('not.exist');
+  cy.get('[data-cy="header-notification-counter"]').should('not.exist');
+
+  cy.get('#profile-logout-btn').should('be.visible').and('contain', 'Sign out').click();
   cy.location('pathname').should('eq', '/logout');
 
   // navigate back to onboarding homepage
