@@ -303,13 +303,14 @@ Cypress.Commands.add('innerTextShouldNotEq', { prevSubject: 'element' }, (subjec
   });
 });
 
-// Common helper function to store a string value to an alias and Cypress env
+// Common helper function to store a string value to an alias and Cypress.expose
 // see https://docs.cypress.io/guides/core-concepts/variables-and-aliases#Sharing-Context
-// note: aliases work in the context of as test and only the first test after before
+// note: aliases work in the context of a test and only the first test after before
 function storeStringToAlias(text: string, alias: string): void {
   // store text as alias
   cy.wrap(text).as(alias);
-  // also store text in Cypress env to be used in beforeEach to re-create aliases because they are cleared at end of each test
+  // also store text via Cypress.expose so beforeEach can re-create aliases
+  // (aliases are cleared at the end of each test)
   // e.g. cy.wrap(Cypress.expose(profile1.pubkyAlias)).as(profile1.pubkyAlias);
   Cypress.expose(alias, text);
 }

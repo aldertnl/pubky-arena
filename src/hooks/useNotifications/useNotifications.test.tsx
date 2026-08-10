@@ -25,12 +25,15 @@ const {
   setMockCurrentUserPubky,
   mockUnreadCount,
   setMockUnreadCount,
+  mockLastRead,
+  setMockLastRead,
   mockNotificationPreferences,
   setMockNotificationPreferences,
   mockNotificationController,
 } = vi.hoisted(() => {
   const pubky = { current: 'test-user-pubky' as string | null };
   const unread = { current: 0 };
+  const lastRead = { current: 0 };
   const notificationPreferences = {
     current: createAllEnabledNotificationPreferences(),
   };
@@ -52,6 +55,10 @@ const {
     setMockUnreadCount: (value: number) => {
       unread.current = value;
     },
+    mockLastRead: lastRead,
+    setMockLastRead: (value: number) => {
+      lastRead.current = value;
+    },
     mockNotificationPreferences: notificationPreferences,
     setMockNotificationPreferences: (value: typeof notificationPreferences.current) => {
       notificationPreferences.current = value;
@@ -71,7 +78,7 @@ vi.mock('@/stores/auth/auth.store', () => ({
 }));
 vi.mock('@/stores/notification/notification.store', () => ({
   useNotificationStore: vi.fn((selector) => {
-    const state = { lastRead: 0, unread: mockUnreadCount.current, setLastRead: vi.fn() };
+    const state = { lastRead: mockLastRead.current, unread: mockUnreadCount.current, setLastRead: vi.fn() };
     return selector ? selector(state) : state.lastRead;
   }),
 }));
@@ -105,6 +112,7 @@ describe('useNotifications', () => {
     vi.clearAllMocks();
     setMockCurrentUserPubky('test-user-pubky');
     setMockUnreadCount(0);
+    setMockLastRead(0);
     setMockNotificationPreferences(createAllEnabledNotificationPreferences());
     vi.mocked(useMutedUsers).mockReturnValue({
       mutedUserIds: [],
@@ -389,5 +397,91 @@ describe('useNotifications', () => {
 
     expect(NotificationController.getOrFetchNotifications).toHaveBeenNthCalledWith(2, {});
     expect(result.current.notifications).toEqual(latestPageNotifications);
+  });
+
+  describe('read baseline latching', () => {
+    it('reclassifies unread notifications as soon as lastRead hydrates from zero, without an unrelated notifications change', async () => {
+      // Store starts at 0 (not yet hydrated from persistence) so everything is
+      // initially unread relative to the baseline.
+      setMockLastRead(0);
+
+      const notifications = [
+        { id: 'old', type: NotificationType.Follow, timestamp: 1000, followed_by: 'user1' },
+        { id: 'new', type: NotificationType.Follow, timestamp: 2000, followed_by: 'user2' },
+      ] as FlatNotification[];
+
+      vi.mocked(NotificationController.getOrFetchNotifications).mockResolvedValueOnce({
+        flatNotifications: notifications,
+        olderThan: 999,
+      });
+
+      const { result, rerender } = renderHook(() => useNotifications());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // Baseline still 0: both notifications are unread.
+      expect(result.current.unreadCount).toBe(2);
+      expect(result.current.isNotificationUnread(notifications[0])).toBe(true);
+      expect(result.current.isNotificationUnread(notifications[1])).toBe(true);
+
+      // Store hydrates lastRead to a real timestamp. This must reclassify the
+      // already-loaded list on its own -- the `notifications` array itself
+      // does not change, so anything keying off it (instead of the baseline)
+      // would miss this update.
+      await act(async () => {
+        setMockLastRead(1500);
+        rerender();
+      });
+
+      await waitFor(() => {
+        expect(result.current.unreadCount).toBe(1);
+      });
+      expect(result.current.isNotificationUnread(notifications[0])).toBe(false);
+      expect(result.current.isNotificationUnread(notifications[1])).toBe(true);
+      expect(result.current.unreadNotifications).toEqual([notifications[1]]);
+    });
+
+    it('keeps the baseline frozen once latched, so a later lastRead increase does not reclassify already-loaded notifications', async () => {
+      setMockLastRead(0);
+
+      const notifications = [
+        { id: 'mid', type: NotificationType.Follow, timestamp: 1500, followed_by: 'user1' },
+      ] as FlatNotification[];
+
+      vi.mocked(NotificationController.getOrFetchNotifications).mockResolvedValueOnce({
+        flatNotifications: notifications,
+        olderThan: 999,
+      });
+
+      const { result, rerender } = renderHook(() => useNotifications());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // First hydration latches the baseline to 1000.
+      await act(async () => {
+        setMockLastRead(1000);
+        rerender();
+      });
+
+      await waitFor(() => {
+        expect(result.current.isNotificationUnread(notifications[0])).toBe(true);
+      });
+
+      // A later increase (e.g. the user marking notifications as read mid-session)
+      // must not move the already-latched baseline, per the "sticky baseline"
+      // contract -- otherwise the currently-visible unread notification would
+      // flip to read out from under the user without them re-opening the list.
+      await act(async () => {
+        setMockLastRead(2000);
+        rerender();
+      });
+
+      expect(result.current.isNotificationUnread(notifications[0])).toBe(true);
+      expect(result.current.unreadNotifications).toEqual(notifications);
+    });
   });
 });
