@@ -34,6 +34,7 @@ describe('DialogReportPostIssueStep', () => {
       back: vi.fn(),
       forward: vi.fn(),
       refresh: vi.fn(),
+      bfcacheId: 'test-bfcache-id',
     } as ReturnType<typeof useRouter>);
   });
 

@@ -90,7 +90,9 @@ export function useStreamPagination({
   // fetch recounts consumed rows from scratch).
   const committedRemovalsRef = useRef(0);
   const activeStreamIdRef = useRef(streamId);
-  activeStreamIdRef.current = streamId;
+  useEffect(() => {
+    activeStreamIdRef.current = streamId;
+  });
 
   /**
    * Sets the appropriate loading state based on load type

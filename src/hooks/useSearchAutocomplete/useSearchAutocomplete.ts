@@ -27,13 +27,13 @@ export function useSearchAutocomplete({
   const [isSearching, setIsSearching] = useState(false);
   // Guards against out-of-order async responses overwriting newer results.
   const requestIdRef = useRef(0);
+  const debouncedSearchRef = useRef<ReturnType<typeof debounce> | null>(null);
 
   // Get user details from IDs using shared hook
   const { users, isLoading: isLoadingUsers } = useUserDetailsFromIds({ userIds });
 
-  // Debounced search function
-  const debouncedSearchRef = useRef(
-    debounce(async (searchQuery: string) => {
+  useEffect(() => {
+    const performSearch = async (searchQuery: string) => {
       const requestId = ++requestIdRef.current;
       setIsSearching(true);
 
@@ -112,8 +112,14 @@ export function useSearchAutocomplete({
           setIsSearching(false);
         }
       }
-    }, AUTOCOMPLETE_DEBOUNCE_MS),
-  );
+    };
+
+    debouncedSearchRef.current = debounce(performSearch, AUTOCOMPLETE_DEBOUNCE_MS);
+
+    return () => {
+      debouncedSearchRef.current?.cancel();
+    };
+  }, []);
 
   useEffect(() => {
     // Reset results if disabled or empty query
@@ -122,17 +128,17 @@ export function useSearchAutocomplete({
       setTags([]);
       setUserIds([]);
       setIsSearching(false);
-      debouncedSearchRef.current.cancel();
+      debouncedSearchRef.current?.cancel();
       return;
     }
 
     // Trigger debounced search
     const debouncedFn = debouncedSearchRef.current;
-    debouncedFn(query.trim());
+    debouncedFn?.(query.trim());
 
     // Cleanup: cancel pending debounced calls
     return () => {
-      debouncedFn.cancel();
+      debouncedFn?.cancel();
     };
   }, [query, enabled]);
 

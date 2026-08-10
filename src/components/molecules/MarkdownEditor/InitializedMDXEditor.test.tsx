@@ -346,7 +346,7 @@ describe('InitializedMDXEditor', () => {
     it('renders smile icons in emoji buttons', () => {
       const { container } = render(<InitializedMDXEditor editorRef={null} markdown="" />);
 
-      const smileIcons = container.querySelectorAll('.lucide-smile');
+      const smileIcons = container.querySelectorAll('.lucide-face-slightly-smiling');
       // One in the markdown toolbar, one in the rich text toolbar
       expect(smileIcons).toHaveLength(2);
       smileIcons.forEach((icon) => {
@@ -358,8 +358,9 @@ describe('InitializedMDXEditor', () => {
       render(<InitializedMDXEditor editorRef={null} markdown="" />);
 
       const markdownButton = screen.getByTestId('button-with-tooltip-markdown');
-      const markdownIcon = markdownButton.querySelector('svg[viewBox="0 0 208 128"]');
+      const markdownIcon = markdownButton.querySelector('svg');
       expect(markdownIcon).toBeInTheDocument();
+      expect(markdownIcon).toHaveAttribute('viewBox', '0 0 208 128');
       expect(markdownIcon).toHaveClass('size-6');
     });
 

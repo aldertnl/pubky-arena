@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Check, Smile } from 'lucide-react';
+import { Check, FaceSlightlySmiling } from 'lucide-react';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { Input } from '@/atoms/Input/Input';
@@ -122,7 +122,7 @@ export function StatusPickerContent({ onStatusSelect, currentStatus }: StatusPic
                 )}
                 aria-label="Open emoji picker"
               >
-                <Smile className="size-5" strokeWidth={2} />
+                <FaceSlightlySmiling className="size-5" strokeWidth={2} />
               </Button>
             )}
             <Input

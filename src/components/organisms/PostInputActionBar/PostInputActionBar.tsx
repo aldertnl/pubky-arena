@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Image, Loader2, Newspaper, Send, Smile } from 'lucide-react';
+import { FaceSlightlySmiling, Image, Loader2, Newspaper, Send } from 'lucide-react';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { Typography } from '@/atoms/Typography/Typography';
@@ -52,7 +52,7 @@ export function PostInputActionBar({
             disabled={!onEmojiClick || isSubmitting}
             aria-label="Add emoji"
           >
-            <ActionButtonContent Icon={Smile} />
+            <ActionButtonContent Icon={FaceSlightlySmiling} />
           </Button>
         ) : null}
         {!isArticle && !isEdit ? (

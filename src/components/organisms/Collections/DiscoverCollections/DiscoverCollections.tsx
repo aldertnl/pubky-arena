@@ -99,7 +99,9 @@ export function DiscoverCollections() {
   // Ref of currently-visible IDs, read inside the async fetch so appends can
   // dedup without re-creating the function on every successful append.
   const visibleIdsRef = useRef<string[]>([]);
-  visibleIdsRef.current = visibleIds;
+  useEffect(() => {
+    visibleIdsRef.current = visibleIds;
+  });
 
   // Cancellation token for the in-flight initial fetch. When the effect
   // re-fires (StrictMode double-invoke, or genuine viewer switch), the old
