@@ -131,26 +131,51 @@ describe('locks.utils', () => {
   });
 
   describe('initLockClient', () => {
-    it('applies every pkarr relay + the testnet homeserver, then builds the client for the configured server', () => {
+    it('applies every pkarr relay, then builds the client for the configured server', () => {
       const client = initLockClient();
 
       expect(mocks.addPkarrRelay).toHaveBeenCalledTimes(2);
-      expect(mocks.setLocalTestnetHomeserver).toHaveBeenCalledWith('homeservertestpubky');
       expect(mocks.forServerWithOptions).toHaveBeenCalledWith('lockserverpubky', expect.anything());
       expect(client).toBe(mocks.forServerWithOptions.mock.results[0]?.value);
     });
 
-    it('skips the testnet homeserver on mainnet', () => {
-      mocks.getTestnet.mockReturnValue(false);
+    // The SDK falls back to this homeserver whenever creator pkarr resolution fails, which hides
+    // resolution bugs on testnet until they reach a deployed environment.
+    it('never sets the testnet homeserver fallback', () => {
       initLockClient();
+
       expect(mocks.setLocalTestnetHomeserver).not.toHaveBeenCalled();
     });
   });
 
   describe('ensureLocksSdkReady', () => {
+    // The init promise is module state, so each test re-imports to start with an empty cache.
+    const freshEnsureLocksSdkReady = async () => {
+      vi.resetModules();
+      return (await import('./locks.utils')).ensureLocksSdkReady;
+    };
+
     it('resolves after running the SDK wasm init', async () => {
       await expect(ensureLocksSdkReady()).resolves.toBeUndefined();
       expect(mocks.init).toHaveBeenCalled();
+    });
+
+    it('runs the wasm init once, however many callers ask', async () => {
+      const ensure = await freshEnsureLocksSdkReady();
+
+      await Promise.all([ensure(), ensure(), ensure()]);
+
+      expect(mocks.init).toHaveBeenCalledTimes(1);
+    });
+
+    it('retries on the next call after a failed init', async () => {
+      const ensure = await freshEnsureLocksSdkReady();
+      mocks.init.mockRejectedValueOnce(new Error('wasm boom'));
+
+      await expect(ensure()).rejects.toThrow('wasm boom');
+      // A cached rejection would leave Locks dead until a page reload.
+      await expect(ensure()).resolves.toBeUndefined();
+      expect(mocks.init).toHaveBeenCalledTimes(2);
     });
   });
 });

@@ -1,5 +1,5 @@
 import { Locks, LocksOptions, type Session as LocksSdkSession } from '@pubky/locks-sdk';
-import { getHomeserver, getLockServer, getPkarrRelays, getTestnet } from '@/config/network';
+import { getLockServer, getPkarrRelays } from '@/config/network';
 import { AuthErrorCode, ValidationErrorCode } from '@/libs/error/error.codes';
 import { Err } from '@/libs/error/error.factories';
 import { ErrorService } from '@/libs/error/error.types';
@@ -42,9 +42,14 @@ let sdkReady: Promise<void> | null = null;
  */
 export function ensureLocksSdkReady(): Promise<void> {
   if (!sdkReady) {
-    sdkReady = import('@pubky/locks-sdk').then(async ({ default: init }) => {
-      await init();
-    });
+    sdkReady = import('@pubky/locks-sdk')
+      .then(async ({ default: init }) => {
+        await init();
+      })
+      .catch((error) => {
+        sdkReady = null;
+        throw error;
+      });
   }
   return sdkReady;
 }
@@ -85,17 +90,21 @@ export function getLockSession(): LocksSdkSession {
 }
 
 /**
+ * The app's network options (pkarr relays) for any SDK entry point.
+ */
+export function buildLocksOptions(): LocksOptions {
+  const options = new LocksOptions();
+  for (const relay of getPkarrRelays()) {
+    options.addPkarrRelay(relay);
+  }
+  return options;
+}
+
+/**
  * Builds a Locks client for the configured Lock Server.
  * TODO:[Locks] today there is one server, taken from env. Once multiple lock servers exist,
  * the reader must use each lock's `lock_server.override`; take the server pubky as a param again then.
  */
 export function initLockClient(): Locks {
-  const options = new LocksOptions();
-  for (const relay of getPkarrRelays()) {
-    options.addPkarrRelay(relay);
-  }
-  if (getTestnet()) {
-    options.setLocalTestnetHomeserver(getHomeserver());
-  }
-  return Locks.forServerWithOptions(getLockServerPubky(), options);
+  return Locks.forServerWithOptions(getLockServerPubky(), buildLocksOptions());
 }

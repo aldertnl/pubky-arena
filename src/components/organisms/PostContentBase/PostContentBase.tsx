@@ -6,13 +6,12 @@ import { isArticleContent } from '@/libs/post/articleContent';
 import { cn, isPostDeleted } from '@/libs/utils/utils';
 import { parseCompositeId } from '@/models/models.utils';
 import { PostDeleted } from '@/molecules/PostDeleted/PostDeleted';
-import { PostLinkEmbeds } from '@/molecules/PostLinkEmbeds/PostLinkEmbeds';
 import { PostMissing } from '@/molecules/PostMissing/PostMissing';
-import { PostText } from '@/molecules/PostText/PostText';
 import { CollectionCard } from '@/organisms/Collections/CollectionCard/CollectionCard';
 import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
+import { LockedPostContent } from '../LockedPostContent/LockedPostContent';
 import { PostArticle } from '../PostArticle/PostArticle';
-import { PostAttachments } from '../PostAttachments/PostAttachments';
+import { PostBody } from '../PostBody/PostBody';
 import { PostContentBlurred } from '../PostContentBlurred/PostContentBlurred';
 import { PostContentBaseSkeleton } from './PostContentBase.skeleton';
 import type { PostContentBaseProps } from './PostContentBase.types';
@@ -41,10 +40,26 @@ export function PostContentBase({ postId, className, textClassName }: PostConten
   const isBlurred = postDetails.is_blurred;
   const isArticle = postDetails.kind === 'long' && isArticleContent(postDetails.content);
   const isCollection = postDetails.kind === 'collection';
+  // Lock detection is by the top-level `lock` URL (points at the public lock.json), not by `kind`
+  // (which now holds the teaser's real type). Nexus delivers `lock` (see NexusPostDetails.lock).
+  const isLock = !!postDetails.lock;
 
   if (isDeleted) return <PostDeleted />;
 
   if (isBlurred) return <PostContentBlurred postId={postId} className={className} />;
+
+  if (isLock)
+    return (
+      <LockedPostContent
+        content={postDetails.content}
+        lock={postDetails.lock}
+        authorId={parseCompositeId(postId).pubky}
+        attachments={postDetails.attachments}
+        localAttachments={localAttachments}
+        className={className}
+        textClassName={textClassName}
+      />
+    );
 
   if (isArticle)
     return (
@@ -65,14 +80,12 @@ export function PostContentBase({ postId, className, textClassName }: PostConten
 
   return (
     <Container className={cn('min-w-0 gap-3', className)}>
-      {/* Post text */}
-      {hasContent && <PostText content={postDetails.content} className={textClassName} />}
-
-      {/* Link previews from text */}
-      {hasContent && <PostLinkEmbeds content={postDetails.content} />}
-
-      {/* Attachments on this post */}
-      <PostAttachments attachments={postDetails.attachments} localAttachments={localAttachments} />
+      <PostBody
+        content={postDetails.content}
+        attachments={postDetails.attachments}
+        localAttachments={localAttachments}
+        textClassName={textClassName}
+      />
     </Container>
   );
 }

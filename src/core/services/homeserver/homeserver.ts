@@ -51,8 +51,13 @@ import {
   resolveOwnedSessionPath,
 } from './homeserver.utils';
 
-const CAPABILITIES = '/pub/pubky.app/:rw';
-const PUB_PATH_PREFIX = '/pub/' as const;
+// Only the Pubky Ring auth flow is scoped by these — keypair signin mints a root-capability session.
+// - /pub/pubky.app/:rw   — the app's public data
+// - /priv/social/:rw     — where unlocked lock content is copied (reader replication)
+// - /priv/locks.app/:r   — read-only: a creator reads their OWN guarded original here (Ring sessions)
+// Changing this invalidates existing Ring sessions until they re-authenticate.
+const CAPABILITIES = '/pub/pubky.app/:rw,/priv/social/:rw,/priv/locks.app/:r';
+const STORAGE_PATH_PREFIXES = ['/pub/', '/priv/'] as const;
 /** Default limit for list operations */
 const LIST_DEFAULT_LIMIT = 500;
 
@@ -82,7 +87,7 @@ export class HomeserverService {
 
   private static resolveOwnedSessionPath(url: string): TOwnedSessionPath | null {
     const session = useAuthStore.getState().selectSession();
-    return resolveOwnedSessionPath({ url, session, pubPathPrefix: PUB_PATH_PREFIX });
+    return resolveOwnedSessionPath({ url, session, allowedPrefixes: STORAGE_PATH_PREFIXES });
   }
 
   /**
@@ -127,7 +132,8 @@ export class HomeserverService {
     try {
       const homeserverPublicKey = PublicKey.from(getHomeserver());
       const signer = this.getSigner(keypair);
-      const session = await signer.signup(homeserverPublicKey, signupToken);
+      // TODO: cookie auth is deprecated in pubky 0.10 — migrate to the grant flow (`signup()` + `signin(clientId)`).
+      const session = await signer.signupCookie(homeserverPublicKey, signupToken);
 
       Logger.debug('Signup successful', { session });
 
@@ -203,7 +209,8 @@ export class HomeserverService {
     try {
       // get homeserver from pkarr records
       await this.checkHomeserver({ publicKey: keypair.publicKey });
-      const session = await signer.signin();
+      // TODO: cookie auth is deprecated in pubky 0.10 — migrate to grant `signin(clientId)`.
+      const session = await signer.signinCookie();
       return { session };
     } catch (signinError) {
       try {
@@ -234,7 +241,8 @@ export class HomeserverService {
 
     try {
       const pubkySdk = this.getPubkySdk();
-      const flow = pubkySdk.startAuthFlow(capabilities, AuthFlowKind.signin(), getDefaultHttpRelay());
+      // TODO: cookie auth is deprecated in pubky 0.10 — migrate to `startGrantAuthFlow()`.
+      const flow = pubkySdk.startCookieAuthFlow(capabilities, AuthFlowKind.signin(), getDefaultHttpRelay());
       const approval = createCancelableAuthApproval(flow);
 
       return {
@@ -350,7 +358,7 @@ export class HomeserverService {
     if (method !== HttpMethod.GET && !isHttpUrl(url)) {
       throw Err.validation(
         ValidationErrorCode.INVALID_INPUT,
-        `Authenticated writes must target an owned ${PUB_PATH_PREFIX}* path for the current session.`,
+        `Authenticated writes must target an owned ${STORAGE_PATH_PREFIXES.join('* / ')}* path for the current session.`,
         {
           service: ErrorService.Homeserver,
           operation: 'request',
@@ -398,7 +406,7 @@ export class HomeserverService {
     if (!isHttpUrl(url)) {
       throw Err.validation(
         ValidationErrorCode.INVALID_INPUT,
-        `Blob uploads must target an owned ${PUB_PATH_PREFIX}* path for the current session.`,
+        `Blob uploads must target an owned ${STORAGE_PATH_PREFIXES.join('* / ')}* path for the current session.`,
         {
           service: ErrorService.Homeserver,
           operation: 'putBlob',
@@ -508,6 +516,36 @@ export class HomeserverService {
 
       return await pubkySdk.publicStorage.get(url as Address);
     } catch (error) {
+      return handleError({ error, additionalContext: { url, method: HttpMethod.GET } });
+    }
+  }
+
+  /** Raw bytes of a resource (owned/public/http). Rejects (via `get`) on a missing or 4xx/5xx path. */
+  static async getBytes(url: string): Promise<Uint8Array> {
+    const response = await this.get(url);
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
+  /**
+   * Bytes of an owned resource, or null when it is absent (404) — WITHOUT logging. For existence
+   * checks (e.g. unlock detection) where "not there" is an expected outcome, not an error to report.
+   * Calls the SDK directly so a 404 bypasses `handleError`/Sentry, mirroring `list`'s 404 fallback.
+   *
+   * Only a 404 means "absent": every other failure (403, 5xx, network) rejects, since the resource
+   * may well exist and a null would let the caller record a missing file as a confirmed absence.
+   */
+  static async getBytesIfExists(url: string): Promise<Uint8Array | null> {
+    const owned = this.resolveOwnedSessionPath(url);
+    // Unreadable without a session — return null rather than fire an unauthenticated request.
+    if (!owned) return null;
+    try {
+      // `storage.get` resolves for any status, so the response has to be checked here.
+      const response = await owned.session.storage.get(owned.path);
+      if (response.status === HttpStatusCode.NOT_FOUND) return null;
+      await assertOk({ response, url, operation: 'getBytesIfExists' });
+      return new Uint8Array(await response.arrayBuffer());
+    } catch (error) {
+      if (extractStatusCode(error) === HttpStatusCode.NOT_FOUND) return null;
       return handleError({ error, additionalContext: { url, method: HttpMethod.GET } });
     }
   }

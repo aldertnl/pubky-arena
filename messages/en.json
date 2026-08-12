@@ -516,8 +516,11 @@
     "lock": {
       "unlock": "Unlock",
       "defaultTitle": "Locked post",
-      "titlePlaceholder": "Title",
-      "teaserPlaceholder": "Write a short announcement to tease your content."
+      "titleLabel": "Lock title",
+      "teaserPlaceholder": "Write a short announcement to tease your content.",
+      "unavailable": "Lock content is not available",
+      "unlocked": "Unlocked",
+      "myLockedContent": "My locked content"
     },
     "addTag": "add tag",
     "limitReached": "limit reached",
@@ -662,6 +665,12 @@
       "newPost": "New Post",
       "newLockedPost": "New Locked Post",
       "description": "{title} dialog"
+    },
+    "unlockContent": {
+      "title": "Password to Unlock",
+      "passwordLabel": "Password",
+      "viewContent": "View Content",
+      "error": "Couldn't unlock this content. Please try again."
     },
     "lockContent": {
       "title": "Lock Content",

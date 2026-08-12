@@ -1,4 +1,33 @@
-import type { TGuardedResource } from '@/services/locks/locks.types';
+import type { LockFile, TGuardedResource, TUnlockedContent } from '@/services/locks/locks.types';
+
+/** Params for the reader unlock flow. `lockUrl` is the post's public `lock.json` URL. */
+export type TUnlockContentParams = {
+  lockFile: LockFile;
+  lockUrl: string;
+  password: string;
+};
+
+/** Params for reading the guarded content after unlock, authorized by `credential`. */
+export type TFetchUnlockedContentParams = {
+  lockFile: LockFile;
+  credential: string;
+};
+
+/** Params to copy unlocked content into the reader's own `/priv` (the only write of the three). */
+export type TReplicateUnlockedContentParams = {
+  lockUrl: string;
+  readerPubky: string;
+  content: TUnlockedContent;
+};
+
+export type TFetchReplicatedContentParams = {
+  lockUrl: string;
+  readerPubky: string;
+};
+
+export type TFetchOwnContentParams = {
+  lockFile: LockFile;
+};
 
 /**
  * One file to guard. The storage path is minted per upload, so the original filename is not part of

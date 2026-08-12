@@ -68,9 +68,6 @@ export function RouteGuardProvider({ children }: RouteGuardProviderProps) {
     });
   }, [hasHydrated, session, sessionExport]);
 
-  // Restore the Locks session alongside the homeserver one (no-op while Locks is unconfigured).
-  useRestoreLocksAuth();
-
   // Post-migration re-sync: fetch critical homeserver data after DB recreation
   // TODO: Consider using BroadcastChannel to notify other browser tabs when DB was recreated / resync completed
   useEffect(() => {
@@ -185,6 +182,9 @@ export function RouteGuardProvider({ children }: RouteGuardProviderProps) {
       router.push(redirectTo);
     }
   }, [status, pathname, router, isLoading, isRouteAccessible]);
+
+  // Restore the Locks session alongside the homeserver one (no-op while Locks is unconfigured).
+  useRestoreLocksAuth();
 
   // Show loading spinner while:
   // 1. Authentication status is being determined (isLoading = true)

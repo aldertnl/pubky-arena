@@ -1,11 +1,25 @@
 import { LocksApplication } from '@/application/locks/locks';
-import type { TCreateLockContentParams } from '@/application/locks/locks.types';
-import { sleep } from '@/libs/utils/utils';
 import type {
+  TCreateLockContentParams,
+  TFetchOwnContentParams,
+  TFetchReplicatedContentParams,
+  TFetchUnlockedContentParams,
+  TReplicateUnlockedContentParams,
+  TUnlockContentParams,
+} from '@/application/locks/locks.types';
+import { isAppError, isAuthError } from '@/libs/error/error.utils';
+import { sleep } from '@/libs/utils/utils';
+import { LockContentParser, LockFileParser } from '@/pipes/locks/locks.parser';
+import type {
+  LockPostContent,
   TCreateContentLockResult,
   TExchangeSessionCodeParams,
+  TFetchLockFileParams,
+  TFetchLockFileResult,
   TGetConnectUrlParams,
   TLocksSessionResult,
+  TUnlockedContent,
+  TUnlockResult,
 } from '@/services/locks/locks.types';
 import { useLocksAuthStore } from '@/stores/locksAuth/locksAuth.store';
 
@@ -13,7 +27,8 @@ import { useLocksAuthStore } from '@/stores/locksAuth/locksAuth.store';
 const SIGNOUT_TIMEOUT_MS = 3000;
 
 /**
- * Entry point for the Lock Server: auth (mirrors `AuthController`) and publishing locked content.
+ * Entry point for the Lock Server: auth (mirrors `AuthController`), publishing locked content
+ * (creator), and reading a lock's public `lock.json` (reader).
  */
 export class LocksController {
   private constructor() {} // Prevent instantiation
@@ -52,21 +67,11 @@ export class LocksController {
     const result = await LocksApplication.exchangeSessionCode(params);
     useLocksAuthStore.getState().init({ session: result.session, secret: result.secret });
     // Register the creator's default Lock Server pointer in the background on every auth, mirroring
-    // the homeserver's post-auth write. Fire-and-forget: a failure must not drop the established
-    // session (the pointer write is idempotent and retried on the next auth). Runs after `init` —
-    // the service reads the session it just persisted.
-    void this.registerLockServiceConfig();
+    // the homeserver's post-auth write. Fire-and-forget: a failure (already reported to Sentry by the
+    // service Err factory) must not drop the established session — the write is idempotent and
+    // retried on the next auth. Runs after `init` — the service reads the session it just persisted.
+    void LocksApplication.setLockServiceConfig().catch(() => {});
     return result;
-  }
-
-  /** Background lock-service-config write; reports failures to Sentry but never drops the session. */
-  private static async registerLockServiceConfig(): Promise<void> {
-    try {
-      await LocksApplication.setLockServiceConfig();
-    } catch {
-      // Already reported to Sentry by the service Err factory; swallow so the write (idempotent,
-      // retried on the next auth) never drops the established session.
-    }
   }
 
   /**
@@ -100,10 +105,14 @@ export class LocksController {
   }
 
   /**
-   * On app load, rebuilds the live Locks session from the persisted bearer secret.
-   * No-op if nothing to restore or a session is already live. A malformed/stale secret is cleared so
-   * the UI shows unauthenticated rather than a broken session. Restore is local (no network), so no
-   * retry is needed.
+   * On app load, rebuilds the live Locks session from the persisted bearer secret, then validates it
+   * against the Lock Server. No-op if nothing to restore or a session is already live.
+   *
+   * `restoreSession` is offline, so a server-expired secret would rebuild a session that looks live —
+   * the composer would show "authenticated", let the creator configure a lock, and only surprise them
+   * with a sign-in prompt when publishing makes the first real call. The SDK exposes no read to probe
+   * with, so validate via the idempotent config write: a rejected session (401 → Auth) is cleared now.
+   * Other failures (network / 5xx) keep the session — they don't prove it's dead.
    */
   static async restorePersistedLocksSession(): Promise<void> {
     const store = useLocksAuthStore.getState();
@@ -114,7 +123,14 @@ export class LocksController {
     } catch {
       // Malformed/stale secret — already reported by the service Err factory; clear it so the UI
       // shows unauthenticated rather than a broken session.
-      store.reset();
+      this.clearSession();
+      return;
+    }
+
+    try {
+      await LocksApplication.setLockServiceConfig();
+    } catch (error) {
+      if (isAppError(error) && isAuthError(error)) this.clearSession();
     }
   }
 
@@ -124,5 +140,44 @@ export class LocksController {
    */
   static createLockContent(params: TCreateLockContentParams): Promise<TCreateContentLockResult> {
     return LocksApplication.createLockContent(params);
+  }
+
+  /**
+   * Fetch the lock file (`lock.json`) referenced by a post's top-level `lock` URL and resolve how
+   * its content is gated. Delegates to the application, which validates the URL and performs the read.
+   */
+  static async fetchLockFile(params: TFetchLockFileParams): Promise<TFetchLockFileResult> {
+    const lockFile = await LocksApplication.fetchLockFile(params);
+    return { lockFile, verifierType: LockFileParser.resolveVerifierType(lockFile) };
+  }
+
+  /** Announcement content of a lock post; null when the post's `content` isn't valid announcement JSON. */
+  static getLockContent(content: string): LockPostContent | null {
+    return LockContentParser.parse(content);
+  }
+
+  /** Reader unlock: submit the proof for a resolved lock file, verify, and return the access credential. */
+  static unlock(params: TUnlockContentParams): Promise<TUnlockResult> {
+    return LocksApplication.unlockContent(params);
+  }
+
+  /** Reads the guarded post + attachments after unlock, using the access credential. */
+  static fetchUnlockedContent(params: TFetchUnlockedContentParams): Promise<TUnlockedContent> {
+    return LocksApplication.fetchUnlockedContent(params);
+  }
+
+  /** Copies unlocked content into the reader's own `/priv`, so later reads need no credential. */
+  static replicateUnlockedContent(params: TReplicateUnlockedContentParams): Promise<void> {
+    return LocksApplication.replicateUnlockedContent(params);
+  }
+
+  /** Loads already-unlocked content from the reader's `/priv`, or null if this lock isn't unlocked yet. */
+  static fetchReplicatedContent(params: TFetchReplicatedContentParams): Promise<TUnlockedContent | null> {
+    return LocksApplication.fetchReplicatedContent(params);
+  }
+
+  /** Creator reads their own locked content directly from the guarded original (owner == signed-in). */
+  static fetchOwnContent(params: TFetchOwnContentParams): Promise<TUnlockedContent> {
+    return LocksApplication.fetchOwnContent(params);
   }
 }

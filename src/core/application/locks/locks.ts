@@ -1,14 +1,41 @@
 import type { Session as LocksSdkSession } from '@pubky/locks-sdk';
+import { ServerErrorCode, ValidationErrorCode } from '@/libs/error/error.codes';
+import { Err } from '@/libs/error/error.factories';
+import { ErrorService } from '@/libs/error/error.types';
+import { isAppError, isValidationError } from '@/libs/error/error.utils';
+import { stripPubkyPrefix } from '@/libs/utils/utils';
+import { GuardedContentParser, LockContentParser, LockProofBundler } from '@/pipes/locks/locks.parser';
+import { HomeserverService } from '@/services/homeserver/homeserver';
 import { LocksService } from '@/services/locks/locks';
 import type {
+  LockFile,
   TCreateContentLockResult,
   TExchangeSessionCodeParams,
+  TFetchLockFileParams,
   TGenerateConnectUrlParams,
   TGuardedResource,
   TLocksSessionResult,
   TRegisterGuardedResourceResult,
+  TUnlockedAttachment,
+  TUnlockedContent,
+  TUnlockResult,
+  TVerificationStatus,
 } from '@/services/locks/locks.types';
-import type { TCreateLockContentParams, TLockContentFile } from './locks.types';
+import type {
+  TCreateLockContentParams,
+  TFetchOwnContentParams,
+  TFetchReplicatedContentParams,
+  TFetchUnlockedContentParams,
+  TLockContentFile,
+  TReplicateUnlockedContentParams,
+  TUnlockContentParams,
+} from './locks.types';
+
+// Verification polling: check status every interval, up to a bounded number of attempts.
+const POLL_INTERVAL_MS = 1500;
+const MAX_POLL_ATTEMPTS = 40;
+
+const isVerifying = (status: TVerificationStatus) => status === 'pending' || status === 'in_progress';
 
 // TODO:[Locks] #2040 — Phase 1 ships the `password` verifier, but the Lock Server does not implement
 // one yet: `VerifierType` (locks-core/src/lock_policy.rs) only has `DevStatic`, and unknown verifier
@@ -24,8 +51,8 @@ const VERIFIER_PARAMS = { satisfied: true };
 const CREDENTIAL_TTL_SECONDS = 900;
 
 /**
- * Application layer for the Lock Server: auth (mirrors `AuthApplication`) and publishing
- * locked content.
+ * Application layer for the Lock Server: auth (mirrors `AuthApplication`), publishing locked content
+ * (creator), and reading a lock's public `lock.json` (reader).
  *
  * The auth methods delegate straight to the service — their real orchestration (session persistence,
  * store writes) lives in `LocksController`, since only controllers manage stores (ADR 0004).
@@ -40,6 +67,252 @@ export class LocksApplication {
   /** Whether the Lock Server at `origin` is ready to serve — gates the auth flow before the iframe. */
   static isServerReady(origin: string): Promise<boolean> {
     return LocksService.isServerReady(origin);
+  }
+
+  private static wait(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Reader unlock: mint a bundle id, submit the proof, poll until the Lock Server finishes verifying,
+   * then request the access credential.
+   */
+  static async unlockContent({ lockFile, lockUrl, password }: TUnlockContentParams): Promise<TUnlockResult> {
+    const { creator } = lockFile;
+    const bundleId = await LocksService.generateBundleId();
+    const bundle = LockProofBundler.build(lockFile, lockUrl, bundleId);
+
+    // Submit the proof; the server verifies asynchronously and returns a pending task.
+    let task = await LocksService.submitProofBundle(bundle, password);
+    // Poll the task status until it's no longer verifying (or the attempt ceiling is hit).
+    for (let attempt = 0; isVerifying(task.status) && attempt < MAX_POLL_ATTEMPTS; attempt++) {
+      await this.wait(POLL_INTERVAL_MS);
+      task = await LocksService.lookupVerificationTask(creator, bundleId);
+    }
+
+    if (task.status !== 'completed') {
+      const failure = {
+        service: ErrorService.Locks,
+        operation: 'unlockContent',
+        context: { status: task.status, failureMessage: task.failure_message },
+      };
+      if (task.status === 'failed' || task.status === 'expired') {
+        throw Err.validation(ValidationErrorCode.INVALID_INPUT, `Unlock verification ${task.status}`, failure);
+      }
+      // Still `pending`/`in_progress` after the last poll — the server may finish it later.
+      throw Err.server(
+        ServerErrorCode.SERVICE_UNAVAILABLE,
+        `Unlock verification did not complete (${task.status})`,
+        failure,
+      );
+    }
+
+    const credential = await LocksService.issueAccessCredential(creator, bundleId);
+    return { bundleId, credential: credential.credential, expiresAt: credential.expires_at };
+  }
+
+  /** Reads the guarded post + its attachments with the access credential. Throws when the post is unparseable. */
+  static async fetchUnlockedContent({ lockFile, credential }: TFetchUnlockedContentParams): Promise<TUnlockedContent> {
+    const primaryPath = lockFile.primary_resource?.path;
+    const readPath = primaryPath ? GuardedContentParser.toReadPath(primaryPath) : null;
+    if (!readPath) {
+      throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'lock file has no readable primary resource', {
+        service: ErrorService.Locks,
+        operation: 'fetchUnlockedContent',
+        context: { primaryPath },
+      });
+    }
+
+    const primaryBytes = await LocksService.proxyReadGuardedResource(credential, readPath);
+    const post = GuardedContentParser.parsePost(primaryBytes);
+    if (!post) {
+      // Unlock succeeded but the primary resource isn't a parseable post — a permanent data error, so
+      // report it (like a dropped attachment) instead of a silent null the caller can't distinguish.
+      throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'unlocked guarded post is not parseable', {
+        service: ErrorService.Locks,
+        operation: 'fetchUnlockedContent',
+        context: { readPath },
+      });
+    }
+
+    // Reader path: proxy-read each attachment through the Lock Server with the access credential.
+    const readBytes = (path: string) => this.proxyReadAttachment(credential, path);
+    const attachments = await this.readAttachments(lockFile, post.attachments ?? [], 'fetchUnlockedContent', readBytes);
+    return { post, attachments };
+  }
+
+  /** Proxy-reads one attachment: strips the guarded prefix to the relative path the Lock Server expects. */
+  private static proxyReadAttachment(credential: string, path: string): Promise<Uint8Array> {
+    const readPath = GuardedContentParser.toReadPath(path);
+    if (!readPath) {
+      throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'attachment path is outside the guarded namespace', {
+        service: ErrorService.Locks,
+        operation: 'fetchUnlockedContent',
+        context: { path },
+      });
+    }
+    return LocksService.proxyReadGuardedResource(credential, readPath);
+  }
+
+  /**
+   * Pairs each attachment's bytes with its content type (from the lock file), reading the bytes via the
+   * caller's `readBytes` (reader = proxy-read with a credential; creator = direct read of their own HS).
+   * A validation error (permanent data fault) drops only that attachment; any other failure rejects
+   * the whole read so no caller persists a partial result — see the catch below.
+   *
+   * TODO:[Locks] #2040 — both failure kinds surface only after the unlock is already paid for (credential
+   * issued), so the reader needs a user-facing retry UI that does not charge again — re-download for
+   * transient failures, re-fetch of the dropped attachment for permanent ones. Decide with the real
+   * payment verifier.
+   */
+  private static async readAttachments(
+    lockFile: LockFile,
+    uris: string[],
+    operation: string,
+    readBytes: (path: string, uri: string) => Promise<Uint8Array>,
+  ): Promise<TUnlockedAttachment[]> {
+    const reads = await Promise.all(
+      uris.map(async (uri) => {
+        try {
+          const path = GuardedContentParser.attachmentUriToPath(uri);
+          const contentType = lockFile.secondary_resources?.[path]?.content_type;
+          // No descriptor = a permanent data-integrity error (the bytes live on a HS with no content
+          // type, so they can never render). Report to Sentry, then drop this one attachment.
+          if (!contentType) {
+            throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'guarded attachment has no content descriptor', {
+              service: ErrorService.Locks,
+              operation,
+              context: { path },
+            });
+          }
+          return { id: path.slice(path.lastIndexOf('/') + 1), contentType, bytes: await readBytes(path, uri) };
+        } catch (error) {
+          // Validation = permanent data error (bad uri / no descriptor / outside namespace), already
+          // reported — retrying can't fix it, so drop this attachment and let the rest render.
+          if (isAppError(error) && isValidationError(error)) return null;
+          // Anything else is a transient `readBytes` failure (the proxy-read / homeserver GET —
+          // network, 5xx): rethrow so the fetch fails before `replicateUnlockedContent` writes the
+          // `post.json` marker, keeping the unlock retryable.
+          throw error;
+        }
+      }),
+    );
+    return reads.filter((attachment): attachment is TUnlockedAttachment => attachment !== null);
+  }
+
+  /**
+   * Copies unlocked content into the reader's own `/priv/social/unlocked/<lockId>/`, so re-reading it
+   * later needs no credential and survives the creator revoking access.
+   *
+   * Attachments upload first: `post.json` is the completion marker (§7 reads it to decide whether a
+   * lock is already unlocked), so it must land only once everything it references is stored. A partial
+   * run therefore leaves no marker and is simply retried on the next unlock.
+   */
+  static async replicateUnlockedContent({
+    lockUrl,
+    readerPubky,
+    content,
+  }: TReplicateUnlockedContentParams): Promise<void> {
+    const lockId = LockContentParser.lockIdFromUrl(lockUrl);
+    if (!lockId) {
+      throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'lock URL has no lock id to replicate under', {
+        service: ErrorService.Locks,
+        operation: 'replicateUnlockedContent',
+        context: { lockUrl },
+      });
+    }
+
+    for (const attachment of content.attachments) {
+      await HomeserverService.putBlob({
+        url: GuardedContentParser.unlockedUrl(readerPubky, lockId, attachment.id),
+        blob: attachment.bytes,
+      });
+    }
+
+    await HomeserverService.putBlob({
+      url: GuardedContentParser.unlockedPostUrl(readerPubky, lockId),
+      blob: new TextEncoder().encode(
+        GuardedContentParser.buildUnlockedPost(content.post, readerPubky, lockId, content.attachments),
+      ),
+    });
+  }
+
+  /** Already unlocked → load from reader's HS `/priv`. Null if no `post.json` (never unlocked or partial). */
+  static async fetchReplicatedContent({
+    lockUrl,
+    readerPubky,
+  }: TFetchReplicatedContentParams): Promise<TUnlockedContent | null> {
+    const lockId = LockContentParser.lockIdFromUrl(lockUrl);
+    if (!lockId) return null;
+
+    // 404 → no marker → not unlocked yet; `getBytesIfExists` returns null quietly (no error log).
+    const postBytes = await HomeserverService.getBytesIfExists(
+      GuardedContentParser.unlockedPostUrl(readerPubky, lockId),
+    );
+    if (!postBytes) return null;
+
+    const replicated = GuardedContentParser.parseReplicatedPost(postBytes);
+    if (!replicated) {
+      // Marker present but corrupt (a 200 with unparseable bytes) — a data error, not "not unlocked".
+      // Report it like the other parse failures instead of a silent null.
+      throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'replicated post is not parseable', {
+        service: ErrorService.Locks,
+        operation: 'fetchReplicatedContent',
+        context: { lockId },
+      });
+    }
+
+    const refs = replicated.attachments ?? [];
+    const attachments = await Promise.all(
+      refs.map(async ({ url, content_type }) => ({
+        id: url.slice(url.lastIndexOf('/') + 1),
+        contentType: content_type,
+        bytes: await HomeserverService.getBytes(url),
+      })),
+    );
+
+    return {
+      post: { content: replicated.content, kind: replicated.kind, attachments: refs.map((ref) => ref.url) },
+      attachments,
+    };
+  }
+
+  /**
+   * Creator reads their OWN locked content straight from their homeserver
+   * (`/priv/locks.app/content/`) — no unlock, no credential, no replication.
+   * Only valid when the lock owner is the signed-in account (a == b); the caller
+   * verifies that before calling.
+   *
+   * TODO:[Locks] #1998 — content types still come from the public `lock.json` (`secondary_resources`),
+   * since direct-read/proxy-read return bytes only. pubky/locks#25 makes the SDK preserve the
+   * response's content-type header; once it's integrated, read the type from there and drop this.
+   */
+  static async fetchOwnContent({ lockFile }: TFetchOwnContentParams): Promise<TUnlockedContent> {
+    const primaryPath = lockFile.primary_resource?.path;
+    if (!primaryPath) {
+      throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'lock file has no readable primary resource', {
+        service: ErrorService.Locks,
+        operation: 'fetchOwnContent',
+        context: { primaryPath },
+      });
+    }
+
+    const owner = stripPubkyPrefix(lockFile.creator);
+    const post = GuardedContentParser.parsePost(await HomeserverService.getBytes(`pubky://${owner}${primaryPath}`));
+    if (!post) {
+      // 200 but unparseable — the creator's own guarded original is corrupt. Report, don't return null.
+      throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'own guarded post is not parseable', {
+        service: ErrorService.Locks,
+        operation: 'fetchOwnContent',
+        context: { owner, primaryPath },
+      });
+    }
+
+    // Creator path: the guarded original lives on their own HS, so read each attachment URI directly.
+    const attachments = await this.readAttachments(lockFile, post.attachments ?? [], 'fetchOwnContent', (_path, uri) =>
+      HomeserverService.getBytes(uri),
+    );
+    return { post, attachments };
   }
 
   static exchangeSessionCode(params: TExchangeSessionCodeParams): Promise<TLocksSessionResult> {
@@ -113,5 +386,19 @@ export class LocksApplication {
       contentType,
       bytes,
     });
+  }
+
+  /** Reads the creator's public `lock.json`. Throws for a malformed `lock` URL. */
+  static async fetchLockFile({ lockUrl }: TFetchLockFileParams): Promise<LockFile | null> {
+    if (!LockContentParser.isValidLockUrl(lockUrl)) {
+      throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'post lock URL is not a valid pubky homeserver URL', {
+        service: ErrorService.Locks,
+        operation: 'fetchLockFile',
+        context: { lockUrl },
+      });
+    }
+
+    // TODO:[Locks] #2040 — lock-sdk returns `any`; validate with Zod instead of casting.
+    return (await LocksService.readContentLock(lockUrl)) as LockFile;
   }
 }
