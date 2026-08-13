@@ -13,8 +13,8 @@ import {
   copyToClipboard,
   daysAgo,
   extractInitials,
+  focusAdjacentGridItem,
   formatInviteCode,
-  formatNotificationTime,
   formatPublicKey,
   formatUSDate,
   generateRandomColor,
@@ -30,6 +30,7 @@ import {
   isValidTagLabel,
   minutesAgo,
   radixIdSerializer,
+  resolveDisplayName,
   sanitizeTagInput,
   shouldBypassLinkConfirmation,
   stripPubkyPrefix,
@@ -220,6 +221,21 @@ describe('Utils', () => {
       const result = formatPublicKey({ key, length: 1 });
       // With length 1, only the last character of the key is shown.
       expect(result).toBe('...j');
+    });
+  });
+
+  describe('resolveDisplayName', () => {
+    const PUBKY = 'o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy';
+
+    it('returns the name when present', () => {
+      expect(resolveDisplayName({ name: 'Alice', id: PUBKY })).toBe('Alice');
+    });
+
+    it('falls back to a shortened public key when the name is empty', () => {
+      const result = resolveDisplayName({ name: '', id: PUBKY });
+      expect(result).toBe(formatPublicKey({ key: PUBKY }));
+      expect(result).toContain('...');
+      expect(result).not.toBe(PUBKY);
     });
   });
 
@@ -469,15 +485,6 @@ describe('Utils', () => {
 
       // Should not throw error
       expect(() => clearCookies()).not.toThrow();
-    });
-
-    it('should skip cookies in the exclude list', () => {
-      document.cookie = 'auth=token123; path=/';
-      document.cookie = 'locale=es; path=/';
-
-      clearCookies(['locale']);
-
-      expect(document.cookie).toContain('locale=es');
     });
   });
 
@@ -816,178 +823,6 @@ describe('Utils', () => {
     });
   });
 
-  describe('formatNotificationTime', () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    describe('short format (default)', () => {
-      it('should return "now" for timestamps less than 1 minute ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 30 * 1000; // 30 seconds ago
-        expect(formatNotificationTime(timestamp)).toBe('now');
-      });
-
-      it('should return "now" for current timestamp', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        expect(formatNotificationTime(now)).toBe('now');
-      });
-
-      it('should return minutes format for timestamps less than 60 minutes ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 5 * 60 * 1000; // 5 minutes ago
-        expect(formatNotificationTime(timestamp)).toBe('5m');
-      });
-
-      it('should return minutes format for 59 minutes ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 59 * 60 * 1000;
-        expect(formatNotificationTime(timestamp)).toBe('59m');
-      });
-
-      it('should return hours format for timestamps less than 24 hours ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 3 * 60 * 60 * 1000; // 3 hours ago
-        expect(formatNotificationTime(timestamp)).toBe('3h');
-      });
-
-      it('should return days format for 2 days ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 2 * 24 * 60 * 60 * 1000;
-        expect(formatNotificationTime(timestamp)).toBe('2d');
-      });
-    });
-
-    describe('long format', () => {
-      it('should return "NOW" for timestamps less than 1 minute ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 30 * 1000; // 30 seconds ago
-        expect(formatNotificationTime(timestamp, true)).toBe('NOW');
-      });
-
-      it('should return "NOW" for current timestamp', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        expect(formatNotificationTime(now, true)).toBe('NOW');
-      });
-
-      it('should return minutes format for timestamps less than 60 minutes ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 5 * 60 * 1000; // 5 minutes ago
-        expect(formatNotificationTime(timestamp, true)).toBe('5 MINUTES AGO');
-      });
-
-      it('should return minutes format for 59 minutes ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 59 * 60 * 1000;
-        expect(formatNotificationTime(timestamp, true)).toBe('59 MINUTES AGO');
-      });
-
-      it('should return hours format for timestamps less than 24 hours ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 3 * 60 * 60 * 1000; // 3 hours ago
-        expect(formatNotificationTime(timestamp, true)).toBe('3 HOURS AGO');
-      });
-
-      it('should return hours format for 23 hours ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 23 * 60 * 60 * 1000;
-        expect(formatNotificationTime(timestamp, true)).toBe('23 HOURS AGO');
-      });
-
-      it('should return days format for timestamps less than 7 days ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 2 * 24 * 60 * 60 * 1000; // 2 days ago
-        expect(formatNotificationTime(timestamp, true)).toBe('2 DAYS AGO');
-      });
-
-      it('should return days format for 6 days ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 6 * 24 * 60 * 60 * 1000;
-        expect(formatNotificationTime(timestamp, true)).toBe('6 DAYS AGO');
-      });
-
-      it('should return days format for timestamps 7 or more days ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 7 * 24 * 60 * 60 * 1000; // 7 days ago
-        expect(formatNotificationTime(timestamp, true)).toBe('7 DAYS AGO');
-      });
-
-      it('should return days format for timestamps 30 days ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 30 * 24 * 60 * 60 * 1000; // 30 days ago
-        expect(formatNotificationTime(timestamp, true)).toBe('30 DAYS AGO');
-      });
-
-      it('should handle edge case: exactly 1 minute ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 60 * 1000; // exactly 1 minute
-        expect(formatNotificationTime(timestamp, true)).toBe('1 MINUTE AGO');
-      });
-
-      it('should handle edge case: exactly 60 minutes ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 60 * 60 * 1000; // exactly 1 hour
-        expect(formatNotificationTime(timestamp, true)).toBe('1 HOUR AGO');
-      });
-
-      it('should handle edge case: exactly 24 hours ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 24 * 60 * 60 * 1000; // exactly 1 day
-        expect(formatNotificationTime(timestamp, true)).toBe('1 DAY AGO');
-      });
-
-      it('should handle edge case: exactly 7 days ago', () => {
-        const now = Date.now();
-        vi.setSystemTime(now);
-
-        const timestamp = now - 7 * 24 * 60 * 60 * 1000; // exactly 7 days
-        expect(formatNotificationTime(timestamp, true)).toBe('7 DAYS AGO');
-      });
-    });
-  });
-
   describe('isPostDeleted', () => {
     it('should return true for "[DELETED]" content', () => {
       expect(isPostDeleted('[DELETED]')).toBe(true);
@@ -1075,6 +910,16 @@ describe('Utils', () => {
 
       expect(isSameDomain('not-a-valid-url')).toBe(false);
       expect(isSameDomain('')).toBe(false);
+    });
+
+    it('should return false for a same-domain URL with an unsafe protocol', () => {
+      Object.defineProperty(window, 'location', {
+        writable: true,
+        value: { hostname: 'example.com' },
+      });
+
+      expect(isSameDomain('ftp://example.com/file')).toBe(false);
+      expect(isSameDomain('javascript://example.com/alert(1)')).toBe(false);
     });
 
     it('should handle case-insensitive domain comparison', () => {
@@ -1167,6 +1012,16 @@ describe('Utils', () => {
 
       expect(shouldBypassLinkConfirmation('not-a-valid-url')).toBe(false);
       expect(shouldBypassLinkConfirmation('')).toBe(false);
+    });
+
+    it('should return false for unsupported protocols even when the hostname matches', () => {
+      Object.defineProperty(window, 'location', {
+        writable: true,
+        value: { hostname: 'example.com' },
+      });
+
+      expect(shouldBypassLinkConfirmation('ftp://example.com/file')).toBe(false);
+      expect(shouldBypassLinkConfirmation('javascript://example.com/alert(1)')).toBe(false);
     });
 
     it('should prioritize protocol bypass over domain check', () => {
@@ -1649,6 +1504,149 @@ describe('Utils', () => {
         expect(username.length).toBeGreaterThanOrEqual(11);
         expect(username.length).toBeLessThanOrEqual(25);
       }
+    });
+  });
+
+  describe('focusAdjacentGridItem', () => {
+    it('focuses the next article sibling when present', () => {
+      document.body.innerHTML = `
+        <div role="feed">
+          <article role="article" tabindex="0">
+            <button type="button">Remove</button>
+          </article>
+          <article role="article" tabindex="0" data-testid="next-post-card"></article>
+        </div>
+      `;
+      const button = document.querySelector('button') as HTMLButtonElement;
+      button.focus();
+
+      focusAdjacentGridItem(button);
+
+      expect(document.querySelector('[data-testid="next-post-card"]')).toHaveFocus();
+    });
+
+    it('falls back to the previous article sibling when there is no next sibling', () => {
+      document.body.innerHTML = `
+        <div role="feed">
+          <article role="article" tabindex="0" data-testid="prev-post-card"></article>
+          <article role="article" tabindex="0">
+            <button type="button">Remove</button>
+          </article>
+        </div>
+      `;
+      const button = document.querySelector('button') as HTMLButtonElement;
+      button.focus();
+
+      focusAdjacentGridItem(button);
+
+      expect(document.querySelector('[data-testid="prev-post-card"]')).toHaveFocus();
+    });
+
+    it('focuses the first focusable descendant when the adjacent sibling is not an article', () => {
+      document.body.innerHTML = `
+        <div role="feed">
+          <article role="article" tabindex="0">
+            <button type="button">Remove</button>
+          </article>
+          <div data-testid="adjacent-wrapper">
+            <a href="#next">Next card</a>
+          </div>
+        </div>
+      `;
+      const button = document.querySelector('button') as HTMLButtonElement;
+
+      focusAdjacentGridItem(button);
+
+      expect(document.querySelector('a')).toHaveFocus();
+    });
+
+    it('is a no-op when the button is not inside an article', () => {
+      document.body.innerHTML = `<button type="button">Remove</button>`;
+      const button = document.querySelector('button') as HTMLButtonElement;
+      button.focus();
+
+      focusAdjacentGridItem(button);
+
+      expect(button).toHaveFocus();
+    });
+
+    it('scans past a non-focusable sibling to reach the next article', () => {
+      document.body.innerHTML = `
+        <div role="feed">
+          <article role="article" tabindex="0">
+            <button type="button">Remove</button>
+          </article>
+          <div data-testid="sentinel"></div>
+          <article role="article" tabindex="0" data-testid="next-post-card"></article>
+        </div>
+      `;
+      const button = document.querySelector('button') as HTMLButtonElement;
+
+      focusAdjacentGridItem(button);
+
+      expect(document.querySelector('[data-testid="next-post-card"]')).toHaveFocus();
+    });
+
+    it('falls back to the previous article when following siblings have nothing focusable', () => {
+      document.body.innerHTML = `
+        <div role="feed">
+          <article role="article" tabindex="0" data-testid="prev-post-card"></article>
+          <article role="article" tabindex="0">
+            <button type="button">Remove</button>
+          </article>
+          <div data-testid="sentinel"></div>
+        </div>
+      `;
+      const button = document.querySelector('button') as HTMLButtonElement;
+
+      focusAdjacentGridItem(button);
+
+      expect(document.querySelector('[data-testid="prev-post-card"]')).toHaveFocus();
+    });
+
+    it('never focuses disabled or hidden elements', () => {
+      document.body.innerHTML = `
+        <div role="feed">
+          <article role="article" tabindex="0">
+            <button type="button">Remove</button>
+          </article>
+          <div>
+            <button type="button" disabled data-testid="disabled-btn">Removing</button>
+          </div>
+          <div aria-hidden="true">
+            <button type="button" data-testid="hidden-btn">Hidden</button>
+          </div>
+          <div>
+            <a href="#next" data-testid="reachable-link">Next card</a>
+          </div>
+        </div>
+      `;
+      const button = document.querySelector('button') as HTMLButtonElement;
+
+      focusAdjacentGridItem(button);
+
+      expect(document.querySelector('[data-testid="reachable-link"]')).toHaveFocus();
+    });
+
+    it('hands focus to the adjacent visual-mosaic cell via data-grid-item', () => {
+      document.body.innerHTML = `
+        <div>
+          <div data-grid-item>
+            <div role="button" tabindex="0">
+              <button type="button">Remove</button>
+            </div>
+          </div>
+          <div data-grid-item aria-hidden="true" data-testid="spacer-cell"></div>
+          <div data-grid-item>
+            <div role="button" tabindex="0" data-testid="next-tile"></div>
+          </div>
+        </div>
+      `;
+      const button = document.querySelector('button') as HTMLButtonElement;
+
+      focusAdjacentGridItem(button);
+
+      expect(document.querySelector('[data-testid="next-tile"]')).toHaveFocus();
     });
   });
 });

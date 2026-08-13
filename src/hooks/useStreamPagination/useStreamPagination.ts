@@ -11,13 +11,49 @@ import { isCollectionItemsStream, isSkipPaginatedStream } from '@/models/stream/
 import { sortPostIdsByTimestamp } from '@/utils/sorting';
 import type { UseStreamPaginationOptions, UseStreamPaginationResult } from './useStreamPagination.types';
 
-function resolveDisplayedPostIds(streamPostIds: string[], optimisticPostIds: string[]) {
+function resolveDisplayedPostIds(
+  streamPostIds: string[],
+  optimisticPostIds: string[],
+  hiddenPostIds = new Set<string>(),
+) {
   const streamPostIdsSet = new Set(streamPostIds);
   const filteredOptimisticPostIds = optimisticPostIds.filter((id) => !streamPostIdsSet.has(id));
 
   return {
     optimisticPostIds: filteredOptimisticPostIds,
-    displayedPostIds: [...filteredOptimisticPostIds, ...streamPostIds],
+    displayedPostIds: [
+      ...filteredOptimisticPostIds.filter((id) => !hiddenPostIds.has(id)),
+      ...streamPostIds.filter((id) => !hiddenPostIds.has(id)),
+    ],
+  };
+}
+
+function decrementHiddenPostCounts(hiddenPostCounts: Map<string, number>, postIds: string[]) {
+  postIds.forEach((id) => {
+    const removalCount = hiddenPostCounts.get(id);
+    if (removalCount === undefined) return;
+    if (removalCount === 1) {
+      hiddenPostCounts.delete(id);
+    } else {
+      hiddenPostCounts.set(id, removalCount - 1);
+    }
+  });
+}
+
+function revealPostIds(
+  postIds: string[],
+  hiddenPostCounts: Map<string, number>,
+  streamPostIds: string[],
+  optimisticPostIds: string[],
+) {
+  const revealedPostIds = new Set(postIds.filter((id) => hiddenPostCounts.delete(id)));
+  if (revealedPostIds.size === 0) {
+    return { streamPostIds, optimisticPostIds };
+  }
+
+  return {
+    streamPostIds: streamPostIds.filter((id) => !revealedPostIds.has(id)),
+    optimisticPostIds: optimisticPostIds.filter((id) => !revealedPostIds.has(id)),
   };
 }
 
@@ -44,6 +80,17 @@ export function useStreamPagination({
 
   const postIdsRef = useRef<string[]>([]);
   const optimisticPostIdsRef = useRef<string[]>([]);
+  const hiddenPostCountsRef = useRef<Map<string, number>>(new Map());
+  // Cumulative count of committed-removal stream rows on skip-paginated
+  // streams. `setStreamTail(result.nextCursor)` is an absolute write derived
+  // from the offset captured when the request STARTED, so a commit landing
+  // while a fetch is in flight would be silently overwritten. Each fetch
+  // snapshots this counter at entry and subtracts whatever accrued during its
+  // flight from the cursor it writes back. Reset in `clearState` (a fresh
+  // fetch recounts consumed rows from scratch).
+  const committedRemovalsRef = useRef(0);
+  const activeStreamIdRef = useRef(streamId);
+  activeStreamIdRef.current = streamId;
 
   /**
    * Sets the appropriate loading state based on load type
@@ -63,13 +110,11 @@ export function useStreamPagination({
     async (isInitialLoad: boolean) => {
       setLoadingState(isInitialLoad, true);
       setError(null);
-
-      // Offset-paginated streams (engagement + single-collection items) carry the count of
-      // already-loaded posts as their cursor; Nexus returns no timestamp/score cursor for them.
-      const isSkipStream = isSkipPaginatedStream(streamId);
+      const committedRemovalsAtRequest = committedRemovalsRef.current;
 
       try {
         let result: TReadPostStreamChunkResponse;
+        // Always resume from `streamTail`; never recompute the cursor from the visible count.
 
         if (isInitialLoad) {
           // Prepare stream for initial load: clear stale cache, merge unread posts, clear unread stream
@@ -81,38 +126,41 @@ export function useStreamPagination({
           result = await StreamPostsController.getOrFetchStreamSlice({
             streamId,
             lastPostId: undefined,
-            // Skip-paginated streams start at offset 0; timestamp streams seed from the cached tail.
-            streamTail: isSkipStream ? 0 : cachedLastPostTimestamp,
+            // Skip streams always start at offset 0; score streams seed from the cached tail.
+            streamTail: isSkipPaginatedStream(streamId) ? 0 : cachedLastPostTimestamp,
             limit,
           });
         } else {
-          const cursorValue = isSkipStream ? postIdsRef.current.length : streamTail;
-
           result = await StreamPostsController.getOrFetchStreamSlice({
             streamId,
             lastPostId,
-            streamTail: cursorValue,
+            streamTail,
             limit,
           });
         }
 
-        // Handle empty results
+        // Advance from the response, even on a fully-filtered (empty) page.
+        if (result.nextCursor != null) {
+          // Skip streams: `nextCursor` extends the offset this request captured
+          // at start, so removals committed during the flight are not in it —
+          // re-apply them or the absolute write below would discard their
+          // decrements. Clamped: a `clearState` during the flight resets the
+          // counter, and a stale resolution must not over-correct a fresh one.
+          const removalsDuringFlight = isSkipPaginatedStream(streamId)
+            ? Math.max(0, committedRemovalsRef.current - committedRemovalsAtRequest)
+            : 0;
+          setStreamTail(Math.max(0, result.nextCursor - removalsDuringFlight));
+        }
+
+        // hasMore reflects the stream end, not the filtered count: a mute/filter-emptied page
+        // keeps hasMore so the advanced cursor is re-requested. This can't spin IN PLACE (the
+        // cursor always advances by raw count, and a short raw page forces reachedEnd), but an
+        // auto-loading caller (useInfiniteScroll) will chain rounds through a filtered region
+        // until the true stream end, with no per-user-action bound or feedback. Known
+        // limitation, deliberately unchanged here — any remedy (toast + backoff, manual
+        // load-more) is a product-visible UX change tracked as follow-up.
         if (result.nextPageIds.length === 0) {
-          // Update cursor even on empty results so subsequent loads can progress
-          if (result.timestamp !== undefined) {
-            setStreamTail(result.timestamp);
-          }
-
-          // Respect reachedEnd flag - only set hasMore to false if we actually
-          // reached the end of stream, not just because filters removed all posts
-          if (result.reachedEnd) {
-            Logger.debug('[useStreamPagination] Empty result, reached end of stream');
-            setHasMore(false);
-          } else {
-            Logger.debug('[useStreamPagination] Empty result after filtering, more posts may exist');
-            setHasMore(true);
-          }
-
+          setHasMore(!result.reachedEnd);
           setLoadingState(isInitialLoad, false);
           return;
         }
@@ -121,20 +169,10 @@ export function useStreamPagination({
         const existingIds = new Set(postIdsRef.current);
         const newUniquePostIds = result.nextPageIds.filter((id) => !existingIds.has(id));
 
-        // Update pagination cursors even if all posts are duplicates
-        // (we need to move forward in the stream)
+        // Update last-returned id even if all posts are duplicates (we need to move forward)
         const lastId = result.nextPageIds[result.nextPageIds.length - 1];
         setLastPostId(lastId);
-
-        if (result.timestamp !== undefined) {
-          setStreamTail(result.timestamp);
-        }
-
-        // Check hasMore based on reachedEnd flag from the response
-        // This correctly handles cases where we hit MAX_FETCH_ITERATIONS due to mute filtering
-        // vs actually reaching the end of the stream
-        const hasMorePosts = result.reachedEnd !== true;
-        setHasMore(hasMorePosts);
+        setHasMore(result.reachedEnd !== true);
 
         // If all posts were duplicates, don't update the UI but keep hasMore state
         if (newUniquePostIds.length === 0) {
@@ -145,7 +183,11 @@ export function useStreamPagination({
         // Update state with unique posts only
         const updatedPostIds = isInitialLoad ? newUniquePostIds : [...postIdsRef.current, ...newUniquePostIds];
         postIdsRef.current = updatedPostIds;
-        const displayedState = resolveDisplayedPostIds(updatedPostIds, optimisticPostIdsRef.current);
+        const displayedState = resolveDisplayedPostIds(
+          updatedPostIds,
+          optimisticPostIdsRef.current,
+          new Set(hiddenPostCountsRef.current.keys()),
+        );
         optimisticPostIdsRef.current = displayedState.optimisticPostIds;
         setPostIds(displayedState.displayedPostIds);
       } catch (err) {
@@ -164,14 +206,24 @@ export function useStreamPagination({
   /**
    * Clears all state
    */
-  const clearState = useCallback(({ preserveOptimisticPostIds = false } = {}) => {
+  const clearState = useCallback(({ preserveOptimisticPostIds = false, preserveHiddenPostIds = false } = {}) => {
     postIdsRef.current = [];
+    if (!preserveHiddenPostIds) {
+      hiddenPostCountsRef.current.clear();
+    }
     if (!preserveOptimisticPostIds) {
       optimisticPostIdsRef.current = [];
     }
-    setPostIds(optimisticPostIdsRef.current);
+    const displayedState = resolveDisplayedPostIds(
+      postIdsRef.current,
+      optimisticPostIdsRef.current,
+      new Set(hiddenPostCountsRef.current.keys()),
+    );
+    optimisticPostIdsRef.current = displayedState.optimisticPostIds;
+    setPostIds(displayedState.displayedPostIds);
     setLastPostId(undefined);
     setStreamTail(0);
+    committedRemovalsRef.current = 0;
     setHasMore(true);
     setError(null);
   }, []);
@@ -180,7 +232,10 @@ export function useStreamPagination({
    * Refresh function - clears state and fetches from beginning
    */
   const refresh = useCallback(async () => {
-    clearState({ preserveOptimisticPostIds: isCollectionItemsStream(streamId) });
+    clearState({
+      preserveOptimisticPostIds: isCollectionItemsStream(streamId),
+      preserveHiddenPostIds: true,
+    });
     await fetchStreamSlice(true);
   }, [clearState, fetchStreamSlice, streamId]);
 
@@ -199,6 +254,14 @@ export function useStreamPagination({
    */
   const prependPosts = useCallback(async (postIds: string | string[]) => {
     const idsToAdd = Array.isArray(postIds) ? postIds : [postIds];
+    const revealedState = revealPostIds(
+      idsToAdd,
+      hiddenPostCountsRef.current,
+      postIdsRef.current,
+      optimisticPostIdsRef.current,
+    );
+    postIdsRef.current = revealedState.streamPostIds;
+    optimisticPostIdsRef.current = revealedState.optimisticPostIds;
 
     // Filter out posts that already exist to avoid duplicates
     const existingIds = new Set(postIdsRef.current);
@@ -215,14 +278,22 @@ export function useStreamPagination({
       // Fetch post details to get timestamps and sort
       const sortedIds = await sortPostIdsByTimestamp(allIds);
       postIdsRef.current = sortedIds;
-      const displayedState = resolveDisplayedPostIds(sortedIds, optimisticPostIdsRef.current);
+      const displayedState = resolveDisplayedPostIds(
+        sortedIds,
+        optimisticPostIdsRef.current,
+        new Set(hiddenPostCountsRef.current.keys()),
+      );
       optimisticPostIdsRef.current = displayedState.optimisticPostIds;
       setPostIds(displayedState.displayedPostIds);
     } catch (err) {
       Logger.error('Failed to prepend posts:', err);
       // Fallback: add without sorting
       postIdsRef.current = allIds;
-      const displayedState = resolveDisplayedPostIds(allIds, optimisticPostIdsRef.current);
+      const displayedState = resolveDisplayedPostIds(
+        allIds,
+        optimisticPostIdsRef.current,
+        new Set(hiddenPostCountsRef.current.keys()),
+      );
       optimisticPostIdsRef.current = displayedState.optimisticPostIds;
       setPostIds(displayedState.displayedPostIds);
     }
@@ -235,6 +306,14 @@ export function useStreamPagination({
    */
   const prependOptimisticPosts = (postIds: string | string[]) => {
     const idsToAdd = Array.isArray(postIds) ? postIds : [postIds];
+    const revealedState = revealPostIds(
+      idsToAdd,
+      hiddenPostCountsRef.current,
+      postIdsRef.current,
+      optimisticPostIdsRef.current,
+    );
+    postIdsRef.current = revealedState.streamPostIds;
+    optimisticPostIdsRef.current = revealedState.optimisticPostIds;
     const currentDisplayedIds = new Set([...optimisticPostIdsRef.current, ...postIdsRef.current]);
     const newIds = idsToAdd.filter((id) => {
       if (currentDisplayedIds.has(id)) {
@@ -250,7 +329,11 @@ export function useStreamPagination({
     }
 
     const optimisticPostIds = [...newIds, ...optimisticPostIdsRef.current];
-    const displayedState = resolveDisplayedPostIds(postIdsRef.current, optimisticPostIds);
+    const displayedState = resolveDisplayedPostIds(
+      postIdsRef.current,
+      optimisticPostIds,
+      new Set(hiddenPostCountsRef.current.keys()),
+    );
     optimisticPostIdsRef.current = displayedState.optimisticPostIds;
     setPostIds(displayedState.displayedPostIds);
   };
@@ -261,16 +344,79 @@ export function useStreamPagination({
    * @param postIds - A single post ID or array of post IDs to remove
    */
   const removePosts = useCallback((postIds: string | string[]) => {
-    const idsToRemove = Array.isArray(postIds) ? postIds : [postIds];
+    const existingPostIds = new Set([...postIdsRef.current, ...optimisticPostIdsRef.current]);
+    const idsToRemove = [...new Set(Array.isArray(postIds) ? postIds : [postIds])].filter((id) =>
+      existingPostIds.has(id),
+    );
     const idsToRemoveSet = new Set(idsToRemove);
-
+    idsToRemove.forEach((id) => hiddenPostCountsRef.current.delete(id));
     optimisticPostIdsRef.current = optimisticPostIdsRef.current.filter((id) => !idsToRemoveSet.has(id));
-    const updatedPostIds = postIdsRef.current.filter((id) => !idsToRemoveSet.has(id));
-    postIdsRef.current = updatedPostIds;
-    const displayedState = resolveDisplayedPostIds(updatedPostIds, optimisticPostIdsRef.current);
+    postIdsRef.current = postIdsRef.current.filter((id) => !idsToRemoveSet.has(id));
+    const displayedState = resolveDisplayedPostIds(
+      postIdsRef.current,
+      optimisticPostIdsRef.current,
+      new Set(hiddenPostCountsRef.current.keys()),
+    );
     optimisticPostIdsRef.current = displayedState.optimisticPostIds;
     setPostIds(displayedState.displayedPostIds);
   }, []);
+
+  const removePostsOptimistically = (postIds: string | string[]) => {
+    const existingPostIds = new Set([...postIdsRef.current, ...optimisticPostIdsRef.current]);
+    const idsToRemove = [...new Set(Array.isArray(postIds) ? postIds : [postIds])].filter((id) =>
+      existingPostIds.has(id),
+    );
+    const removalStreamId = streamId;
+    idsToRemove.forEach((id) => {
+      hiddenPostCountsRef.current.set(id, (hiddenPostCountsRef.current.get(id) ?? 0) + 1);
+    });
+    const updateDisplayedPosts = () => {
+      const displayedState = resolveDisplayedPostIds(
+        postIdsRef.current,
+        optimisticPostIdsRef.current,
+        new Set(hiddenPostCountsRef.current.keys()),
+      );
+      optimisticPostIdsRef.current = displayedState.optimisticPostIds;
+      setPostIds(displayedState.displayedPostIds);
+    };
+    updateDisplayedPosts();
+
+    let hasFinalized = false;
+    const finalize = (shouldCommit: boolean) => {
+      if (hasFinalized || activeStreamIdRef.current !== removalStreamId) return;
+      hasFinalized = true;
+
+      decrementHiddenPostCounts(hiddenPostCountsRef.current, idsToRemove);
+      if (shouldCommit) {
+        const idsToRemoveSet = new Set(idsToRemove);
+        if (isSkipPaginatedStream(removalStreamId)) {
+          // Skip streams resume from a consumed-raw-rows offset. A committed
+          // removal deletes one of those rows server-side, shifting every
+          // later index down — so drop the removed stream rows from the
+          // offset too, or the next loadMore skips one live row per removal
+          // once the backend reindexes the shorter list. Membership is
+          // checked at commit time: rows refetched after a refresh are
+          // already recounted in the new offset, and optimistic prepends
+          // never counted toward it.
+          const removedStreamRowCount = postIdsRef.current.filter((id) => idsToRemoveSet.has(id)).length;
+          if (removedStreamRowCount > 0) {
+            // Also tallied in committedRemovalsRef so an in-flight fetch can
+            // re-apply this decrement to the absolute cursor it writes back.
+            committedRemovalsRef.current += removedStreamRowCount;
+            setStreamTail((tail) => Math.max(0, tail - removedStreamRowCount));
+          }
+        }
+        optimisticPostIdsRef.current = optimisticPostIdsRef.current.filter((id) => !idsToRemoveSet.has(id));
+        postIdsRef.current = postIdsRef.current.filter((id) => !idsToRemoveSet.has(id));
+      }
+      updateDisplayedPosts();
+    };
+
+    return {
+      commit: () => finalize(true),
+      rollback: () => finalize(false),
+    };
+  };
 
   // Initial load and reset when streamId changes
   useEffect(() => {
@@ -292,5 +438,6 @@ export function useStreamPagination({
     prependPosts,
     prependOptimisticPosts,
     removePosts,
+    removePostsOptimistically,
   };
 }

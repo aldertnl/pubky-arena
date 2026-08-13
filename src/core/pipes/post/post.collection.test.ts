@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { COLLECTION_LAYOUT } from '@/config/collections';
 import {
   COLLECTION_CONTENT_MAX_LENGTH,
   COLLECTION_ITEM_URI_MAX_LENGTH,
@@ -16,6 +17,7 @@ describe('CollectionPostContent', () => {
         description: 'Best stuff',
         items: [],
         cover_image: undefined,
+        layout: COLLECTION_LAYOUT.GRID,
       });
     });
 
@@ -96,6 +98,7 @@ describe('CollectionPostContent', () => {
         description: '',
         items: [VALID_ITEM_URI, 'https://example.com/post'],
         cover_image: undefined,
+        layout: COLLECTION_LAYOUT.GRID,
       });
     });
 
@@ -137,6 +140,7 @@ describe('CollectionPostContent', () => {
         description: 'Bitcoin writing',
         items: [VALID_ITEM_URI],
         cover_image: undefined,
+        layout: COLLECTION_LAYOUT.GRID,
       });
     });
 
@@ -156,6 +160,7 @@ describe('CollectionPostContent', () => {
         description: '',
         items: [],
         cover_image: 'https://cdn.example.com/cover.png',
+        layout: COLLECTION_LAYOUT.GRID,
       });
     });
 
@@ -167,6 +172,7 @@ describe('CollectionPostContent', () => {
         description: '',
         items: [],
         cover_image: undefined,
+        layout: COLLECTION_LAYOUT.GRID,
       });
     });
 
@@ -185,7 +191,37 @@ describe('CollectionPostContent', () => {
         description: '',
         items: [VALID_ITEM_URI],
         cover_image: undefined,
+        layout: COLLECTION_LAYOUT.GRID,
       });
+    });
+
+    it('round-trips List and falls back to Grid for missing or unknown layouts', () => {
+      const listJson = CollectionPostContent.toJson({
+        name: 'Reading',
+        layout: COLLECTION_LAYOUT.LIST,
+      });
+
+      expect(CollectionPostContent.parse(listJson)?.layout).toBe(COLLECTION_LAYOUT.LIST);
+      expect(CollectionPostContent.parse(JSON.stringify({ name: 'Legacy' }))?.layout).toBe(COLLECTION_LAYOUT.GRID);
+      expect(CollectionPostContent.parse(JSON.stringify({ name: 'Future', layout: 'spiral' }))?.layout).toBe(
+        COLLECTION_LAYOUT.GRID,
+      );
+    });
+
+    it('round-trips Visual through normalize, toJson, and parse', () => {
+      expect(
+        CollectionPostContent.normalize({
+          name: 'Gallery',
+          layout: COLLECTION_LAYOUT.VISUAL,
+        }).layout,
+      ).toBe(COLLECTION_LAYOUT.VISUAL);
+
+      const visualJson = CollectionPostContent.toJson({
+        name: 'Gallery',
+        layout: COLLECTION_LAYOUT.VISUAL,
+      });
+
+      expect(CollectionPostContent.parse(visualJson)?.layout).toBe(COLLECTION_LAYOUT.VISUAL);
     });
 
     it('returns null for malformed envelopes', () => {
@@ -229,6 +265,44 @@ describe('CollectionPostContent', () => {
       const collection = CollectionPostContent.normalize({ name: 'Saved', items: [VALID_ITEM_URI] });
 
       expect(CollectionPostContent.removeItem(collection, 'https://example.com/missing')).toBe(collection);
+    });
+  });
+
+  describe('reorderItems', () => {
+    const uriA = 'https://example.com/post/a';
+    const uriB = 'https://example.com/post/b';
+    const uriC = 'https://example.com/post/c';
+
+    it('reorders items to the drafted order', () => {
+      const collection = CollectionPostContent.normalize({ name: 'Saved', items: [uriA, uriB, uriC] });
+
+      expect(CollectionPostContent.reorderItems(collection, [uriC, uriA, uriB]).items).toEqual([uriC, uriA, uriB]);
+    });
+
+    it('returns the same collection when the drafted order matches the current order', () => {
+      const collection = CollectionPostContent.normalize({ name: 'Saved', items: [uriA, uriB] });
+
+      expect(CollectionPostContent.reorderItems(collection, [uriA, uriB])).toBe(collection);
+    });
+
+    it('keeps items added since the draft was taken, leading the reordered set', () => {
+      // uriC was added (prepended) after the [uriB, uriA] draft was snapshotted.
+      const collection = CollectionPostContent.normalize({ name: 'Saved', items: [uriC, uriA, uriB] });
+
+      expect(CollectionPostContent.reorderItems(collection, [uriB, uriA]).items).toEqual([uriC, uriB, uriA]);
+    });
+
+    it('drops drafted items that were removed since the draft was taken', () => {
+      // uriB was removed after the [uriC, uriB, uriA] draft was snapshotted.
+      const collection = CollectionPostContent.normalize({ name: 'Saved', items: [uriA, uriC] });
+
+      expect(CollectionPostContent.reorderItems(collection, [uriC, uriB, uriA]).items).toEqual([uriC, uriA]);
+    });
+
+    it('trims drafted URIs before matching', () => {
+      const collection = CollectionPostContent.normalize({ name: 'Saved', items: [uriA, uriB] });
+
+      expect(CollectionPostContent.reorderItems(collection, [`  ${uriB}  `, uriA]).items).toEqual([uriB, uriA]);
     });
   });
 });

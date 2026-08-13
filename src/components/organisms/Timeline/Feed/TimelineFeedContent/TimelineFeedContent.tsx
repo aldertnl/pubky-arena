@@ -4,6 +4,8 @@ import { useEffect, useRef } from 'react';
 import { MuteFilter } from '@/application/stream/posts/muting/mute-filter';
 import { Container } from '@/atoms/Container/Container';
 import { TIMELINE_FEED_VARIANT } from '@/config/feed';
+import { NEXUS_STREAM_MAX_LIMIT } from '@/config/nexus';
+import { COLLECTION_ITEMS_MAX_COUNT } from '@/config/posts';
 import { useApplyPendingFeedInsert } from '@/hooks/useApplyPendingFeedInsert/useApplyPendingFeedInsert';
 import type { FeedLayoutResolution } from '@/hooks/useFeedLayoutResolution/useFeedLayoutResolution';
 import { useMutedUsers } from '@/hooks/useMutedUsers/useMutedUsers';
@@ -18,14 +20,27 @@ import { buildFeedKey } from '@/stores/feedOptimistic/feedOptimistic.types';
 import { TimelineGridPosts } from '../../Posts/GridPosts/GridPosts';
 import { TimelinePosts } from '../../Posts/Posts';
 import { NewPostsSection } from '../NewPostsSection/NewPostsSection';
-import type { TimelineFeedContextValue, TimelineFeedProps } from '../TimelineFeed/TimelineFeed.types';
+import type {
+  HomeTimelineFeedProps,
+  TimelineFeedContextValue,
+  TimelineFeedProps,
+} from '../TimelineFeed/TimelineFeed.types';
 import { TimelineFeedContext } from '../TimelineFeed/TimelineFeedContext';
 import { VisualTimelinePosts } from '../TimelineFeed/VisualTimelinePosts';
 
-type TimelineFeedGridTrailingSlot = Extract<
+type TimelineFeedTrailingSlot = Extract<
   TimelineFeedProps,
   { variant: typeof TIMELINE_FEED_VARIANT.BOOKMARKS | typeof TIMELINE_FEED_VARIANT.COLLECTION }
->['gridTrailingSlot'];
+>['trailingSlot'];
+
+type TimelineFeedVisualHiddenItemsNotice = Extract<
+  TimelineFeedProps,
+  { variant: typeof TIMELINE_FEED_VARIANT.COLLECTION }
+>['visualHiddenItemsNotice'];
+
+// A spec-max collection needs ceil(100 / 50) = 2 eager pages after the
+// initial load; +1 round of headroom for a trailing empty/filtered page.
+const COLLECTION_EAGER_LOAD_MAX_ROUNDS = Math.ceil(COLLECTION_ITEMS_MAX_COUNT / NEXUS_STREAM_MAX_LIMIT) + 1;
 
 interface TimelineFeedContentProps {
   streamId: PostStreamId;
@@ -33,10 +48,18 @@ interface TimelineFeedContentProps {
   tagsLayout: TagsLayout;
   layoutResolution?: FeedLayoutResolution;
   children?: TimelineFeedProps['children'];
+  persistentHeader?: HomeTimelineFeedProps['persistentHeader'];
   emptyState?: TimelineFeedProps['emptyState'];
   collectionId?: TimelineFeedContextValue['collectionId'];
   pullToRefreshContainerRef?: TimelineFeedProps['pullToRefreshContainerRef'];
-  gridTrailingSlot?: TimelineFeedGridTrailingSlot;
+  trailingSlot?: TimelineFeedTrailingSlot;
+  visualHiddenItemsNotice?: TimelineFeedVisualHiddenItemsNotice;
+  /**
+   * Optional reorder applied to the deduped stream ids before rendering.
+   * Used by the COLLECTION variant to sort the (asynchronously indexed) Nexus
+   * stream by the local-first envelope order. Must be pure.
+   */
+  transformPostIds?: (postIds: string[]) => string[];
 }
 
 interface TimelineFeedWithStreamProps {
@@ -45,10 +68,13 @@ interface TimelineFeedWithStreamProps {
   tagsLayout: TagsLayout;
   layoutResolution?: FeedLayoutResolution;
   children?: TimelineFeedProps['children'];
+  persistentHeader?: HomeTimelineFeedProps['persistentHeader'];
   emptyState?: TimelineFeedProps['emptyState'];
   collectionId?: TimelineFeedContextValue['collectionId'];
   pullToRefreshContainerRef?: TimelineFeedProps['pullToRefreshContainerRef'];
-  gridTrailingSlot?: TimelineFeedGridTrailingSlot;
+  trailingSlot?: TimelineFeedTrailingSlot;
+  visualHiddenItemsNotice?: TimelineFeedVisualHiddenItemsNotice;
+  transformPostIds?: TimelineFeedContentProps['transformPostIds'];
 }
 
 /**
@@ -63,10 +89,13 @@ export function TimelineFeedWithStream({
   tagsLayout,
   layoutResolution,
   children,
+  persistentHeader,
   emptyState,
   collectionId,
   pullToRefreshContainerRef,
-  gridTrailingSlot,
+  trailingSlot,
+  visualHiddenItemsNotice,
+  transformPostIds,
 }: TimelineFeedWithStreamProps) {
   if (!streamId) {
     return <TimelineLoading />;
@@ -81,7 +110,10 @@ export function TimelineFeedWithStream({
       emptyState={emptyState}
       collectionId={collectionId}
       pullToRefreshContainerRef={pullToRefreshContainerRef}
-      gridTrailingSlot={gridTrailingSlot}
+      trailingSlot={trailingSlot}
+      persistentHeader={persistentHeader}
+      visualHiddenItemsNotice={visualHiddenItemsNotice}
+      transformPostIds={transformPostIds}
     >
       {children}
     </TimelineFeedContent>
@@ -107,10 +139,13 @@ function TimelineFeedContent({
   tagsLayout,
   layoutResolution,
   children,
+  persistentHeader,
   emptyState,
   collectionId,
   pullToRefreshContainerRef,
-  gridTrailingSlot,
+  trailingSlot,
+  visualHiddenItemsNotice,
+  transformPostIds,
 }: TimelineFeedContentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const refreshContainerRef = pullToRefreshContainerRef ?? containerRef;
@@ -118,6 +153,7 @@ function TimelineFeedContent({
 
   const isVisualActive = layoutResolution?.isVisualActive ?? false;
   const isGridActive = layoutResolution?.isGridActive ?? false;
+  const isCollectionFeed = variant === TIMELINE_FEED_VARIANT.COLLECTION;
   const {
     postIds: rawPostIds,
     loading,
@@ -129,11 +165,39 @@ function TimelineFeedContent({
     prependPosts,
     prependOptimisticPosts,
     removePosts,
+    removePostsOptimistically,
   } = useStreamPagination({
     streamId,
+    // Collections are finite (≤100 items per envelope spec) — fetch at the
+    // Nexus max page size so the eager full load below takes ≤2 requests.
+    ...(isCollectionFeed ? { limit: NEXUS_STREAM_MAX_LIMIT } : {}),
   });
 
-  const postIds = [...new Set(rawPostIds)];
+  // Collections eagerly load the ENTIRE stream instead of waiting for scroll.
+  // `transformPostIds` sorts the feed by the envelope's item order, but it can
+  // only sort ids that are loaded: with lazy pagination, a post the owner just
+  // reordered from an unloaded page into the top slots would be missing from
+  // the first page (Nexus re-indexes the stream asynchronously), making the
+  // saved order appear wrong. Each completed page re-runs the effect until the
+  // stream reports its end; a fetch error sets hasMore=false, which stops it.
+  // The rounds cap is a defensive bound in case the backend ever misreports
+  // `reachedEnd` — if it trips, the feed degrades to normal scroll-to-load
+  // (the infinite-scroll sentinel stays active while hasMore is true).
+  const eagerLoadRoundsRef = useRef(0);
+  useEffect(() => {
+    // A fresh initial load (mount, pull-to-refresh, unmute refresh) restarts
+    // the stream from page one, so the eager budget resets with it.
+    if (loading) eagerLoadRoundsRef.current = 0;
+  }, [loading]);
+  useEffect(() => {
+    if (!isCollectionFeed || loading || loadingMore || !hasMore) return;
+    if (eagerLoadRoundsRef.current >= COLLECTION_EAGER_LOAD_MAX_ROUNDS) return;
+    eagerLoadRoundsRef.current += 1;
+    void loadMore();
+  }, [isCollectionFeed, loading, loadingMore, hasMore, loadMore]);
+
+  const dedupedPostIds = [...new Set(rawPostIds)];
+  const postIds = transformPostIds ? transformPostIds(dedupedPostIds) : dedupedPostIds;
 
   // Drain optimistic posts the global FAB enqueued for this feed. The FAB lives
   // outside this feed's React tree, so it cannot call `prependOptimisticPosts`
@@ -201,10 +265,13 @@ function TimelineFeedContent({
     prependPosts,
     prependOptimisticPosts,
     removePosts,
+    removePostsOptimistically,
   };
-  const showGridEndMessage =
-    variant !== TIMELINE_FEED_VARIANT.COLLECTION && variant !== TIMELINE_FEED_VARIANT.BOOKMARKS;
-  const shouldRenderChildren = !isVisualActive || isGridActive;
+  const showEndMessage = variant !== TIMELINE_FEED_VARIANT.COLLECTION && variant !== TIMELINE_FEED_VARIANT.BOOKMARKS;
+  // `children` is the composer/filter region on interactive feeds (hidden by the
+  // immersive Visual mosaic on Home/Search/Custom) but the collection hero on
+  // COLLECTION, which must stay visible in every layout.
+  const shouldRenderChildren = !isVisualActive || isGridActive || variant === TIMELINE_FEED_VARIANT.COLLECTION;
 
   return (
     <TimelineFeedContext.Provider value={contextValue}>
@@ -212,6 +279,7 @@ function TimelineFeedContent({
         <Container ref={containerRef} className="min-w-0 flex-1 gap-6 lg:overflow-hidden">
           {enablePullToRefresh && <PullToRefreshIndicator state={pullState} pullDistance={pullDistance} />}
           {shouldRenderChildren ? children : null}
+          {persistentHeader}
           <NewPostsSection
             streamId={streamId}
             variant={variant}
@@ -228,9 +296,9 @@ function TimelineFeedContent({
               error={error}
               hasMore={hasMore}
               loadMore={loadMore}
-              showEndMessage={showGridEndMessage}
+              showEndMessage={showEndMessage}
               emptyState={emptyState}
-              trailingSlot={gridTrailingSlot}
+              trailingSlot={trailingSlot}
             />
           ) : isVisualActive ? (
             <VisualTimelinePosts
@@ -240,6 +308,11 @@ function TimelineFeedContent({
               error={error}
               hasMore={hasMore}
               loadMore={loadMore}
+              emptyState={emptyState}
+              trailingSlot={trailingSlot}
+              hiddenItemsNotice={visualHiddenItemsNotice}
+              showEndMessage={showEndMessage}
+              showUnavailablePosts={variant === TIMELINE_FEED_VARIANT.COLLECTION}
             />
           ) : (
             <TimelinePosts
@@ -249,6 +322,9 @@ function TimelineFeedContent({
               error={error}
               hasMore={hasMore}
               loadMore={loadMore}
+              emptyState={emptyState}
+              trailingSlot={trailingSlot}
+              showEndMessage={showEndMessage}
             />
           )}
         </Container>

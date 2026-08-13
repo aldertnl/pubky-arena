@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import type { ElementType, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePostArticle } from '@/hooks/usePostArticle/usePostArticle';
+import { useHomeStore } from '@/stores/home/home.store';
+import { LAYOUT } from '@/stores/home/home.types';
 import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
 import type { AttachmentConstructed } from '../PostAttachments/PostAttachments.types';
 import { PostArticleDetail } from './PostArticleDetail';
@@ -32,7 +34,9 @@ vi.mock('@/atoms/Container/Container', () => ({
 }));
 
 vi.mock('@/atoms/Image/Image', () => ({
-  Image: ({ src, alt }: { src: string; alt: string }) => <img data-testid="cover-image" src={src} alt={alt} />,
+  Image: ({ src, alt, className }: { src: string; alt: string; className?: string }) => (
+    <img data-testid="cover-image" src={src} alt={alt} className={className} />
+  ),
 }));
 
 vi.mock('@/atoms/Typography/Typography', () => ({
@@ -168,6 +172,7 @@ describe('PostArticleDetail', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    useHomeStore.getState().reset();
     mockUsePostArticle.mockReturnValue({
       title: 'Test Article Title',
       body: 'Test article body content',
@@ -186,6 +191,25 @@ describe('PostArticleDetail', () => {
     expect(screen.queryByText('Replies')).not.toBeInTheDocument();
   });
 
+  it('uses the stacked columns layout by default', () => {
+    render(<PostArticleDetail {...defaultProps} />);
+
+    const containers = screen.getAllByTestId('container');
+    expect(containers.some((el) => el.className.includes('mb-6 gap-6'))).toBe(true);
+    expect(containers.some((el) => el.className.includes('lg:grid-cols-3'))).toBe(false);
+    expect(containers.some((el) => el.className.includes('max-w-2/4'))).toBe(true);
+  });
+
+  it('keeps the side tags grid layout in wide mode', () => {
+    useHomeStore.getState().setLayout(LAYOUT.WIDE);
+
+    render(<PostArticleDetail {...defaultProps} />);
+
+    const containers = screen.getAllByTestId('container');
+    expect(containers.some((el) => el.className.includes('lg:grid-cols-3'))).toBe(true);
+    expect(containers.some((el) => el.className.includes('max-w-2/4'))).toBe(false);
+  });
+
   it('renders the article title as h1', () => {
     render(<PostArticleDetail {...defaultProps} />);
 
@@ -196,7 +220,7 @@ describe('PostArticleDetail', () => {
     render(<PostArticleDetail {...defaultProps} />);
 
     expect(screen.getByTestId('post-header')).toHaveAttribute('data-post-id', 'user123:post456');
-    expect(screen.getByTestId('post-header')).toHaveAttribute('data-size', 'large');
+    expect(screen.getByTestId('post-header')).toHaveAttribute('data-size', 'extraLarge');
     expect(screen.getByTestId('post-header')).toHaveAttribute('data-time-placement', 'bottom-left');
   });
 
@@ -229,6 +253,21 @@ describe('PostArticleDetail', () => {
 
     expect(screen.getByTestId('cover-image')).toHaveAttribute('src', 'https://example.com/image.jpg');
     expect(screen.getByTestId('cover-image')).toHaveAttribute('alt', 'Cover image');
+  });
+
+  it('renders the cover image at a 16:9 ratio filling the frame', () => {
+    mockUsePostArticle.mockReturnValue({
+      title: 'Test Title',
+      body: 'Test body',
+      coverImage: {
+        src: 'https://example.com/image.jpg',
+        alt: 'Cover image',
+      },
+    });
+
+    render(<PostArticleDetail {...defaultProps} />);
+
+    expect(screen.getByTestId('cover-image')).toHaveClass('aspect-video', 'w-full', 'object-cover', 'object-center');
   });
 
   it('does not render cover image when not available', () => {
@@ -459,6 +498,14 @@ describe('PostArticleDetail', () => {
 
   it('matches snapshot when blurred', () => {
     const { container } = render(<PostArticleDetail {...defaultProps} isBlurred />);
+
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('matches snapshot in wide layout', () => {
+    useHomeStore.getState().setLayout(LAYOUT.WIDE);
+
+    const { container } = render(<PostArticleDetail {...defaultProps} />);
 
     expect(container.firstChild).toMatchSnapshot();
   });

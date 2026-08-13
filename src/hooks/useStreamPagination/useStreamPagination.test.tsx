@@ -35,7 +35,7 @@ describe('useStreamPagination', () => {
     vi.mocked(StreamPostsController.getCachedLastPostTimestamp).mockResolvedValue(0);
     vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
       nextPageIds: mockPostIds,
-      timestamp: Date.now(),
+      nextCursor: Date.now(),
     });
     // Mock PostDetailsModel to return posts with timestamps that preserve input order
     // (newer posts first = higher timestamps)
@@ -49,6 +49,45 @@ describe('useStreamPagination', () => {
     // Mock sortPostIdsByTimestamp to preserve input order by default
     // (simulates already-sorted posts)
     vi.mocked(sortPostIdsByTimestamp).mockImplementation(async (ids: string[]) => ids);
+  });
+
+  describe('Cursor advances on empty-after-filter pages', () => {
+    it('advances streamTail from nextCursor on an empty page so the next loadMore resumes past it', async () => {
+      const streamId = 'timeline:all:all' as PostStreamId;
+      vi.mocked(StreamPostsController.getCachedLastPostTimestamp).mockResolvedValue(0);
+      // Initial load: a full page, cursor 20.
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValueOnce({
+        nextPageIds: ['p1', 'p2'],
+        nextCursor: 20,
+      });
+      const { result } = renderHook(() => useStreamPagination({ streamId }));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      // loadMore #1: a fully-filtered (empty) page that isn't the end; cursor advances to 40.
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValueOnce({
+        nextPageIds: [],
+        reachedEnd: false,
+        nextCursor: 40,
+      });
+      await act(async () => {
+        await result.current.loadMore();
+      });
+      expect(result.current.hasMore).toBe(true); // empty-but-not-ended keeps loading
+
+      // loadMore #2 must resume from the advanced cursor (40), not the stale 20.
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValueOnce({
+        nextPageIds: ['p3'],
+        nextCursor: 41,
+      });
+      await act(async () => {
+        await result.current.loadMore();
+      });
+      expect(StreamPostsController.getOrFetchStreamSlice).toHaveBeenCalledWith(
+        expect.objectContaining({ streamId, streamTail: 40 }),
+      );
+    });
   });
 
   describe('Initialization', () => {
@@ -117,7 +156,7 @@ describe('useStreamPagination', () => {
     it('should set hasMore to false when no posts are returned', async () => {
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: [],
-        timestamp: Date.now(),
+        nextCursor: Date.now(),
         reachedEnd: true, // Actual end of stream
       });
 
@@ -138,7 +177,7 @@ describe('useStreamPagination', () => {
     it('should keep hasMore true when empty results but not reached end', async () => {
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: [],
-        timestamp: Date.now(),
+        nextCursor: Date.now(),
         reachedEnd: false, // Filters removed all posts, but more exist
       });
 
@@ -160,7 +199,7 @@ describe('useStreamPagination', () => {
       const limit = 30;
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: Array(25).fill('post'),
-        timestamp: Date.now(),
+        nextCursor: Date.now(),
         reachedEnd: true, // Less than limit (30) means end of stream
       });
 
@@ -218,7 +257,7 @@ describe('useStreamPagination', () => {
     it('should not load more when hasMore is false', async () => {
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: ['post1', 'post2'],
-        timestamp: Date.now(),
+        nextCursor: Date.now(),
         reachedEnd: true, // Less than limit (10) means end of stream
       });
 
@@ -358,7 +397,7 @@ describe('useStreamPagination', () => {
 
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: ['post1', 'post2', 'post3'],
-        timestamp: undefined, // Engagement streams don't use timestamp
+        nextCursor: undefined, // Engagement streams don't use timestamp
       });
 
       const { result } = renderHook(() =>
@@ -382,15 +421,16 @@ describe('useStreamPagination', () => {
 
   describe('Skip-paginated streams (collection items)', () => {
     // collection:<author>:<postId> pages by offset (`skip`); Nexus returns no timestamp/score
-    // cursor, so the cursor is the count of already-loaded items. Regression guard for the
-    // infinite-scroll flicker where a stuck null timestamp cursor re-served page 1 forever.
+    // cursor, so the resume cursor is a raw offset advanced by the controller and threaded
+    // back via `nextCursor`. Regression guard for the infinite-scroll flicker where a stuck
+    // cursor re-served page 1 forever, and for deriving the offset from the visible count.
     const collectionStreamId = 'collection:author-1:post-1' as PostStreamId;
 
     it('starts the initial load at offset 0, ignoring any cached timestamp cursor', async () => {
       vi.mocked(StreamPostsController.getCachedLastPostTimestamp).mockResolvedValue(9999);
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: ['c1', 'c2', 'c3'],
-        timestamp: undefined, // skip-paginated streams carry no timestamp cursor
+        nextCursor: 3,
       });
 
       const { result } = renderHook(() => useStreamPagination({ streamId: collectionStreamId }));
@@ -408,11 +448,11 @@ describe('useStreamPagination', () => {
       );
     });
 
-    it('paginates by the number of already-loaded items on loadMore (offset cursor)', async () => {
+    it('paginates by the offset cursor returned from the previous page on loadMore', async () => {
       vi.mocked(StreamPostsController.getCachedLastPostTimestamp).mockResolvedValue(0);
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: ['c1', 'c2', 'c3'],
-        timestamp: undefined,
+        nextCursor: 3,
       });
 
       const { result } = renderHook(() => useStreamPagination({ streamId: collectionStreamId }));
@@ -425,7 +465,7 @@ describe('useStreamPagination', () => {
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: ['c4', 'c5'],
-        timestamp: undefined,
+        nextCursor: 5,
       });
 
       await act(async () => {
@@ -435,7 +475,7 @@ describe('useStreamPagination', () => {
       expect(StreamPostsController.getOrFetchStreamSlice).toHaveBeenCalledWith(
         expect.objectContaining({
           streamId: collectionStreamId,
-          streamTail: 3, // count of already-loaded items, not a timestamp
+          streamTail: 3, // resume offset threaded from the previous page
         }),
       );
     });
@@ -444,7 +484,7 @@ describe('useStreamPagination', () => {
       vi.mocked(StreamPostsController.getCachedLastPostTimestamp).mockResolvedValue(0);
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: ['c1', 'c2', 'c3'],
-        timestamp: undefined,
+        nextCursor: 3,
       });
 
       const { result } = renderHook(() => useStreamPagination({ streamId: collectionStreamId }));
@@ -462,7 +502,7 @@ describe('useStreamPagination', () => {
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: ['c4', 'c5'],
-        timestamp: undefined,
+        nextCursor: 5,
       });
 
       await act(async () => {
@@ -478,11 +518,44 @@ describe('useStreamPagination', () => {
       expect(result.current.postIds).toEqual(['optimistic-c0', 'c1', 'c2', 'c3', 'c4', 'c5']);
     });
 
+    it('counts optimistically hidden rows that were already consumed in the collection offset', async () => {
+      vi.mocked(StreamPostsController.getCachedLastPostTimestamp).mockResolvedValue(0);
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['c1', 'c2', 'c3'],
+        nextCursor: 3,
+      });
+      const { result } = renderHook(() => useStreamPagination({ streamId: collectionStreamId }));
+
+      await waitFor(() => {
+        expect(result.current.postIds).toEqual(['c1', 'c2', 'c3']);
+      });
+      act(() => {
+        result.current.removePostsOptimistically('c2');
+      });
+
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['c4', 'c5'],
+        nextCursor: 5,
+      });
+      await act(async () => {
+        await result.current.loadMore();
+      });
+
+      expect(StreamPostsController.getOrFetchStreamSlice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          streamId: collectionStreamId,
+          streamTail: 3,
+        }),
+      );
+      expect(result.current.postIds).toEqual(['c1', 'c3', 'c4', 'c5']);
+    });
+
     it('preserves optimistic membership posts across collection refresh without changing the next offset', async () => {
       vi.mocked(StreamPostsController.getCachedLastPostTimestamp).mockResolvedValue(0);
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: ['c1', 'c2'],
-        timestamp: undefined,
+        nextCursor: 2,
       });
 
       const { result } = renderHook(() => useStreamPagination({ streamId: collectionStreamId }));
@@ -500,7 +573,7 @@ describe('useStreamPagination', () => {
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: ['c1', 'c2'],
-        timestamp: undefined,
+        nextCursor: 2,
       });
 
       await act(async () => {
@@ -519,7 +592,7 @@ describe('useStreamPagination', () => {
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: ['c3'],
-        timestamp: undefined,
+        nextCursor: 3,
       });
 
       await act(async () => {
@@ -576,7 +649,7 @@ describe('useStreamPagination', () => {
       const limit = 30;
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: Array(limit).fill('post'),
-        timestamp: Date.now(),
+        nextCursor: Date.now(),
       });
 
       const { result } = renderHook(() =>
@@ -607,7 +680,7 @@ describe('useStreamPagination', () => {
     it('should handle empty results with reachedEnd true', async () => {
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: [],
-        timestamp: Date.now(),
+        nextCursor: Date.now(),
         reachedEnd: true,
       });
 
@@ -628,7 +701,7 @@ describe('useStreamPagination', () => {
     it('should handle empty results with reachedEnd false', async () => {
       vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
         nextPageIds: [],
-        timestamp: Date.now(),
+        nextCursor: Date.now(),
         reachedEnd: false,
       });
 
@@ -689,7 +762,7 @@ describe('useStreamPagination', () => {
     it('invokes onError on loadMore failures too', async () => {
       // First (initial) call succeeds, second (loadMore) call throws.
       vi.mocked(StreamPostsController.getOrFetchStreamSlice)
-        .mockResolvedValueOnce({ nextPageIds: mockPostIds, timestamp: Date.now() })
+        .mockResolvedValueOnce({ nextPageIds: mockPostIds, nextCursor: Date.now() })
         .mockRejectedValueOnce(new Error('boom'));
       const onError = vi.fn();
 
@@ -1013,6 +1086,557 @@ describe('useStreamPagination', () => {
       });
 
       expect(result.current.postIds).toEqual(expectedOrder);
+    });
+
+    it('should restore a removed post to its original position', async () => {
+      const { result } = renderHook(() =>
+        useStreamPagination({
+          streamId: mockStreamId,
+        }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const initialPostIds = result.current.postIds;
+      const postToRemove = initialPostIds[1];
+      let rollback: (() => void) | undefined;
+
+      act(() => {
+        rollback = result.current.removePostsOptimistically(postToRemove).rollback;
+      });
+      act(() => rollback?.());
+
+      expect(result.current.postIds).toEqual(initialPostIds);
+
+      act(() => rollback?.());
+      expect(result.current.postIds).toEqual(initialPostIds);
+    });
+
+    it('should preserve concurrent optimistic inserts when restoring a removed post', async () => {
+      const { result } = renderHook(() =>
+        useStreamPagination({
+          streamId: mockStreamId,
+        }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const initialPostIds = result.current.postIds;
+      const postToRemove = initialPostIds[1];
+      let rollback: (() => void) | undefined;
+
+      act(() => {
+        rollback = result.current.removePostsOptimistically(postToRemove).rollback;
+        result.current.prependOptimisticPosts('new-optimistic-post');
+      });
+      act(() => rollback?.());
+
+      expect(result.current.postIds).toEqual(['new-optimistic-post', ...initialPostIds]);
+    });
+
+    it('should restore an optimistically inserted post', async () => {
+      const { result } = renderHook(() => useStreamPagination({ streamId: mockStreamId }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+      act(() => {
+        result.current.prependOptimisticPosts('optimistic-post');
+      });
+
+      let rollback: (() => void) | undefined;
+      act(() => {
+        rollback = result.current.removePostsOptimistically('optimistic-post').rollback;
+      });
+      expect(result.current.postIds).not.toContain('optimistic-post');
+
+      act(() => rollback?.());
+      expect(result.current.postIds).toEqual(['optimistic-post', ...mockPostIds]);
+    });
+
+    it('should keep an optimistic removal hidden across refresh', async () => {
+      const { result } = renderHook(() => useStreamPagination({ streamId: mockStreamId }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      let rollback: (() => void) | undefined;
+      act(() => {
+        rollback = result.current.removePostsOptimistically(mockPostIds[1]).rollback;
+      });
+      await act(async () => {
+        await result.current.refresh();
+      });
+
+      expect(result.current.postIds).toEqual(['post1', 'post3']);
+
+      act(() => rollback?.());
+      expect(result.current.postIds).toEqual(mockPostIds);
+    });
+
+    it('should preserve order when concurrent removals roll back', async () => {
+      const { result } = renderHook(() =>
+        useStreamPagination({
+          streamId: mockStreamId,
+        }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const initialPostIds = result.current.postIds;
+      let rollbackSecond: (() => void) | undefined;
+      let rollbackThird: (() => void) | undefined;
+
+      act(() => {
+        rollbackSecond = result.current.removePostsOptimistically(initialPostIds[1]).rollback;
+        rollbackThird = result.current.removePostsOptimistically(initialPostIds[2]).rollback;
+      });
+      act(() => rollbackSecond?.());
+      act(() => rollbackThird?.());
+
+      expect(result.current.postIds).toEqual(initialPostIds);
+    });
+
+    it('should ignore a rollback after the active stream changes', async () => {
+      const nextStreamId = 'timeline:following:all' as PostStreamId;
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockImplementation(async ({ streamId }) => ({
+        nextPageIds: streamId === mockStreamId ? mockPostIds : ['next-stream-post'],
+        nextCursor: Date.now(),
+      }));
+      const { result, rerender } = renderHook(
+        ({ streamId }) =>
+          useStreamPagination({
+            streamId,
+          }),
+        { initialProps: { streamId: mockStreamId } },
+      );
+
+      await waitFor(() => {
+        expect(result.current.postIds).toEqual(mockPostIds);
+      });
+
+      let rollback: (() => void) | undefined;
+      act(() => {
+        rollback = result.current.removePostsOptimistically(mockPostIds[1]).rollback;
+      });
+      rerender({ streamId: nextStreamId });
+
+      await waitFor(() => {
+        expect(result.current.postIds).toEqual(['next-stream-post']);
+      });
+      act(() => rollback?.());
+
+      expect(result.current.postIds).toEqual(['next-stream-post']);
+    });
+
+    it('should keep a removed post hidden after commit and ignore a late rollback', async () => {
+      const { result } = renderHook(() => useStreamPagination({ streamId: mockStreamId }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      let commit: (() => void) | undefined;
+      let rollback: (() => void) | undefined;
+      act(() => {
+        const removal = result.current.removePostsOptimistically(mockPostIds[1]);
+        commit = removal?.commit;
+        rollback = removal?.rollback;
+      });
+      act(() => commit?.());
+
+      expect(result.current.postIds).toEqual(['post1', 'post3']);
+
+      act(() => rollback?.());
+      expect(result.current.postIds).toEqual(['post1', 'post3']);
+    });
+
+    it('should decrement the collection skip offset when a committed removal shrinks the stream', async () => {
+      const collectionStreamId = 'collection:author-1:post-1' as PostStreamId;
+      vi.mocked(StreamPostsController.getCachedLastPostTimestamp).mockResolvedValue(0);
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['c1', 'c2', 'c3'],
+        nextCursor: 3,
+      });
+      const { result } = renderHook(() => useStreamPagination({ streamId: collectionStreamId }));
+
+      await waitFor(() => {
+        expect(result.current.postIds).toEqual(['c1', 'c2', 'c3']);
+      });
+
+      let commit: (() => void) | undefined;
+      act(() => {
+        commit = result.current.removePostsOptimistically('c2').commit;
+      });
+      act(() => commit?.());
+
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['c4', 'c5'],
+        nextCursor: 4,
+      });
+      await act(async () => {
+        await result.current.loadMore();
+      });
+
+      // The committed removal shrank the backend collection by one already
+      // consumed row, so the next page resumes one offset earlier — otherwise
+      // the row that shifted into the removed slot is skipped after Nexus
+      // reindexes the edited collection.
+      expect(StreamPostsController.getOrFetchStreamSlice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          streamId: collectionStreamId,
+          streamTail: 2,
+        }),
+      );
+      expect(result.current.postIds).toEqual(['c1', 'c3', 'c4', 'c5']);
+    });
+
+    it('should keep the collection skip offset counting rows restored by a rollback', async () => {
+      const collectionStreamId = 'collection:author-1:post-1' as PostStreamId;
+      vi.mocked(StreamPostsController.getCachedLastPostTimestamp).mockResolvedValue(0);
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['c1', 'c2', 'c3'],
+        nextCursor: 3,
+      });
+      const { result } = renderHook(() => useStreamPagination({ streamId: collectionStreamId }));
+
+      await waitFor(() => {
+        expect(result.current.postIds).toEqual(['c1', 'c2', 'c3']);
+      });
+
+      let rollback: (() => void) | undefined;
+      act(() => {
+        rollback = result.current.removePostsOptimistically('c2').rollback;
+      });
+      act(() => rollback?.());
+
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['c4', 'c5'],
+        nextCursor: 5,
+      });
+      await act(async () => {
+        await result.current.loadMore();
+      });
+
+      // A rolled-back removal never shrank the backend list, so the consumed
+      // offset must stay intact.
+      expect(StreamPostsController.getOrFetchStreamSlice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          streamId: collectionStreamId,
+          streamTail: 3,
+        }),
+      );
+      expect(result.current.postIds).toEqual(['c1', 'c2', 'c3', 'c4', 'c5']);
+    });
+
+    it('should not shift the timestamp cursor when a removal commits on a score-paginated stream', async () => {
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: mockPostIds,
+        nextCursor: 1111,
+      });
+      const { result } = renderHook(() => useStreamPagination({ streamId: mockStreamId }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      let commit: (() => void) | undefined;
+      act(() => {
+        commit = result.current.removePostsOptimistically(mockPostIds[1]).commit;
+      });
+      act(() => commit?.());
+
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['post4'],
+        nextCursor: 999,
+      });
+      await act(async () => {
+        await result.current.loadMore();
+      });
+
+      // Timestamp cursors are positions, not row counts — removing a row must
+      // not rewind them.
+      expect(StreamPostsController.getOrFetchStreamSlice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          streamId: mockStreamId,
+          streamTail: 1111,
+        }),
+      );
+    });
+
+    it('should re-apply a commit landing mid-fetch to the skip offset the fetch writes back', async () => {
+      const collectionStreamId = 'collection:author-1:post-1' as PostStreamId;
+      vi.mocked(StreamPostsController.getCachedLastPostTimestamp).mockResolvedValue(0);
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['c1', 'c2', 'c3'],
+        nextCursor: 3,
+      });
+      const { result } = renderHook(() => useStreamPagination({ streamId: collectionStreamId }));
+
+      await waitFor(() => {
+        expect(result.current.postIds).toEqual(['c1', 'c2', 'c3']);
+      });
+
+      let resolveSlice: ((value: { nextPageIds: string[]; nextCursor: number }) => void) | undefined;
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockReturnValue(
+        new Promise((resolve) => {
+          resolveSlice = resolve;
+        }),
+      );
+      let loadMorePromise: Promise<void> | undefined;
+      act(() => {
+        loadMorePromise = result.current.loadMore();
+      });
+
+      let commit: (() => void) | undefined;
+      act(() => {
+        commit = result.current.removePostsOptimistically('c2').commit;
+      });
+      act(() => commit?.());
+
+      await act(async () => {
+        resolveSlice?.({ nextPageIds: ['c4', 'c5'], nextCursor: 5 });
+        await loadMorePromise;
+      });
+
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['c6'],
+        nextCursor: 5,
+      });
+      await act(async () => {
+        await result.current.loadMore();
+      });
+
+      // The in-flight page derived nextCursor 5 from the offset captured
+      // before the commit, so its absolute write must re-apply the commit's
+      // decrement instead of silently discarding it.
+      expect(StreamPostsController.getOrFetchStreamSlice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          streamId: collectionStreamId,
+          streamTail: 4,
+        }),
+      );
+      expect(result.current.postIds).toEqual(['c1', 'c3', 'c4', 'c5', 'c6']);
+    });
+
+    it('should not double-apply a commit that settled before the next fetch started', async () => {
+      const collectionStreamId = 'collection:author-1:post-1' as PostStreamId;
+      vi.mocked(StreamPostsController.getCachedLastPostTimestamp).mockResolvedValue(0);
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['c1', 'c2', 'c3'],
+        nextCursor: 3,
+      });
+      const { result } = renderHook(() => useStreamPagination({ streamId: collectionStreamId }));
+
+      await waitFor(() => {
+        expect(result.current.postIds).toEqual(['c1', 'c2', 'c3']);
+      });
+
+      let commit: (() => void) | undefined;
+      act(() => {
+        commit = result.current.removePostsOptimistically('c2').commit;
+      });
+      act(() => commit?.());
+
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['c4', 'c5'],
+        nextCursor: 4,
+      });
+      await act(async () => {
+        await result.current.loadMore();
+      });
+
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['c6'],
+        nextCursor: 5,
+      });
+      await act(async () => {
+        await result.current.loadMore();
+      });
+
+      // The commit was already folded into the offset the second fetch sent
+      // (streamTail 2 → nextCursor 4); re-subtracting it here would refetch
+      // and dedupe-drop a row on every subsequent page.
+      expect(StreamPostsController.getOrFetchStreamSlice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          streamId: collectionStreamId,
+          streamTail: 4,
+        }),
+      );
+    });
+
+    it('should keep the timestamp cursor from an in-flight fetch when a removal commits mid-flight', async () => {
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: mockPostIds,
+        nextCursor: 1111,
+      });
+      const { result } = renderHook(() => useStreamPagination({ streamId: mockStreamId }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      let resolveSlice: ((value: { nextPageIds: string[]; nextCursor: number }) => void) | undefined;
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockReturnValue(
+        new Promise((resolve) => {
+          resolveSlice = resolve;
+        }),
+      );
+      let loadMorePromise: Promise<void> | undefined;
+      act(() => {
+        loadMorePromise = result.current.loadMore();
+      });
+
+      let commit: (() => void) | undefined;
+      act(() => {
+        commit = result.current.removePostsOptimistically(mockPostIds[1]).commit;
+      });
+      act(() => commit?.());
+
+      await act(async () => {
+        resolveSlice?.({ nextPageIds: ['post4'], nextCursor: 2222 });
+        await loadMorePromise;
+      });
+
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockClear();
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockResolvedValue({
+        nextPageIds: ['post5'],
+        nextCursor: 3333,
+      });
+      await act(async () => {
+        await result.current.loadMore();
+      });
+
+      // Score cursors are timestamps, not row counts — a mid-flight commit
+      // must not subtract anything from them.
+      expect(StreamPostsController.getOrFetchStreamSlice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          streamId: mockStreamId,
+          streamTail: 2222,
+        }),
+      );
+    });
+
+    it('should reveal a committed post again when it is re-added optimistically', async () => {
+      const { result } = renderHook(() => useStreamPagination({ streamId: mockStreamId }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      let commit: (() => void) | undefined;
+      act(() => {
+        commit = result.current.removePostsOptimistically(mockPostIds[1]).commit;
+      });
+      act(() => commit?.());
+      expect(result.current.postIds).toEqual(['post1', 'post3']);
+
+      // A stale hidden count left behind by commit would suppress the post
+      // forever; re-adding it must show it again.
+      act(() => {
+        result.current.prependOptimisticPosts(mockPostIds[1]);
+      });
+      expect(result.current.postIds).toEqual(['post2', 'post1', 'post3']);
+    });
+
+    it('should resolve overlapping removals of the same post independently', async () => {
+      const { result } = renderHook(() => useStreamPagination({ streamId: mockStreamId }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      let rollbackFirst: (() => void) | undefined;
+      let commitSecond: (() => void) | undefined;
+      act(() => {
+        rollbackFirst = result.current.removePostsOptimistically(mockPostIds[1]).rollback;
+        commitSecond = result.current.removePostsOptimistically(mockPostIds[1]).commit;
+      });
+
+      // One of the two overlapping removals rolling back keeps the post hidden
+      // while the other is still pending.
+      act(() => rollbackFirst?.());
+      expect(result.current.postIds).toEqual(['post1', 'post3']);
+
+      act(() => commitSecond?.());
+      expect(result.current.postIds).toEqual(['post1', 'post3']);
+    });
+
+    it('should keep a pending removal hidden when an in-flight loadMore resolves', async () => {
+      const { result } = renderHook(() => useStreamPagination({ streamId: mockStreamId }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      let resolveFetch: ((value: { nextPageIds: string[]; nextCursor: number }) => void) | undefined;
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveFetch = resolve;
+          }),
+      );
+
+      let loadMorePromise: Promise<void> | undefined;
+      act(() => {
+        loadMorePromise = result.current.loadMore();
+      });
+      act(() => {
+        result.current.removePostsOptimistically(mockPostIds[1]);
+      });
+      expect(result.current.postIds).toEqual(['post1', 'post3']);
+
+      await act(async () => {
+        resolveFetch?.({ nextPageIds: ['post4'], nextCursor: 200 });
+        await loadMorePromise;
+      });
+
+      expect(result.current.postIds).toEqual(['post1', 'post3', 'post4']);
+    });
+
+    it('should ignore a commit after the active stream changes', async () => {
+      const nextStreamId = 'timeline:following:all' as PostStreamId;
+      vi.mocked(StreamPostsController.getOrFetchStreamSlice).mockImplementation(async ({ streamId }) => ({
+        nextPageIds: streamId === mockStreamId ? mockPostIds : ['next-stream-post'],
+        nextCursor: Date.now(),
+      }));
+      const { result, rerender } = renderHook(
+        ({ streamId }) =>
+          useStreamPagination({
+            streamId,
+          }),
+        { initialProps: { streamId: mockStreamId } },
+      );
+
+      await waitFor(() => {
+        expect(result.current.postIds).toEqual(mockPostIds);
+      });
+
+      let commit: (() => void) | undefined;
+      act(() => {
+        commit = result.current.removePostsOptimistically(mockPostIds[1]).commit;
+      });
+      rerender({ streamId: nextStreamId });
+
+      await waitFor(() => {
+        expect(result.current.postIds).toEqual(['next-stream-post']);
+      });
+      act(() => commit?.());
+
+      expect(result.current.postIds).toEqual(['next-stream-post']);
     });
   });
 });

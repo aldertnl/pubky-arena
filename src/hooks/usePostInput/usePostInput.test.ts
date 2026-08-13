@@ -11,15 +11,14 @@ import {
 } from '@/config/posts';
 import { PostController } from '@/controllers/post/post';
 import { Logger } from '@/libs/logger/logger';
-import { PostStreamTypes } from '@/models/stream/post/postStream.types';
+import { type PostStreamId, PostStreamTypes } from '@/models/stream/post/postStream.types';
 import { POST_INPUT_VARIANT } from '@/organisms/PostInput/PostInput.constants';
 import { useTimelineFeedContext } from '@/organisms/Timeline/Feed/TimelineFeed/TimelineFeedContext';
 import { mockClipboardEvent, mockDragEvent } from '@/test-utils/react-events';
 import { asOpaque } from '@/test-utils/type-assertions';
 import { usePostInput } from './usePostInput';
 
-// next-intl is mocked globally in src/config/test.ts
-// Real placeholders from messages/en.json for test assertions
+// Literal copies of POST_INPUT_PLACEHOLDER keep assertions independent of the component constants
 const REAL_PLACEHOLDERS = {
   reply: 'Write a reply...',
   post: "What's on your mind?",
@@ -49,6 +48,7 @@ const mockDeletePost = vi.fn();
 vi.mock('@/hooks/useCurrentUserProfile/useCurrentUserProfile', () => ({
   useCurrentUserProfile: vi.fn(() => ({
     currentUserPubky: 'test-user-pubky',
+    userDetails: { name: 'Test Author' },
   })),
 }));
 
@@ -172,6 +172,7 @@ describe('usePostInput', () => {
       expect(result.current.hasContent).toBe(false);
       expect(result.current.isDragging).toBe(false);
       expect(result.current.currentUserPubky).toBe('test-user-pubky');
+      expect(result.current.currentUserDetails).toEqual({ name: 'Test Author' });
     });
 
     it('returns initial state with expanded mode when expanded=true', () => {
@@ -200,6 +201,49 @@ describe('usePostInput', () => {
       expect(result.current.markdownEditorRef.current).toBeNull();
       expect(result.current.containerRef.current).toBeNull();
       expect(result.current.fileInputRef.current).toBeNull();
+    });
+  });
+
+  describe('textarea autosizing', () => {
+    it('forces an empty textarea to one line instead of measuring a stretched layout', () => {
+      const { result, rerender } = renderHook(() =>
+        usePostInput({
+          variant: 'post',
+        }),
+      );
+      const textarea = document.createElement('textarea');
+      textarea.style.height = '900px';
+      result.current.textareaRef.current = textarea;
+
+      act(() => {
+        result.current.handleExpand();
+      });
+      rerender();
+
+      expect(textarea.style.height).toBe('1lh');
+    });
+
+    it('measures non-empty content from zero height', () => {
+      const { result, rerender } = renderHook(() =>
+        usePostInput({
+          variant: 'post',
+        }),
+      );
+      const textarea = document.createElement('textarea');
+      textarea.style.height = '900px';
+      Object.defineProperty(textarea, 'scrollHeight', {
+        configurable: true,
+        get: () => {
+          expect(textarea.style.height).toBe('0px');
+          return 48;
+        },
+      });
+      result.current.textareaRef.current = textarea;
+
+      mockContent = 'Two lines of content';
+      rerender();
+
+      expect(textarea.style.height).toBe('48px');
     });
   });
 
@@ -658,6 +702,36 @@ describe('usePostInput', () => {
       vi.mocked(useTimelineFeedContext).mockReturnValue({
         ...mockTimelineFeedContext,
         streamId: PostStreamTypes.TIMELINE_ALL_COLLECTION,
+      });
+      vi.mocked(PostController.getDetails).mockResolvedValue({ kind: 'short' } as never);
+
+      const mockOnSuccess = vi.fn();
+      const { result } = renderHook(() =>
+        usePostInput({
+          variant: 'post',
+          onSuccess: mockOnSuccess,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      await waitFor(() => {
+        expect(PostController.getDetails).toHaveBeenCalledWith({ compositeId: 'created-post-id' });
+      });
+      expect(mockPrependPosts).not.toHaveBeenCalled();
+      expect(mockOnSuccess).toHaveBeenCalledWith('created-post-id');
+    });
+
+    it('does not prependPosts when the created post kind does not match a wot_domain stream kind', async () => {
+      mockContent = 'Test content';
+      mockPost.mockImplementation(async ({ onSuccess }) => {
+        onSuccess('created-post-id');
+      });
+      vi.mocked(useTimelineFeedContext).mockReturnValue({
+        ...mockTimelineFeedContext,
+        streamId: 'timeline:wot_domain:2:image:bitcoin' as PostStreamId,
       });
       vi.mocked(PostController.getDetails).mockResolvedValue({ kind: 'short' } as never);
 

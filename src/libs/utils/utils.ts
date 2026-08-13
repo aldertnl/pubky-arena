@@ -4,6 +4,7 @@ import type { SnapshotSerializer } from 'vitest';
 import { DEFAULT_DISPLAY_PUBLIC_KEY_LENGTH, TAG_MAX_LENGTH } from '@/config/posts';
 import { parseCompositeId } from '@/models/models.utils';
 import type { PostInputVariant } from '@/organisms/PostInput/PostInput.types';
+import { getSafeExternalUrl } from './safeExternalUrl';
 import { RADIX_ID_REGEX, RADIX_ID_TEST_REGEX, TAG_BANNED_CHARS } from './utils.constants';
 import type {
   CopyToClipboardProps,
@@ -47,6 +48,15 @@ export function formatPublicKey({
   const prefix = rawKey.slice(0, Math.floor(length / 2));
   const suffix = rawKey.slice(-(length - prefix.length));
   return `${prefixLabel}${prefix}...${suffix}`;
+}
+
+/**
+ * Resolves a user's display name, falling back to a shortened public key when
+ * the profile has no `name` set. Mirrors the app's UI convention
+ * (`user.name || formatPublicKey(...)`, e.g. in `UserListItem`).
+ */
+export function resolveDisplayName(user: { name: string; id: string }): string {
+  return user.name || formatPublicKey({ key: user.id });
 }
 
 /**
@@ -243,12 +253,11 @@ export function formatInviteCode(code: string) {
   }
 }
 
-export function clearCookies(exclude: string[] = []) {
+export function clearCookies() {
   if (typeof document !== 'undefined') {
     document.cookie.split(';').forEach((cookie) => {
       const eqPos = cookie.indexOf('=');
       const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-      if (exclude.includes(name.trim())) return;
       document.cookie = `${name.trim()}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
     });
   }
@@ -273,31 +282,6 @@ export const sleep = (ms: number): Promise<void> => new Promise((resolve) => set
 export const minutesAgo = (mins: number): number => Date.now() - mins * 60 * 1000;
 export const hoursAgo = (hours: number): number => Date.now() - hours * 60 * 60 * 1000;
 export const daysAgo = (days: number): number => Date.now() - days * 24 * 60 * 60 * 1000;
-
-/**
- * Formats a timestamp for notifications display - SHORT format for mobile
- * Returns format: "now", "15m", "1h", "2d", etc.
- */
-export function formatNotificationTime(timestamp: number, longFormat = false): string {
-  const diffMs = Date.now() - timestamp;
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (longFormat) {
-    // Long format for desktop: "15 MINUTES AGO", "1 HOUR AGO", etc.
-    if (diffMins < 1) return 'NOW';
-    if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'MINUTE' : 'MINUTES'} AGO`;
-    if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'HOUR' : 'HOURS'} AGO`;
-    return `${diffDays} ${diffDays === 1 ? 'DAY' : 'DAYS'} AGO`;
-  }
-
-  // Short format for mobile: "now", "15m", "1h", "2d", etc.
-  if (diffMins < 1) return 'now';
-  if (diffMins < 60) return `${diffMins}m`;
-  if (diffHours < 24) return `${diffHours}h`;
-  return `${diffDays}d`;
-}
 
 /**
  * Formats a filename by truncating it if it exceeds the max length,
@@ -498,8 +482,9 @@ export function getDisplayTags(tags: string[], options: GetDisplayTagsOptions = 
 const BYPASS_PROTOCOLS = ['mailto:', 'tel:'];
 
 /**
- * Checks if a URL is on the same domain as the current page.
+ * Checks if a safe external URL is on the same domain as the current page.
  * Compares hostnames while ignoring the 'www.' prefix.
+ * Unsupported URL schemes always return false.
  *
  * @param url - The URL to check
  * @returns true if the URL is on the same domain, false otherwise
@@ -514,8 +499,11 @@ const BYPASS_PROTOCOLS = ['mailto:', 'tel:'];
  */
 export function isSameDomain(url: string): boolean {
   try {
-    // Parse the URL to check
-    const urlObj = new URL(url);
+    const safeUrl = getSafeExternalUrl(url);
+    if (!safeUrl) return false;
+
+    // Parse the validated URL to check
+    const urlObj = new URL(safeUrl);
     const urlHostname = urlObj.hostname.toLowerCase().replace(/^www\./, '');
 
     // Get current page hostname
@@ -531,6 +519,7 @@ export function isSameDomain(url: string): boolean {
 
 /**
  * Determines if a link should bypass the confirmation dialog and open directly.
+ * Unsupported or malformed URLs never bypass confirmation.
  * Returns true if:
  * - The URL uses a bypass protocol (mailto, tel, etc.)
  * - The URL is on the same domain as the current page
@@ -548,13 +537,17 @@ export function isSameDomain(url: string): boolean {
  * ```
  */
 export function shouldBypassLinkConfirmation(url: string): boolean {
+  const safeUrl = getSafeExternalUrl(url);
+  if (!safeUrl) return false;
+
   // Check if URL uses a bypass protocol (mailto, tel, etc.)
-  if (BYPASS_PROTOCOLS.some((protocol) => url.startsWith(protocol))) {
+  const protocol = new URL(safeUrl).protocol;
+  if (BYPASS_PROTOCOLS.includes(protocol)) {
     return true;
   }
 
   // Check if URL is on the same domain
-  return isSameDomain(url);
+  return isSameDomain(safeUrl);
 }
 
 /**
@@ -771,6 +764,59 @@ export function generateRandomUsername(): string {
   }
 
   return `${randomAdjective}-${randomNoun1}-${randomNoun2}`;
+}
+
+const FOCUSABLE_SELECTOR = 'button,a[href],[tabindex]:not([tabindex="-1"])';
+// Feed cards (`[role="article"]` in grid/list layouts) and visual-mosaic cells
+// (`[data-grid-item]` — the tiles are `role="button"`, not articles).
+const GRID_ITEM_SELECTOR = '[role="article"],[data-grid-item]';
+
+function isFocusCandidate(element: HTMLElement): boolean {
+  return !element.matches(':disabled') && element.closest('[hidden],[aria-hidden="true"]') === null;
+}
+
+function findFocusTarget(item: HTMLElement): HTMLElement | null {
+  if (item.matches(FOCUSABLE_SELECTOR) && isFocusCandidate(item)) return item;
+  for (const candidate of item.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)) {
+    if (isFocusCandidate(candidate)) return candidate;
+  }
+  return null;
+}
+
+/**
+ * Moves keyboard focus to the adjacent feed card before the current card is
+ * removed from the DOM.
+ *
+ * Used by collection/bookmarks Remove CTAs on deleted or missing posts: the
+ * Remove button is about to unmount with its card, so without this hand-off
+ * focus would fall to `document.body` (or disappear), which breaks keyboard
+ * and screen-reader navigation through the grid. The current card is the
+ * closest grid item (`[role="article"]` card or `[data-grid-item]` mosaic
+ * cell). Siblings are scanned outward — all following, then all preceding, so
+ * non-focusable neighbors (spacers, sentinels) don't dead-end the hand-off —
+ * and disabled or hidden elements are never focused. Each sibling yields the
+ * item itself when focusable, otherwise its first focusable descendant.
+ */
+export function focusAdjacentGridItem(button: HTMLButtonElement): void {
+  const currentItem = button.closest<HTMLElement>(GRID_ITEM_SELECTOR);
+  if (!currentItem) return;
+
+  for (let sibling = currentItem.nextElementSibling; sibling; sibling = sibling.nextElementSibling) {
+    if (!(sibling instanceof HTMLElement)) continue;
+    const target = findFocusTarget(sibling);
+    if (target) {
+      target.focus();
+      return;
+    }
+  }
+  for (let sibling = currentItem.previousElementSibling; sibling; sibling = sibling.previousElementSibling) {
+    if (!(sibling instanceof HTMLElement)) continue;
+    const target = findFocusTarget(sibling);
+    if (target) {
+      target.focus();
+      return;
+    }
+  }
 }
 
 /**

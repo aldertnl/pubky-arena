@@ -6,6 +6,7 @@ import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
 import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
 import { usePostHeaderVisibility } from '@/hooks/usePostHeaderVisibility/usePostHeaderVisibility';
 import { usePostNavigation } from '@/hooks/usePostNavigation/usePostNavigation';
+import { useRemoveDeletedPost } from '@/hooks/useRemoveDeletedPost/useRemoveDeletedPost';
 import { resetViewport, setMobileViewport } from '@/test-utils/viewport';
 import { PostMain } from './PostMain';
 import { PostMainLayoutProvider } from './PostMainLayoutContext';
@@ -13,9 +14,13 @@ import { PostMainLayoutProvider } from './PostMainLayoutContext';
 // Use vi.hoisted to define mock functions before vi.mock calls (which are hoisted)
 const { mockPostHeader } = vi.hoisted(() => ({
   mockPostHeader: vi.fn(
-    ({ postId }: { postId: string; size?: 'normal' | 'large'; timeAgoPlacement?: 'top-right' | 'bottom-left' }) => (
-      <div data-testid="post-header">PostHeader {postId}</div>
-    ),
+    ({
+      postId,
+    }: {
+      postId: string;
+      size?: 'normal' | 'large' | 'extraLarge';
+      timeAgoPlacement?: 'top-right' | 'bottom-left';
+    }) => <div data-testid="post-header">PostHeader {postId}</div>,
   ),
 }));
 
@@ -177,6 +182,16 @@ vi.mock('@/organisms/PostContent/PostContent', () => {
   };
 });
 
+vi.mock('./PostMainListRow/PostMainListRow', () => {
+  return {
+    PostMainListRow: ({ postId, showFullContent }: { postId: string; showFullContent: boolean }) => (
+      <div data-testid="post-main-list-row" data-show-full-content={String(showFullContent)}>
+        {postId}
+      </div>
+    ),
+  };
+});
+
 vi.mock('@/organisms/PostHeader/PostHeader', () => {
   return {
     PostHeader: ({
@@ -185,7 +200,7 @@ vi.mock('@/organisms/PostHeader/PostHeader', () => {
       timeAgoPlacement,
     }: {
       postId: string;
-      size?: 'normal' | 'large';
+      size?: 'normal' | 'large' | 'extraLarge';
       timeAgoPlacement?: 'top-right' | 'bottom-left';
     }) => mockPostHeader({ postId, size, timeAgoPlacement }),
   };
@@ -202,15 +217,29 @@ vi.mock('@/organisms/PostTagsPanel/PostTagsPanel', () => {
 });
 
 // Stub molecules used by PostMain
-vi.mock('@/molecules/PostDeleted/PostDeleted', () => {
+vi.mock('@/molecules/PostUnavailable/PostUnavailable', () => {
   return {
-    PostDeleted: () => <div data-testid="post-deleted">PostDeleted</div>,
-  };
-});
-
-vi.mock('@/molecules/PostMissing/PostMissing', () => {
-  return {
-    PostMissing: () => <div data-testid="post-missing">PostMissing</div>,
+    PostUnavailable: ({
+      message,
+      onRemove,
+      isRemoving,
+      removeDataCy,
+    }: {
+      message: string;
+      onRemove?: () => void;
+      isRemoving?: boolean;
+      removeDataCy?: string;
+    }) => (
+      <div
+        data-testid="post-unavailable"
+        data-message={message}
+        data-remove-cy={removeDataCy}
+        data-is-removing={String(isRemoving)}
+      >
+        PostUnavailable
+        {onRemove ? <button onClick={onRemove}>Remove unavailable post</button> : null}
+      </div>
+    ),
   };
 });
 
@@ -276,6 +305,14 @@ vi.mock('@/hooks/usePostNavigation/usePostNavigation', () => ({
   usePostNavigation: vi.fn(),
 }));
 
+vi.mock('@/hooks/useRemoveDeletedPost/useRemoveDeletedPost', () => ({
+  useRemoveDeletedPost: vi.fn(() => ({
+    canRemove: false,
+    isRemoving: false,
+    remove: vi.fn(),
+  })),
+}));
+
 describe('PostMain', () => {
   const mockUseIsMobile = vi.mocked(useIsMobile);
   const mockHandlePostClick = vi.fn();
@@ -285,6 +322,11 @@ describe('PostMain', () => {
     vi.clearAllMocks();
     mockPostHeader.mockClear();
     mockUseIsMobile.mockReturnValue(false);
+    vi.mocked(useRemoveDeletedPost).mockReturnValue({
+      canRemove: false,
+      isRemoving: false,
+      remove: vi.fn(),
+    });
     vi.mocked(usePostNavigation).mockReturnValue({
       getPostHref: vi.fn(() => '/post/author/post-abc'),
       navigateToPost: vi.fn(),
@@ -317,6 +359,12 @@ describe('PostMain', () => {
     expect(screen.getByTestId('clickable-tags-list')).toHaveTextContent('ClickableTagsList post-123');
     expect(screen.getByTestId('clickable-tags-list')).toHaveAttribute('data-show-add-button', 'true');
     expect(screen.getByTestId('post-actions')).toBeInTheDocument();
+  });
+
+  it('does not initialize unavailable-post removal for an available post', () => {
+    render(<PostMain postId="post-123" />);
+
+    expect(useRemoveDeletedPost).not.toHaveBeenCalled();
   });
 
   it('invokes navigation click handler when clickable area is clicked', () => {
@@ -369,7 +417,7 @@ describe('PostMain', () => {
     expect(connector).toHaveAttribute('data-variant', POST_THREAD_CONNECTOR_VARIANTS.REGULAR);
   });
 
-  it('renders PostDeleted when post is deleted', () => {
+  it('renders PostUnavailable when post is deleted', () => {
     vi.mocked(usePostDetails).mockReturnValue({
       postDetails: {
         id: 'post-deleted',
@@ -386,14 +434,68 @@ describe('PostMain', () => {
 
     render(<PostMain postId="post-deleted" />);
 
-    expect(screen.getByTestId('post-deleted')).toBeInTheDocument();
+    const unavailable = screen.getByTestId('post-unavailable');
+    expect(unavailable).toHaveAttribute('data-message', 'This post has been deleted by its author.');
+    expect(unavailable).toHaveAttribute('data-remove-cy', 'post-deleted-remove-btn');
     expect(screen.queryByTestId('post-header')).not.toBeInTheDocument();
     expect(screen.queryByTestId('post-content')).not.toBeInTheDocument();
     expect(screen.queryByTestId('clickable-tags-list')).not.toBeInTheDocument();
     expect(screen.queryByTestId('post-actions')).not.toBeInTheDocument();
   });
 
-  it('renders PostMissing when the post is not found (settled null)', () => {
+  it('passes the remove action to a removable deleted post', () => {
+    const remove = vi.fn().mockResolvedValue(true);
+    vi.mocked(useRemoveDeletedPost).mockReturnValue({
+      canRemove: true,
+      isRemoving: false,
+      remove,
+    });
+    vi.mocked(usePostDetails).mockReturnValue({
+      postDetails: {
+        id: 'post-deleted',
+        indexed_at: 0,
+        kind: 'short',
+        uri: 'pubky://test-user/pub/pubky.app/posts/post-deleted',
+        content: '[DELETED]',
+        attachments: [],
+        is_moderated: false,
+        is_blurred: false,
+      },
+      isLoading: false,
+    });
+
+    render(<PostMain postId="post-deleted" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove unavailable post' }));
+
+    expect(remove).toHaveBeenCalledTimes(1);
+  });
+
+  it('passes the pending state to a removable deleted post', () => {
+    vi.mocked(useRemoveDeletedPost).mockReturnValue({
+      canRemove: true,
+      isRemoving: true,
+      remove: vi.fn(),
+    });
+    vi.mocked(usePostDetails).mockReturnValue({
+      postDetails: {
+        id: 'post-deleted',
+        indexed_at: 0,
+        kind: 'short',
+        uri: 'pubky://test-user/pub/pubky.app/posts/post-deleted',
+        content: '[DELETED]',
+        attachments: [],
+        is_moderated: false,
+        is_blurred: false,
+      },
+      isLoading: false,
+    });
+
+    render(<PostMain postId="post-deleted" />);
+
+    expect(screen.getByTestId('post-unavailable')).toHaveAttribute('data-is-removing', 'true');
+  });
+
+  it('renders PostUnavailable when the post is not found (settled null)', () => {
     vi.mocked(usePostDetails).mockReturnValue({
       postDetails: null,
       isLoading: false,
@@ -401,13 +503,64 @@ describe('PostMain', () => {
 
     render(<PostMain postId="post-missing" />);
 
-    expect(screen.getByTestId('post-missing')).toBeInTheDocument();
-    expect(screen.queryByTestId('post-deleted')).not.toBeInTheDocument();
+    const unavailable = screen.getByTestId('post-unavailable');
+    expect(unavailable).toHaveAttribute('data-message', 'Post not found.');
+    expect(unavailable).toHaveAttribute('data-remove-cy', 'post-missing-remove-btn');
     expect(screen.queryByTestId('post-header')).not.toBeInTheDocument();
     expect(screen.queryByTestId('post-content')).not.toBeInTheDocument();
   });
 
-  it('does not render PostMissing while the post is still loading (null + loading)', () => {
+  it('passes the remove action to a removable missing post', () => {
+    const remove = vi.fn().mockResolvedValue(true);
+    vi.mocked(useRemoveDeletedPost).mockReturnValue({
+      canRemove: true,
+      isRemoving: false,
+      remove,
+    });
+    vi.mocked(usePostDetails).mockReturnValue({
+      postDetails: null,
+      isLoading: false,
+    });
+
+    render(<PostMain postId="post-missing" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove unavailable post' }));
+
+    expect(remove).toHaveBeenCalledTimes(1);
+  });
+
+  it('passes the pending state to a removable missing post', () => {
+    vi.mocked(useRemoveDeletedPost).mockReturnValue({
+      canRemove: true,
+      isRemoving: true,
+      remove: vi.fn(),
+    });
+    vi.mocked(usePostDetails).mockReturnValue({
+      postDetails: null,
+      isLoading: false,
+    });
+
+    render(<PostMain postId="post-missing" />);
+
+    expect(screen.getByTestId('post-unavailable')).toHaveAttribute('data-is-removing', 'true');
+  });
+
+  it('does not pass a remove action when a missing post is not removable', () => {
+    vi.mocked(useRemoveDeletedPost).mockReturnValue({
+      canRemove: false,
+      isRemoving: false,
+      remove: vi.fn(),
+    });
+    vi.mocked(usePostDetails).mockReturnValue({
+      postDetails: null,
+      isLoading: false,
+    });
+
+    render(<PostMain postId="post-missing" />);
+
+    expect(screen.queryByRole('button', { name: 'Remove unavailable post' })).not.toBeInTheDocument();
+  });
+
+  it('does not render PostUnavailable while the post is still loading (null + loading)', () => {
     vi.mocked(usePostDetails).mockReturnValue({
       postDetails: null,
       isLoading: true,
@@ -415,13 +568,13 @@ describe('PostMain', () => {
 
     render(<PostMain postId="post-loading" />);
 
-    expect(screen.queryByTestId('post-missing')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('post-unavailable')).not.toBeInTheDocument();
   });
 
   it('renders normal content when post is not deleted', () => {
     render(<PostMain postId="post-normal" />);
 
-    expect(screen.queryByTestId('post-deleted')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('post-unavailable')).not.toBeInTheDocument();
     expect(screen.getByTestId('post-header')).toBeInTheDocument();
     expect(screen.getByTestId('post-content')).toBeInTheDocument();
     expect(screen.getByTestId('clickable-tags-list')).toBeInTheDocument();
@@ -541,7 +694,7 @@ describe('PostMain', () => {
     expect(screen.getByTestId('post-content')).toBeInTheDocument();
   });
 
-  it('passes large size and bottom-left timestamp placement for side tags layout', () => {
+  it('passes extraLarge size and bottom-left timestamp placement for side tags layout', () => {
     render(
       <PostMainLayoutProvider tagsLayout="side">
         <PostMain postId="post-side-1" />
@@ -550,7 +703,7 @@ describe('PostMain', () => {
 
     expect(mockPostHeader).toHaveBeenCalledWith({
       postId: 'post-side-1',
-      size: 'large',
+      size: 'extraLarge',
       timeAgoPlacement: 'bottom-left',
     });
   });
@@ -647,6 +800,24 @@ describe('PostMain', () => {
     });
   });
 
+  it('falls back to inline layout on mobile when the inherited layout is list', () => {
+    mockUseIsMobile.mockReturnValue(true);
+
+    render(
+      <PostMainLayoutProvider tagsLayout="list">
+        <PostMain postId="post-mobile-list-1" />
+      </PostMainLayoutProvider>,
+    );
+
+    expect(screen.getByTestId('clickable-tags-list')).toBeInTheDocument();
+    expect(screen.queryByTestId('post-main-list-row')).not.toBeInTheDocument();
+    expect(mockPostHeader).toHaveBeenCalledWith({
+      postId: 'post-mobile-list-1',
+      size: undefined,
+      timeAgoPlacement: undefined,
+    });
+  });
+
   it('inherits side tags layout from the thread context', () => {
     render(
       <PostMainLayoutProvider tagsLayout="side">
@@ -656,16 +827,54 @@ describe('PostMain', () => {
 
     expect(mockPostHeader).toHaveBeenCalledWith({
       postId: 'post-context-side-1',
-      size: 'large',
+      size: 'extraLarge',
       timeAgoPlacement: 'bottom-left',
     });
     expect(screen.getByTestId('post-content')).toHaveAttribute('data-text-class-name', 'text-xl leading-7');
+  });
+
+  it('renders the compact list row for list tags layout', () => {
+    render(
+      <PostMainLayoutProvider tagsLayout="list">
+        <PostMain postId="post-list-1" />
+      </PostMainLayoutProvider>,
+    );
+
+    expect(screen.getByTestId('post-main-list-row')).toHaveTextContent('post-list-1');
+    expect(screen.getByTestId('post-main-list-row')).toHaveAttribute('data-show-full-content', 'false');
+    expect(screen.queryByTestId('post-content')).not.toBeInTheDocument();
+    expect(mockPostHeader).not.toHaveBeenCalled();
+  });
+
+  it('passes full content mode to the list row only for non-reply posts', () => {
+    render(
+      <PostMainLayoutProvider tagsLayout="list">
+        <PostMain postId="post-list-full-1" showFullContentInListLayout />
+      </PostMainLayoutProvider>,
+    );
+
+    expect(screen.getByTestId('post-main-list-row')).toHaveAttribute('data-show-full-content', 'true');
+  });
+
+  it('keeps reply rows compact even when full list content is enabled', () => {
+    render(
+      <PostMainLayoutProvider tagsLayout="list">
+        <PostMain postId="post-list-reply-1" isReply showFullContentInListLayout />
+      </PostMainLayoutProvider>,
+    );
+
+    expect(screen.getByTestId('post-main-list-row')).toHaveAttribute('data-show-full-content', 'false');
   });
 });
 
 describe('PostMain - Tag Expansion', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useRemoveDeletedPost).mockReturnValue({
+      canRemove: false,
+      isRemoving: false,
+      remove: vi.fn(),
+    });
   });
 
   it('does not show PostTagsPanel by default', () => {
@@ -720,6 +929,11 @@ describe('PostMain - Snapshots', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useIsMobile).mockReturnValue(false);
+    vi.mocked(useRemoveDeletedPost).mockReturnValue({
+      canRemove: false,
+      isRemoving: false,
+      remove: vi.fn(),
+    });
     vi.mocked(usePostNavigation).mockReturnValue({
       getPostHref: vi.fn(() => '/post/author/post-abc'),
       navigateToPost: vi.fn(),
@@ -730,9 +944,6 @@ describe('PostMain - Snapshots', () => {
       handlePostKeyDown: vi.fn(),
     });
 
-    // Reset mocked hook return values that are overridden in earlier (non-snapshot) tests.
-    // Without this, running the full suite (e.g. CI `test:coverage`) can leak mocked
-    // implementations into snapshot tests and cause snapshot drift.
     vi.mocked(usePostHeaderVisibility).mockReturnValue({
       showRepostHeader: false,
       shouldShowPostHeader: true,
@@ -789,6 +1000,30 @@ describe('PostMain - Snapshots', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
+  it('matches snapshot with removable deleted post', () => {
+    vi.mocked(useRemoveDeletedPost).mockReturnValue({
+      canRemove: true,
+      isRemoving: false,
+      remove: vi.fn(),
+    });
+    vi.mocked(usePostDetails).mockReturnValue({
+      postDetails: {
+        id: 'post-deleted-removable',
+        indexed_at: 0,
+        kind: 'short',
+        uri: 'pubky://test-user/pub/pubky.app/posts/post-deleted-removable',
+        content: '[DELETED]',
+        attachments: [],
+        is_moderated: false,
+        is_blurred: false,
+      },
+      isLoading: false,
+    });
+
+    const { container } = render(<PostMain postId="post-deleted-removable" />);
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
   it('matches snapshot for simple repost by current user (no content)', () => {
     const mockUsePostHeaderVisibility = vi.mocked(usePostHeaderVisibility);
     mockUsePostHeaderVisibility.mockReturnValue({
@@ -826,6 +1061,11 @@ describe('PostMain - Snapshots', () => {
 describe('PostMain - Mobile Snapshots', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useRemoveDeletedPost).mockReturnValue({
+      canRemove: false,
+      isRemoving: false,
+      remove: vi.fn(),
+    });
 
     // Replicate the snapshot describe's mock-state setup so mobile snapshots stay stable.
     vi.mocked(usePostNavigation).mockReturnValue({

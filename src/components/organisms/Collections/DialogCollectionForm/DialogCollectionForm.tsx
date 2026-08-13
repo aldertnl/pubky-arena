@@ -1,14 +1,14 @@
 'use client';
 
 import { type ReactNode } from 'react';
-import { Image as ImageIcon, Trash2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { type UseFormReturn, useWatch } from 'react-hook-form';
+import { Grip, Image as ImageIcon, LayoutGrid, Rows4, Trash2 } from 'lucide-react';
+import { Controller, type UseFormReturn, useWatch } from 'react-hook-form';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/atoms/Dialog/Dialog';
 import { Label } from '@/atoms/Label/Label';
 import { Typography } from '@/atoms/Typography/Typography';
+import { COLLECTION_LAYOUT } from '@/config/collections';
 import { FORM_LABEL_CLASSES } from '@/config/forms';
 import { IMAGE_MAX_RAW_SIZE } from '@/config/images';
 import { COLLECTION_DESCRIPTION_MAX_CHARACTER_LENGTH, COLLECTION_NAME_MAX_CHARACTER_LENGTH } from '@/config/posts';
@@ -17,6 +17,7 @@ import {
   CREATE_COLLECTION_FORM_FIELDS,
   type CreateCollectionFormData,
 } from '@/hooks/useCreateCollection/useCreateCollection.types';
+import { cn } from '@/libs/utils/utils';
 import { ControlledInputField } from '@/molecules/ControlledInputField/ControlledInputField';
 
 /** Truncates long placeholder/value text with an ellipsis (matches Figma dashed inputs). */
@@ -32,6 +33,8 @@ type DialogCollectionFormProps = {
   title: string;
   /** Submit button label when idle (`t('save')`). */
   submitLabel: string;
+  /** Label above the Grid/List/Visual selector. */
+  layoutLabel: string;
   /** RHF form + cover picker from a `use{Create,Edit}Collection` hook. */
   form: UseFormReturn<CreateCollectionFormData>;
   cover: UseCoverImagePickerResult;
@@ -79,6 +82,7 @@ export function DialogCollectionForm({
   onOpenChange,
   title,
   submitLabel,
+  layoutLabel,
   form,
   cover,
   onSubmit,
@@ -88,7 +92,6 @@ export function DialogCollectionForm({
   disableOpenAutoFocus = false,
   children,
 }: DialogCollectionFormProps) {
-  const t = useTranslations('collections.new');
   const {
     previewUrl: coverPreviewUrl,
     error: coverError,
@@ -104,12 +107,17 @@ export function DialogCollectionForm({
   // never made it into form state, so saving would commit unchanged content
   // while the user is still staring at a validation error.
   const canSubmit = !!watchedName.trim() && !areInputsDisabled && !coverError;
+  const layoutOptions = [
+    { value: COLLECTION_LAYOUT.GRID, label: 'Grid', icon: Grip },
+    { value: COLLECTION_LAYOUT.LIST, label: 'List', icon: Rows4 },
+    { value: COLLECTION_LAYOUT.VISUAL, label: 'Visual', icon: LayoutGrid },
+  ];
 
   const coverErrorMessage =
     coverError === 'invalid-type'
-      ? t('coverImageInvalid')
+      ? 'Cover image must be an image file.'
       : coverError === 'too-large'
-        ? t('coverImageTooLarge', { maxSize: `${Math.round(IMAGE_MAX_RAW_SIZE / (1024 * 1024))}MB` })
+        ? `Cover image is too large. Maximum size is ${`${Math.round(IMAGE_MAX_RAW_SIZE / (1024 * 1024))}MB`}.`
         : null;
 
   return (
@@ -127,32 +135,76 @@ export function DialogCollectionForm({
           <ControlledInputField
             name={CREATE_COLLECTION_FORM_FIELDS.NAME}
             control={form.control}
-            label={t('nameLabel')}
-            placeholder={t('namePlaceholder')}
+            label={'Title'}
+            placeholder={'Name your collection'}
             maxLength={COLLECTION_NAME_MAX_CHARACTER_LENGTH}
             variant="dashed"
             size="lg"
             disabled={areInputsDisabled}
             className={COLLECTION_FORM_INPUT_WRAPPER_CLASS}
             inputClassName={COLLECTION_FORM_INPUT_CLASS}
+            dataCy="collection-form-name-input"
           />
 
           <ControlledInputField
             name={CREATE_COLLECTION_FORM_FIELDS.DESCRIPTION}
             control={form.control}
-            label={t('descriptionLabel')}
-            placeholder={t('descriptionPlaceholder')}
+            label={'Description'}
+            placeholder={'What will people find here?'}
             maxLength={COLLECTION_DESCRIPTION_MAX_CHARACTER_LENGTH}
             variant="dashed"
             size="lg"
             disabled={areInputsDisabled}
             className={COLLECTION_FORM_INPUT_WRAPPER_CLASS}
             inputClassName={COLLECTION_FORM_INPUT_CLASS}
+            dataCy="collection-form-description-input"
           />
 
           <Container overrideDefaults className="flex flex-col gap-2">
+            <Label id="collection-layout-label" className={FORM_LABEL_CLASSES}>
+              {layoutLabel}
+            </Label>
+            <Controller
+              name={CREATE_COLLECTION_FORM_FIELDS.LAYOUT}
+              control={form.control}
+              render={({ field }) => (
+                <Container
+                  overrideDefaults
+                  role="radiogroup"
+                  aria-labelledby="collection-layout-label"
+                  className="flex w-full border-b border-border"
+                >
+                  {layoutOptions.map(({ value, label, icon: Icon }) => {
+                    const selected = field.value === value;
+
+                    return (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant="ghost"
+                        role="radio"
+                        aria-checked={selected}
+                        aria-label={label}
+                        disabled={areInputsDisabled}
+                        onClick={() => field.onChange(value)}
+                        className={cn(
+                          '-mb-px h-12 flex-1 rounded-none !border-x-0 !border-t-0 !border-b !border-solid bg-transparent shadow-none',
+                          selected ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground',
+                        )}
+                        data-cy={`collection-layout-${value}`}
+                      >
+                        <Icon className="size-5" />
+                      </Button>
+                    );
+                  })}
+                </Container>
+              )}
+            />
+          </Container>
+
+          <Container overrideDefaults className="flex flex-col gap-2">
             <Label htmlFor={coverInputId} className={FORM_LABEL_CLASSES}>
-              {t('backgroundLabel')}
+              {'Background'}
             </Label>
             <Container
               overrideDefaults
@@ -168,11 +220,11 @@ export function DialogCollectionForm({
                   className="rounded-full"
                   onClick={removeCover}
                   disabled={areInputsDisabled}
-                  aria-label={t('removeImage')}
+                  aria-label={'Remove image'}
                 >
                   <Trash2 className="size-4" />
                   <Typography as="span" overrideDefaults>
-                    {t('removeImage')}
+                    {'Remove image'}
                   </Typography>
                 </Button>
               ) : (
@@ -183,11 +235,11 @@ export function DialogCollectionForm({
                   className="rounded-full"
                   onClick={chooseCover}
                   disabled={areInputsDisabled}
-                  aria-label={t('addImage')}
+                  aria-label={'Add image'}
                 >
                   <ImageIcon className="size-4" />
                   <Typography as="span" overrideDefaults>
-                    {t('addImage')}
+                    {'Add image'}
                   </Typography>
                 </Button>
               )}
@@ -210,8 +262,14 @@ export function DialogCollectionForm({
         </Container>
 
         <DialogFooter>
-          <Button size="lg" onClick={onSubmit} disabled={!canSubmit} className="order-1 sm:order-2">
-            {isSaving ? t('saving') : submitLabel}
+          <Button
+            size="lg"
+            onClick={onSubmit}
+            disabled={!canSubmit}
+            className="order-1 sm:order-2"
+            data-cy="collection-form-save-btn"
+          >
+            {isSaving ? 'Saving...' : submitLabel}
           </Button>
           <Button
             variant="outline"
@@ -220,7 +278,7 @@ export function DialogCollectionForm({
             disabled={isSaving}
             className="order-2 sm:order-1"
           >
-            {t('cancel')}
+            {'Cancel'}
           </Button>
         </DialogFooter>
       </DialogContent>

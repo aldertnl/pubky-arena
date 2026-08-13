@@ -1,10 +1,11 @@
 'use client';
 
 import { StickyNote } from 'lucide-react';
-import { useFormatter, useTranslations } from 'next-intl';
 import { Container } from '@/atoms/Container/Container';
 import { Typography } from '@/atoms/Typography/Typography';
 import { cn } from '@/libs/utils/utils';
+
+const compactNumber = new Intl.NumberFormat('en-US', { notation: 'compact' });
 
 interface CollectionCountBadgeProps {
   count: number;
@@ -36,15 +37,14 @@ interface CollectionCountBadgeProps {
  * header row.
  */
 export function CollectionCountBadge({ count, tone = 'on-card' }: CollectionCountBadgeProps) {
-  const format = useFormatter();
-  const t = useTranslations('collections');
   const isOnMuted = tone === 'on-muted';
-  const compactCount = format.number(count, { notation: 'compact' });
-  const countLabel = t('postCount', { count });
+  const compactCount = compactNumber.format(count);
+  const countLabel = count === 1 ? 'post' : 'posts';
 
   return (
     <Container
       overrideDefaults
+      data-cy="collection-count-badge"
       aria-label={`${compactCount} ${countLabel}`}
       className={cn(
         'flex h-6 shrink-0 items-center justify-center gap-1 rounded-full px-2 py-1 text-muted-foreground',

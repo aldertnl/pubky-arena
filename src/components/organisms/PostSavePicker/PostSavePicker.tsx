@@ -2,7 +2,6 @@
 
 import { type KeyboardEvent, type ReactNode, useEffect, useState } from 'react';
 import { Bookmark, Check, Library, Loader2, Plus, SquareLibrary } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import {
@@ -142,6 +141,7 @@ function CollectionRow({
     <SavePickerRow
       layout={layout}
       disabled={collection.isUpdating}
+      dataCy="post-save-collection-option"
       onActivate={() => void onToggleCollection(collection.id)}
     >
       <Library className="size-4" />
@@ -168,7 +168,6 @@ function SavePickerContent({
   toggleCollection,
   createCollectionWithPost,
 }: SavePickerContentProps) {
-  const t = useTranslations('postSave');
   const [newCollectionName, setNewCollectionName] = useState('');
   const canCreate = newCollectionName.trim().length > 0 && !isCreatingCollection;
 
@@ -210,7 +209,7 @@ function SavePickerContent({
             overrideDefaults
             className={cn('min-w-0 flex-1 truncate', layout === 'sheet' && 'text-left')}
           >
-            {t('bookmarks')}
+            {'Bookmarks'}
           </Typography>
           <SaveTargetIcon isSaved={isBookmarked} isBusy={isBookmarkBusy} />
         </SavePickerRow>
@@ -219,7 +218,7 @@ function SavePickerContent({
           <Container overrideDefaults className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
             <Typography overrideDefaults className="text-base font-medium">
-              {t('loadingCollections')}
+              {'Loading collections...'}
             </Typography>
           </Container>
         ) : (
@@ -237,7 +236,7 @@ function SavePickerContent({
       {layout === 'dropdown' ? <DropdownMenuSeparator /> : <Container overrideDefaults className="h-px bg-muted" />}
 
       <Container overrideDefaults className={cn('flex flex-col gap-2', layout === 'dropdown' && 'pt-1')}>
-        <Label className="text-xs tracking-widest text-muted-foreground uppercase">{t('newCollection')}</Label>
+        <Label className="text-xs tracking-widest text-muted-foreground uppercase">{'New Collection'}</Label>
         <Container
           overrideDefaults
           className="flex items-center gap-2 rounded-md border border-dashed border-input px-4 py-3"
@@ -247,9 +246,10 @@ function SavePickerContent({
             onChange={(event) => setNewCollectionName(event.target.value)}
             onKeyDown={handleInputKeyDown}
             maxLength={COLLECTION_NAME_MAX_CHARACTER_LENGTH}
-            placeholder={t('collectionNamePlaceholder')}
+            placeholder={'Collection name'}
             className="h-auto border-none p-0 shadow-none"
             disabled={isCreatingCollection}
+            data-cy="post-save-new-collection-input"
           />
           <Button
             type="button"
@@ -258,7 +258,8 @@ function SavePickerContent({
             className="size-6"
             disabled={!canCreate}
             onClick={() => void handleCreate()}
-            aria-label={t('createCollection')}
+            aria-label={'Create collection'}
+            data-cy="post-save-new-collection-create-btn"
           >
             {isCreatingCollection ? <Loader2 className="animate-spin" /> : <Plus />}
           </Button>
@@ -269,7 +270,6 @@ function SavePickerContent({
 }
 
 export function PostSavePicker({ postId, buttonClassName }: PostSavePickerProps) {
-  const t = useTranslations('postSave');
   const isMobile = useIsMobile();
   const { requireAuth } = useRequireAuth();
   const feed = useTimelineFeedContext();
@@ -312,7 +312,7 @@ export function PostSavePicker({ postId, buttonClassName }: PostSavePickerProps)
       // `w-10` keeps the icon-only trigger the same width as sibling action
       // buttons in `PostActionsBar` (which carry an icon + count and grow naturally).
       className={cn(buttonClassName, 'w-10')}
-      aria-label={t('open')}
+      aria-label={'Save post'}
       data-cy="post-bookmark-btn"
     >
       <SaveTriggerIcon state={triggerIconState} />
@@ -336,7 +336,7 @@ export function PostSavePicker({ postId, buttonClassName }: PostSavePickerProps)
         <SheetTrigger asChild>{trigger}</SheetTrigger>
         <SheetContent side="bottom" aria-describedby={undefined} className="rounded-t-xl border-border bg-popover">
           <SheetHeader>
-            <SheetTitle>{t('title')}</SheetTitle>
+            <SheetTitle>{'Save post'}</SheetTitle>
           </SheetHeader>
           <SavePickerContent layout="sheet" {...contentProps} />
         </SheetContent>

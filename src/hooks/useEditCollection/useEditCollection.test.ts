@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { COLLECTION_LAYOUT, type CollectionLayout } from '@/config/collections';
 import { CREATE_COLLECTION_FORM_FIELDS } from '@/hooks/useCreateCollection/useCreateCollection.types';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
 import { Err } from '@/libs/error/error.factories';
@@ -25,17 +26,6 @@ const mocks = vi.hoisted(() => ({
     reset: vi.fn(),
   },
 }));
-
-const translations: Record<string, string> = {
-  'collections.new.nameRequired': 'Collection title is required.',
-  'collections.edit.updated': 'Collection updated',
-  'collections.edit.updateFailed': 'Failed to update collection.',
-  'toast.file.imageTooLargeGif':
-    'This GIF exceeds the {maxSize} upload limit and cannot be compressed. Please use a smaller GIF.',
-  'toast.success': 'Success',
-  'toast.error': 'Error',
-};
-
 vi.mock('@/controllers/post/post', () => ({
   PostController: {
     commitEditCollection: (...args: unknown[]) => mocks.commitEditCollection(...args),
@@ -66,23 +56,18 @@ vi.mock('@/stores/localFiles/localFiles.store', () => ({
     },
   ),
 }));
-
-vi.mock('next-intl', () => ({
-  useTranslations:
-    (namespace: string) =>
-    (key: string, values?: Record<string, string>): string =>
-      Object.entries(values ?? {}).reduce(
-        (msg, [n, v]) => msg.replace(`{${n}}`, v),
-        translations[`${namespace}.${key}`] ?? key,
-      ),
-}));
-
-const collectionContent = (overrides?: { name?: string; description?: string; cover_image?: string | null }) =>
+const collectionContent = (overrides?: {
+  name?: string;
+  description?: string;
+  cover_image?: string | null;
+  layout?: CollectionLayout;
+}) =>
   JSON.stringify({
     name: overrides?.name ?? 'Reading list',
     description: overrides?.description ?? 'Top picks',
     items: [],
     cover_image: overrides?.cover_image ?? null,
+    layout: overrides?.layout,
   });
 
 const COMPOSITE_ID = 'pk:author/posts/c1';
@@ -98,15 +83,38 @@ describe('useEditCollection', () => {
   });
 
   it('prefills the form once the collection envelope loads', async () => {
+    mocks.postDetails = { content: collectionContent({ layout: COLLECTION_LAYOUT.LIST }) };
     const { result } = renderHook(() => useEditCollection({ compositeCollectionId: COMPOSITE_ID }));
 
     await waitFor(() => {
       expect(result.current.form.getValues()).toEqual({
         [CREATE_COLLECTION_FORM_FIELDS.NAME]: 'Reading list',
         [CREATE_COLLECTION_FORM_FIELDS.DESCRIPTION]: 'Top picks',
+        [CREATE_COLLECTION_FORM_FIELDS.LAYOUT]: COLLECTION_LAYOUT.LIST,
       });
     });
     expect(result.current.isLoaded).toBe(true);
+  });
+
+  it('prefills the Visual layout and keeps it on submit when untouched', async () => {
+    mocks.postDetails = { content: collectionContent({ layout: COLLECTION_LAYOUT.VISUAL }) };
+    mocks.commitEditCollection.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useEditCollection({ compositeCollectionId: COMPOSITE_ID }));
+
+    await waitFor(() => {
+      expect(result.current.form.getValues()[CREATE_COLLECTION_FORM_FIELDS.LAYOUT]).toBe(COLLECTION_LAYOUT.VISUAL);
+    });
+
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.submit();
+    });
+
+    expect(ok).toBe(true);
+    expect(mocks.commitEditCollection).toHaveBeenCalledWith(
+      expect.objectContaining({ layout: COLLECTION_LAYOUT.VISUAL }),
+    );
   });
 
   it('submits with the original cover URL when the user does not touch the picker', async () => {
@@ -131,6 +139,7 @@ describe('useEditCollection', () => {
       name: 'New name',
       description: 'Top picks',
       coverImage: 'pubky://author/files/cover-1',
+      layout: COLLECTION_LAYOUT.GRID,
     });
     // No new file picked → store should NOT be touched (CDN already has it).
     expect(mocks.setCollectionCover).not.toHaveBeenCalled();
@@ -286,6 +295,38 @@ describe('useEditCollection', () => {
     expect(mocks.commitEditCollection).not.toHaveBeenCalled();
   });
 
+  it('resets to the just-committed envelope when the live query propagates BEFORE close (stale reopen regression)', async () => {
+    // Regression (QA find): the local-first commit propagates the committed
+    // envelope through the Dexie live query while the save is still awaited,
+    // so by the time the dialog closes, the `reset` the close handler captured
+    // belongs to the pre-save render. Reading the render-scope values there
+    // wrote the page-load layout back into the form, and the prefill effect
+    // never re-fired (its deps had already changed while the guard was armed) —
+    // so reopening the dialog highlighted the old layout until a page refresh.
+    mocks.postDetails = { content: collectionContent({ layout: COLLECTION_LAYOUT.GRID }) };
+    const { result, rerender } = renderHook(() => useEditCollection({ compositeCollectionId: COMPOSITE_ID }));
+
+    await waitFor(() => {
+      expect(result.current.form.getValues()[CREATE_COLLECTION_FORM_FIELDS.LAYOUT]).toBe(COLLECTION_LAYOUT.GRID);
+    });
+
+    // Capture reset from the pre-save render — this is the closure the dialog's
+    // close handler actually holds when the save resolves.
+    const staleReset = result.current.reset;
+
+    // User picks Visual and saves; the live query emits the committed envelope
+    // before the dialog close runs.
+    act(() => result.current.form.setValue(CREATE_COLLECTION_FORM_FIELDS.LAYOUT, COLLECTION_LAYOUT.VISUAL));
+    await act(async () => {
+      mocks.postDetails = { content: collectionContent({ layout: COLLECTION_LAYOUT.VISUAL }) };
+      rerender();
+    });
+
+    act(() => staleReset());
+
+    expect(result.current.form.getValues()[CREATE_COLLECTION_FORM_FIELDS.LAYOUT]).toBe(COLLECTION_LAYOUT.VISUAL);
+  });
+
   it('re-prefills the form from the latest envelope after reset() — even when the live query updates AFTER close', async () => {
     // Regression: the dialog stays mounted across open/close cycles, so the
     // hook's `hasPrefilledRef` persists. If reset() runs before the post-commit
@@ -305,6 +346,7 @@ describe('useEditCollection', () => {
       expect(result.current.form.getValues()).toEqual({
         [CREATE_COLLECTION_FORM_FIELDS.NAME]: 'Old name',
         [CREATE_COLLECTION_FORM_FIELDS.DESCRIPTION]: 'Old description',
+        [CREATE_COLLECTION_FORM_FIELDS.LAYOUT]: COLLECTION_LAYOUT.GRID,
       });
     });
 
@@ -323,6 +365,7 @@ describe('useEditCollection', () => {
       expect(result.current.form.getValues()).toEqual({
         [CREATE_COLLECTION_FORM_FIELDS.NAME]: 'New name',
         [CREATE_COLLECTION_FORM_FIELDS.DESCRIPTION]: 'New description',
+        [CREATE_COLLECTION_FORM_FIELDS.LAYOUT]: COLLECTION_LAYOUT.GRID,
       });
     });
   });

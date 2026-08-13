@@ -207,25 +207,6 @@ describe('PostInputActionBar', () => {
     expect(screen.getByRole('button', { name: 'Post' })).toBeInTheDocument();
   });
 
-  it('does not render character limit when not provided', () => {
-    render(<PostInputActionBar hideArticleButton={false} />);
-
-    expect(screen.queryByText(/^\d+\/\d+$/)).not.toBeInTheDocument();
-  });
-
-  it('renders character limit when provided', () => {
-    render(<PostInputActionBar hideArticleButton={false} characterLimit={{ count: 45, max: 300 }} />);
-
-    expect(screen.getByText('45/300')).toBeInTheDocument();
-  });
-
-  it('uses desktop-only classes for character limit', () => {
-    render(<PostInputActionBar hideArticleButton={false} characterLimit={{ count: 45, max: 300 }} />);
-
-    expect(screen.getByText('45/300')).toHaveClass('hidden');
-    expect(screen.getByText('45/300')).toHaveClass('sm:block');
-  });
-
   it('uses full width root layout', () => {
     const { container } = render(<PostInputActionBar hideArticleButton={false} />);
 

@@ -3,7 +3,6 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMobileAuth } from '@/hooks/useMobileAuth/useMobileAuth';
 import { asOpaque } from '@/test-utils/type-assertions';
-import messages from '../../../../messages/en.json';
 import { SignInContent, SignInFooter } from './SignIn';
 
 // Mock Next.js router
@@ -91,6 +90,18 @@ vi.mock('@/hooks/useMobileAuth/useMobileAuth', () => ({
     onAuthorizeClick: mockOnAuthorizeClick,
   })),
 }));
+
+const resetMobileAuthMock = () => {
+  vi.mocked(useMobileAuth).mockReturnValue({
+    url: 'mock-auth-url',
+    isLoading: false,
+    isExpired: false,
+    fetchUrl: mockFetchUrl,
+    copyAuthUrl: mockCopyAuthUrl,
+    isOpeningRing: false,
+    onAuthorizeClick: mockOnAuthorizeClick,
+  });
+};
 
 // Mock molecules used by SignInContent
 vi.mock('@/molecules/Content/Content', () => {
@@ -251,6 +262,7 @@ describe('SignInContent', () => {
     mockCopyToClipboard.mockClear();
     mockCopyAuthUrl.mockClear();
     resetMockSignInState();
+    resetMobileAuthMock();
   });
 
   afterAll(() => {
@@ -297,8 +309,17 @@ describe('SignInContent', () => {
     const qrImage = images.find((img) => img.getAttribute('src') === '/images/pubky-ring-qr-example.webp');
 
     expect(qrImage).toHaveAttribute('alt', 'Pubky Ring');
-    expect(qrImage).toHaveAttribute('width', '220');
-    expect(qrImage).toHaveAttribute('height', '220');
+    expect(qrImage).toHaveAttribute('width', '176');
+    expect(qrImage).toHaveAttribute('height', '176');
+  });
+
+  it('renders scan illustration beside the QR on desktop', async () => {
+    await act(async () => {
+      render(<SignInContent />);
+    });
+
+    expect(screen.getByTestId('sign-in-qr-card')).toBeInTheDocument();
+    expect(screen.getByAltText('Pubky Ring phone scanning a QR code')).toHaveAttribute('src', '/images/scan.webp');
   });
 
   it('renders logo and button in mobile version', async () => {
@@ -320,21 +341,6 @@ describe('SignInContent', () => {
     expect(logoImage).toHaveAttribute('height', '30');
 
     expect(screen.getByRole('button', { name: /Authorize with Pubky Ring/i })).toBeInTheDocument();
-  });
-
-  it('renders store badge links with expected destinations', async () => {
-    await act(async () => {
-      render(<SignInContent />);
-    });
-
-    const appleStoreLink = screen.getByRole('link', { name: /Apple Store Button Pubky Ring/i });
-    const googlePlayLink = screen.getByRole('link', { name: /Google Store Button Pubky Ring/i });
-
-    expect(appleStoreLink).toHaveAttribute('href', 'https://apps.apple.com/us/app/pubky-ring/id6739356756');
-    expect(googlePlayLink).toHaveAttribute('href', 'https://play.google.com/store/apps/details?id=to.pubky.ring');
-
-    expect(screen.getByAltText('Apple Store Button Pubky Ring')).toHaveAttribute('src', '/images/badge-apple.webp');
-    expect(screen.getByAltText('Google Store Button Pubky Ring')).toHaveAttribute('src', '/images/badge-android.webp');
   });
 
   it('calls mobile authorize handler when button is tapped', async () => {
@@ -447,7 +453,7 @@ describe('SignInContent', () => {
     expect(mockCopyAuthUrl).toHaveBeenCalled();
     expect(toast).toHaveBeenCalledWith({
       variant: 'error',
-      description: messages.toast.copy.copyFailedDesc,
+      description: 'Could not copy to clipboard',
     });
   });
 
@@ -494,6 +500,20 @@ describe('SignInContent', () => {
   });
 });
 
+describe('SignInContent - Snapshots', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetMockSignInState();
+    resetMobileAuthMock();
+  });
+
+  it('matches snapshot for the QR sign-in layout', () => {
+    const { container } = render(<SignInContent />);
+
+    expect(container).toMatchSnapshot();
+  });
+});
+
 describe('SignInContent - Progress View', () => {
   const clipboardMock = { writeText: vi.fn().mockResolvedValue(undefined) };
 
@@ -507,6 +527,7 @@ describe('SignInContent - Progress View', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetMockSignInState();
+    resetMobileAuthMock();
   });
 
   it('renders progress view when authUrlResolved is true', async () => {
@@ -516,8 +537,8 @@ describe('SignInContent - Progress View', () => {
       render(<SignInContent />);
     });
 
-    expect(screen.getByText(messages.onboarding.signIn.progressTitle)).toBeInTheDocument();
-    expect(screen.getByText(messages.onboarding.signIn.progressSubtitle)).toBeInTheDocument();
+    expect(screen.getByText('Signing in.')).toBeInTheDocument();
+    expect(screen.getByText('Please wait while your Pubky experience loads.')).toBeInTheDocument();
 
     // Should show all 4 step labels
     expect(screen.getByText('Verifying account')).toBeInTheDocument();

@@ -1,8 +1,7 @@
 import type { ComponentType } from 'react';
-import type { CharacterLimit, PostInputActionSubmitMode } from '../PostInputActionBar/PostInputActionBar.types';
+import type { PostInputActionSubmitMode } from '../PostInputActionBar/PostInputActionBar.types';
 
 export interface PostInputExpandableSectionProps {
-  isExpanded: boolean;
   content: string;
   tags: string[];
   isSubmitting: boolean;
@@ -26,11 +25,4 @@ export interface PostInputExpandableSectionProps {
   onEmojiSelect: (emoji: { native: string }) => void;
   onImageClick?: () => void;
   onArticleClick?: () => void;
-  className?: string;
-  /**
-   * Optional compensation for vertical parent gap (in px) so spacing can animate out
-   * together with height during exit.
-   */
-  parentGapPx?: number;
-  characterLimit?: CharacterLimit;
 }

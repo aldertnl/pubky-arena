@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { COLLECTION_LAYOUT, type CollectionLayout } from '@/config/collections';
 import { DialogEditCollection } from './DialogEditCollection';
 
 const mocks = vi.hoisted(() => ({
@@ -8,28 +9,6 @@ const mocks = vi.hoisted(() => ({
   toast: vi.fn(),
   postDetails: null as { content: string } | null,
 }));
-
-const translations: Record<string, string> = {
-  'collections.edit.title': 'Edit Collection',
-  'collections.edit.save': 'Save changes',
-  'collections.edit.updated': 'Collection updated',
-  'collections.edit.updateFailed': 'Failed to update collection.',
-  'collections.new.nameLabel': 'Title',
-  'collections.new.namePlaceholder': 'Name your collection',
-  'collections.new.descriptionLabel': 'Description',
-  'collections.new.descriptionPlaceholder': 'What will people find here?',
-  'collections.new.backgroundLabel': 'Background',
-  'collections.new.addImage': 'Add image',
-  'collections.new.removeImage': 'Remove image',
-  'collections.new.coverImageInvalid': 'Cover image must be an image file.',
-  'collections.new.coverImageTooLarge': 'Cover image is too large.',
-  'collections.new.nameRequired': 'Collection title is required.',
-  'collections.new.cancel': 'Cancel',
-  'collections.new.saving': 'Saving...',
-  'toast.success': 'Success',
-  'toast.error': 'Error',
-};
-
 vi.mock('@/controllers/post/post', () => ({
   PostController: {
     commitEditCollection: (...args: unknown[]) => mocks.commitEditCollection(...args),
@@ -53,24 +32,20 @@ vi.mock('@/stores/localFiles/localFiles.store', () => ({
     },
   ),
 }));
-
-vi.mock('next-intl', () => ({
-  useTranslations:
-    (namespace: string) =>
-    (key: string, values?: Record<string, string>): string => {
-      const translation = translations[`${namespace}.${key}`] ?? key;
-      return Object.entries(values ?? {}).reduce((msg, [n, v]) => msg.replace(`{${n}}`, v), translation);
-    },
-}));
-
 const COMPOSITE_ID = 'pk:author/posts/c1';
 
-const collectionContent = (overrides?: { name?: string; description?: string; cover_image?: string | null }) =>
+const collectionContent = (overrides?: {
+  name?: string;
+  description?: string;
+  cover_image?: string | null;
+  layout?: CollectionLayout;
+}) =>
   JSON.stringify({
     name: overrides?.name ?? 'Reading list',
     description: overrides?.description ?? 'Top picks',
     items: [],
     cover_image: overrides?.cover_image ?? null,
+    layout: overrides?.layout,
   });
 
 describe('DialogEditCollection', () => {
@@ -96,13 +71,18 @@ describe('DialogEditCollection', () => {
 
   it('prefills the form with the current collection name and description from the envelope', async () => {
     mocks.postDetails = {
-      content: collectionContent({ name: 'Proof of Work', description: 'Bitcoin essays' }),
+      content: collectionContent({
+        name: 'Proof of Work',
+        description: 'Bitcoin essays',
+        layout: COLLECTION_LAYOUT.LIST,
+      }),
     };
     render(<DialogEditCollection open onOpenChange={vi.fn()} compositeCollectionId={COMPOSITE_ID} />);
 
     await waitFor(() => {
       expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe('Proof of Work');
       expect((screen.getByLabelText('Description') as HTMLInputElement).value).toBe('Bitcoin essays');
+      expect(screen.getByRole('radio', { name: 'List' })).toHaveAttribute('aria-checked', 'true');
     });
   });
 
@@ -133,6 +113,7 @@ describe('DialogEditCollection', () => {
         expect.objectContaining({
           compositeCollectionId: COMPOSITE_ID,
           name: 'New name',
+          layout: COLLECTION_LAYOUT.GRID,
         }),
       );
     });

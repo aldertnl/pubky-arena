@@ -1,12 +1,10 @@
 'use client';
-
-import { useTranslations } from 'next-intl';
 import { Card } from '@/atoms/Card/Card';
 import { Container } from '@/atoms/Container/Container';
 import { Typography } from '@/atoms/Typography/Typography';
 import { isArticleContent } from '@/libs/post/articleContent';
 import { isPostDeleted } from '@/libs/utils/utils';
-import { PostDeleted } from '@/molecules/PostDeleted/PostDeleted';
+import { PostUnavailable } from '@/molecules/PostUnavailable/PostUnavailable';
 import { PostArticleDetail } from '@/organisms/PostArticleDetail/PostArticleDetail';
 import { PostMain } from '@/organisms/PostMain/PostMain';
 import { PostMainLayoutProvider } from '@/organisms/PostMain/PostMainLayoutContext';
@@ -25,7 +23,6 @@ import type { SinglePostContentProps } from './SinglePostContent.types';
  * - Below: two columns with Replies timeline (larger) and Participants sidebar (smaller)
  */
 export function SinglePostContent({ postId, postDetails }: SinglePostContentProps) {
-  const t = useTranslations('post');
   const layout = useHomeStore((state) => state.layout);
   const tagsLayout = getTagsLayoutForSurfaceLayout(layout);
 
@@ -37,12 +34,12 @@ export function SinglePostContent({ postId, postDetails }: SinglePostContentProp
   return (
     <PostMainLayoutProvider tagsLayout={tagsLayout}>
       {/* Page header with breadcrumb navigation */}
-      <PostPageHeader postId={postId} />
+      {!isArticle && <PostPageHeader postId={postId} />}
 
       {/* Main post - FULL WIDTH - always visible */}
       {isDeleted ? (
         <Card className="rounded-md py-0">
-          <PostDeleted />
+          <PostUnavailable message={'This post has been deleted by its author.'} />
         </Card>
       ) : isArticle ? (
         <PostArticleDetail
@@ -53,15 +50,15 @@ export function SinglePostContent({ postId, postDetails }: SinglePostContentProp
         />
       ) : (
         <Container overrideDefaults data-cy="single-post-card">
-          <PostMain postId={postId} pinActionsToBottom isNavigable={false} />
+          <PostMain postId={postId} pinActionsToBottom isNavigable={false} showFullContentInListLayout />
         </Container>
       )}
 
       {/* Replies section */}
       <Container overrideDefaults className="mb-6 flex">
-        {/* Left column - Replies thread with QuickReply at the end (larger) */}
+        {/* Left column - Replies thread with QuickReply directly below the parent post (larger) */}
         <Container className="mb-12 w-full min-w-0 flex-1 gap-0 overflow-hidden sm:mb-0">
-          {isArticle && <Typography className="text-2xl font-light text-muted-foreground">{t('replies')}</Typography>}
+          {isArticle && <Typography className="text-2xl font-light text-muted-foreground">{'Replies'}</Typography>}
           <Container overrideDefaults className="ml-3">
             <ThreadTree key={postId} postId={postId} showQuickReply={!isDeleted} />
           </Container>

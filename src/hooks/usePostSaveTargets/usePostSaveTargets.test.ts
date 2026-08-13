@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { COLLECTION_LAYOUT } from '@/config/collections';
 import { AppError } from '@/libs/error/error';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
 import { ErrorCategory, ErrorService } from '@/libs/error/error.types';
@@ -11,13 +12,6 @@ const mocks = vi.hoisted(() => ({
   toggleBookmark: vi.fn(),
   toast: vi.fn(),
 }));
-
-const translations: Record<string, string> = {
-  success: 'Success',
-  addedToCollection: 'Post added to collection.',
-  removedFromCollection: 'Post removed from collection.',
-};
-
 vi.mock('@/controllers/post/post', () => ({
   PostController: {
     commitUpdateCollectionItem: (...args: unknown[]) => mocks.commitUpdateCollectionItem(...args),
@@ -66,15 +60,6 @@ vi.mock('@/stores/auth/auth.store', () => ({
   useAuthStore: (selector: (state: { currentUserPubky: string }) => unknown) =>
     selector({ currentUserPubky: 'current-user' }),
 }));
-
-vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string, values?: Record<string, string>) =>
-    Object.entries(values ?? {}).reduce(
-      (message, [name, value]) => message.replace(`{${name}}`, value),
-      translations[key] ?? key,
-    ),
-}));
-
 describe('usePostSaveTargets', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -158,6 +143,7 @@ describe('usePostSaveTargets', () => {
       authorId: 'current-user',
       name: 'New collection',
       items: ['pubky://author/pub/pubky.app/posts/post1'],
+      layout: COLLECTION_LAYOUT.GRID,
     });
   });
 });

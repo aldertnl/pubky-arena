@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import Image from 'next/image';
 import { CheckCircle, Circle, Key, Loader2, RefreshCw } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { FooterLinks } from '@/atoms/FooterLinks/FooterLinks';
@@ -14,6 +13,7 @@ import { Typography } from '@/atoms/Typography/Typography';
 import { useMobileAuth } from '@/hooks/useMobileAuth/useMobileAuth';
 import { Logger } from '@/libs/logger/logger';
 import { cn } from '@/libs/utils/utils';
+import { BalancedQrCard } from '@/molecules/BalancedQrCard/BalancedQrCard';
 import { ContentCard } from '@/molecules/Content/Content';
 import { Logo } from '@/molecules/Logo/Logo';
 import { PageTitle } from '@/molecules/Page/Page';
@@ -23,23 +23,23 @@ import { useOnboardingStore } from '@/stores/onboarding/onboarding.store';
 import { useSignInStore } from '@/stores/signIn/signIn.store';
 import type { SignInState } from '@/stores/signIn/signIn.types';
 
-// Step configuration for the progress display (labels are translation keys)
+// Step configuration for the progress display
 const SIGN_IN_STEPS = [
   {
     key: 'profileChecked',
-    labelKey: 'verifyingAccount',
+    label: 'Verifying account',
   },
   {
     key: 'bootstrapFetched',
-    labelKey: 'loadingData',
+    label: 'Loading your data',
   },
   {
     key: 'dataPersisted',
-    labelKey: 'buildingFeed',
+    label: 'Building your feed',
   },
   {
     key: 'homeserverSynced',
-    labelKey: 'syncingSettings',
+    label: 'Syncing settings',
   },
 ] as const;
 type StepKey = (typeof SIGN_IN_STEPS)[number]['key'];
@@ -64,7 +64,6 @@ const StepIcon = ({ status }: { status: StepStatus }) => {
 };
 const SignInProgress = () => {
   const state = useSignInStore();
-  const t = useTranslations('onboarding.signIn');
   return (
     <Container className="items-start justify-center">
       <div className="flex w-full max-w-sm flex-col gap-4">
@@ -82,7 +81,7 @@ const SignInProgress = () => {
                   status === 'pending' && 'text-muted-foreground',
                 )}
               >
-                {t(step.labelKey)}
+                {step.label}
               </Typography>
             </div>
           );
@@ -92,8 +91,6 @@ const SignInProgress = () => {
   );
 };
 export const SignInContent = () => {
-  const t = useTranslations('onboarding.signIn');
-  const tCopy = useTranslations('toast.copy');
   const { url, isLoading, isExpired, fetchUrl, copyAuthUrl, isOpeningRing, onAuthorizeClick } = useMobileAuth();
   const authUrlResolved = useSignInStore((state) => state.authUrlResolved);
   useEffect(() => {
@@ -106,13 +103,13 @@ export const SignInContent = () => {
       await copyAuthUrl();
       toast({
         variant: 'info',
-        title: t('linkCopied'),
+        title: 'Authentication link copied',
       });
     } catch (error) {
       Logger.error('Failed to copy auth URL to clipboard:', error);
       toast({
         variant: 'error',
-        description: tCopy('copyFailedDesc'),
+        description: 'Could not copy to clipboard',
       });
     }
   };
@@ -121,18 +118,18 @@ export const SignInContent = () => {
     <>
       <Loader2 className="mr-2 size-4 animate-spin" />
       <Typography as="span" overrideDefaults aria-live="polite">
-        {isOpeningRing ? t('openingRing') : t('generatingShort')}
+        {isOpeningRing ? 'Opening Pubky Ring...' : 'Generating...'}
       </Typography>
     </>
   ) : isExpired ? (
     <>
       <RefreshCw className="mr-2 size-4" />
-      {t('clickToReload')}
+      {'Click to reload'}
     </>
   ) : (
     <>
       <Key className="mr-2 size-4" />
-      {t('authorize')}
+      {'Authorize with Pubky Ring'}
     </>
   );
 
@@ -149,44 +146,45 @@ export const SignInContent = () => {
   }
   return (
     <>
-      {/** Desktop view */}
       <Container size="container" className="hidden md:flex">
         <SignInHeader />
-        <ContentCard layout="column">
-          <Container className="items-center justify-center gap-3">
-            <button
-              type="button"
-              className="group relative flex h-[220px] w-[220px] cursor-pointer items-center justify-center rounded-lg bg-foreground p-4"
-              onClick={isExpired ? fetchUrl : handleQRClick}
-              disabled={isLoading || (!url && !isExpired)}
-              aria-label={isExpired ? 'Reload sign-in QR code' : 'Copy authentication link'}
-            >
-              <QrCodeSlot
-                isLoading={isLoading}
-                isExpired={isExpired}
-                url={url}
-                generatingLabel={t('generating')}
-                clickToReloadLabel={t('clickToReload')}
-                activeQrHasHoverEffect
-              />
-            </button>
-            <Container className="w-56 flex-row items-center justify-between gap-5">
-              <Link href="https://apps.apple.com/us/app/pubky-ring/id6739356756">
-                <Image src="/images/badge-apple.webp" alt="Apple Store Button Pubky Ring" width={94.5} height={28} />
-              </Link>
-              <Link href="https://play.google.com/store/apps/details?id=to.pubky.ring">
-                <Image src="/images/badge-android.webp" alt="Google Store Button Pubky Ring" width={94.5} height={28} />
-              </Link>
-            </Container>
-          </Container>
-        </ContentCard>
+        <BalancedQrCard
+          data-testid="sign-in-qr-card"
+          illustration={
+            <Image
+              priority
+              src="/images/scan.webp"
+              alt="Pubky Ring phone scanning a QR code"
+              width={192}
+              height={192}
+              className="size-48"
+            />
+          }
+        >
+          <button
+            type="button"
+            className="group relative flex size-48 cursor-pointer items-center justify-center rounded-md bg-foreground p-2"
+            onClick={isExpired ? fetchUrl : handleQRClick}
+            disabled={isLoading || (!url && !isExpired)}
+            aria-label={isExpired ? 'Reload sign-in QR code' : 'Copy authentication link'}
+          >
+            <QrCodeSlot
+              isLoading={isLoading}
+              isExpired={isExpired}
+              url={url}
+              generatingLabel={'Generating QR Code...'}
+              clickToReloadLabel={'Click to reload'}
+              activeQrHasHoverEffect
+            />
+          </button>
+        </BalancedQrCard>
       </Container>
 
       {/** Mobile view */}
       <Container size="container" className="md:hidden">
         <SignInHeader />
         <ContentCard layout="column">
-          <Container className="flex-col items-center justify-center gap-6 lg:flex-row">
+          <Container className="flex-col items-center justify-center gap-6">
             <Image src="/images/logo-pubky-ring.svg" alt="Pubky Ring" width={137} height={30} />
             <Button
               className="w-full"
@@ -206,40 +204,38 @@ export const SignInContent = () => {
 };
 export const SignInFooter = () => {
   const authUrlResolved = useSignInStore((state) => state.authUrlResolved);
-  const t = useTranslations('onboarding.signIn');
   if (authUrlResolved) return null;
   return (
     <FooterLinks className="py-6">
-      {t.rich('recoveryHint', {
-        pubkyRing: (chunks) => (
-          <Link href="https://pubkyring.app/" target="_blank" rel="noopener noreferrer">
-            {chunks}
-          </Link>
-        ),
-      })}
+      {'Not able to sign in with '}
+      <Link href="https://pubkyring.app/" target="_blank" rel="noopener noreferrer">
+        {'Pubky Ring'}
+      </Link>
+      {'? Use the recovery phrase or encrypted file to restore your account.'}
     </FooterLinks>
   );
 };
 export const SignInHeader = () => {
-  const t = useTranslations('onboarding.signIn');
   return (
     <PageHeader>
       <PageTitle size="large">
-        {t.rich('title', {
-          highlight: (chunks) => <span className="text-brand">{chunks}</span>,
-        })}
+        {'Sign in to '}
+        <span className="text-brand">{'Pubky.'}</span>
       </PageTitle>
-      <PageSubtitle>{t('subtitle')}</PageSubtitle>
+      <PageSubtitle>
+        {'Authorize with '}
+        <span className="text-brand">{'Pubky Ring'}</span>
+        {' to sign in.'}
+      </PageSubtitle>
     </PageHeader>
   );
 };
 const SignInProgressHeader = () => {
-  const t = useTranslations('onboarding.signIn');
   return (
     <PageHeader>
       <Logo className="py-6 lg:hidden" />
-      <PageTitle size="large">{t('progressTitle')}</PageTitle>
-      <PageSubtitle>{t('progressSubtitle')}</PageSubtitle>
+      <PageTitle size="large">{'Signing in.'}</PageTitle>
+      <PageSubtitle>{'Please wait while your Pubky experience loads.'}</PageSubtitle>
     </PageHeader>
   );
 };

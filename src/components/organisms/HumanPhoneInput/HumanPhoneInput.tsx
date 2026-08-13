@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { PageHeader } from '@/atoms/PageHeader/PageHeader';
@@ -22,14 +21,21 @@ type HumanPhoneInputProps = {
 };
 
 export const HumanPhoneInput = ({ onBack, onCodeSent, initialPhoneNumber }: HumanPhoneInputProps) => {
-  const t = useTranslations('onboarding.phone');
-  const tCommon = useTranslations('common');
   const [phoneNumberInput, setPhoneNumberInput] = useState(initialPhoneNumber || '');
   const [isSendingCode, setIsSendingCode] = useState(false);
+  const [hasAttemptedSend, setHasAttemptedSend] = useState(false);
+
+  const parsedPhoneNumber = parsePhoneNumber(phoneNumberInput);
+  const isValidNumber = !!parsedPhoneNumber;
+  const showInvalidError = hasAttemptedSend && !isValidNumber;
+
   const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPhoneNumberInput(e.target.value);
+    if (hasAttemptedSend) {
+      setHasAttemptedSend(false);
+    }
   };
-  const isValidNumber = !!parsePhoneNumber(phoneNumberInput);
+
   async function onSendCode(phoneNumber: string) {
     if (isSendingCode) {
       return;
@@ -42,15 +48,13 @@ export const HumanPhoneInput = ({ onBack, onCodeSent, initialPhoneNumber }: Huma
           case SmsCodeErrorType.BLOCKED:
             toast({
               variant: 'error',
-              description: t('blockedDescription'),
+              description: 'This phone number cannot be used for verification.',
             });
             break;
           case SmsCodeErrorType.RATE_LIMITED_TEMPORARY: {
             const retryMessage = result.retryAfter
-              ? t('rateLimitedWithRetry', {
-                  seconds: result.retryAfter,
-                })
-              : t('tooManyAttemptsDescription');
+              ? `Too many verification attempts. Retry in ${result.retryAfter}s.`
+              : 'Too many verification attempts';
             toast({
               variant: 'warning',
               description: retryMessage,
@@ -60,19 +64,19 @@ export const HumanPhoneInput = ({ onBack, onCodeSent, initialPhoneNumber }: Huma
           case SmsCodeErrorType.RATE_LIMITED_WEEKLY:
             toast({
               variant: 'warning',
-              description: t('weeklyLimitDescription'),
+              description: 'Too many verification attempts',
             });
             break;
           case SmsCodeErrorType.RATE_LIMITED_YEARLY:
             toast({
               variant: 'warning',
-              description: t('yearlyLimitDescription'),
+              description: 'Too many verification attempts',
             });
             break;
           default:
             toast({
               variant: 'error',
-              description: t('sendFailedDescription'),
+              description: 'Could not send verification code. Try again later.',
             });
         }
         return;
@@ -81,27 +85,37 @@ export const HumanPhoneInput = ({ onBack, onCodeSent, initialPhoneNumber }: Huma
     } catch {
       toast({
         variant: 'error',
-        description: t('verificationFailed'),
+        description: 'Phone verification failed. Try again.',
       });
     } finally {
       setIsSendingCode(false);
     }
   }
+
+  function handleSendCode() {
+    if (!parsedPhoneNumber) {
+      setHasAttemptedSend(true);
+      return;
+    }
+    setHasAttemptedSend(false);
+    void onSendCode(parsedPhoneNumber.format('E.164'));
+  }
+
   return (
     <React.Fragment>
       <PageHeader>
         <PageTitle size="large">
-          {t.rich('title', {
-            highlight: (chunks) => <span className="text-brand">{chunks}</span>,
-          })}
+          {'Enter '}
+          <span className="text-brand">{'Phone.'}</span>
         </PageTitle>
-        <PageSubtitle>{t('subtitle')}</PageSubtitle>
+        <PageSubtitle>{'We will send you a verification code.'}</PageSubtitle>
       </PageHeader>
       <HumanPhoneInputField
         value={phoneNumberInput}
         onChange={handlePhoneNumberChange}
         isValid={isValidNumber}
-        onEnter={() => isValidNumber && onSendCode(phoneNumberInput)}
+        error={showInvalidError ? 'Enter a valid mobile number including country code.' : undefined}
+        onEnter={handleSendCode}
       />
       <Container className={cn('mt-6 flex-row justify-between gap-3 lg:gap-6')}>
         <Button
@@ -112,18 +126,18 @@ export const HumanPhoneInput = ({ onBack, onCodeSent, initialPhoneNumber }: Huma
           onClick={onBack}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          {tCommon('back')}
+          {'Back'}
         </Button>
         <Button
           id="human-phone-send-code-btn"
           size="lg"
           className="w-full flex-1 rounded-full md:flex-0"
           variant="default"
-          disabled={!isValidNumber || isSendingCode}
-          onClick={() => isValidNumber && onSendCode(phoneNumberInput)}
+          disabled={isSendingCode}
+          onClick={handleSendCode}
         >
           <ArrowRight className="mr-2 h-4 w-4" />
-          {t('sendCode')}
+          {'Send Code'}
         </Button>
       </Container>
     </React.Fragment>

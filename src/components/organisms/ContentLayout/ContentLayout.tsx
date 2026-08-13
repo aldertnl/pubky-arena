@@ -68,6 +68,7 @@ export function ContentLayout({
   classNameWrapperContent,
   classNameMobileHeader,
   feedVariant,
+  layoutOverride,
   disableWideShellLayout,
 }: ContentLayoutProps) {
   const { layout: homeLayout } = useHomeStore();
@@ -76,7 +77,7 @@ export function ContentLayout({
     feedVariant === TIMELINE_FEED_VARIANT.CUSTOM && customFeed?.layout !== undefined
       ? pubkyLayoutToHomeLayout(customFeed.layout)
       : undefined;
-  const requestedLayout = customFeedLayout ?? homeLayout;
+  const requestedLayout = layoutOverride ?? customFeedLayout ?? homeLayout;
 
   const [drawerFilterOpen, setDrawerFilterOpen] = useState(false);
   const [drawerRightOpen, setDrawerRightOpen] = useState(false);
@@ -92,7 +93,7 @@ export function ContentLayout({
         effectiveLayout: requestedLayout,
       };
   const usesWideShellLayout =
-    (effectiveLayout === LAYOUT.WIDE && !disableWideShellLayout) ||
+    ((effectiveLayout === LAYOUT.WIDE || effectiveLayout === LAYOUT.LIST) && !disableWideShellLayout) ||
     (feedVariant !== undefined && effectiveLayout === LAYOUT.VISUAL);
 
   // Close drawers when switching from wide-shell to inline sidebars on desktop

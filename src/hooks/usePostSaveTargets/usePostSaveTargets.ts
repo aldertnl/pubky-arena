@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { postUriBuilder } from 'pubky-app-specs';
+import { DEFAULT_COLLECTION_LAYOUT } from '@/config/collections';
 import { PostController } from '@/controllers/post/post';
 import { useAuthoredCollections } from '@/hooks/useAuthoredCollections/useAuthoredCollections';
 import { useBookmark } from '@/hooks/useBookmark/useBookmark';
@@ -37,7 +37,6 @@ export function usePostSaveTargets(postId: string): UsePostSaveTargetsResult {
   const bookmark = useBookmark(postId);
   const { collections, isLoading: isCollectionsLoading } = useAuthoredCollections(Boolean(currentUserPubky));
   const { toast } = useToast();
-  const tSave = useTranslations('postSave');
   const [updatingCollectionIds, setUpdatingCollectionIds] = useState<Set<string>>(new Set());
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
 
@@ -77,13 +76,13 @@ export function usePostSaveTargets(postId: string): UsePostSaveTargetsResult {
         shouldAdd: !target.isSaved,
       });
       toast({
-        title: target.isSaved ? tSave('removedFromCollection') : tSave('addedToCollection'),
+        title: target.isSaved ? 'Post removed from collection.' : 'Post added to collection.',
       });
     } catch (error) {
       Logger.error('[usePostSaveTargets] Failed to update collection membership', { error, collectionId, postId });
       toast({
         variant: 'error',
-        description: isAppError(error) ? error.message : tSave('updateCollectionFailed'),
+        description: isAppError(error) ? error.message : 'Failed to update collection.',
       });
     } finally {
       setCollectionUpdating(collectionId, false);
@@ -100,15 +99,16 @@ export function usePostSaveTargets(postId: string): UsePostSaveTargetsResult {
         authorId: currentUserPubky,
         name,
         items: [postUri],
+        layout: DEFAULT_COLLECTION_LAYOUT,
       });
       toast({
-        title: tSave('collectionCreated'),
+        title: 'Collection created and post saved.',
       });
     } catch (error) {
       Logger.error('[usePostSaveTargets] Failed to create collection', { error, postId });
       toast({
         variant: 'error',
-        description: isAppError(error) ? error.message : tSave('createCollectionFailed'),
+        description: isAppError(error) ? error.message : 'Failed to create collection.',
       });
     } finally {
       setIsCreatingCollection(false);

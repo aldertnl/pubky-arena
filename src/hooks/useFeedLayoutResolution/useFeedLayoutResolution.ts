@@ -37,12 +37,17 @@ export function resolveFeedLayout({
   variant,
   isPhoneViewport,
 }: FeedLayoutResolutionInput): FeedLayoutResolution {
+  const isRichLayoutSupported = RICH_LAYOUT_SUPPORTED_FEED_VARIANTS.has(variant);
+  const isCollectionVariant = variant === TIMELINE_FEED_VARIANT.COLLECTION;
   const isVisualRequested = requestedLayout === LAYOUT.VISUAL;
-  const isVisualSupported = !isPhoneViewport && RICH_LAYOUT_SUPPORTED_FEED_VARIANTS.has(variant);
+  const isVisualSupported = !isPhoneViewport && (isRichLayoutSupported || isCollectionVariant);
   const isWideRequested = requestedLayout === LAYOUT.WIDE;
-  const isWideSupported = RICH_LAYOUT_SUPPORTED_FEED_VARIANTS.has(variant);
+  const isListRequested = requestedLayout === LAYOUT.LIST;
+  const isListSupported = isRichLayoutSupported || isCollectionVariant;
   const effectiveLayout =
-    (isVisualRequested && !isVisualSupported) || (isWideRequested && !isWideSupported)
+    (isVisualRequested && !isVisualSupported) ||
+    (isWideRequested && !isRichLayoutSupported) ||
+    (isListRequested && !isListSupported)
       ? LAYOUT.COLUMNS
       : requestedLayout;
 
@@ -51,12 +56,17 @@ export function resolveFeedLayout({
     effectiveLayout,
     isVisualRequested,
     isVisualActive: effectiveLayout === LAYOUT.VISUAL,
-    isGridActive: GRID_LAYOUT_VARIANTS.has(variant),
+    isGridActive:
+      GRID_LAYOUT_VARIANTS.has(variant) ||
+      (variant === TIMELINE_FEED_VARIANT.COLLECTION && effectiveLayout === LAYOUT.COLUMNS),
     isPhoneViewport,
   };
 }
 
-export function useFeedLayoutResolution(variant: TimelineFeedVariant): FeedLayoutResolution {
+export function useFeedLayoutResolution(
+  variant: TimelineFeedVariant,
+  requestedLayoutOverride?: LayoutType,
+): FeedLayoutResolution {
   const homeLayout = useHomeStore((state) => state.layout);
   const customFeed = useCustomFeed();
   const isPhoneViewport = useIsMobile({ breakpoint: 'md' });
@@ -65,7 +75,7 @@ export function useFeedLayoutResolution(variant: TimelineFeedVariant): FeedLayou
       ? pubkyLayoutToHomeLayout(customFeed.layout)
       : undefined;
 
-  const requestedLayout = customFeedLayout ?? homeLayout;
+  const requestedLayout = requestedLayoutOverride ?? customFeedLayout ?? homeLayout;
 
   return resolveFeedLayout({
     requestedLayout,

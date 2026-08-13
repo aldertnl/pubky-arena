@@ -5,9 +5,12 @@ import { TIMELINE_FEED_VARIANT } from '@/config/feed';
 import { useCustomStreamId } from '@/hooks/useCustomStreamId/useCustomStreamId';
 import { useFeedLayoutResolution } from '@/hooks/useFeedLayoutResolution/useFeedLayoutResolution';
 import { useHotStreamId } from '@/hooks/useHotStreamId/useHotStreamId';
+import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
 import { useSearchStreamId } from '@/hooks/useSearchStreamId/useSearchStreamId';
 import { useStreamIdFromFilters } from '@/hooks/useStreamIdFromFilters/useStreamIdFromFilters';
 import { useSyncInteractiveVisualContent } from '@/hooks/useSyncInteractiveVisualContent/useSyncInteractiveVisualContent';
+import { parseCollectionContent } from '@/libs/post/collectionContent';
+import { sortPostIdsByCollectionOrder } from '@/libs/post/collectionItemOrder';
 import { buildCompositeId } from '@/models/models.utils';
 import {
   type AuthorStreamCompositeId,
@@ -20,8 +23,9 @@ import { getTagsLayoutForSurfaceLayout } from '@/organisms/PostMain/PostMainLayo
 import { useProfileContext } from '@/providers/ProfileProvider/ProfileProvider';
 import { StreamSource } from '@/services/nexus/stream/posts/postStream.types';
 import { useHomeStore } from '@/stores/home/home.store';
+import { LAYOUT } from '@/stores/home/home.types';
 import { TimelineFeedWithStream } from '../TimelineFeedContent/TimelineFeedContent';
-import type { TimelineFeedProps } from './TimelineFeed.types';
+import type { HomeTimelineFeedProps, TimelineFeedProps } from './TimelineFeed.types';
 import { resolveVisualFeedContent } from './TimelineFeedVisual.helpers';
 
 export { useTimelineFeedContext } from './TimelineFeedContext';
@@ -32,40 +36,36 @@ export { useTimelineFeedContext } from './TimelineFeedContext';
  * Organism that encapsulates stream calculation and pagination logic.
  * Routes to variant-specific wrappers so each only subscribes to its own data sources.
  */
-export function TimelineFeed({
-  variant,
-  children,
-  emptyState,
-  pullToRefreshContainerRef,
-  gridTrailingSlot,
-}: TimelineFeedProps) {
-  switch (variant) {
+export function TimelineFeed(props: TimelineFeedProps) {
+  switch (props.variant) {
     case TIMELINE_FEED_VARIANT.HOME:
-      return <HomeTimelineFeed>{children}</HomeTimelineFeed>;
+      return <HomeTimelineFeed persistentHeader={props.persistentHeader}>{props.children}</HomeTimelineFeed>;
     case TIMELINE_FEED_VARIANT.CUSTOM:
-      return <CustomTimelineFeed>{children}</CustomTimelineFeed>;
+      return <CustomTimelineFeed>{props.children}</CustomTimelineFeed>;
     case TIMELINE_FEED_VARIANT.BOOKMARKS:
       return (
-        <BookmarksTimelineFeed emptyState={emptyState} gridTrailingSlot={gridTrailingSlot}>
-          {children}
+        <BookmarksTimelineFeed emptyState={props.emptyState} trailingSlot={props.trailingSlot}>
+          {props.children}
         </BookmarksTimelineFeed>
       );
     case TIMELINE_FEED_VARIANT.PROFILE:
-      return <ProfileTimelineFeed>{children}</ProfileTimelineFeed>;
+      return <ProfileTimelineFeed>{props.children}</ProfileTimelineFeed>;
     case TIMELINE_FEED_VARIANT.PROFILE_COLLECTIONS:
-      return <ProfileCollectionsTimelineFeed>{children}</ProfileCollectionsTimelineFeed>;
+      return <ProfileCollectionsTimelineFeed>{props.children}</ProfileCollectionsTimelineFeed>;
     case TIMELINE_FEED_VARIANT.HOT:
-      return <HotTimelineFeed>{children}</HotTimelineFeed>;
+      return <HotTimelineFeed>{props.children}</HotTimelineFeed>;
     case TIMELINE_FEED_VARIANT.SEARCH:
-      return <SearchTimelineFeed>{children}</SearchTimelineFeed>;
+      return <SearchTimelineFeed>{props.children}</SearchTimelineFeed>;
     case TIMELINE_FEED_VARIANT.COLLECTION:
       return (
         <CollectionTimelineFeed
-          emptyState={emptyState}
-          pullToRefreshContainerRef={pullToRefreshContainerRef}
-          gridTrailingSlot={gridTrailingSlot}
+          emptyState={props.emptyState}
+          pullToRefreshContainerRef={props.pullToRefreshContainerRef}
+          trailingSlot={props.trailingSlot}
+          requestedLayout={props.requestedLayout}
+          visualHiddenItemsNotice={props.visualHiddenItemsNotice}
         >
-          {children}
+          {props.children}
         </CollectionTimelineFeed>
       );
     default:
@@ -73,7 +73,13 @@ export function TimelineFeed({
   }
 }
 
-function HomeTimelineFeed({ children }: { children?: TimelineFeedProps['children'] }) {
+function HomeTimelineFeed({
+  children,
+  persistentHeader,
+}: {
+  children?: HomeTimelineFeedProps['children'];
+  persistentHeader?: HomeTimelineFeedProps['persistentHeader'];
+}) {
   const content = useHomeStore((state) => state.content);
   const layoutResolution = useFeedLayoutResolution(TIMELINE_FEED_VARIANT.HOME);
   const resolvedContent = resolveVisualFeedContent({
@@ -91,6 +97,7 @@ function HomeTimelineFeed({ children }: { children?: TimelineFeedProps['children
       variant={TIMELINE_FEED_VARIANT.HOME}
       tagsLayout={tagsLayout}
       layoutResolution={layoutResolution}
+      persistentHeader={persistentHeader}
     >
       {children}
     </TimelineFeedWithStream>
@@ -117,14 +124,11 @@ function CustomTimelineFeed({ children }: { children?: TimelineFeedProps['childr
 function BookmarksTimelineFeed({
   children,
   emptyState,
-  gridTrailingSlot,
+  trailingSlot,
 }: {
   children?: TimelineFeedProps['children'];
   emptyState?: Extract<TimelineFeedProps, { variant: typeof TIMELINE_FEED_VARIANT.BOOKMARKS }>['emptyState'];
-  gridTrailingSlot?: Extract<
-    TimelineFeedProps,
-    { variant: typeof TIMELINE_FEED_VARIANT.BOOKMARKS }
-  >['gridTrailingSlot'];
+  trailingSlot?: Extract<TimelineFeedProps, { variant: typeof TIMELINE_FEED_VARIANT.BOOKMARKS }>['trailingSlot'];
 }) {
   // The bookmarks route exposes no filter UI and shows collections in their own
   // section below, so the feed is always the fixed all-bookmarks stream. It must
@@ -142,7 +146,7 @@ function BookmarksTimelineFeed({
       tagsLayout="inline"
       layoutResolution={layoutResolution}
       emptyState={emptyState}
-      gridTrailingSlot={gridTrailingSlot}
+      trailingSlot={trailingSlot}
     >
       {children}
     </TimelineFeedWithStream>
@@ -189,7 +193,9 @@ function CollectionTimelineFeed({
   children,
   emptyState,
   pullToRefreshContainerRef,
-  gridTrailingSlot,
+  trailingSlot,
+  requestedLayout,
+  visualHiddenItemsNotice,
 }: {
   children?: TimelineFeedProps['children'];
   emptyState?: Extract<TimelineFeedProps, { variant: typeof TIMELINE_FEED_VARIANT.COLLECTION }>['emptyState'];
@@ -197,10 +203,12 @@ function CollectionTimelineFeed({
     TimelineFeedProps,
     { variant: typeof TIMELINE_FEED_VARIANT.COLLECTION }
   >['pullToRefreshContainerRef'];
-  gridTrailingSlot?: Extract<
+  trailingSlot?: Extract<TimelineFeedProps, { variant: typeof TIMELINE_FEED_VARIANT.COLLECTION }>['trailingSlot'];
+  requestedLayout: Extract<TimelineFeedProps, { variant: typeof TIMELINE_FEED_VARIANT.COLLECTION }>['requestedLayout'];
+  visualHiddenItemsNotice?: Extract<
     TimelineFeedProps,
     { variant: typeof TIMELINE_FEED_VARIANT.COLLECTION }
-  >['gridTrailingSlot'];
+  >['visualHiddenItemsNotice'];
 }) {
   // The single-collection route owns these params (`/collections/[userId]/[postId]`).
   // Reading them here mirrors how `ProfileTimelineFeed` resolves its stream from context.
@@ -209,18 +217,28 @@ function CollectionTimelineFeed({
   const postId = params?.postId;
   const streamId = userId && postId ? buildCollectionItemsStreamId(userId, postId) : undefined;
   const collectionId = userId && postId ? buildCompositeId({ pubky: userId, id: postId }) : undefined;
-  const layoutResolution = useFeedLayoutResolution(TIMELINE_FEED_VARIANT.COLLECTION);
+  const layoutResolution = useFeedLayoutResolution(TIMELINE_FEED_VARIANT.COLLECTION, requestedLayout ?? LAYOUT.COLUMNS);
+  const tagsLayout = getTagsLayoutForSurfaceLayout(layoutResolution.effectiveLayout);
+
+  // The envelope's `items` (a live Dexie query) is the local-first source of
+  // truth for ordering; the Nexus `collection` stream re-indexes asynchronously
+  // and can serve a stale order right after an add/remove/reorder commit.
+  // Sorting the stream's ids by the envelope makes commits render instantly.
+  const { postDetails } = usePostDetails(collectionId);
+  const envelopeItems = postDetails ? parseCollectionContent(postDetails.content)?.items : undefined;
 
   return (
     <TimelineFeedWithStream
       streamId={streamId}
       variant={TIMELINE_FEED_VARIANT.COLLECTION}
-      tagsLayout="inline"
+      tagsLayout={tagsLayout}
       layoutResolution={layoutResolution}
       emptyState={emptyState}
       collectionId={collectionId}
       pullToRefreshContainerRef={pullToRefreshContainerRef}
-      gridTrailingSlot={gridTrailingSlot}
+      trailingSlot={trailingSlot}
+      visualHiddenItemsNotice={visualHiddenItemsNotice}
+      transformPostIds={(postIds) => sortPostIdsByCollectionOrder(postIds, envelopeItems)}
     >
       {children}
     </TimelineFeedWithStream>
