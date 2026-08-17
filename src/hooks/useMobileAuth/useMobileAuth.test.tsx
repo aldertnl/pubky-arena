@@ -12,7 +12,7 @@ vi.mock('../useAuthUrl/useAuthUrl', () => ({
 
 describe('useMobileAuth', () => {
   const defaultAuthUrlReturn = {
-    url: 'pubkyauth://signin?token=test123',
+    url: 'pubkyring://signin?token=test123',
     isLoading: false,
     isExpired: false,
     fetchUrl: mockFetchUrl,
@@ -27,7 +27,7 @@ describe('useMobileAuth', () => {
   it('returns useAuthUrl data plus hook values', () => {
     const { result } = renderHook(() => useMobileAuth());
 
-    expect(result.current.url).toBe('pubkyauth://signin?token=test123');
+    expect(result.current.url).toBe('pubkyring://signin?token=test123');
     expect(result.current.isLoading).toBe(false);
     expect(result.current.isExpired).toBe(false);
     expect(result.current.fetchUrl).toBe(mockFetchUrl);
@@ -79,7 +79,7 @@ describe('useMobileAuth', () => {
     });
 
     expect(result.current.isOpeningRing).toBe(true);
-    expect(mockLocation.href).toBe('pubkyauth://signin?token=test123');
+    expect(mockLocation.href).toBe('pubkyring://signin?token=test123');
 
     Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
   });

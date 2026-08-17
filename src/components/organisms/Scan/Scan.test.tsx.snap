@@ -86,7 +86,7 @@ exports[`Scan Components - Snapshots > ScanFooter - Snapshots > matches snapshot
   >
     Pubky Ring
   </a>
-   or any other 
+  , powered by 
   <a
     data-testid="link"
     href="https://pubky.org"
@@ -94,7 +94,7 @@ exports[`Scan Components - Snapshots > ScanFooter - Snapshots > matches snapshot
   >
     Pubky Core
   </a>
-  –powered keychain.
+  .
 </div>
 `;
 

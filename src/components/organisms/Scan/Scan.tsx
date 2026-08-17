@@ -121,11 +121,11 @@ export const ScanFooter = () => {
       <Link href={getPubkyRingLink()} target="_blank">
         {'Pubky Ring'}
       </Link>
-      {' or any other '}
+      {', powered by '}
       <Link href={getPubkyCoreLink()} target="_blank">
         {'Pubky Core'}
       </Link>
-      {'–powered keychain.'}
+      {'.'}
     </FooterLinks>
   );
 };

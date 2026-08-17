@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GenerateDeeplinkOptions, generatePubkyRingDeeplink } from './deeplink';
+import { GenerateDeeplinkOptions, generatePubkyRingAuthDeeplink, generatePubkyRingDeeplink } from './deeplink';
 
 describe('generatePubkyRingDeeplink', () => {
   describe('basic functionality', () => {
@@ -159,5 +159,40 @@ describe('generatePubkyRingDeeplink', () => {
 
       expect(result).toBe('pubkyring://test');
     });
+  });
+});
+
+describe('generatePubkyRingAuthDeeplink', () => {
+  // Fixtures mirror the real URL shapes: the SDK emits signin URLs with an unencoded query,
+  // while HomeserverService.generateSignupAuthUrl re-serializes the query via URLSearchParams,
+  // percent-encoding caps and relay.
+  it('should replace the pubkyauth scheme on signin URLs', () => {
+    const authUrl = 'pubkyauth://signin?caps=/pub/pubky.app/:rw&relay=https://httprelay.pubky.app/link/&secret=abc123';
+    const result = generatePubkyRingAuthDeeplink(authUrl);
+
+    expect(result).toBe(
+      'pubkyring://signin?caps=/pub/pubky.app/:rw&relay=https://httprelay.pubky.app/link/&secret=abc123',
+    );
+  });
+
+  it('should replace the pubkyauth scheme on signup URLs', () => {
+    const authUrl =
+      'pubkyauth://signup?caps=%2Fpub%2Fpubky.app%2F%3Arw&relay=https%3A%2F%2Fhttprelay.pubky.app%2Flink%2F&secret=abc123&hs=homeserver-z32&st=ABCD-1234-WXYZ';
+    const result = generatePubkyRingAuthDeeplink(authUrl);
+
+    expect(result).toBe(
+      'pubkyring://signup?caps=%2Fpub%2Fpubky.app%2F%3Arw&relay=https%3A%2F%2Fhttprelay.pubky.app%2Flink%2F&secret=abc123&hs=homeserver-z32&st=ABCD-1234-WXYZ',
+    );
+  });
+
+  it('should not nest schemes', () => {
+    const result = generatePubkyRingAuthDeeplink('pubkyauth://signin?secret=abc');
+
+    expect(result).toBe('pubkyring://signin?secret=abc');
+  });
+
+  it('should return non-pubkyauth URLs unchanged', () => {
+    expect(generatePubkyRingAuthDeeplink('https://example.com/auth')).toBe('https://example.com/auth');
+    expect(generatePubkyRingAuthDeeplink('')).toBe('');
   });
 });

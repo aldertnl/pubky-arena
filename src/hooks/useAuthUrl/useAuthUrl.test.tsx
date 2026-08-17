@@ -65,7 +65,7 @@ describe('useAuthUrl', () => {
   const createCancelAuthFlow = (): (() => void) => vi.fn();
 
   it('fetches auth URL on mount when autoFetch is enabled', async () => {
-    const mockAuthUrl = 'pubkyring://authorize?token=test123';
+    const mockAuthUrl = 'pubkyauth://signin?token=test123';
     const mockAwaitApproval = new Promise<Session>(() => {});
 
     mockGetAuthUrl.mockResolvedValue({
@@ -80,11 +80,27 @@ describe('useAuthUrl', () => {
     expect(result.current.url).toBe('');
 
     await waitFor(() => {
-      expect(result.current.url).toBe(mockAuthUrl);
+      expect(result.current.url).toBe('pubkyring://signin?token=test123');
       expect(result.current.isLoading).toBe(false);
     });
 
     expect(mockGetAuthUrl).toHaveBeenCalledTimes(1);
+  });
+
+  it('converts pubkyauth:// authorization URLs to Pubky Ring deeplinks', async () => {
+    mockGetAuthUrl.mockResolvedValue({
+      authorizationUrl: 'pubkyauth://signin?caps=/pub/pubky.app/:rw&relay=https%3A%2F%2Frelay.example&secret=abc',
+      awaitApproval: new Promise<Session>(() => {}),
+      cancelAuthFlow: createCancelAuthFlow(),
+    });
+
+    const { result } = renderHook(() => useAuthUrl());
+
+    await waitFor(() => {
+      expect(result.current.url).toBe(
+        'pubkyring://signin?caps=/pub/pubky.app/:rw&relay=https%3A%2F%2Frelay.example&secret=abc',
+      );
+    });
   });
 
   it('does not auto-fetch when autoFetch is false', () => {
@@ -97,7 +113,7 @@ describe('useAuthUrl', () => {
 
   it('allows manual fetchUrl calls', async () => {
     mockGetAuthUrl.mockResolvedValue({
-      authorizationUrl: 'pubkyring://authorize?token=manual',
+      authorizationUrl: 'pubkyauth://signin?token=manual',
       awaitApproval: new Promise<Session>(() => {}),
       cancelAuthFlow: createCancelAuthFlow(),
     });
@@ -109,7 +125,7 @@ describe('useAuthUrl', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.url).toBe('pubkyring://authorize?token=manual');
+      expect(result.current.url).toBe('pubkyring://signin?token=manual');
       expect(result.current.isLoading).toBe(false);
     });
   });
@@ -123,7 +139,7 @@ describe('useAuthUrl', () => {
     });
 
     mockGetAuthUrl.mockResolvedValue({
-      authorizationUrl: 'pubkyring://authorize?token=approval',
+      authorizationUrl: 'pubkyauth://signin?token=approval',
       awaitApproval: mockAwaitApproval,
       cancelAuthFlow: createCancelAuthFlow(),
     });
@@ -148,7 +164,7 @@ describe('useAuthUrl', () => {
     });
 
     mockGetAuthUrl.mockResolvedValue({
-      authorizationUrl: 'pubkyring://authorize?token=rejection',
+      authorizationUrl: 'pubkyauth://signin?token=rejection',
       awaitApproval: mockAwaitApproval,
       cancelAuthFlow: createCancelAuthFlow(),
     });
@@ -176,7 +192,7 @@ describe('useAuthUrl', () => {
     });
 
     mockGetAuthUrl.mockResolvedValue({
-      authorizationUrl: 'pubkyring://authorize?token=canceled',
+      authorizationUrl: 'pubkyauth://signin?token=canceled',
       awaitApproval: mockAwaitApproval,
       cancelAuthFlow: createCancelAuthFlow(),
     });
@@ -202,7 +218,7 @@ describe('useAuthUrl', () => {
     });
 
     mockGetAuthUrl.mockResolvedValue({
-      authorizationUrl: 'pubkyring://authorize?token=session-expired',
+      authorizationUrl: 'pubkyauth://signin?token=session-expired',
       awaitApproval: mockAwaitApproval,
       cancelAuthFlow: createCancelAuthFlow(),
     });
@@ -237,7 +253,7 @@ describe('useAuthUrl', () => {
     });
 
     mockGetAuthUrl.mockResolvedValue({
-      authorizationUrl: 'pubkyring://authorize?token=timeout',
+      authorizationUrl: 'pubkyauth://signin?token=timeout',
       awaitApproval: mockAwaitApproval,
       cancelAuthFlow: createCancelAuthFlow(),
     });
@@ -274,7 +290,7 @@ describe('useAuthUrl', () => {
     });
 
     mockGetAuthUrl.mockResolvedValue({
-      authorizationUrl: 'pubkyring://authorize?token=init-failure',
+      authorizationUrl: 'pubkyauth://signin?token=init-failure',
       awaitApproval: mockAwaitApproval,
       cancelAuthFlow: createCancelAuthFlow(),
     });
@@ -312,7 +328,7 @@ describe('useAuthUrl', () => {
 
   it('does not cancel active auth flow on unmount', async () => {
     mockGetAuthUrl.mockResolvedValue({
-      authorizationUrl: 'pubkyring://authorize?token=unmount',
+      authorizationUrl: 'pubkyauth://signin?token=unmount',
       awaitApproval: new Promise<Session>(() => {}),
       cancelAuthFlow: createCancelAuthFlow(),
     });
@@ -336,7 +352,7 @@ describe('useAuthUrl', () => {
     });
 
     mockGetAuthUrl.mockResolvedValue({
-      authorizationUrl: 'pubkyring://authorize?token=post-unmount',
+      authorizationUrl: 'pubkyauth://signin?token=post-unmount',
       awaitApproval: mockAwaitApproval,
       cancelAuthFlow: createCancelAuthFlow(),
     });
@@ -356,7 +372,7 @@ describe('useAuthUrl', () => {
   });
 
   it('calls AuthController.getSignupAuthUrl when type is signup with inviteCode', async () => {
-    const mockAuthUrl = 'pubkyring://authorize?token=signup';
+    const mockAuthUrl = 'pubkyauth://signup?token=signup';
 
     mockGetSignupAuthUrl.mockResolvedValue({
       authorizationUrl: mockAuthUrl,
@@ -367,7 +383,7 @@ describe('useAuthUrl', () => {
     const { result } = renderHook(() => useAuthUrl({ type: 'signup', inviteCode: 'A9KM-7MJP-ERM9' }));
 
     await waitFor(() => {
-      expect(result.current.url).toBe(mockAuthUrl);
+      expect(result.current.url).toBe('pubkyring://signup?token=signup');
       expect(result.current.isLoading).toBe(false);
     });
 
@@ -377,7 +393,7 @@ describe('useAuthUrl', () => {
 
   it('copyAuthUrl copies url to clipboard', async () => {
     mockGetAuthUrl.mockResolvedValue({
-      authorizationUrl: 'pubkyring://authorize?token=copy',
+      authorizationUrl: 'pubkyauth://signin?token=copy',
       awaitApproval: new Promise<Session>(() => {}),
       cancelAuthFlow: createCancelAuthFlow(),
     });
@@ -385,14 +401,14 @@ describe('useAuthUrl', () => {
     const { result } = renderHook(() => useAuthUrl());
 
     await waitFor(() => {
-      expect(result.current.url).toBe('pubkyring://authorize?token=copy');
+      expect(result.current.url).toBe('pubkyring://signin?token=copy');
     });
 
     await act(async () => {
       await result.current.copyAuthUrl();
     });
 
-    expect(mockCopyToClipboard).toHaveBeenCalledWith({ text: 'pubkyring://authorize?token=copy' });
+    expect(mockCopyToClipboard).toHaveBeenCalledWith({ text: 'pubkyring://signin?token=copy' });
   });
 
   it('copyAuthUrl does nothing when url is empty', async () => {

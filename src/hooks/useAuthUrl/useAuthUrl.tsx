@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Session } from '@synonymdev/pubky';
 import { AuthController } from '@/controllers/auth/auth';
+import { generatePubkyRingAuthDeeplink } from '@/libs/deeplink/deeplink';
 import { AuthErrorCode } from '@/libs/error/error.codes';
 import { isAppError, isAuthError, isTimeoutError } from '@/libs/error/error.utils';
 import { Logger } from '@/libs/logger/logger';
@@ -85,7 +86,10 @@ export function useAuthUrl(options: UseAuthUrlOptions = {}): UseAuthUrlReturn {
         });
 
       if (!isMountedRef.current) return;
-      setUrl(authorizationUrl ?? '');
+      // Expose the Pubky-Ring-targeted deeplink everywhere (QR, copy, tap-to-open): the
+      // generic pubkyauth:// scheme is also registered by other apps (e.g. Bitkit), so OS
+      // scheme resolution can route it away from Ring. Revisit if other signers are supported.
+      setUrl(generatePubkyRingAuthDeeplink(authorizationUrl ?? ''));
     } catch (error) {
       Logger.error('Failed to generate auth URL:', error);
       if (!isMountedRef.current) return;

@@ -16,7 +16,11 @@ export type UseAuthUrlOptions =
     };
 
 export interface UseAuthUrlReturn {
-  /** The authorization URL for QR code or deeplink */
+  /**
+   * The authorization deeplink for QR code, copy, and tap-to-open. `pubkyauth://` URLs are
+   * rewritten to the Pubky-Ring-targeted `pubkyring://` scheme; any other shape the controller
+   * returns passes through unchanged. Empty until fetched or after the flow expires.
+   */
   url: string;
   /** Whether the auth URL is currently being generated */
   isLoading: boolean;
