@@ -7,7 +7,7 @@
  * @param onVerify - Called with the trimmed invite code when the full code is entered.
  * @param onSuccess - Called when the user clicks Continue after successful verification.
  */
-import React, { useEffect, useEffectEvent, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, CircleCheck, Loader2, Server } from 'lucide-react';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
@@ -38,7 +38,8 @@ export const HumanInviteCode = ({ onBack, onVerify, onSuccess }: HumanInviteCode
   const showDestructiveBorder = !isVerifying && (verificationOutcome === 'invalid' || verificationOutcome === 'used');
   const trimmedInviteCode = inviteCode.trim();
   const isInviteCodeEntered = trimmedInviteCode.length === 14;
-  const onVerifyLatest = useEffectEvent(onVerify);
+  const onVerifyRef = useRef(onVerify);
+  onVerifyRef.current = onVerify;
 
   useEffect(() => {
     if (!isInviteCodeEntered) {
@@ -59,7 +60,7 @@ export const HumanInviteCode = ({ onBack, onVerify, onSuccess }: HumanInviteCode
       setIsVerified(false);
       setVerificationOutcome(null);
       try {
-        const result = await onVerifyLatest(trimmedInviteCode);
+        const result = await onVerifyRef.current(trimmedInviteCode);
         if (cancelled) {
           return;
         }

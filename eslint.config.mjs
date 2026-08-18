@@ -61,6 +61,11 @@ const eslintConfig = [
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'react-hooks/set-state-in-effect': 'off', // Allow setState in effects
+      // Keep latest-callback/id refs assigned during render. Moving those writes
+      // into effects would delay the update and change stale-closure behaviour.
+      'react-hooks/refs': 'off',
+      // Existing useCallback/useMemo deps are intentional; do not force compiler-inferred lists.
+      'react-hooks/preserve-manual-memoization': 'off',
       'import/first': 'error',
       '@stylistic/padding-line-between-statements': [
         'error',

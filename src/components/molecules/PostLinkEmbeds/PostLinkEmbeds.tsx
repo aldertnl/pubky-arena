@@ -58,6 +58,7 @@ const stripMarkdownLinks = (content: string): string => {
  * Returns the first URL
  */
 const parseContentForUrl = (content: string) => {
+  // linkify-it v6 defaults fuzzyLink to false; keep matching protocol-less URLs.
   const linkify = new LinkifyIt({ fuzzyLink: true });
 
   // Disable unwanted protocol types

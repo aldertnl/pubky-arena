@@ -30,7 +30,6 @@ export function useTagSuggestions({
   const [isLoading, setIsLoading] = useState(false);
   // Guards against out-of-order async responses overwriting newer results
   const requestIdRef = useRef(0);
-  const debouncedSearchRef = useRef<ReturnType<typeof debounce> | null>(null);
 
   // Memoize excludeTags set for efficient filtering
   const excludeTagsSet = useMemo(() => new Set(excludeTags.map((t) => t.toLowerCase())), [excludeTags]);
@@ -41,8 +40,9 @@ export function useTagSuggestions({
     [rawSuggestions, excludeTagsSet],
   );
 
-  useEffect(() => {
-    const performSearch = async (searchQuery: string, searchLimit: number) => {
+  // Debounced search function
+  const debouncedSearchRef = useRef(
+    debounce(async (searchQuery: string, searchLimit: number) => {
       const requestId = ++requestIdRef.current;
       setIsLoading(true);
 
@@ -68,12 +68,14 @@ export function useTagSuggestions({
           setIsLoading(false);
         }
       }
-    };
+    }, TAG_SUGGESTIONS_DEBOUNCE_MS),
+  );
 
-    debouncedSearchRef.current = debounce(performSearch, TAG_SUGGESTIONS_DEBOUNCE_MS);
-
+  // Cleanup debounced function on unmount to prevent memory leaks
+  useEffect(() => {
+    const debouncedFn = debouncedSearchRef.current;
     return () => {
-      debouncedSearchRef.current?.cancel();
+      debouncedFn.cancel();
     };
   }, []);
 
@@ -82,7 +84,7 @@ export function useTagSuggestions({
 
     // Reset if disabled, empty query, or below minimum length
     if (!enabled || !trimmedQuery || trimmedQuery.length < TAG_SUGGESTIONS_MIN_QUERY_LENGTH) {
-      debouncedSearchRef.current?.cancel(); // Cancel first to prevent race conditions
+      debouncedSearchRef.current.cancel(); // Cancel first to prevent race conditions
       requestIdRef.current += 1; // Then invalidate any in-flight request
       setRawSuggestions([]);
       setIsLoading(false);
@@ -91,11 +93,11 @@ export function useTagSuggestions({
 
     // Trigger debounced search
     const debouncedFn = debouncedSearchRef.current;
-    debouncedFn?.(trimmedQuery, limit);
+    debouncedFn(trimmedQuery, limit);
 
     // Cleanup: cancel pending debounced calls when deps change
     return () => {
-      debouncedFn?.cancel();
+      debouncedFn.cancel();
     };
   }, [query, enabled, limit]);
 

@@ -35,16 +35,14 @@ export function useNotifications(): UseNotificationsResult {
   const { mutedUserIdSet } = useMutedUsers();
   const lastRead = useNotificationStore((s) => s.lastRead);
   const unread = useNotificationStore((s) => s.unread);
-  // Sticky baseline: freeze at the first non-zero lastRead so marking as read
-  // during this session does not immediately reclassify the loaded list.
-  const [readBaseline, setReadBaseline] = useState(lastRead);
+  const lastReadRef = useRef(lastRead);
   const previousUnreadRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (readBaseline === 0 && lastRead > 0) {
-      setReadBaseline(lastRead);
+    if (lastReadRef.current === 0 && lastRead > 0) {
+      lastReadRef.current = lastRead;
     }
-  }, [lastRead, readBaseline]);
+  }, [lastRead]);
 
   /**
    * Extracts the actor (initiator) user ID from a notification.
@@ -197,19 +195,16 @@ export function useNotifications(): UseNotificationsResult {
   /**
    * Check if a notification is unread
    */
-  const isNotificationUnread = useCallback(
-    (n: FlatNotification) => {
-      return n.timestamp > readBaseline;
-    },
-    [readBaseline],
-  );
+  const isNotificationUnread = useCallback((n: FlatNotification) => {
+    return n.timestamp > lastReadRef.current;
+  }, []);
 
   /**
    * List of unread notifications
    */
   const unreadNotifications = useMemo(() => {
-    return notifications.filter((n) => n.timestamp > readBaseline);
-  }, [notifications, readBaseline]);
+    return notifications.filter((n) => n.timestamp > lastReadRef.current);
+  }, [notifications]);
 
   /**
    * Initial load - fetch first page when component mounts

@@ -1,7 +1,7 @@
 'use client';
 
 import { forwardRef, useImperativeHandle, useRef } from 'react';
-import { FaceSlightlySmiling, X } from 'lucide-react';
+import { Smile, X } from 'lucide-react';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { Input } from '@/atoms/Input/Input';
@@ -212,7 +212,7 @@ export const TagInput = forwardRef<TagInputHandle, TagInputProps>(function TagIn
                 aria-label="Open emoji picker"
                 disabled={isDisabled}
               >
-                <FaceSlightlySmiling className="size-4" strokeWidth={2} />
+                <Smile className="size-4" strokeWidth={2} />
               </Button>
             )}
 

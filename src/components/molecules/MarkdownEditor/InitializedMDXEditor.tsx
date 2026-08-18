@@ -29,7 +29,7 @@ import {
   toolbarPlugin,
   UndoRedo,
 } from '@mdxeditor/editor';
-import { AlertTriangle, FaceSlightlySmiling, Type } from 'lucide-react';
+import { AlertTriangle, Smile, Type } from 'lucide-react';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { Textarea } from '@/atoms/Textarea/Textarea';
@@ -156,7 +156,7 @@ export default function InitializedMDXEditor({
             className="size-7 cursor-default rounded"
             data-testid="markdown-emoji-button"
           >
-            <FaceSlightlySmiling className="size-6" />
+            <Smile className="size-6" />
           </Button>
 
           <Button
@@ -208,7 +208,7 @@ export default function InitializedMDXEditor({
                 <CodeToggle />
                 <InsertCodeBlock />
                 <ButtonWithTooltip title={'Emoji'} onClick={() => setShowEmojiPicker(true)}>
-                  <FaceSlightlySmiling className="size-6" />
+                  <Smile className="size-6" />
                 </ButtonWithTooltip>
                 <ButtonWithTooltip title={'Markdown'} onClick={switchToMarkdownMode}>
                   <MarkdownMark className="size-6" />

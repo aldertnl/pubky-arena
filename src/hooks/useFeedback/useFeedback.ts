@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useCurrentUserProfile } from '@/hooks/useCurrentUserProfile/useCurrentUserProfile';
 import { postJson } from '@/libs/api/client-request';
 import { Logger } from '@/libs/logger/logger';
@@ -26,11 +26,11 @@ export function useFeedback() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setFeedback(e.target.value);
-  };
+  }, []);
 
-  const submit = async () => {
+  const submit = useCallback(async () => {
     const currentFeedback = feedback.trim();
 
     if (!currentFeedback) return;
@@ -60,15 +60,15 @@ export function useFeedback() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [feedback, isSubmitting, currentUserPubky, userDetails?.name]);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setFeedback('');
     setIsSuccess(false);
     setIsSubmitting(false);
-  };
+  }, []);
 
-  const hasContent = feedback.trim().length > 0;
+  const hasContent = useMemo(() => feedback.trim().length > 0, [feedback]);
 
   return {
     feedback,

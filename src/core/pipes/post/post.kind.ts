@@ -16,6 +16,7 @@ type TResolveTagTargetCompositeIdParams = {
 };
 
 // Keep these aligned with PostLinkEmbeds so we treat links consistently.
+// linkify-it v6 defaults fuzzyLink to false; keep matching protocol-less URLs.
 const IGNORED_PROTOCOLS = ['ftp:', 'mailto:'];
 
 const stripMarkdownLinks = (content: string): string => {

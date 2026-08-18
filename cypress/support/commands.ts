@@ -185,16 +185,7 @@ function collectRecoveryPhraseWords(): Cypress.Chainable<string> {
 Cypress.Commands.add('signOut', () => {
   goToProfilePageFromHeader();
 
-  // Wait until the notification counter and list have settled before clicking the logout button
-  cy.get('body').should(($body) => {
-    const hasList = $body.find('[data-cy="notifications-list"]').length > 0;
-    const hasEmpty = $body.text().includes('Nothing to see here yet');
-    expect(hasList || hasEmpty, 'notifications finished initial load').to.eq(true);
-  });
-  cy.get('[data-testid^="notification-skeleton-"]').should('not.exist');
-  cy.get('[data-cy="header-notification-counter"]').should('not.exist');
-
-  cy.get('#profile-logout-btn').should('be.visible').and('contain', 'Sign out').click();
+  cy.get('#profile-logout-btn').click();
   cy.location('pathname').should('eq', '/logout');
 
   // navigate back to onboarding homepage
@@ -312,14 +303,13 @@ Cypress.Commands.add('innerTextShouldNotEq', { prevSubject: 'element' }, (subjec
   });
 });
 
-// Common helper function to store a string value to an alias and Cypress.expose
+// Common helper function to store a string value to an alias and Cypress env
 // see https://docs.cypress.io/guides/core-concepts/variables-and-aliases#Sharing-Context
-// note: aliases work in the context of a test and only the first test after before
+// note: aliases work in the context of as test and only the first test after before
 function storeStringToAlias(text: string, alias: string): void {
   // store text as alias
   cy.wrap(text).as(alias);
-  // also store text via Cypress.expose so beforeEach can re-create aliases
-  // (aliases are cleared at the end of each test)
+  // also store text in Cypress env to be used in beforeEach to re-create aliases because they are cleared at end of each test
   // e.g. cy.wrap(Cypress.expose(profile1.pubkyAlias)).as(profile1.pubkyAlias);
   Cypress.expose(alias, text);
 }

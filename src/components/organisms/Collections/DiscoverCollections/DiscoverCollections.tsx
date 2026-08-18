@@ -11,6 +11,7 @@ import { COLLECTIONS_SECTION_PAGE_SIZE, COLLECTIONS_SECTION_SKELETON_COUNT } fro
 import { BookmarkController } from '@/controllers/bookmark/bookmark';
 import { PostController } from '@/controllers/post/post';
 import { StreamPostsController } from '@/controllers/stream/posts/posts';
+import { resolveResumeAnchor } from '@/controllers/stream/posts/posts.utils';
 import { Logger } from '@/libs/logger/logger';
 import { parseCollectionContent } from '@/libs/post/collectionContent';
 import { isPostDeleted } from '@/libs/utils/utils';
@@ -99,9 +100,7 @@ export function DiscoverCollections() {
   // Ref of currently-visible IDs, read inside the async fetch so appends can
   // dedup without re-creating the function on every successful append.
   const visibleIdsRef = useRef<string[]>([]);
-  useEffect(() => {
-    visibleIdsRef.current = visibleIds;
-  });
+  visibleIdsRef.current = visibleIds;
 
   // Cancellation token for the in-flight initial fetch. When the effect
   // re-fires (StrictMode double-invoke, or genuine viewer switch), the old
@@ -155,9 +154,10 @@ export function DiscoverCollections() {
       const seen = new Set(base);
       const fresh = result.nextPageIds.filter((id) => !seen.has(id));
 
-      const lastRawId = result.nextPageIds[result.nextPageIds.length - 1];
+      // Anchor is inert for this skip stream's offset pagination, but resolves the
+      // same way as every other feed so the semantics stay uniform.
       cursorRef.current = {
-        lastPostId: lastRawId ?? cursor.lastPostId,
+        lastPostId: resolveResumeAnchor(result) ?? cursor.lastPostId,
         streamTail: result.nextCursor ?? cursor.streamTail,
       };
       setReachedEnd(result.reachedEnd === true);
