@@ -68,10 +68,12 @@ export function SearchInput({ autoFocus = false }: SearchInputProps) {
   });
 
   const handleUserClick = (userId: Pubky) => {
+    // Navigate before closing the dropdown so an in-flight autocomplete
+    // refresh cannot cancel the App Router transition on slower runs.
+    router.push(getUserProfileUrl(userId, currentUserPubky));
     addUser(userId);
     clearInputValue();
     setFocus(false);
-    router.push(getUserProfileUrl(userId, currentUserPubky));
   };
 
   const handleTagClick = (tag: string) => {

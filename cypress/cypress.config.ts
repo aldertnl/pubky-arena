@@ -27,7 +27,6 @@ export default defineConfig({
       homeserverAdminPassword: process.env['HOMESERVER_ADMIN_PASSWORD'] || 'admin',
     },
     expose: {
-      // cypress-slow-down@1.4+ reads this via Cypress.expose (not Cypress.env)
       commandDelay: defaultMs,
       ci: process.env['CI'],
       isMobile: false,

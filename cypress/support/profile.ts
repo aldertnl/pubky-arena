@@ -148,16 +148,15 @@ export const checkNotificationAt = (
         expect(dot.length).to.equal(0);
       }
     });
-  // if profile name is provided, navigate to it in the notification
+  // if a profile name is provided, click the notification row to navigate
   if (profileToNavigateTo) {
     cy.get('[data-cy="notifications-list"]')
       .should('be.visible')
       .children()
       .should('have.length.at.least', index + 1)
       .eq(index)
-      .within(($notif) => {
-        cy.wrap($notif).get('a').should('contain.text', profileToNavigateTo).contains(profileToNavigateTo).click();
-      });
+      .should('contain', profileToNavigateTo)
+      .click();
   }
 };
 
