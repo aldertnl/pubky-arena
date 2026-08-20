@@ -1520,6 +1520,72 @@ describe('truncateAtWordBoundary', () => {
     const result = truncateAtWordBoundary(text, 12);
     expect(result.endsWith('...\u00A0')).toBe(true);
   });
+
+  describe('preserveUrls', () => {
+    it('extends the hard cut to include a URL crossing the limit', () => {
+      const url = 'https://example.com/very/long/path/to/some/page';
+      const text = `Check this out ${url} and more text after`;
+      // Limit 30 lands mid-URL and the last space (14) is before the 80% boundary (24)
+      expect(truncateAtWordBoundary(text, 30, true)).toBe(`Check this out ${url} ...\u00A0`);
+    });
+
+    it('extends the hard cut to include a www-style URL crossing the limit', () => {
+      const url = 'www.example.com/path/that/keeps/going/on/and/on';
+      const text = `Look ${url} here`;
+      expect(truncateAtWordBoundary(text, 20, true)).toBe(`Look ${url} ...\u00A0`);
+    });
+
+    it('extends the cut for www URLs regardless of TLD', () => {
+      const url = `www.example.unknowntld/${'p'.repeat(40)}`;
+      const text = `Look ${url} here`;
+      expect(truncateAtWordBoundary(text, 20, true)).toBe(`Look ${url} ...\u00A0`);
+    });
+
+    it('extends the cut to the whitespace boundary for URLs with characters like braces', () => {
+      const url = `https://example.com/aa{${'b'.repeat(40)}`;
+      const text = `Check this out ${url} end`;
+      expect(truncateAtWordBoundary(text, 30, true)).toBe(`Check this out ${url} ...\u00A0`);
+    });
+
+    it('extends the cut for www URLs glued to punctuation, which GFM still autolinks', () => {
+      const url = `www.example.com/${'p'.repeat(40)}`;
+      const text = `see items one and two,${url} here`;
+      expect(truncateAtWordBoundary(text, 30, true)).toBe(`see items one and two,${url} ...\u00A0`);
+    });
+
+    it('extends the cut for www URLs on their own line', () => {
+      const url = `www.example.com/${'p'.repeat(40)}`;
+      const text = `line one:\n${url} here`;
+      expect(truncateAtWordBoundary(text, 20, true)).toBe(`line one:\n${url} ...\u00A0`);
+    });
+
+    it('returns the text unchanged when the crossing URL runs to the end of the text', () => {
+      const url = `https://example.com/${'a'.repeat(100)}`;
+      expect(truncateAtWordBoundary(url, 50, true)).toBe(url);
+    });
+
+    it('keeps the whole URL when the cut lands exactly at its end', () => {
+      const url = 'https://example.com';
+      const text = `${url} plus additional trailing words`;
+      expect(truncateAtWordBoundary(text, url.length, true)).toBe(`${url} ...\u00A0`);
+    });
+
+    it('does not extend the cut for bare domains that GFM does not autolink', () => {
+      const text = `Check this out example.com/${'a'.repeat(50)}`;
+      expect(truncateAtWordBoundary(text, 30, true)).toBe(`${text.slice(0, 30)}...\u00A0`);
+    });
+
+    it('does not extend the cut when a URL ends on an earlier line than the cut', () => {
+      const text = `a https://x.co\n${'b'.repeat(400)}`;
+      expect(truncateAtWordBoundary(text, 300, true)).toBe(`${text.slice(0, 300)}...\u00A0`);
+    });
+
+    it('hard cuts mid-URL when preserveUrls is off', () => {
+      const url = 'https://example.com/very/long/path/to/some/page';
+      const text = `Check this out ${url} and more text after`;
+      expect(truncateAtWordBoundary(text, 30)).toBe(`${text.slice(0, 30)}...\u00A0`);
+    });
+  });
 });
 
 describe('truncatePostPreviewText', () => {
@@ -1573,6 +1639,22 @@ describe('truncatePostPreviewText', () => {
     const result = truncatePostPreviewText(content);
     expect(result?.length).toBeLessThanOrEqual(TRUNCATION_LIMIT + 4);
     expect(result?.endsWith('...\u00A0')).toBe(true);
+  });
+
+  it('keeps a URL crossing the character limit intact', () => {
+    const url = `https://example.com/${'a'.repeat(100)}`;
+    const content = `${'word '.repeat(46)}${url} and trailing words after the link`;
+
+    // The URL spans indices 230-350, so the 300-char cut would land mid-URL
+    expect(truncatePostPreviewText(content)).toBe(`${'word '.repeat(46)}${url} ...\u00A0`);
+  });
+
+  it('does not truncate when the only overflow is a URL running to the end of the text', () => {
+    const url = `https://example.com/${'a'.repeat(100)}`;
+    const content = `${'word '.repeat(46)}${url}`;
+
+    // Cutting mid-URL would break the link and cutting at its end would hide nothing
+    expect(truncatePostPreviewText(content)).toBeNull();
   });
 });
 

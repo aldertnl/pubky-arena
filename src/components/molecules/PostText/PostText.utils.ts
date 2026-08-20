@@ -340,7 +340,9 @@ export const truncatePostPreviewText = (text: string): string | null => {
   const lineLimitedText = getLineLimitedPostPreviewText(meaningfulText);
 
   if (lineLimitedText.length > TRUNCATION_LIMIT) {
-    return truncateAtWordBoundary(lineLimitedText, TRUNCATION_LIMIT);
+    const charLimitedText = truncateAtWordBoundary(lineLimitedText, TRUNCATION_LIMIT, true);
+    // An unchanged result means the overflow was only a URL running to the text's end
+    if (charLimitedText !== lineLimitedText) return charLimitedText;
   }
 
   return lineLimitedText.length < meaningfulText.length ? `${lineLimitedText}${TRUNCATION_ELLIPSIS}` : null;
@@ -753,9 +755,18 @@ export const remarkExtractFirstParagraph = () => (tree: Root) => {
   tree.children = previewChildren;
 };
 
-// Truncate text at word boundaries to avoid cutting mid-word, mid-markdown, or mid-URL.
+// Where remark-gfm can start an autolink literal inside a whitespace-free token: `http(s)://`
+// after any non-alphabetic character, `www.` after any punctuation or symbol (or the token
+// start, since tokens begin after whitespace). Union of micromark's previousProtocol/
+// previousWww syntax checks and mdast-util-gfm-autolink-literal's previous() transform check.
+const GFM_AUTOLINK_START_REGEX = /(^|[^a-z])(https?:\/\/)|(^|[\p{P}\p{S}])(www\.)/iu;
+
+// Truncate text at word boundaries to avoid cutting mid-word.
 // Falls back to hard cut if no suitable word boundary is found within 80% of the limit.
-export const truncateAtWordBoundary = (text: string, limit: number): string => {
+// With `preserveUrls`, a hard cut that would land inside an autolinked URL moves to the end
+// of the URL's whitespace-delimited token instead (autolinks run to the next whitespace, so
+// this is exactly the rendered link's end), keeping the link's href intact.
+export const truncateAtWordBoundary = (text: string, limit: number, preserveUrls = false): string => {
   if (text.length <= limit) return text;
 
   const truncated = text.slice(0, limit);
@@ -763,6 +774,24 @@ export const truncateAtWordBoundary = (text: string, limit: number): string => {
 
   // Only use word boundary if it's within 80% of the limit to avoid too-short truncation
   const minBoundary = Math.floor(limit * 0.8);
+  if (lastSpace > minBoundary) return truncated.slice(0, lastSpace) + TRUNCATION_ELLIPSIS;
 
-  return (lastSpace > minBoundary ? truncated.slice(0, lastSpace) : truncated) + TRUNCATION_ELLIPSIS;
+  if (preserveUrls) {
+    // The cut's token runs between the whitespace characters surrounding the limit
+    const tokenStart = truncated.search(/\s\S*$/) + 1;
+    const whitespaceAfterLimit = /\s/g;
+    whitespaceAfterLimit.lastIndex = limit;
+    const tokenEnd = whitespaceAfterLimit.exec(text)?.index ?? text.length;
+    const autolink = GFM_AUTOLINK_START_REGEX.exec(text.slice(tokenStart, tokenEnd));
+    const autolinkStart = autolink ? tokenStart + autolink.index + (autolink[1] ?? autolink[3]).length : -1;
+
+    // Extend the cut to the token's end when a URL starts before the cut and crosses it
+    if (autolink && autolinkStart < limit) {
+      if (tokenEnd >= text.trimEnd().length) return text;
+      // The plain space keeps the ellipsis out of the autolinked href
+      return `${text.slice(0, tokenEnd)} ${TRUNCATION_ELLIPSIS}`;
+    }
+  }
+
+  return truncated + TRUNCATION_ELLIPSIS;
 };

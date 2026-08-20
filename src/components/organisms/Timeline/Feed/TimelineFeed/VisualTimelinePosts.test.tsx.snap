@@ -65,6 +65,7 @@ exports[`VisualTimelinePosts - Snapshots > matches snapshot for a populated visu
                   class="overflow-hidden max-h-[96px]"
                 >
                   <div
+                    data-pre-truncated="true"
                     data-testid="visual-overlay-text"
                   >
                     Hello world

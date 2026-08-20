@@ -949,6 +949,70 @@ describe('PostText', () => {
       expect(screen.getByRole('button', { name: 'Show full post content' })).toBeInTheDocument();
     });
 
+    it('keeps the full URL href and shortens the visible link text when truncation cuts mid-URL', () => {
+      const url = `https://example.com/${'a'.repeat(100)}`;
+      const content = `${'word '.repeat(46)}${url} and trailing words after the link`;
+      render(<PostText content={content} />);
+
+      const link = screen.getByRole('link');
+      expect(link).toHaveAttribute('href', url);
+      expect(link.textContent).toBe(`https://example.com/aaaa...${'a'.repeat(23)}`);
+      expect(screen.getByRole('button', { name: 'Show full post content' })).toBeInTheDocument();
+    });
+
+    it('does not shorten short link text in truncated previews', () => {
+      const url = 'https://example.com';
+      const content = `${url} ${generateContent(400)}`;
+      render(<PostText content={content} />);
+
+      const link = screen.getByRole('link');
+      expect(link).toHaveAttribute('href', url);
+      expect(link.textContent).toBe(url);
+    });
+
+    it('keeps the full link text on post detail page', () => {
+      mockUsePathname.mockReturnValue('/post/some-post-id');
+      const url = `https://example.com/${'a'.repeat(100)}`;
+      const content = `${'word '.repeat(46)}${url} and trailing words after the link`;
+      render(<PostText content={content} />);
+
+      const link = screen.getByRole('link');
+      expect(link).toHaveAttribute('href', url);
+      expect(link.textContent).toBe(url);
+    });
+
+    it('shows the full link text after expanding with Show more', () => {
+      const url = `https://example.com/${'a'.repeat(100)}`;
+      const content = `${'word '.repeat(46)}${url} and trailing words after the link`;
+      render(<PostText content={content} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Show full post content' }));
+
+      const link = screen.getByRole('link');
+      expect(link).toHaveAttribute('href', url);
+      expect(link.textContent).toBe(url);
+    });
+
+    it('does not truncate content when the overflow is only a URL running to the end', () => {
+      const url = `https://example.com/${'a'.repeat(100)}`;
+      const content = `${'word '.repeat(46)}${url}`;
+      render(<PostText content={content} />);
+
+      expect(screen.getByRole('link')).toHaveAttribute('href', url);
+      expect(screen.queryByRole('button', { name: 'Show full post content' })).not.toBeInTheDocument();
+    });
+
+    it('skips truncation but shortens link text when content is pre-truncated by the caller', () => {
+      const url = `https://example.com/${'a'.repeat(100)}`;
+      const content = `${'word '.repeat(46)}${url} and trailing words after the link`;
+      render(<PostText content={content} isPreTruncated />);
+
+      const link = screen.getByRole('link');
+      expect(link).toHaveAttribute('href', url);
+      expect(link.textContent).toBe(`https://example.com/aaaa...${'a'.repeat(23)}`);
+      expect(screen.queryByRole('button', { name: 'Show full post content' })).not.toBeInTheDocument();
+    });
+
     it('renders "Show more" button with correct styling classes', () => {
       const longContent = generateContent(600);
       render(<PostText content={longContent} />);

@@ -138,7 +138,7 @@ function VisualTimelineTileOverlay({ tile, size, onReplyClick, onRepostClick }: 
     }
 
     const limit = isCompact ? 120 : size === 'wide' ? 260 : 180;
-    return truncateAtWordBoundary(trimmedContent, limit);
+    return truncateAtWordBoundary(trimmedContent, limit, true);
   }, [isCompact, size, tile.content]);
 
   return (
@@ -179,6 +179,7 @@ function VisualTimelineTileOverlay({ tile, size, onReplyClick, onRepostClick }: 
             <Container overrideDefaults className={cn('overflow-hidden', isCompact ? 'max-h-[84px]' : 'max-h-[96px]')}>
               <PostText
                 content={truncatedContent}
+                isPreTruncated
                 className={cn(
                   'text-white [&_*]:text-white [&_blockquote]:border-white/30 [&_button]:text-white [&_button]:hover:text-white/80',
                   isCompact ? 'text-sm leading-5' : 'text-base leading-6',

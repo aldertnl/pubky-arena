@@ -7,7 +7,8 @@ import remarkGfm from 'remark-gfm';
 import { POST_ROUTES } from '@/app/routes';
 import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
-import { cn } from '@/libs/utils/utils';
+import { URL_TRUNCATE_LENGTH } from '@/config/urls';
+import { cn, truncateMiddle } from '@/libs/utils/utils';
 import { PostMentions } from '@/organisms/PostMentions/PostMentions';
 import { PostCodeBlock } from '../PostCodeBlock/PostCodeBlock';
 import { PostHashtags } from '../PostHashtags/PostHashtags';
@@ -39,13 +40,21 @@ import {
  * Memoization prevents unnecessary re-renders when TTL refreshes update IndexedDB records
  * without changes to the actual post content.
  */
-export const PostText = memo(function PostText({ content, isArticle, onLinkClick, className }: PostTextProps) {
+export const PostText = memo(function PostText({
+  content,
+  isArticle,
+  onLinkClick,
+  className,
+  isPreTruncated,
+}: PostTextProps) {
   const pathname = usePathname();
   const onPostPage = pathname.startsWith(POST_ROUTES.POST);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const contentTruncated = !isArticle && !onPostPage && !isExpanded ? truncatePostPreviewText(content) : null;
+  const contentTruncated =
+    !isArticle && !onPostPage && !isExpanded && !isPreTruncated ? truncatePostPreviewText(content) : null;
   const showMoreButton = Boolean(contentTruncated);
+  const inTruncatedPreview = showMoreButton || Boolean(isPreTruncated);
 
   const remarkPlugins = [
     remarkGfm,
@@ -97,6 +106,12 @@ export const PostText = memo(function PostText({ content, isArticle, onLinkClick
             if (dataType === 'hashtag') return <PostHashtags {...props} />;
             if (dataType === 'mention') return <PostMentions {...props} />;
 
+            // In collapsed previews shorten only the visible link text; the href keeps the full URL
+            const displayChildren =
+              inTruncatedPreview && typeof children === 'string'
+                ? truncateMiddle(children, URL_TRUNCATE_LENGTH)
+                : children;
+
             return (
               <a
                 {...rest}
@@ -111,7 +126,7 @@ export const PostText = memo(function PostText({ content, isArticle, onLinkClick
                 }}
                 className={cn(className, 'cursor-pointer text-brand transition-colors hover:text-brand/80')}
               >
-                {children}
+                {displayChildren}
               </a>
             );
           },

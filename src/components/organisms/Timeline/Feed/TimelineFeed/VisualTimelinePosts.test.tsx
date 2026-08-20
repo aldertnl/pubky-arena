@@ -115,15 +115,11 @@ vi.mock('@/molecules/PostHeaderUserInfo/PostHeaderUserInfo', () => {
 
 vi.mock('@/molecules/PostText/PostText', () => {
   return {
-    PostText: ({ content }: { content: string }) => <div data-testid="visual-overlay-text">{content}</div>,
-  };
-});
-
-vi.mock('@/molecules/PostText/PostText.utils', () => {
-  return {
-    truncateAtWordBoundary: (content: string, limit: number) => {
-      return content.length > limit ? `${content.slice(0, limit)}...` : content;
-    },
+    PostText: ({ content, isPreTruncated }: { content: string; isPreTruncated?: boolean }) => (
+      <div data-testid="visual-overlay-text" data-pre-truncated={isPreTruncated}>
+        {content}
+      </div>
+    ),
   };
 });
 
@@ -848,6 +844,39 @@ describe('VisualTimelinePosts', () => {
     );
 
     expect(screen.getByTestId('visual-overlay-content-stack')).toHaveClass('flex', 'flex-col', 'gap-4');
+  });
+
+  it('keeps a URL crossing the tile limit whole and marks the snippet as pre-truncated', () => {
+    // The medium tile truncates at 180 chars; the URL spans 140-360, so the cut lands mid-URL
+    const url = `https://example.com/${'a'.repeat(200)}`;
+    const rows = createRows();
+    const tile = rows[0]?.cells[0]?.tile;
+    if (!tile) throw new Error('expected a fixture tile');
+    tile.content = `${'word '.repeat(28)}${url} trailing words after the link`;
+    mockUseVisualFeedTiles.mockReturnValue({
+      rows,
+      tail: [],
+      tiles: [],
+      hasPendingSnapshot: false,
+      hasPendingTiles: false,
+      hasPendingFiles: false,
+      hasPendingPostDetails: false,
+    });
+
+    render(
+      <VisualTimelinePosts
+        postIds={['author:post1']}
+        loading={false}
+        loadingMore={false}
+        error={null}
+        hasMore={false}
+        loadMore={vi.fn()}
+      />,
+    );
+
+    const overlayText = screen.getByTestId('visual-overlay-text');
+    expect(overlayText.textContent).toContain(url);
+    expect(overlayText).toHaveAttribute('data-pre-truncated', 'true');
   });
 
   it('does not force a selected-looking border on overlay tags', () => {
