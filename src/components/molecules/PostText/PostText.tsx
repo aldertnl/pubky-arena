@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -37,16 +37,10 @@ import {
  * - URL detection and linking
  * - Content truncation with in-place "Show more" on non-post pages
  *
- * Memoization prevents unnecessary re-renders when TTL refreshes update IndexedDB records
- * without changes to the actual post content.
+ * Re-render bailouts on TTL refreshes (#959) come from the React Compiler
+ * (`reactCompiler` in next.config.ts) — no manual memo needed.
  */
-export const PostText = memo(function PostText({
-  content,
-  isArticle,
-  onLinkClick,
-  className,
-  isPreTruncated,
-}: PostTextProps) {
+export function PostText({ content, isArticle, onLinkClick, className, isPreTruncated }: PostTextProps) {
   const pathname = usePathname();
   const onPostPage = pathname.startsWith(POST_ROUTES.POST);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -235,4 +229,4 @@ export const PostText = memo(function PostText({
       )}
     </Container>
   );
-});
+}
