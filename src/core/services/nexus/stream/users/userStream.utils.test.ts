@@ -1,13 +1,29 @@
 import { describe, expect, it } from 'vitest';
+import { AppError } from '@/libs/error/error';
+import { ValidationErrorCode } from '@/libs/error/error.codes';
+import { ErrorCategory } from '@/libs/error/error.types';
 import type { Pubky } from '@/models/models.types';
 import { type UserStreamId, UserStreamTypes } from '@/models/stream/user/userStream.types';
 import { userStreamApi } from '@/services/nexus/stream/users/userStream.api';
 import type {
   TUserStreamBase,
   TUserStreamInfluencersParams,
+  TUserStreamStarterPackParams,
   TUserStreamWithUserIdParams,
 } from '@/services/nexus/stream/users/userStream.types';
 import { createUserStreamParams, streamRequiresUserId } from './userStream.utils';
+
+const expectValidationError = (fn: () => unknown) => {
+  try {
+    fn();
+    expect.fail('Should have thrown');
+  } catch (error) {
+    expect(error).toBeInstanceOf(AppError);
+    const appError = error as AppError;
+    expect(appError.category).toBe(ErrorCategory.Validation);
+    expect(appError.code).toBe(ValidationErrorCode.INVALID_INPUT);
+  }
+};
 
 describe('createUserStreamParams', () => {
   const baseParams: TUserStreamBase = {
@@ -268,6 +284,116 @@ describe('createUserStreamParams', () => {
   });
 
   // ============================================================================
+  // 4-Part Starter Pack IDs (source:timeframe:reach:tags)
+  // ============================================================================
+
+  describe('4-part starter pack IDs (source:timeframe:reach:tags)', () => {
+    it('should parse a live starter pack ID into starter_pack reach with a tags param', () => {
+      const streamId = 'starter_pack:all:all:bitcoin,music' as UserStreamId;
+
+      const result = createUserStreamParams(streamId, baseParams);
+
+      expect(result.reach).toBe('starter_pack');
+      expect(result.apiParams).toEqual({
+        skip: 0,
+        limit: 20,
+        tags: 'bitcoin,music',
+      });
+    });
+
+    it('should preserve tag order in the tags param', () => {
+      const forward = createUserStreamParams('starter_pack:all:all:travel,music' as UserStreamId, baseParams);
+      const reversed = createUserStreamParams('starter_pack:all:all:music,travel' as UserStreamId, baseParams);
+
+      expect((forward.apiParams as TUserStreamStarterPackParams).tags).toBe('travel,music');
+      expect((reversed.apiParams as TUserStreamStarterPackParams).tags).toBe('music,travel');
+    });
+
+    it('should spread baseParams including viewer_id for live starter pack IDs', () => {
+      const streamId = 'starter_pack:all:all:bitcoin' as UserStreamId;
+      const paramsWithViewer: TUserStreamBase = {
+        skip: 0,
+        limit: 20,
+        viewer_id: 'viewer-abc' as Pubky,
+      };
+
+      const result = createUserStreamParams(streamId, paramsWithViewer);
+
+      expect(result.apiParams).toEqual({
+        skip: 0,
+        limit: 20,
+        viewer_id: 'viewer-abc',
+        tags: 'bitcoin',
+      });
+    });
+
+    it('should parse a mock starter pack ID into starter_pack_mock reach without a tags param', () => {
+      const streamId = 'starter_pack_mock:all:all:bitcoin,music' as UserStreamId;
+
+      const result = createUserStreamParams(streamId, baseParams);
+
+      expect(result.reach).toBe('starter_pack_mock');
+      // most_followed serves the mock and rejects a `tags` query param
+      expect(result.apiParams).toEqual(baseParams);
+      expect(result.apiParams).not.toHaveProperty('tags');
+    });
+
+    it('should reject an empty tag segment', () => {
+      expectValidationError(() => createUserStreamParams('starter_pack:all:all:' as UserStreamId, baseParams));
+    });
+
+    it('should reject more than 5 tags', () => {
+      expectValidationError(() =>
+        createUserStreamParams('starter_pack:all:all:a,b,c,d,e,f' as UserStreamId, baseParams),
+      );
+    });
+
+    it('should reject noncanonical labels instead of silently normalizing', () => {
+      expectValidationError(() => createUserStreamParams('starter_pack:all:all:Bitcoin' as UserStreamId, baseParams));
+    });
+
+    it('should reject labels with whitespace or banned characters', () => {
+      expectValidationError(() =>
+        createUserStreamParams('starter_pack:all:all:rock music' as UserStreamId, baseParams),
+      );
+      expectValidationError(() => createUserStreamParams('starter_pack:all:all:a,,b' as UserStreamId, baseParams));
+    });
+
+    it('should reject overlength labels (>20 chars)', () => {
+      expectValidationError(() =>
+        createUserStreamParams(`starter_pack:all:all:${'a'.repeat(21)}` as UserStreamId, baseParams),
+      );
+    });
+
+    it('should reject 4-part IDs whose source is not a starter pack variant', () => {
+      expectValidationError(() => createUserStreamParams('part1:part2:part3:part4' as UserStreamId, baseParams));
+      expectValidationError(() => createUserStreamParams('most_followed:all:all:bitcoin' as UserStreamId, baseParams));
+    });
+
+    it('should reject non-"all" timeframe segments', () => {
+      expectValidationError(() => createUserStreamParams('starter_pack:today:all:bitcoin' as UserStreamId, baseParams));
+      expectValidationError(() =>
+        createUserStreamParams('starter_pack_mock:this_month:all:bitcoin' as UserStreamId, baseParams),
+      );
+    });
+
+    it('should reject non-"all" reach segments', () => {
+      expectValidationError(() =>
+        createUserStreamParams('starter_pack:all:friends:bitcoin' as UserStreamId, baseParams),
+      );
+      expectValidationError(() =>
+        createUserStreamParams('starter_pack_mock:all:followers:bitcoin' as UserStreamId, baseParams),
+      );
+    });
+
+    it('should reject IDs where both timeframe and reach are non-"all"', () => {
+      expectValidationError(() =>
+        createUserStreamParams('starter_pack:today:friends:bitcoin' as UserStreamId, baseParams),
+      );
+    });
+  });
+
+  // ============================================================================
   // Edge Cases and Error Handling
   // ============================================================================
 
@@ -278,20 +404,19 @@ describe('createUserStreamParams', () => {
       );
     });
 
-    it('should throw error for invalid format (1 part)', () => {
+    it('should throw a validation error for invalid format (1 part)', () => {
       const streamId = 'invalid-stream-id' as UserStreamId;
 
+      expectValidationError(() => createUserStreamParams(streamId, baseParams));
       expect(() => createUserStreamParams(streamId, baseParams)).toThrow(
-        'Invalid stream ID: "invalid-stream-id". Expected 2 or 3 parts separated by ":"',
+        'Invalid stream ID: expected 2, 3, or 4 parts separated by ":"',
       );
     });
 
-    it('should throw error for invalid format (4+ parts)', () => {
-      const streamId = 'part1:part2:part3:part4' as UserStreamId;
+    it('should throw a validation error for invalid format (5+ parts)', () => {
+      const streamId = 'part1:part2:part3:part4:part5' as UserStreamId;
 
-      expect(() => createUserStreamParams(streamId, baseParams)).toThrow(
-        'Invalid stream ID: "part1:part2:part3:part4". Expected 2 or 3 parts separated by ":"',
-      );
+      expectValidationError(() => createUserStreamParams(streamId, baseParams));
     });
 
     it('should throw error for empty streamId', () => {
