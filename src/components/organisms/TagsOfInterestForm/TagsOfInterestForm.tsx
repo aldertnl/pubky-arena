@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { APP_ROUTES, ONBOARDING_ROUTES } from '@/app/routes';
@@ -23,14 +24,23 @@ export const TagsOfInterestForm = () => {
   const markExperienceCompleted = useOnboardingStore((state) => state.markExperienceCompleted);
 
   const { tags: popularTags } = useHotTags({ limit: ONBOARDING_INTERESTS_SUGGESTED_COUNT });
-  const { selectedTags, addTag, removeTag, toggleTag, isSelected, isAtLimit } = useInterestTags();
+  // Seed from the persisted selection (frozen at mount) so a round trip to the profile
+  // step — Back button or browser back — restores the tags and their order.
+  const [initialTags] = useState(() => useOnboardingStore.getState().interestTags);
+  const { selectedTags, addTag, removeTag, toggleTag, isSelected, isAtLimit } = useInterestTags(initialTags);
+
+  // Persist every change rather than only on Continue: Back, browser back, and guard
+  // redirects all bypass the Continue handler and must not lose the selection.
+  useEffect(() => {
+    setInterestTags(selectedTags);
+  }, [selectedTags, setInterestTags]);
 
   const popularLabels = new Set(popularTags.map((tag) => canonicalizeInterestTag(tag.name)));
   const selectedPopularCount = selectedTags.filter((tag) => popularLabels.has(tag)).length;
   const customTags = selectedTags.filter((tag) => !popularLabels.has(tag));
 
   const handleContinue = () => {
-    setInterestTags(selectedTags);
+    // Selection is already persisted by the sync effect above.
     // TEMPORARY(#2388): Tags is currently the last Experience screen, so completion is
     // written here. #2388 relocates this write to the Follow screen's Finish action and
     // retargets Continue to the follow route.

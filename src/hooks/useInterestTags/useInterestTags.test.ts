@@ -118,4 +118,31 @@ describe('useInterestTags', () => {
     expect(result.current.selectedTags).toEqual(['tag0', 'tag1', 'tag2', 'tag3', 'tag4']);
     expect(result.current.isSelected('overflow')).toBe(false);
   });
+
+  describe('initialTags seeding', () => {
+    it('seeds the selection preserving order', () => {
+      const { result } = renderHook(() => useInterestTags(['bitcoin', 'art']));
+
+      expect(result.current.selectedTags).toEqual(['bitcoin', 'art']);
+      expect(result.current.isSelected('bitcoin')).toBe(true);
+    });
+
+    it('sanitizes the seed: canonicalizes, drops invalid labels, dedupes, and caps', () => {
+      const { result } = renderHook(() =>
+        useInterestTags([' Bitcoin ', 'bitcoin', 'bad tag', 'a'.repeat(21), 't1', 't2', 't3', 't4', 't5']),
+      );
+
+      expect(result.current.selectedTags).toEqual(['bitcoin', 't1', 't2', 't3', 't4']);
+      expect(result.current.isAtLimit).toBe(true);
+    });
+
+    it('remains fully interactive after seeding', () => {
+      const { result } = renderHook(() => useInterestTags(['bitcoin']));
+
+      act(() => result.current.toggleTag('bitcoin'));
+      act(() => result.current.addTag('art'));
+
+      expect(result.current.selectedTags).toEqual(['art']);
+    });
+  });
 });

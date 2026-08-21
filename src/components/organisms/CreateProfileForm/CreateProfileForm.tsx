@@ -218,7 +218,9 @@ export const CreateProfileForm = () => {
           className="onboarding-nav mt-auto flex-col sm:flex-row lg:pt-0"
           backButtonDisabled={!isRevisit}
           onHandleBackButton={isRevisit ? () => router.push(ONBOARDING_ROUTES.TAGS) : undefined}
-          continueButtonDisabled={isSubmitDisabled}
+          // isLoading stays true in revisit mode until the current profile arrives; submitting
+          // the still-empty defaults would overwrite the existing bio, links, and avatar.
+          continueButtonDisabled={isSubmitDisabled || state.isLoading}
           continueButtonLoading={state.isSaving}
           continueText={state.submitText}
           onContinue={handlers.handleSubmit}
