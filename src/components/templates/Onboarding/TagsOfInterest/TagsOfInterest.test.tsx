@@ -186,6 +186,22 @@ describe('TagsOfInterest', () => {
     expect(useOnboardingStore.getState().experienceCompletedByPubky[ACTIVE_PUBKY]).toBeUndefined();
   });
 
+  it('restores the selection after a Back round trip to the profile step', () => {
+    const { unmount } = render(<TagsOfInterest />);
+
+    fireEvent.click(screen.getByTestId('popular-tag-bitcoin'));
+    addCustomTag('satoshi');
+    fireEvent.click(screen.getByRole('button', { name: /back/i }));
+
+    // Simulate the route change to the profile step and back
+    unmount();
+    render(<TagsOfInterest />);
+
+    expect(screen.getByTestId('popular-tag-bitcoin')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('interest-tag-satoshi')).toBeInTheDocument();
+    expect(useOnboardingStore.getState().interestTags).toEqual(['bitcoin', 'satoshi']);
+  });
+
   it('redirects home without rendering when the active pubky already completed the experience', () => {
     useOnboardingStore.setState({
       experienceCompletedByPubky: { [ACTIVE_PUBKY]: true },

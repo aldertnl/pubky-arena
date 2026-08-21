@@ -1094,6 +1094,24 @@ describe('CreateProfileForm', () => {
       expect(continueButton).toHaveTextContent('Save Profile');
     });
 
+    it('keeps Continue disabled while the current profile has not loaded', () => {
+      // Local miss + failed fetch: userDetails never arrives, so submitting the empty
+      // defaults would overwrite the existing bio, links, and avatar.
+      vi.mocked(useCurrentUserProfile).mockReturnValue({
+        userDetails: null,
+        currentUserPubky: mockPubky,
+      });
+
+      render(<CreateProfileForm />);
+
+      // Even with a valid name typed in, the loading gate must hold the submit
+      const nameInput = screen.getAllByTestId('molecules-input')[0];
+      fireEvent.change(nameInput, { target: { value: 'Valid Name' } });
+
+      expect(screen.getByTestId('continue-button')).toBeDisabled();
+      expect(ProfileController.commitUpdate).not.toHaveBeenCalled();
+    });
+
     it('enables the back button and navigates to the tags step without saving', async () => {
       render(<CreateProfileForm />);
 
