@@ -84,6 +84,8 @@ export interface UseProfileFormPropsCreate extends UseProfileFormPropsBase {
 export interface UseProfileFormPropsEdit extends UseProfileFormPropsBase {
   mode: 'edit';
   userDetails: NexusUserDetails | null | undefined;
+  /** Route to navigate to after a successful save (defaults to the own-profile page). */
+  redirectTo?: string;
 }
 
 export type UseProfileFormProps = UseProfileFormPropsCreate | UseProfileFormPropsEdit;
