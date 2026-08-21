@@ -39,6 +39,8 @@ describe('OnboardingStore', () => {
       mnemonic: null,
       hasHydrated: false,
       showWelcomeDialog: false,
+      interestTags: [],
+      experienceCompletedByPubky: {},
     });
   });
 
@@ -618,6 +620,94 @@ describe('OnboardingStore', () => {
       expect(resetState.mnemonic).toBeNull();
       expect(resetState.hasHydrated).toBe(true); // Preserved
       expect(resetState.showWelcomeDialog).toBe(false); // Reset to initial state
+    });
+  });
+
+  describe('Interest Tags', () => {
+    it('should have empty interestTags by default', () => {
+      expect(useOnboardingStore.getState().interestTags).toEqual([]);
+    });
+
+    it('should set interest tags preserving order', () => {
+      useOnboardingStore.getState().setInterestTags(['bitcoin', 'art', 'photography']);
+
+      expect(useOnboardingStore.getState().interestTags).toEqual(['bitcoin', 'art', 'photography']);
+    });
+
+    it('should replace previous interest tags on set', () => {
+      const state = useOnboardingStore.getState();
+      state.setInterestTags(['bitcoin']);
+      state.setInterestTags(['art', 'music']);
+
+      expect(useOnboardingStore.getState().interestTags).toEqual(['art', 'music']);
+    });
+
+    it('should clear interestTags on reset to prevent cross-account leakage', () => {
+      useOnboardingStore.getState().setInterestTags(['bitcoin', 'art']);
+
+      useOnboardingStore.getState().reset();
+
+      expect(useOnboardingStore.getState().interestTags).toEqual([]);
+    });
+  });
+
+  describe('Experience Completion (per pubky)', () => {
+    const pubkyA = 'pubky-user-a';
+    const pubkyB = 'pubky-user-b';
+
+    it('should have empty completion map by default', () => {
+      expect(useOnboardingStore.getState().experienceCompletedByPubky).toEqual({});
+    });
+
+    it('should mark completion for a specific pubky only', () => {
+      useOnboardingStore.getState().markExperienceCompleted(pubkyA);
+
+      const state = useOnboardingStore.getState();
+      expect(state.experienceCompletedByPubky[pubkyA]).toBe(true);
+      expect(state.experienceCompletedByPubky[pubkyB]).toBeUndefined();
+    });
+
+    it('should accumulate completion across multiple pubkys', () => {
+      const state = useOnboardingStore.getState();
+      state.markExperienceCompleted(pubkyA);
+      state.markExperienceCompleted(pubkyB);
+
+      const finalState = useOnboardingStore.getState();
+      expect(finalState.experienceCompletedByPubky[pubkyA]).toBe(true);
+      expect(finalState.experienceCompletedByPubky[pubkyB]).toBe(true);
+    });
+
+    it('should preserve completion through reset (same-account logout/re-login)', () => {
+      const mockSecrets = createMockSecrets();
+      const state = useOnboardingStore.getState();
+      state.setSecrets(mockSecrets);
+      state.markExperienceCompleted(pubkyA);
+
+      // Logout and sign-in both call reset()
+      state.reset();
+
+      const resetState = useOnboardingStore.getState();
+      expect(resetState.secretKey).toBeNull();
+      expect(resetState.experienceCompletedByPubky[pubkyA]).toBe(true);
+    });
+
+    it('should not flag a different account on the same browser after reset', () => {
+      const state = useOnboardingStore.getState();
+      state.markExperienceCompleted(pubkyA);
+
+      state.reset();
+
+      expect(useOnboardingStore.getState().experienceCompletedByPubky[pubkyB]).toBeUndefined();
+    });
+
+    it('should survive repeated resets', () => {
+      const state = useOnboardingStore.getState();
+      state.markExperienceCompleted(pubkyA);
+
+      state.reset();
+      state.reset();
+
+      expect(useOnboardingStore.getState().experienceCompletedByPubky[pubkyA]).toBe(true);
     });
   });
 });

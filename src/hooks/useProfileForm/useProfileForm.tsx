@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
-import { HOME_ROUTES, PROFILE_ROUTES, SETTINGS_ROUTES } from '@/app/routes';
+import { ONBOARDING_ROUTES, PROFILE_ROUTES, SETTINGS_ROUTES } from '@/app/routes';
 import { USER_BIO_MAX_LENGTH, USER_NAME_MAX_LENGTH, USER_NAME_MIN_LENGTH } from '@/config/user';
 import { AuthController } from '@/controllers/auth/auth';
 import { FileController } from '@/controllers/file/file';
@@ -44,6 +44,7 @@ export function useProfileForm(props: UseProfileFormProps): UseProfileFormReturn
   const { mode, pubky } = props;
   // Extract userDetails for edit mode to avoid object reference issues in useEffect
   const userDetails = props.mode === 'edit' ? props.userDetails : undefined;
+  const editRedirectTo = props.mode === 'edit' ? props.redirectTo : undefined;
   const setShowWelcomeDialog = props.mode === 'create' ? props.setShowWelcomeDialog : undefined;
 
   const router = useRouter();
@@ -329,7 +330,7 @@ export function useProfileForm(props: UseProfileFormProps): UseProfileFormReturn
         }
         await AuthController.bootstrapWithDelay();
         setShowWelcomeDialog?.(true);
-        router.push(HOME_ROUTES.HOME);
+        router.push(ONBOARDING_ROUTES.TAGS);
       } else {
         await ProfileController.commitUpdate({
           name: user.name,
@@ -352,7 +353,7 @@ export function useProfileForm(props: UseProfileFormProps): UseProfileFormReturn
         toast({
           title: 'Profile updated',
         });
-        router.push(PROFILE_ROUTES.PROFILE);
+        router.push(editRedirectTo ?? PROFILE_ROUTES.PROFILE);
       }
     } catch (error) {
       const sizeLimitMessage = getImageUploadSizeLimitToastMessage(error);
@@ -405,6 +406,7 @@ export function useProfileForm(props: UseProfileFormProps): UseProfileFormReturn
     avatarChanged,
     originalAvatarUrl,
     userDetails,
+    editRedirectTo,
     setShowWelcomeDialog,
     router,
     toast,
