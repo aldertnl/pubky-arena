@@ -5,7 +5,7 @@ import { Pause, Play, X } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Button } from '@/atoms/Button/Button';
 import { Typography } from '@/atoms/Typography/Typography';
-import { GLASS_PANEL_CLASS } from '@/config/theme';
+import { GRAPH_SURFACE_CLASS } from '@/config/theme';
 import { cn } from '@/libs/utils/utils';
 
 export interface GraphTimeMachineProps {
@@ -91,7 +91,7 @@ export function GraphTimeMachine({ bounds, timestamps, cap, onCapChange, onClose
 
   return (
     <div
-      className={cn(GLASS_PANEL_CLASS, 'flex items-center gap-3 px-4 py-2.5', className)}
+      className={cn(GRAPH_SURFACE_CLASS, 'flex items-center gap-3 px-4 py-2.5 shadow-lg', className)}
       data-cy="graph-time-machine"
     >
       <Button

@@ -8,6 +8,7 @@ import { Logger } from '@/libs/logger/logger';
 import type { Pubky } from '@/models/models.types';
 import { toast } from '@/molecules/Toaster/use-toast';
 import type { NexusGraph, NexusGraphEdge, NexusGraphNode } from '@/services/nexus/graph/graph.types';
+import { useAuthStore } from '@/stores/auth/auth.store';
 import { useGraphStore } from '@/stores/graph/graph.store';
 import { AUTO_DECLUTTER_EDGES, type TrailEntry, type UseSocialGraphResult } from './useSocialGraph.types';
 import { detectCommunities, dominantLabel, type GraphRelationship, relationshipMap } from './useSocialGraph.utils';
@@ -33,11 +34,21 @@ export function useSocialGraph(): UseSocialGraphResult {
   const [error, setError] = useState(false);
   const autoDecluttered = useRef(false);
 
-  // Relationship colors derive from the FOLLOWS topology around the focus
+  const { currentUserPubky: viewerPubky } = useAuthStore();
+  const meNodeId = viewerPubky ? `user:${viewerPubky}` : null;
+
+  // Opacity tiers derive from the FOLLOWS topology around the focus
   const deriveRelationships = useCallback(
     (nodeIds: string[], edges: NexusGraphEdge[]): Map<string, GraphRelationship> =>
       relationshipMap(focusId ?? '', nodeIds, edges),
     [focusId],
+  );
+  // Sizes/chip counts stay anchored on the signed-in user; signed-out deep
+  // links fall back to the focus so the center still reads 64px
+  const deriveSizeRelationships = useCallback(
+    (nodeIds: string[], edges: NexusGraphEdge[]): Map<string, GraphRelationship> =>
+      relationshipMap(meNodeId ?? focusId ?? '', nodeIds, edges),
+    [meNodeId, focusId],
   );
   const resolveAnchor = useCallback(
     (_graph: NexusGraph, parent: NexusGraphNode | null) => focusId ?? parent?.id ?? '',
@@ -49,6 +60,7 @@ export function useSocialGraph(): UseSocialGraphResult {
     focusId,
     resolveAnchor,
     deriveRelationships,
+    deriveSizeRelationships,
     exemptFocus: true,
   });
   const {
@@ -56,6 +68,8 @@ export function useSocialGraph(): UseSocialGraphResult {
     setGraph,
     loadNonce,
     currentUserPubky,
+    expandedIds,
+    expand,
     setExpandedIds,
     setPathIds,
     setIsExpanding,
@@ -76,7 +90,7 @@ export function useSocialGraph(): UseSocialGraphResult {
       setTimeCap(null);
       try {
         const neighborhood = await GraphController.fetchNeighborhood(
-          { kind: 'user', id: pubky, depth: 1 },
+          { kind: 'user', id: pubky, depth: 1, ...(core.fetchKinds ? { kinds: core.fetchKinds } : {}) },
           currentUserPubky,
         );
         if (nonce !== loadNonce.current) return;
@@ -94,7 +108,7 @@ export function useSocialGraph(): UseSocialGraphResult {
         if (nonce === loadNonce.current) setIsLoading(false);
       }
     },
-    [loadNonce, currentUserPubky, select, setPathIds, setTimeCap, setGraph, setExpandedIds],
+    [loadNonce, currentUserPubky, core.fetchKinds, select, setPathIds, setTimeCap, setGraph, setExpandedIds],
   );
 
   const focus = useCallback(
@@ -123,7 +137,7 @@ export function useSocialGraph(): UseSocialGraphResult {
       setIsExpanding(true);
       try {
         const neighborhood = await GraphController.fetchNeighborhood(
-          { kind: 'user', id: pubky, depth: 1 },
+          { kind: 'user', id: pubky, depth: 1, ...(core.fetchKinds ? { kinds: core.fetchKinds } : {}) },
           currentUserPubky,
         );
         if (nonce !== loadNonce.current) return;
@@ -143,34 +157,27 @@ export function useSocialGraph(): UseSocialGraphResult {
         setIsExpanding(false);
       }
     },
-    [graph, focus, loadNonce, currentUserPubky, mergeNeighborhood, setExpandedIds, setIsExpanding, t],
+    [graph, focus, loadNonce, currentUserPubky, core.fetchKinds, mergeNeighborhood, setExpandedIds, setIsExpanding, t],
   );
 
-  /** Search-to-add for tags: merge the label's neighborhood in. */
-  const addTag = useCallback(
-    async (label: string) => {
-      const nodeId = `tag:${label}`;
-      if (graph.nodes.some((n) => n.id === nodeId)) {
-        select(nodeId);
-        return;
-      }
-      const nonce = loadNonce.current;
-      setIsExpanding(true);
-      try {
-        const neighborhood = await GraphController.fetchNeighborhood({ kind: 'tag', id: label }, currentUserPubky);
-        if (nonce !== loadNonce.current) return;
-        mergeNeighborhood(neighborhood, null, nodeId);
-        setExpandedIds((prev) => new Set(prev).add(nodeId));
-        select(nodeId);
-      } catch (err) {
-        Logger.error('useSocialGraph: failed to add tag', err);
-        toast({ description: t('states.expandError') });
-      } finally {
-        setIsExpanding(false);
-      }
+  /**
+   * Design behavior: single click on a user centers + focuses them. Re-anchors
+   * opacity tiers, moves the ring, and (once) pulls in their neighborhood,
+   * pruning around the clicked node rather than the previous focus. The
+   * camera flight is the template's job (it owns the canvas handle).
+   */
+  const recenter = useCallback(
+    async (nodeId: string) => {
+      const node = graph.nodes.find((n) => n.id === nodeId && n.kind === 'user');
+      if (!node) return;
+      focus(nodeId);
+      if (!expandedIds.has(nodeId)) await expand(nodeId, nodeId);
     },
-    [graph, select, loadNonce, currentUserPubky, mergeNeighborhood, setExpandedIds, setIsExpanding, t],
+    [graph, focus, expandedIds, expand],
   );
+
+  /** Search-to-add for tags: shared core behavior (chip click / search). */
+  const addTag = core.addTag;
 
   const { communitiesOn, toggleCommunities } = useGraphStore();
   const { communities, communityLabels } = useMemo(() => {
@@ -196,13 +203,16 @@ export function useSocialGraph(): UseSocialGraphResult {
     return { communities, communityLabels };
   }, [communitiesOn, graph]);
 
-  // Dense graphs start decluttered; the user can always toggle back
+  // Dense graphs start decluttered; the user can always toggle back.
+  // Satellite HAS_TAG spokes do not count: they scale with visible users by
+  // design and would silently halve the effective threshold.
+  const realEdgeCount = useMemo(() => edges.reduce((n, e) => n + (e.type === 'HAS_TAG' ? 0 : 1), 0), [edges]);
   useEffect(() => {
-    if (autoDecluttered.current || edges.length <= AUTO_DECLUTTER_EDGES) return;
+    if (autoDecluttered.current || realEdgeCount <= AUTO_DECLUTTER_EDGES) return;
     autoDecluttered.current = true;
     setDeclutter(true);
     toast({ description: t('states.autoDeclutter') });
-  }, [edges.length, setDeclutter, t]);
+  }, [realEdgeCount, setDeclutter, t]);
 
   return {
     nodes: core.nodes,
@@ -211,12 +221,15 @@ export function useSocialGraph(): UseSocialGraphResult {
     selectedNode: core.selectedNode,
     expandedIds: core.expandedIds,
     relationships: core.relationships,
+    opacityTiers: core.opacityTiers,
+    sizeTiers: core.sizeTiers,
     classCounts: core.classCounts,
     trail,
     pathIds: core.pathIds,
     communities,
     communityLabels,
     timeBounds: core.timeBounds,
+    timelineStamps: core.timelineStamps,
     timeCap: core.timeCap,
     declutter: core.declutter,
     hiddenClasses: core.hiddenClasses,
@@ -231,6 +244,7 @@ export function useSocialGraph(): UseSocialGraphResult {
     addUser,
     addTag,
     focus,
+    recenter,
     select,
     toggleClass: core.toggleClass,
     toggleDeclutter: core.toggleDeclutter,

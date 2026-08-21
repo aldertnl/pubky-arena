@@ -59,6 +59,17 @@ describe('streamToGraph', () => {
     // Ghosts have empty content until someone selects them (panel hydrates)
     const ghost = graph.nodes.find((n) => n.id === `post:${GHOST}:PX`);
     expect(ghost?.kind === 'post' && ghost.content).toBe('');
+
+    // Reply-ness travels with the node, so the canvas can glyph it without the edge
+    const isReply = (id: string) => {
+      const node = graph.nodes.find((n) => n.id === id);
+      return node?.kind === 'post' ? node.is_reply : null;
+    };
+    expect(isReply(`post:${AUTHOR_B}:P2`)).toBe(true);
+    expect(isReply(`post:${AUTHOR_B}:P3`)).toBe(true);
+    expect(isReply(`post:${AUTHOR_A}:P1`)).toBe(false);
+    // A ghost parent's own lineage is unknown; it draws as a post
+    expect(isReply(`post:${GHOST}:PX`)).toBe(false);
   });
 
   it('never lets a ghost shadow a real post that appears later in the stream', () => {

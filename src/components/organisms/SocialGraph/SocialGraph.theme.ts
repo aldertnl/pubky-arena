@@ -8,6 +8,7 @@
  */
 
 import { COLORS } from '@/config/theme';
+import type { GraphTier } from '@/hooks/useSocialGraph/useSocialGraph.utils';
 import { cssColorToHex } from '@/libs/utils/utils';
 
 export type GraphTheme = {
@@ -21,6 +22,46 @@ export type GraphTheme = {
   label: string;
   halo: string;
 };
+
+// Design constants (Figma "Feed - Graph"): every edge is a 1px #525252
+// hairline, node surfaces are #303034 discs, and clusters dim by tier.
+export const GRAPH_EDGE_RGB = '82, 82, 82';
+export const GRAPH_NODE_SURFACE = '#303034';
+/** Cluster opacity by tier: centered 100%, direct connections 60%, other 40%. */
+export const TIER_ALPHA: Record<GraphTier, number> = { center: 1, direct: 0.6, other: 0.4 };
+/** Avatar radius (graph units = design px) by tier: 64/48/32px diameters. */
+export const AVATAR_RADIUS: Record<GraphTier, number> = { center: 32, direct: 24, other: 16 };
+/** Post nodes are fixed 36px circles with a 20px kind glyph. */
+export const POST_RADIUS = 18;
+export const POST_ICON_SIZE = 20;
+
+// The design's edge look assumes a few dozen follows; a real account has
+// hundreds, and full-alpha edges stack into a starburst. Spokes (edges touching
+// the focus) recede gently with the focus degree and floor high enough to stay
+// readable; the neighbor mesh recedes with total density down to a texture.
+const SPOKE_DESIGN_DEGREE = 60;
+const SPOKE_ALPHA_FLOOR = 0.55;
+const MESH_DESIGN_EDGES = 80;
+const MESH_ALPHA_FLOOR = 0.3;
+const MESH_ALPHA = 0.3;
+
+/** Alpha multipliers for follow edges: `spoke` touches the focus, `mesh` is everything else. */
+export function followAlphaFactors(
+  edges: ReadonlyArray<{ source: string; target: string; type: string }>,
+  focusId: string | null,
+): { spoke: number; mesh: number } {
+  let spokes = 0;
+  let total = 0;
+  for (const edge of edges) {
+    if (edge.type !== 'FOLLOWS' && edge.type !== 'FRIEND') continue;
+    total++;
+    if (focusId !== null && (edge.source === focusId || edge.target === focusId)) spokes++;
+  }
+  const spoke =
+    spokes <= SPOKE_DESIGN_DEGREE ? 1 : Math.max(SPOKE_ALPHA_FLOOR, Math.sqrt(SPOKE_DESIGN_DEGREE / spokes));
+  const density = total <= MESH_DESIGN_EDGES ? 1 : Math.max(MESH_ALPHA_FLOOR, Math.sqrt(MESH_DESIGN_EDGES / total));
+  return { spoke, mesh: density * MESH_ALPHA };
+}
 
 /** Hex fallbacks approximating the OKLCH tokens in globals.css */
 export const GRAPH_FALLBACK_COLORS: GraphTheme = { ...COLORS.graph };

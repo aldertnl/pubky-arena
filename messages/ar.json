@@ -1464,6 +1464,7 @@
       "extended": "موسع",
       "user": "مستخدم",
       "post": "منشور",
+      "reply": "رد",
       "tag": "وسم",
       "sameCommunity": "نفس المجتمع",
       "bridge": "جسر",
@@ -1483,7 +1484,12 @@
       "timeMachine": "آلة الزمن",
       "pausePhysics": "إيقاف الفيزياء",
       "resumePhysics": "استئناف الفيزياء",
-      "releasePins": "تحرير العقد المثبتة"
+      "releasePins": "تحرير العقد المثبتة",
+      "advanced": "متقدم",
+      "fullscreen": "ملء الشاشة",
+      "exitFullscreen": "إنهاء ملء الشاشة",
+      "edgeDetails": "تفاصيل الروابط",
+      "tagHubs": "عقد الوسوم"
     },
     "panel": {
       "close": "إغلاق",
@@ -1498,7 +1504,9 @@
       "tagUsage": "استُخدم {count, plural, one {مرة واحدة} two {مرتين} few {# مرات} other {# مرة}}",
       "reply": "رد",
       "tracePath": "كيف أنا متصل؟",
-      "followedBy": "يتابعه {count} ممن تتابعهم"
+      "followedBy": "يتابعه {count} ممن تتابعهم",
+      "howConnected": "كيف نحن متصلان؟",
+      "clearPath": "إغلاق عرض الاتصال"
     },
     "states": {
       "error": "تعذر تحميل الرسم البياني.",
@@ -1523,7 +1531,8 @@
     },
     "stream": {
       "mergeMore": "دمج المزيد",
-      "empty": "لا يوجد شيء في هذا التدفق بعد."
+      "empty": "لا يوجد شيء في هذا التدفق بعد.",
+      "loadMore": "تحميل المزيد"
     }
   }
 }

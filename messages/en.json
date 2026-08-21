@@ -1468,6 +1468,7 @@
       "extended": "Extended",
       "user": "User",
       "post": "Post",
+      "reply": "Reply",
       "tag": "Tag",
       "sameCommunity": "Same community",
       "bridge": "Bridge",
@@ -1487,7 +1488,12 @@
       "timeMachine": "Time machine",
       "pausePhysics": "Pause physics",
       "resumePhysics": "Resume physics",
-      "releasePins": "Release pinned nodes"
+      "releasePins": "Release pinned nodes",
+      "advanced": "Advanced",
+      "fullscreen": "Fullscreen",
+      "exitFullscreen": "Exit fullscreen",
+      "edgeDetails": "Edge details",
+      "tagHubs": "Tag hubs"
     },
     "panel": {
       "close": "Close",
@@ -1502,7 +1508,9 @@
       "tagUsage": "used {count, plural, one {# time} other {# times}}",
       "reply": "Reply",
       "tracePath": "How am I connected?",
-      "followedBy": "followed by {count} you follow"
+      "followedBy": "followed by {count} you follow",
+      "howConnected": "How are we connected?",
+      "clearPath": "Exit connection view"
     },
     "states": {
       "error": "Could not load the graph.",
@@ -1527,7 +1535,8 @@
     },
     "stream": {
       "mergeMore": "Merge more",
-      "empty": "Nothing in this stream yet."
+      "empty": "Nothing in this stream yet.",
+      "loadMore": "Load more"
     }
   }
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronRight } from 'lucide-react';
-import { GLASS_PANEL_CLASS } from '@/config/theme';
+import { GRAPH_SURFACE_CLASS } from '@/config/theme';
 import { FileController } from '@/controllers/file/file';
 import type { TrailEntry } from '@/hooks/useSocialGraph/useSocialGraph.types';
 import { cn } from '@/libs/utils/utils';
@@ -25,7 +25,7 @@ export function GraphBreadcrumbs({ trail, onHop, className }: GraphBreadcrumbsPr
   return (
     <div
       className={cn(
-        GLASS_PANEL_CLASS,
+        GRAPH_SURFACE_CLASS,
         'flex max-w-[70vw] items-center gap-1 overflow-x-auto rounded-full px-2 py-1',
         className,
       )}

@@ -82,3 +82,12 @@ export function getBreakpoint(breakpoint: Breakpoint): number {
  * One definition so a restyle is a single edit.
  */
 export const GLASS_PANEL_CLASS = 'rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md';
+
+/**
+ * Graph design surfaces (Figma "Feed - Graph"): solid near-black panels with
+ * a hairline secondary border, and the 44x32 stadium control pills.
+ */
+export const GRAPH_SURFACE_CLASS = 'rounded-lg border border-secondary bg-background';
+export const GRAPH_PILL_CLASS =
+  'h-8 w-11 rounded-full border border-secondary bg-white/[0.045] text-white hover:bg-white/10';
+export const GRAPH_PILL_ACTIVE_CLASS = 'bg-secondary text-[#D4D4DB] hover:bg-secondary';

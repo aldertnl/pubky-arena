@@ -36,6 +36,7 @@ const initialGraph: NexusGraph = {
       post_id: 'p1',
       content: 'hi',
       post_kind: 'short',
+      is_reply: false,
       indexed_at: 1,
     },
     { kind: 'tag', id: 'tag:pubky', label: 'pubky', count: 3 },
@@ -54,7 +55,8 @@ async function loadedHook() {
   act(() => {
     rendered.result.current.load(ME);
   });
-  await waitFor(() => expect(rendered.result.current.nodes).toHaveLength(4));
+  // Default view: the shared tag hub is filtered out (tagHubsOn is off)
+  await waitFor(() => expect(rendered.result.current.nodes).toHaveLength(3));
   return rendered;
 }
 
@@ -69,7 +71,7 @@ describe('useSocialGraph', () => {
   it('loads a neighborhood, starts the trail, and derives the visual model', async () => {
     const { result } = await loadedHook();
 
-    expect(mockGetNeighborhood).toHaveBeenCalledWith({ kind: 'user', id: ME, depth: 1 }, ME);
+    expect(mockGetNeighborhood).toHaveBeenCalledWith({ kind: 'user', id: ME, depth: 1, kinds: 'user,post' }, ME);
     expect(result.current.focusId).toBe(`user:${ME}`);
     expect(result.current.trail.map((t) => t.id)).toEqual([`user:${ME}`]);
     expect(result.current.edges.filter((e) => e.type === 'FRIEND')).toHaveLength(1);
@@ -94,8 +96,11 @@ describe('useSocialGraph', () => {
       await result.current.expand('user:friend');
     });
 
-    expect(mockGetNeighborhood).toHaveBeenLastCalledWith({ kind: 'user', id: 'friend', depth: 1 }, ME);
-    expect(result.current.nodes).toHaveLength(5);
+    expect(mockGetNeighborhood).toHaveBeenLastCalledWith(
+      { kind: 'user', id: 'friend', depth: 1, kinds: 'user,post' },
+      ME,
+    );
+    expect(result.current.nodes).toHaveLength(4);
     expect(result.current.expandedIds.has('user:friend')).toBe(true);
 
     await act(async () => {
@@ -126,7 +131,7 @@ describe('useSocialGraph', () => {
       await result.current.expand('user:friend');
     });
 
-    expect(result.current.nodes).toHaveLength(4);
+    expect(result.current.nodes).toHaveLength(3);
     expect(result.current.expandedIds.has('user:friend')).toBe(false);
     expect(result.current.error).toBe(false);
   });
@@ -206,5 +211,90 @@ describe('useSocialGraph', () => {
       result.current.clearPath();
     });
     expect(result.current.pathIds).toBeNull();
+  });
+
+  it('recenter focuses and expands the clicked user, pruning around it, only once', async () => {
+    const { result } = await loadedHook();
+
+    mockGetNeighborhood.mockResolvedValueOnce({
+      nodes: [
+        { kind: 'user', id: 'user:friend', pubky: 'friend', name: 'Friend', image: null },
+        { kind: 'user', id: 'user:new', pubky: 'new', name: 'New', image: null },
+      ],
+      edges: [{ source: 'user:friend', target: 'user:new', type: 'FOLLOWS' }],
+    });
+
+    await act(async () => {
+      await result.current.recenter('user:friend');
+    });
+
+    expect(result.current.focusId).toBe('user:friend');
+    expect(result.current.trail.at(-1)?.id).toBe('user:friend');
+    expect(mockGetNeighborhood).toHaveBeenLastCalledWith(
+      { kind: 'user', id: 'friend', depth: 1, kinds: 'user,post' },
+      ME,
+    );
+
+    // Already expanded: a second recenter only refocuses, no refetch
+    await act(async () => {
+      await result.current.recenter('user:friend');
+    });
+    expect(mockGetNeighborhood).toHaveBeenCalledTimes(2);
+
+    // Non-user nodes never recenter
+    await act(async () => {
+      await result.current.recenter('tag:pubky');
+    });
+    expect(result.current.focusId).toBe('user:friend');
+  });
+
+  it('path mode keeps only path clusters, bypassing hidden classes, at full opacity', async () => {
+    const { result } = await loadedHook();
+
+    // A stored hidden class must not amputate path members
+    act(() => {
+      result.current.toggleClass('friend');
+    });
+    expect(result.current.nodes.some((n) => n.id === 'user:friend')).toBe(false);
+
+    mockGetPath.mockResolvedValueOnce({
+      nodes: [
+        { kind: 'user', id: `user:${ME}`, pubky: ME, name: 'Me', image: null },
+        { kind: 'user', id: 'user:friend', pubky: 'friend', name: 'Friend', image: null },
+      ],
+      edges: [{ source: `user:${ME}`, target: 'user:friend', type: 'FOLLOWS' }],
+    });
+    await act(async () => {
+      await result.current.tracePath('friend');
+    });
+
+    const ids = result.current.nodes.map((n) => n.id);
+    expect(ids).toContain('user:friend'); // hidden class bypassed
+    expect(ids).toContain(`post:${ME}:p1`); // path users keep their posts
+    expect(ids).not.toContain('tag:pubky'); // everything else is removed
+    expect(result.current.opacityTiers.get('user:friend')).toBe('center');
+    expect(result.current.opacityTiers.get(`user:${ME}`)).toBe('center');
+
+    act(() => {
+      result.current.clearPath();
+    });
+    // Class hiding applies again; the hub stays out (default view)
+    expect(result.current.nodes.some((n) => n.id === 'user:friend')).toBe(false);
+    expect(result.current.nodes.map((n) => n.id)).toEqual([`user:${ME}`, `post:${ME}:p1`]);
+  });
+
+  it('anchors sizes on the signed-in user while opacity follows the focus', async () => {
+    const { result } = await loadedHook();
+
+    act(() => {
+      result.current.focus('user:friend');
+    });
+
+    // Sizes never move off the viewer
+    expect(result.current.sizeTiers.get(`user:${ME}`)).toBe('center');
+    expect(result.current.sizeTiers.get('user:friend')).toBe('direct');
+    // Opacity re-anchors on the focused user (mutuals, so me reads direct)
+    expect(result.current.opacityTiers.get('user:friend')).toBe('center');
+    expect(result.current.opacityTiers.get(`user:${ME}`)).toBe('direct');
   });
 });

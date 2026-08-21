@@ -1,16 +1,44 @@
 import Graph from 'graphology';
 import louvain from 'graphology-communities-louvain';
-import type { NexusGraph, NexusGraphEdge, NexusGraphNode } from '@/services/nexus/graph/graph.types';
+import type { Pubky } from '@/models/models.types';
+import type {
+  NexusGraph,
+  NexusGraphEdge,
+  NexusGraphNode,
+  NexusGraphUserNode,
+} from '@/services/nexus/graph/graph.types';
+import type { NexusTag } from '@/services/nexus/nexus.types';
 
 /** How a user node relates to the focused user. */
 export type GraphRelationship = 'self' | 'friend' | 'following' | 'follower' | 'extended';
 
+/** Opacity/size tier of a user cluster relative to an anchor user. */
+export type GraphTier = 'center' | 'direct' | 'other';
+
 /** Visual edge model: mutual FOLLOWS pairs collapse into a single FRIEND edge. */
 export type SocialGraphVisualEdge = Omit<NexusGraphEdge, 'type'> & {
-  type: NexusGraphEdge['type'] | 'FRIEND';
+  type: NexusGraphEdge['type'] | 'FRIEND' | 'HAS_TAG';
   /** All tag labels carried by an aggregated user-to-user TAGGED edge */
   labels?: string[];
 };
+
+/**
+ * Client-derived per-user profile-tag chip. Never stored in the accumulated
+ * graph state: satellites are re-derived from local tag data each recompute
+ * and keep object identity through a per-hook cache so the simulation never
+ * resets their positions.
+ */
+export type SatelliteTagNode = {
+  kind: 'profile_tag';
+  /** `ptag:{pubky}:{label}` */
+  id: string;
+  pubky: Pubky;
+  label: string;
+  count: number;
+};
+
+/** Everything the canvas can be handed as a node. */
+export type VisualGraphNode = NexusGraphNode | SatelliteTagNode;
 
 /** Canonical identity of an edge, shared by merge dedup and edge spotlights. */
 export const edgeKey = (edge: { source: string; target: string; type: string; label?: string }) =>
@@ -43,7 +71,7 @@ export function mergeGraph(prev: NexusGraph, incoming: NexusGraph): NexusGraph {
  * lexicographically smaller endpoint first) so friendship renders as a single
  * thick arrowless link instead of two overlapping arrows.
  */
-export function collapseMutualFollows(edges: NexusGraphEdge[]): SocialGraphVisualEdge[] {
+export function collapseMutualFollows(edges: SocialGraphVisualEdge[]): SocialGraphVisualEdge[] {
   const followPairs = new Set<string>();
   for (const edge of edges) {
     if (edge.type === 'FOLLOWS') followPairs.add(`${edge.source}>${edge.target}`);
@@ -334,6 +362,171 @@ export function dominantLabel(
     }
   }
   return best;
+}
+
+/** Maps a focus-relative relationship onto the design's three visual tiers. */
+export const tierOf = (relationship: GraphRelationship | undefined): GraphTier => {
+  if (relationship === 'self') return 'center';
+  if (relationship === 'friend' || relationship === 'following' || relationship === 'follower') return 'direct';
+  return 'other';
+};
+
+/** Satellite tag chips shown per user, by tier (design: top 3 / 2 / 1). */
+export const TAG_SATELLITES_BY_TIER: Record<GraphTier, number> = { center: 3, direct: 2, other: 1 };
+
+/** Post nodes kept per author in the default view, by tier (mirrors the tag rule). */
+export const POSTS_BY_TIER: Record<GraphTier, number> = { center: 3, direct: 2, other: 1 };
+
+/**
+ * Top profile tags by tagger count. Label ties break alphabetically so the
+ * selection is deterministic across recomputes and machines.
+ */
+export function topProfileTags<T extends Pick<NexusTag, 'label' | 'taggers_count'>>(tags: T[], n: number): T[] {
+  if (n <= 0) return [];
+  return [...tags].sort((a, b) => b.taggers_count - a.taggers_count || a.label.localeCompare(b.label)).slice(0, n);
+}
+
+/** Deterministic [0,1) hash used to spread satellite spawn angles per label. */
+const labelUnit = (label: string): number => {
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) hash = (hash * 31 + label.charCodeAt(i)) >>> 0;
+  return (hash % 997) / 997;
+};
+
+type PositionedUserNode = NexusGraphUserNode & { x?: number; y?: number };
+type PositionedSatellite = SatelliteTagNode & { x?: number; y?: number; __bornAt?: number };
+
+const SATELLITE_SPAWN_RADIUS = 60;
+
+/**
+ * Derives per-user profile-tag satellites for the visible users. Chip node
+ * objects come from `cache` so their simulation coordinates survive
+ * recomputes; brand-new chips spawn beside their owner (not at the origin)
+ * with a birth stamp for the pulse animation.
+ */
+export function deriveSatellites(
+  users: PositionedUserNode[],
+  tiers: Map<string, GraphTier>,
+  tagsMap: Map<Pubky, NexusTag[]>,
+  cache: Map<string, PositionedSatellite>,
+  nowMs: number,
+): { nodes: SatelliteTagNode[]; edges: SocialGraphVisualEdge[] } {
+  const nodes: SatelliteTagNode[] = [];
+  const edges: SocialGraphVisualEdge[] = [];
+  for (const user of users) {
+    const tier = tiers.get(user.id) ?? 'other';
+    const top = topProfileTags(tagsMap.get(user.pubky) ?? [], TAG_SATELLITES_BY_TIER[tier]);
+    for (const tag of top) {
+      const id = `ptag:${user.pubky}:${tag.label}`;
+      let node = cache.get(id);
+      if (node) {
+        node.count = tag.taggers_count;
+      } else {
+        node = { kind: 'profile_tag', id, pubky: user.pubky, label: tag.label, count: tag.taggers_count };
+        if (user.x !== undefined && user.y !== undefined) {
+          const angle = labelUnit(tag.label) * 2 * Math.PI;
+          node.x = user.x + Math.cos(angle) * SATELLITE_SPAWN_RADIUS;
+          node.y = user.y + Math.sin(angle) * SATELLITE_SPAWN_RADIUS;
+        }
+        node.__bornAt = nowMs;
+        cache.set(id, node);
+      }
+      nodes.push(node);
+      edges.push({ source: user.id, target: id, type: 'HAS_TAG' });
+    }
+  }
+  return { nodes, edges };
+}
+
+/**
+ * How-are-we-connected view: keeps only the path users and their own posts,
+ * dropping everything else outright (the design removes, not dims). Runs
+ * instead of the class/declutter filters so stored preferences can never
+ * amputate the chain.
+ */
+export function applyPathExclusive(
+  nodes: NexusGraphNode[],
+  edges: NexusGraphEdge[],
+  pathIds: Set<string>,
+): { nodes: NexusGraphNode[]; edges: NexusGraphEdge[] } {
+  const keptNodes = nodes.filter((node) => {
+    if (pathIds.has(node.id)) return true;
+    return node.kind === 'post' && pathIds.has(`user:${node.author_id}`);
+  });
+  const keptIds = new Set(keptNodes.map((n) => n.id));
+  return {
+    nodes: keptNodes,
+    edges: edges.filter((e) => keptIds.has(e.source) && keptIds.has(e.target)),
+  };
+}
+
+/**
+ * Default-view cap on post satellites per author (newest first, by tier).
+ * Advanced mode lifts it, and posts whose author left the visible set keep
+ * their existing pruning path.
+ */
+export function postTierCap(
+  nodes: NexusGraphNode[],
+  edges: NexusGraphEdge[],
+  tiers: Map<string, GraphTier>,
+): { nodes: NexusGraphNode[]; edges: NexusGraphEdge[] } {
+  const postsByAuthor = new Map<string, NexusGraphNode[]>();
+  for (const node of nodes) {
+    if (node.kind !== 'post') continue;
+    const owner = `user:${node.author_id}`;
+    const list = postsByAuthor.get(owner);
+    if (list) list.push(node);
+    else postsByAuthor.set(owner, [node]);
+  }
+
+  const dropped = new Set<string>();
+  for (const [owner, posts] of postsByAuthor) {
+    const cap = POSTS_BY_TIER[tiers.get(owner) ?? 'other'];
+    if (posts.length <= cap) continue;
+    const byRecency = [...posts].sort(
+      (a, b) => (b.kind === 'post' ? b.indexed_at : 0) - (a.kind === 'post' ? a.indexed_at : 0),
+    );
+    for (const post of byRecency.slice(cap)) dropped.add(post.id);
+  }
+  if (dropped.size === 0) return { nodes, edges };
+
+  return {
+    nodes: nodes.filter((n) => !dropped.has(n.id)),
+    edges: edges.filter((e) => !dropped.has(e.source) && !dropped.has(e.target)),
+  };
+}
+
+/**
+ * Facepile candidates for the hover card, strictly from edges already on
+ * canvas: users following (or followed by) the target, viewer-followed first,
+ * capped at `cap`. FRIEND edges count in both directions.
+ */
+export function facepileCandidates(
+  targetId: string,
+  edges: Pick<SocialGraphVisualEdge, 'source' | 'target' | 'type'>[],
+  meId: string | null,
+  direction: 'followers' | 'following',
+  cap = 3,
+): string[] {
+  const related = new Set<string>();
+  const iFollow = new Set<string>();
+  for (const edge of edges) {
+    if (edge.type === 'FOLLOWS') {
+      if (direction === 'followers' && edge.target === targetId) related.add(edge.source);
+      if (direction === 'following' && edge.source === targetId) related.add(edge.target);
+      if (meId && edge.source === meId) iFollow.add(edge.target);
+    } else if (edge.type === 'FRIEND') {
+      if (edge.source === targetId) related.add(edge.target);
+      if (edge.target === targetId) related.add(edge.source);
+      if (meId && edge.source === meId) iFollow.add(edge.target);
+      if (meId && edge.target === meId) iFollow.add(edge.source);
+    }
+  }
+  related.delete(targetId);
+  if (meId) related.delete(meId);
+  return [...related]
+    .sort((a, b) => Number(iFollow.has(b)) - Number(iFollow.has(a)) || a.localeCompare(b))
+    .slice(0, cap);
 }
 
 /**

@@ -1468,6 +1468,7 @@
       "extended": "Étendu",
       "user": "Utilisateur",
       "post": "Publication",
+      "reply": "Réponse",
       "tag": "Tag",
       "sameCommunity": "Même communauté",
       "bridge": "Pont",
@@ -1487,7 +1488,12 @@
       "timeMachine": "Machine à remonter le temps",
       "pausePhysics": "Suspendre la physique",
       "resumePhysics": "Reprendre la physique",
-      "releasePins": "Libérer les nœuds épinglés"
+      "releasePins": "Libérer les nœuds épinglés",
+      "advanced": "Avancé",
+      "fullscreen": "Plein écran",
+      "exitFullscreen": "Quitter le plein écran",
+      "edgeDetails": "Détails des liens",
+      "tagHubs": "Nœuds de tags"
     },
     "panel": {
       "close": "Fermer",
@@ -1502,7 +1508,9 @@
       "tagUsage": "utilisé {count, plural, one {# fois} other {# fois}}",
       "reply": "Répondre",
       "tracePath": "Comment suis-je connecté ?",
-      "followedBy": "suivi par {count} que vous suivez"
+      "followedBy": "suivi par {count} que vous suivez",
+      "howConnected": "Comment sommes-nous connectés ?",
+      "clearPath": "Quitter la vue de connexion"
     },
     "states": {
       "error": "Impossible de charger le graphe.",
@@ -1527,7 +1535,8 @@
     },
     "stream": {
       "mergeMore": "Fusionner plus",
-      "empty": "Rien dans ce flux pour le moment."
+      "empty": "Rien dans ce flux pour le moment.",
+      "loadMore": "Charger plus"
     }
   }
 }

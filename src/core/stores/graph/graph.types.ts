@@ -14,6 +14,10 @@ export interface GraphState {
   hiddenClasses: GraphNodeClass[];
   /** Louvain community halos */
   communitiesOn: boolean;
+  /** Fetch shared tag hub nodes with neighborhoods (advanced; default view shows per-user chips only) */
+  tagHubsOn: boolean;
+  /** Aggregated tag-edge count chips + edge popovers (advanced) */
+  edgeChipsOn: boolean;
   /** Pending header-search pick for the graph page to consume (transient, never persisted) */
   searchTarget: GraphSearchTarget | null;
 }
@@ -23,6 +27,8 @@ export interface GraphActions {
   toggleDeclutter: () => void;
   toggleClass: (cls: GraphNodeClass) => void;
   toggleCommunities: () => void;
+  toggleTagHubs: () => void;
+  toggleEdgeChips: () => void;
   /** Header search on the graph page hands its pick to the canvas */
   requestSearch: (target: GraphSearchTarget) => void;
   clearSearchTarget: () => void;
@@ -36,6 +42,8 @@ export const graphInitialState: GraphState = {
   declutter: false,
   hiddenClasses: [],
   communitiesOn: false,
+  tagHubsOn: false,
+  edgeChipsOn: false,
   searchTarget: null,
 };
 
@@ -45,6 +53,8 @@ export enum GraphActionTypes {
   TOGGLE_GRAPH_DECLUTTER = 'TOGGLE_GRAPH_DECLUTTER',
   TOGGLE_GRAPH_CLASS = 'TOGGLE_GRAPH_CLASS',
   TOGGLE_GRAPH_COMMUNITIES = 'TOGGLE_GRAPH_COMMUNITIES',
+  TOGGLE_GRAPH_TAG_HUBS = 'TOGGLE_GRAPH_TAG_HUBS',
+  TOGGLE_GRAPH_EDGE_CHIPS = 'TOGGLE_GRAPH_EDGE_CHIPS',
   REQUEST_GRAPH_SEARCH = 'REQUEST_GRAPH_SEARCH',
   CLEAR_GRAPH_SEARCH_TARGET = 'CLEAR_GRAPH_SEARCH_TARGET',
   RESET_GRAPH = 'RESET_GRAPH',

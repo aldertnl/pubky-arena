@@ -3,7 +3,7 @@
 import { Loader2, Search, Tag as TagIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/atoms/Input/Input';
-import { GLASS_PANEL_CLASS } from '@/config/theme';
+import { GRAPH_SURFACE_CLASS } from '@/config/theme';
 import { useSearchAutocomplete } from '@/hooks/useSearchAutocomplete/useSearchAutocomplete';
 import { useSearchInput } from '@/hooks/useSearchInput/useSearchInput';
 import { cn, generateRandomColor, hexToRgba } from '@/libs/utils/utils';
@@ -62,7 +62,7 @@ export function GraphSearch({ onPickUser, onPickTag, className }: GraphSearchPro
     <div ref={containerRef} className={cn('relative w-56', className)} data-cy="graph-search">
       <div
         className={cn(
-          GLASS_PANEL_CLASS,
+          GRAPH_SURFACE_CLASS,
           'flex items-center gap-2 rounded-full px-3 py-1.5 focus-within:border-white/25',
         )}
       >
@@ -92,7 +92,7 @@ export function GraphSearch({ onPickUser, onPickTag, className }: GraphSearchPro
           id="graph-search-results"
           role="listbox"
           className={cn(
-            GLASS_PANEL_CLASS,
+            GRAPH_SURFACE_CLASS,
             'absolute top-full right-0 left-0 z-20 mt-2 max-h-80 overflow-y-auto bg-black/70 p-1.5',
           )}
         >

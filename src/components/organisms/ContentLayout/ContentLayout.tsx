@@ -93,7 +93,7 @@ export function ContentLayout({
       };
   const usesWideShellLayout =
     (effectiveLayout === LAYOUT.WIDE && !disableWideShellLayout) ||
-    (feedVariant !== undefined && effectiveLayout === LAYOUT.VISUAL);
+    (feedVariant !== undefined && (effectiveLayout === LAYOUT.VISUAL || effectiveLayout === LAYOUT.GRAPH));
 
   // Close drawers when switching from wide-shell to inline sidebars on desktop
   // This prevents the drawer from staying open when sidebars become visible inline

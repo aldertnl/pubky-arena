@@ -53,7 +53,14 @@ export function streamToGraph(
     return id;
   };
 
-  const addPost = (author: string, postId: string, content: string, kind: string, indexedAt: number) => {
+  const addPost = (
+    author: string,
+    postId: string,
+    content: string,
+    kind: string,
+    isReply: boolean,
+    indexedAt: number,
+  ) => {
     const id = `post:${author}:${postId}`;
     if (!nodes.has(id)) {
       nodes.set(id, {
@@ -63,6 +70,7 @@ export function streamToGraph(
         post_id: postId,
         content: content.slice(0, SNIPPET_LENGTH),
         post_kind: kind,
+        is_reply: isReply,
         indexed_at: indexedAt,
       });
       edges.push({ source: addUser(author), target: id, type: 'AUTHORED', indexed_at: indexedAt });
@@ -76,7 +84,7 @@ export function streamToGraph(
     const compositeId = uri ? buildCompositeIdFromPubkyUri({ uri, domain: CompositeIdDomain.POSTS }) : null;
     if (!compositeId) return;
     const { pubky: parentAuthor, id: parentPostId } = parseCompositeId(compositeId);
-    const target = addPost(parentAuthor, parentPostId, '', 'short', indexedAt);
+    const target = addPost(parentAuthor, parentPostId, '', 'short', false, indexedAt);
     edges.push({ source: from, target, type, indexed_at: indexedAt });
   };
 
@@ -90,7 +98,7 @@ export function streamToGraph(
     const { author, content, kind, indexed_at } = post.details;
     const parsed = tryParseCompositeId(post.compositeId);
     if (!parsed) continue;
-    addPost(author, parsed.id, content, kind, indexed_at);
+    addPost(author, parsed.id, content, kind, post.repliedUri !== null, indexed_at);
   }
 
   // Pass 2: lineage (ghosts only for true out-of-stream targets) and tags

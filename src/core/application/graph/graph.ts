@@ -1,5 +1,6 @@
 import { PostStreamApplication } from '@/application/stream/posts/post';
 import { UserStreamApplication } from '@/application/stream/users/users';
+import { UserApplication } from '@/application/user/user';
 import { Logger } from '@/libs/logger/logger';
 import type { Pubky } from '@/models/models.types';
 import { buildCompositeId } from '@/models/models.utils';
@@ -58,6 +59,12 @@ export class GraphApplication {
           ? PostStreamApplication.fetchMissingPostsFromNexus({ cacheMissPostIds, viewerId })
           : Promise.resolve(),
       ]);
+      // Users persisted earlier through the details-only path have no user_tags
+      // row (the stream miss-check above is details-based), so the canvas would
+      // render them without profile-tag chips forever. Runs after the stream
+      // ingestion so freshly persisted tags are not re-fetched; does its own
+      // tags-table miss check internally.
+      await UserApplication.getManyTagsOrFetch({ userIds });
     } catch (error) {
       Logger.warn('GraphApplication: failed to ingest graph entities', { error });
     }

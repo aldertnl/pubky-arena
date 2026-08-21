@@ -25,6 +25,8 @@ export type NexusGraphPostNode = {
   post_id: string;
   content: string;
   post_kind: string;
+  /** Replies to a post outside the neighborhood carry no REPLIED edge, so the flag travels with the node */
+  is_reply: boolean;
   indexed_at: number;
 };
 

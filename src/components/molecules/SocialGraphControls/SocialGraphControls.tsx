@@ -1,110 +1,121 @@
 'use client';
 
-import { Crosshair, History, Maximize2, Pause, Pin, Play, Sparkles, Users, ZoomIn, ZoomOut } from 'lucide-react';
+import { Expand, History, Shrink, SlidersHorizontal, UserRound, ZoomIn, ZoomOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/atoms/Button/Button';
-import { GLASS_PANEL_CLASS } from '@/config/theme';
+import { Popover, PopoverContent, PopoverTrigger } from '@/atoms/Popover/Popover';
+import { GRAPH_PILL_ACTIVE_CLASS, GRAPH_PILL_CLASS, GRAPH_SURFACE_CLASS } from '@/config/theme';
 import { cn } from '@/libs/utils/utils';
 import type { SocialGraphControlsProps } from './SocialGraphControls.types';
 
 /**
  * SocialGraphControls
  *
- * Floating control stack: camera (zoom/fit/recenter), then the view modes
- * (declutter, communities, time machine, physics, pins) and the share shot.
+ * The design's control pill row: zoom out, zoom in, time machine, and
+ * re-center on the signed-in user, plus one extra pill opening the advanced
+ * popover where the non-designed lenses live (legend, communities, declutter,
+ * edge details, physics), and the fullscreen toggle at the right end.
  */
 export function SocialGraphControls({
-  declutter,
-  onToggleDeclutter,
-  physicsPaused,
-  onTogglePhysics,
-  onReleasePins,
-  communitiesOn,
-  onToggleCommunities,
+  onZoomIn,
+  onZoomOut,
   timeMachineOn,
   timeMachineAvailable,
   onToggleTimeMachine,
-  onZoomIn,
-  onZoomOut,
-  onFit,
-  onRecenter,
+  onRecenterSelf,
+  advancedContent,
+  isFullscreen,
+  onToggleFullscreen,
   className,
 }: SocialGraphControlsProps) {
   const t = useTranslations('graph');
 
-  const camera = [
-    { icon: ZoomIn, label: t('controls.zoomIn'), onClick: onZoomIn, dataCy: 'graph-zoom-in' },
-    { icon: ZoomOut, label: t('controls.zoomOut'), onClick: onZoomOut, dataCy: 'graph-zoom-out' },
-    { icon: Maximize2, label: t('controls.fit'), onClick: onFit, dataCy: 'graph-fit' },
-    { icon: Crosshair, label: t('controls.recenter'), onClick: onRecenter, dataCy: 'graph-recenter' },
-  ];
-
-  const modes = [
-    {
-      icon: Sparkles,
-      label: t('controls.declutter'),
-      onClick: onToggleDeclutter,
-      active: declutter,
-      dataCy: 'graph-declutter',
-    },
-    {
-      icon: Users,
-      label: t('controls.communities'),
-      onClick: onToggleCommunities,
-      active: communitiesOn,
-      dataCy: 'graph-communities',
-    },
-    {
-      icon: History,
-      label: t('controls.timeMachine'),
-      onClick: onToggleTimeMachine,
-      active: timeMachineOn,
-      disabled: !timeMachineAvailable,
-      dataCy: 'graph-time-toggle',
-    },
-    {
-      icon: physicsPaused ? Play : Pause,
-      label: physicsPaused ? t('controls.resumePhysics') : t('controls.pausePhysics'),
-      onClick: onTogglePhysics,
-      active: physicsPaused,
-      dataCy: 'graph-physics',
-    },
-    { icon: Pin, label: t('controls.releasePins'), onClick: onReleasePins, dataCy: 'graph-release-pins' },
-  ];
-
   return (
-    <div className={cn(GLASS_PANEL_CLASS, 'flex flex-col gap-1 p-1.5', className)} data-cy="graph-controls">
-      {camera.map(({ icon: Icon, label, onClick, dataCy }) => (
+    <div className={cn('flex items-center gap-3 lg:gap-6', className)} data-cy="graph-controls">
+      <Button
+        variant="ghost"
+        size="icon"
+        className={GRAPH_PILL_CLASS}
+        onClick={onZoomOut}
+        aria-label={t('controls.zoomOut')}
+        title={t('controls.zoomOut')}
+        data-cy="graph-zoom-out"
+      >
+        <ZoomOut className="size-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className={GRAPH_PILL_CLASS}
+        onClick={onZoomIn}
+        aria-label={t('controls.zoomIn')}
+        title={t('controls.zoomIn')}
+        data-cy="graph-zoom-in"
+      >
+        <ZoomIn className="size-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className={cn(GRAPH_PILL_CLASS, timeMachineOn && GRAPH_PILL_ACTIVE_CLASS)}
+        onClick={onToggleTimeMachine}
+        disabled={!timeMachineAvailable}
+        aria-label={t('controls.timeMachine')}
+        aria-pressed={timeMachineOn}
+        title={t('controls.timeMachine')}
+        data-cy="graph-time-toggle"
+      >
+        <History className="size-4" />
+      </Button>
+      {onRecenterSelf && (
         <Button
-          key={dataCy}
           variant="ghost"
           size="icon"
-          className="h-9 w-9"
-          onClick={onClick}
-          aria-label={label}
-          title={label}
-          data-cy={dataCy}
+          className={GRAPH_PILL_CLASS}
+          onClick={onRecenterSelf}
+          aria-label={t('controls.recenter')}
+          title={t('controls.recenter')}
+          data-cy="graph-recenter"
         >
-          <Icon className="size-4" />
+          <UserRound className="size-4" />
         </Button>
-      ))}
-      <div className="mx-1.5 border-t border-white/10" />
-      {modes.map(({ icon: Icon, label, onClick, active, disabled, dataCy }) => (
-        <Button
-          key={dataCy}
-          variant="ghost"
-          size="icon"
-          className={cn('h-9 w-9', active && 'bg-brand/15 text-brand')}
-          onClick={onClick}
-          disabled={disabled}
-          aria-label={label}
-          aria-pressed={active ?? false}
-          title={label}
-          data-cy={dataCy}
-        >
-          <Icon className="size-4" />
-        </Button>
-      ))}
+      )}
+      {advancedContent && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={GRAPH_PILL_CLASS}
+              aria-label={t('controls.advanced')}
+              title={t('controls.advanced')}
+              data-cy="graph-advanced"
+            >
+              <SlidersHorizontal className="size-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            sideOffset={8}
+            className={cn(GRAPH_SURFACE_CLASS, 'w-72 overflow-hidden p-0')}
+            data-cy="graph-advanced-popover"
+          >
+            {advancedContent}
+          </PopoverContent>
+        </Popover>
+      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        className={cn(GRAPH_PILL_CLASS, isFullscreen && GRAPH_PILL_ACTIVE_CLASS)}
+        onClick={onToggleFullscreen}
+        aria-label={t(isFullscreen ? 'controls.exitFullscreen' : 'controls.fullscreen')}
+        aria-pressed={isFullscreen}
+        title={t(isFullscreen ? 'controls.exitFullscreen' : 'controls.fullscreen')}
+        data-cy="graph-fullscreen"
+      >
+        {isFullscreen ? <Shrink className="size-4" /> : <Expand className="size-4" />}
+      </Button>
     </div>
   );
 }

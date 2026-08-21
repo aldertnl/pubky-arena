@@ -8,7 +8,7 @@ import { Button } from '@/atoms/Button/Button';
 import { Link } from '@/atoms/Link/Link';
 import { Tag } from '@/atoms/Tag/Tag';
 import { Typography } from '@/atoms/Typography/Typography';
-import { GLASS_PANEL_CLASS } from '@/config/theme';
+import { GRAPH_SURFACE_CLASS } from '@/config/theme';
 import { FileController } from '@/controllers/file/file';
 import { useFollowUser } from '@/hooks/useFollowUser/useFollowUser';
 import { useIsFollowing } from '@/hooks/useIsFollowing/useIsFollowing';
@@ -80,15 +80,15 @@ export function SocialGraphNodePanel({
   return (
     <div
       className={cn(
-        GLASS_PANEL_CLASS,
-        'flex w-80 flex-col gap-3 bg-black/60 p-3 shadow-lg lg:gap-4 lg:bg-black/40 lg:p-4',
+        GRAPH_SURFACE_CLASS,
+        'flex w-80 flex-col gap-3 bg-black/60 p-3 shadow-lg backdrop-blur-md lg:gap-4 lg:p-4',
         className,
       )}
       data-cy="graph-panel"
     >
       <div className="flex items-center justify-between">
         <Typography size="sm" className="font-medium text-muted-foreground uppercase">
-          {t(`legend.${node.kind}`)}
+          {t(node.kind === 'post' && node.is_reply ? 'legend.reply' : `legend.${node.kind}`)}
         </Typography>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose} aria-label={t('panel.close')}>
           <X className="size-4" />

@@ -39,6 +39,7 @@ const GRAPH: NexusGraph = {
       post_id: '0032ABC',
       content: 'hi',
       post_kind: 'short',
+      is_reply: false,
       indexed_at: 1,
     },
     { kind: 'tag', id: 'tag:pubky', label: 'pubky', count: 3 },

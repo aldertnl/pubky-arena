@@ -14,6 +14,11 @@ export const useGraphStore = create<GraphStore>()(
       }),
       {
         name: GRAPH_PERSIST_KEY,
+        // v1 adds tagHubsOn/edgeChipsOn; migration is purely additive (the
+        // merge below lets missing keys fall back to initial state), the bump
+        // documents the shape change and guards future renames
+        version: 1,
+        migrate: (persisted) => persisted as GraphStore,
         // Explicit toggles survive reloads; declutter deliberately does not,
         // because the dense-graph heuristic flips it automatically and an
         // automatic writer must not overwrite a stored user preference.
@@ -21,6 +26,8 @@ export const useGraphStore = create<GraphStore>()(
         partialize: (state) => ({
           hiddenClasses: state.hiddenClasses,
           communitiesOn: state.communitiesOn,
+          tagHubsOn: state.tagHubsOn,
+          edgeChipsOn: state.edgeChipsOn,
         }),
         // Drop class names that no longer exist after a rename/removal so
         // nothing stays hidden with no legend row to unhide it

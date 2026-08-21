@@ -3,16 +3,23 @@
 import { type MutableRefObject, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { GraphController } from '@/controllers/graph/graph';
+import { useGraphProfileTags } from '@/hooks/useGraphProfileTags/useGraphProfileTags';
 import { type HideableClass, MAX_CLIENT_NODES } from '@/hooks/useSocialGraph/useSocialGraph.types';
 import {
   aggregateParallelEdges,
   applyDeclutter,
+  applyPathExclusive,
   applyTimeCap,
   collapseMutualFollows,
+  deriveSatellites,
   type GraphRelationship,
+  type GraphTier,
   mergeGraph,
+  postTierCap,
   pruneToBudget,
   type SocialGraphVisualEdge,
+  tierOf,
+  type VisualGraphNode,
 } from '@/hooks/useSocialGraph/useSocialGraph.utils';
 import { Logger } from '@/libs/logger/logger';
 import type { Pubky } from '@/models/models.types';
@@ -29,7 +36,7 @@ import { useGraphStore } from '@/stores/graph/graph.store';
 const EMPTY_GRAPH: NexusGraph = { nodes: [], edges: [] };
 
 /** Simulation-facing transient fields force-graph and the painter live on. */
-export type SimNode = NexusGraphNode & { x?: number; y?: number; __bornAt?: number };
+export type SimNode = VisualGraphNode & { x?: number; y?: number; __bornAt?: number };
 
 export type GraphCoreOptions = {
   /** Error-log prefix, e.g. 'useSocialGraph' */
@@ -39,10 +46,21 @@ export type GraphCoreOptions = {
   focusId: string | null | ((graph: NexusGraph) => string | null);
   /** Fallback prune anchor for merges without an explicit anchor */
   resolveAnchor: (graph: NexusGraph, parent: NexusGraphNode | null) => string;
-  /** Derives node relationship colors for the post-time-cap node set */
+  /** Derives focus-anchored relationships (opacity tiers) for the post-time-cap node set */
   deriveRelationships: (nodeIds: string[], edges: NexusGraphEdge[]) => Map<string, GraphRelationship>;
+  /**
+   * Derives signed-in-anchored relationships for the size/satellite tiers
+   * (design: avatar sizes and chip counts stay relative to the signed-in user
+   * while opacity re-anchors on the focus). Defaults to deriveRelationships.
+   */
+  deriveSizeRelationships?: (nodeIds: string[], edges: NexusGraphEdge[]) => Map<string, GraphRelationship>;
   /** Exempt the focus node itself from legend class hiding (explorer behavior) */
   exemptFocus?: boolean;
+  /**
+   * Apply the design's 3/2/1 posts-per-author cap (explorer). The feed turns
+   * this off: its posts ARE the content being visualized.
+   */
+  capPostsByTier?: boolean;
 };
 
 export type GraphCore = {
@@ -74,24 +92,36 @@ export type GraphCore = {
   timeCap: number | null;
   setTimeCap: (cap: number | null) => void;
   timeBounds: { min: number; max: number } | null;
+  /** Sorted raw-graph event timestamps; identity is stable while a cap moves */
+  timelineStamps: number[];
   // Derived visual model
-  nodes: NexusGraphNode[];
+  nodes: VisualGraphNode[];
   edges: SocialGraphVisualEdge[];
   relationships: Map<string, GraphRelationship>;
+  /** Focus-anchored opacity tier per visible node; path mode forces all to 'center' */
+  opacityTiers: Map<string, GraphTier>;
+  /** Signed-in-anchored size/satellite tier per visible node */
+  sizeTiers: Map<string, GraphTier>;
   classCounts: Map<HideableClass, number>;
+  /** kinds= filter for neighborhood fetches derived from the tag-hubs pref */
+  fetchKinds: string | undefined;
   // Actions
   mergeNeighborhood: (incoming: NexusGraph, parent: NexusGraphNode | null, anchorId?: string) => void;
-  expand: (nodeId: string) => Promise<void>;
+  expand: (nodeId: string, anchorId?: string) => Promise<void>;
   refreshNode: (nodeId: string) => Promise<void>;
+  /** Merge a tag's neighborhood in and select its hub (chip click / search) */
+  addTag: (label: string) => Promise<void>;
   tracePath: (targetPubky: Pubky) => Promise<void>;
   clearPath: () => void;
 };
 
 /** Expansion parameters for a node's own neighborhood, by node kind. */
-function expandParamsOf(node: NexusGraphNode): TGraphNeighborhoodParams {
+function expandParamsOf(node: NexusGraphNode, kinds: string | undefined): TGraphNeighborhoodParams {
   switch (node.kind) {
     case 'user':
-      return { kind: 'user', id: node.pubky, depth: 1 };
+      // Only user neighborhoods take the kinds filter: a tag/post expansion
+      // centered on the excluded kind would be self-defeating
+      return { kind: 'user', id: node.pubky, depth: 1, ...(kinds ? { kinds } : {}) };
     case 'post':
       return { kind: 'post', id: `${node.author_id}:${node.post_id}` };
     case 'tag':
@@ -132,11 +162,20 @@ export function useGraphCore({
   focusId: focusIdOption,
   resolveAnchor,
   deriveRelationships,
+  deriveSizeRelationships,
   exemptFocus = false,
+  capPostsByTier = true,
 }: GraphCoreOptions): GraphCore {
   const t = useTranslations('graph');
   const { currentUserPubky } = useAuthStore();
-  const { declutter, hiddenClasses: hiddenClassList, toggleClass, toggleDeclutter, setDeclutter } = useGraphStore();
+  const {
+    declutter,
+    hiddenClasses: hiddenClassList,
+    tagHubsOn,
+    toggleClass,
+    toggleDeclutter,
+    setDeclutter,
+  } = useGraphStore();
   const [graph, setGraph] = useState<NexusGraph>(EMPTY_GRAPH);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -146,9 +185,20 @@ export function useGraphCore({
   const [isTracing, setIsTracing] = useState(false);
   // Guards against a stale expansion/trace resolving after a newer load started
   const loadNonce = useRef(0);
+  // Chip node objects survive recomputes so the sim never resets their layout
+  const satelliteCache = useRef(new Map());
+  // Last committed opacity tiers, kept while a recenter expansion is in flight
+  // so the canvas does not flash all-dim before the new focus's edges merge
+  const opacityTiersRef = useRef<Map<string, GraphTier>>(new Map());
 
   const hiddenClasses = useMemo(() => new Set<HideableClass>(hiddenClassList), [hiddenClassList]);
   const focusId = typeof focusIdOption === 'function' ? focusIdOption(graph) : focusIdOption;
+  // Default view fetches no shared tag hubs; the advanced pref restores them
+  const fetchKinds = tagHubsOn ? undefined : 'user,post';
+
+  // One bulk live query behind every profile-tag chip on the canvas
+  const userPubkys = useMemo(() => graph.nodes.flatMap((n) => (n.kind === 'user' ? [n.pubky] : [])), [graph]);
+  const tagsMap = useGraphProfileTags(userPubkys);
 
   const mergeNeighborhood = useCallback(
     (incoming: NexusGraph, parent: NexusGraphNode | null, anchorId?: string) => {
@@ -173,17 +223,23 @@ export function useGraphCore({
   );
 
   const doExpand = useCallback(
-    async (nodeId: string, force: boolean) => {
+    async (nodeId: string, force: boolean, anchorId?: string) => {
       const node = graph.nodes.find((n) => n.id === nodeId);
       if (!node || isExpanding) return;
       if (!force && expandedIds.has(nodeId)) return;
       const nonce = loadNonce.current;
       setIsExpanding(true);
       try {
-        const neighborhood = await GraphController.fetchNeighborhood(expandParamsOf(node), currentUserPubky);
+        const neighborhood = await GraphController.fetchNeighborhood(
+          expandParamsOf(node, fetchKinds),
+          currentUserPubky,
+        );
         // A newer load() replaced the graph while we were in flight
         if (nonce !== loadNonce.current) return;
-        mergeNeighborhood(neighborhood, node);
+        // Recenter passes the clicked node as anchor: focus state has not
+        // committed yet in the same handler, so resolveAnchor would prune
+        // around the OLD focus and could evict the just-clicked cluster
+        mergeNeighborhood(neighborhood, node, anchorId);
         setExpandedIds((prev) => new Set(prev).add(nodeId));
       } catch (err) {
         // Non-fatal: the current graph stays untouched
@@ -193,11 +249,44 @@ export function useGraphCore({
         setIsExpanding(false);
       }
     },
-    [graph, expandedIds, isExpanding, mergeNeighborhood, currentUserPubky, logTag, t],
+    [graph, expandedIds, isExpanding, mergeNeighborhood, currentUserPubky, fetchKinds, logTag, t],
   );
 
-  const expand = useCallback((nodeId: string) => doExpand(nodeId, false), [doExpand]);
+  const expand = useCallback((nodeId: string, anchorId?: string) => doExpand(nodeId, false, anchorId), [doExpand]);
   const refreshNode = useCallback((nodeId: string) => doExpand(nodeId, true), [doExpand]);
+
+  /**
+   * Merge a tag's neighborhood in (chip click / search-to-add) and select its
+   * hub. Shared by both surfaces so feed chips behave exactly like explorer
+   * chips. The explicit expandedIds entry doubles as the hub's visibility
+   * pass in the default view.
+   */
+  const addTag = useCallback(
+    async (label: string) => {
+      const nodeId = `tag:${label}`;
+      if (graph.nodes.some((n) => n.id === nodeId)) {
+        setSelectedId(nodeId);
+        return;
+      }
+      const nonce = loadNonce.current;
+      setIsExpanding(true);
+      try {
+        const neighborhood = await GraphController.fetchNeighborhood({ kind: 'tag', id: label }, currentUserPubky);
+        if (nonce !== loadNonce.current) return;
+        // Anchor the prune on the incoming hub: a disconnected added cluster
+        // is otherwise "infinitely far" from the focus and gets evicted
+        mergeNeighborhood(neighborhood, null, nodeId);
+        setExpandedIds((prev) => new Set(prev).add(nodeId));
+        setSelectedId(nodeId);
+      } catch (err) {
+        Logger.error(`${logTag}: failed to add tag`, err);
+        toast({ description: t('states.expandError') });
+      } finally {
+        setIsExpanding(false);
+      }
+    },
+    [graph, loadNonce, currentUserPubky, mergeNeighborhood, logTag, t],
+  );
 
   const tracePath = useCallback(
     async (targetPubky: Pubky) => {
@@ -239,13 +328,45 @@ export function useGraphCore({
     return min < max ? { min, max } : null;
   }, [graph]);
 
+  // Sorted event timeline for constant-rate playback. Derived from the RAW
+  // graph on purpose: the visible edge set shrinks under the moving cap, and
+  // stamps derived from it would change identity on every playback tick,
+  // restarting the player at index zero forever.
+  const timelineStamps = useMemo(() => {
+    const stamps: number[] = [];
+    for (const edge of graph.edges) if (edge.indexed_at !== undefined) stamps.push(edge.indexed_at);
+    for (const node of graph.nodes) if (node.kind === 'post' && node.indexed_at > 0) stamps.push(node.indexed_at);
+    return stamps.sort((a, b) => a - b);
+  }, [graph]);
+
   // The visual-model pipeline; each stage is a pure, unit-tested function
-  const { nodes, edges, relationships, classCounts } = useMemo(() => {
+  const { nodes, edges, relationships, opacityTiers, sizeTiers, classCounts } = useMemo(() => {
     const timed = applyTimeCap(graph.nodes, graph.edges, timeCap, focusId);
-    const relationships = deriveRelationships(
-      timed.nodes.map((n) => n.id),
-      timed.edges,
-    );
+    const timedIds = timed.nodes.map((n) => n.id);
+    const relationships = deriveRelationships(timedIds, timed.edges);
+
+    // Sizes and chip counts anchor on the signed-in user; opacity anchors on
+    // the focus (designer notes name two different anchors: "Signed in user
+    // avatar size is 64px" vs "Centered user is shown 100% opacity")
+    const sizeRelationships = deriveSizeRelationships ? deriveSizeRelationships(timedIds, timed.edges) : relationships;
+    const sizeTiers = new Map<string, GraphTier>([...sizeRelationships].map(([id, rel]) => [id, tierOf(rel)]));
+
+    let opacityTiers: Map<string, GraphTier>;
+    if (pathIds) {
+      // How-connected view: everything visible paints at full opacity
+      opacityTiers = new Map(timedIds.map((id) => [id, 'center' as GraphTier]));
+    } else {
+      opacityTiers = new Map([...relationships].map(([id, rel]) => [id, tierOf(rel)]));
+      // A recenter re-anchors opacity before the new focus's neighborhood has
+      // merged; every node would transiently classify 'other' and the canvas
+      // would flash all-dim. Hold the previous tiers until the merge lands.
+      const hasDirect = [...opacityTiers.values()].some((tier) => tier === 'direct');
+      if (!hasDirect && isExpanding && opacityTiersRef.current.size > 0) {
+        opacityTiers = opacityTiersRef.current;
+      } else {
+        opacityTiersRef.current = opacityTiers;
+      }
+    }
 
     // Legend counts reflect what COULD be shown (pre class-hiding)
     const classCounts = new Map<HideableClass, number>();
@@ -254,28 +375,79 @@ export function useGraphCore({
       classCounts.set(cls, (classCounts.get(cls) ?? 0) + 1);
     }
 
-    let nodes = timed.nodes.filter((node) => {
-      const cls: HideableClass = node.kind === 'user' ? (relationships.get(node.id) ?? 'extended') : node.kind;
-      if (exemptFocus && node.id === focusId) return true;
-      return !hiddenClasses.has(cls);
-    });
-    const kept = new Set(nodes.map((n) => n.id));
-    let edges = timed.edges.filter((edge) => {
-      if (!kept.has(edge.source) || !kept.has(edge.target)) return false;
-      if (edge.type === 'TAGGED') return !hiddenClasses.has('tag');
-      if (edge.type === 'FOLLOWS') return true;
-      return !hiddenClasses.has('post');
-    });
+    let nodes: NexusGraphNode[];
+    let edges: NexusGraphEdge[];
+    if (pathIds) {
+      // Path mode bypasses class hiding and declutter outright: a stored
+      // hidden class must never amputate a mid-path user
+      const exclusive = applyPathExclusive(timed.nodes, timed.edges, new Set(pathIds));
+      nodes = exclusive.nodes;
+      edges = exclusive.edges;
+    } else {
+      nodes = timed.nodes.filter((node) => {
+        // Default view has no shared tag hubs (the feed synthesizes them
+        // client-side, bypassing the kinds filter); explicitly-added hubs
+        // (search/chip expansion marks them expanded) always stay
+        if (node.kind === 'tag' && !tagHubsOn && !expandedIds.has(node.id)) return false;
+        const cls: HideableClass = node.kind === 'user' ? (relationships.get(node.id) ?? 'extended') : node.kind;
+        if (exemptFocus && node.id === focusId) return true;
+        return !hiddenClasses.has(cls);
+      });
+      const kept = new Set(nodes.map((n) => n.id));
+      edges = timed.edges.filter((edge) => {
+        if (!kept.has(edge.source) || !kept.has(edge.target)) return false;
+        if (edge.type === 'TAGGED') return !hiddenClasses.has('tag');
+        if (edge.type === 'FOLLOWS') return true;
+        return !hiddenClasses.has('post');
+      });
 
-    if (declutter) {
-      // In a time-machine view, staleness is relative to the capped moment
-      const result = applyDeclutter(nodes, edges, relationships, timeCap ?? Date.now());
-      nodes = result.nodes;
-      edges = result.edges;
+      if (declutter) {
+        // Staleness is relative to the capped moment, else to the newest
+        // stamp in view (not the wall clock: on a stale snapshot every post
+        // is "old" and declutter would silently empty the graph)
+        const result = applyDeclutter(nodes, edges, relationships, timeCap ?? timeBounds?.max ?? Date.now());
+        nodes = result.nodes;
+        edges = result.edges;
+      }
     }
 
-    return { nodes, edges: aggregateParallelEdges(collapseMutualFollows(edges)), relationships, classCounts };
-  }, [graph, timeCap, focusId, deriveRelationships, exemptFocus, hiddenClasses, declutter]);
+    // Design view: at most 3/2/1 posts per author by size tier, newest first.
+    // The feed opts out: its posts are the content being visualized.
+    const capped = capPostsByTier ? postTierCap(nodes, edges, sizeTiers) : { nodes, edges };
+
+    // Per-user profile-tag chips, derived last so they follow exactly the
+    // visible users; chip objects keep identity through the cache
+    const visibleUsers = capped.nodes.filter((n): n is Extract<NexusGraphNode, { kind: 'user' }> => n.kind === 'user');
+    const satellites = deriveSatellites(visibleUsers, sizeTiers, tagsMap, satelliteCache.current, Date.now());
+
+    const visualEdges = aggregateParallelEdges(collapseMutualFollows([...capped.edges, ...satellites.edges]));
+    return {
+      // Satellites first: nodes paint in array order, so avatars and post
+      // circles land on top where a chip drifts underneath one
+      nodes: [...satellites.nodes, ...(capped.nodes as VisualGraphNode[])],
+      edges: visualEdges,
+      relationships,
+      opacityTiers,
+      sizeTiers,
+      classCounts,
+    };
+  }, [
+    graph,
+    timeCap,
+    focusId,
+    pathIds,
+    isExpanding,
+    deriveRelationships,
+    deriveSizeRelationships,
+    exemptFocus,
+    hiddenClasses,
+    declutter,
+    timeBounds,
+    capPostsByTier,
+    tagHubsOn,
+    expandedIds,
+    tagsMap,
+  ]);
 
   const selectedNode = useMemo(() => graph.nodes.find((node) => node.id === selectedId) ?? null, [graph, selectedId]);
 
@@ -302,13 +474,18 @@ export function useGraphCore({
     timeCap,
     setTimeCap: useCallback((cap: number | null) => setTimeCapState(cap), []),
     timeBounds,
+    timelineStamps,
     nodes,
     edges,
     relationships,
+    opacityTiers,
+    sizeTiers,
     classCounts,
+    fetchKinds,
     mergeNeighborhood,
     expand,
     refreshNode,
+    addTag,
     tracePath,
     clearPath: useCallback(() => setPathIds(null), []),
   };

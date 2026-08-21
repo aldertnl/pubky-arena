@@ -5,7 +5,6 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/atoms/Button/Button';
 import { Typography } from '@/atoms/Typography/Typography';
-import { GLASS_PANEL_CLASS } from '@/config/theme';
 import type { HideableClass } from '@/hooks/useSocialGraph/useSocialGraph.types';
 import { cn } from '@/libs/utils/utils';
 
@@ -60,7 +59,7 @@ export function SocialGraphLegend({
 
   return (
     <div
-      className={cn(GLASS_PANEL_CLASS, 'flex w-48 flex-col gap-1 p-3', className)}
+      className={cn('flex w-full flex-col gap-1', className)}
       data-cy="graph-legend"
       onMouseLeave={() => {
         onHoverClass(null);

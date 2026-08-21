@@ -1468,6 +1468,7 @@
       "extended": "拡張",
       "user": "ユーザー",
       "post": "投稿",
+      "reply": "返信",
       "tag": "タグ",
       "sameCommunity": "同じコミュニティ",
       "bridge": "ブリッジ",
@@ -1487,7 +1488,12 @@
       "timeMachine": "タイムマシン",
       "pausePhysics": "物理を一時停止",
       "resumePhysics": "物理を再開",
-      "releasePins": "固定ノードを解除"
+      "releasePins": "固定ノードを解除",
+      "advanced": "詳細設定",
+      "fullscreen": "全画面表示",
+      "exitFullscreen": "全画面表示を終了",
+      "edgeDetails": "エッジの詳細",
+      "tagHubs": "タグノード"
     },
     "panel": {
       "close": "閉じる",
@@ -1502,7 +1508,9 @@
       "tagUsage": "{count}回使用",
       "reply": "返信",
       "tracePath": "どうつながっている？",
-      "followedBy": "フォロー中の{count}人がフォロー"
+      "followedBy": "フォロー中の{count}人がフォロー",
+      "howConnected": "どうつながっている？",
+      "clearPath": "接続ビューを閉じる"
     },
     "states": {
       "error": "グラフを読み込めませんでした。",
@@ -1527,7 +1535,8 @@
     },
     "stream": {
       "mergeMore": "さらに統合",
-      "empty": "このストリームにはまだ何もありません。"
+      "empty": "このストリームにはまだ何もありません。",
+      "loadMore": "もっと読み込む"
     }
   }
 }

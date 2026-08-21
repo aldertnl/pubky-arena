@@ -1468,6 +1468,7 @@
       "extended": "Esteso",
       "user": "Utente",
       "post": "Post",
+      "reply": "Risposta",
       "tag": "Tag",
       "sameCommunity": "Stessa community",
       "bridge": "Ponte",
@@ -1487,7 +1488,12 @@
       "timeMachine": "Macchina del tempo",
       "pausePhysics": "Pausa fisica",
       "resumePhysics": "Riprendi fisica",
-      "releasePins": "Rilascia i nodi fissati"
+      "releasePins": "Rilascia i nodi fissati",
+      "advanced": "Avanzate",
+      "fullscreen": "Schermo intero",
+      "exitFullscreen": "Esci da schermo intero",
+      "edgeDetails": "Dettagli degli archi",
+      "tagHubs": "Nodi tag"
     },
     "panel": {
       "close": "Chiudi",
@@ -1502,7 +1508,9 @@
       "tagUsage": "usato {count, plural, one {# volta} other {# volte}}",
       "reply": "Rispondi",
       "tracePath": "Come sono collegato?",
-      "followedBy": "seguito da {count} che segui"
+      "followedBy": "seguito da {count} che segui",
+      "howConnected": "Come siamo collegati?",
+      "clearPath": "Esci dalla vista connessione"
     },
     "states": {
       "error": "Impossibile caricare il grafo.",
@@ -1527,7 +1535,8 @@
     },
     "stream": {
       "mergeMore": "Aggiungi altro",
-      "empty": "Ancora nulla in questo stream."
+      "empty": "Ancora nulla in questo stream.",
+      "loadMore": "Carica altro"
     }
   }
 }

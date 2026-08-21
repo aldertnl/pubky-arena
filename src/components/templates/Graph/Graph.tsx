@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { RotateCcw, Users } from 'lucide-react';
+import { RotateCcw, Users, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { APP_ROUTES } from '@/app/routes';
 import { Button } from '@/atoms/Button/Button';
@@ -10,12 +10,14 @@ import { Link } from '@/atoms/Link/Link';
 import { Spinner } from '@/atoms/Spinner/Spinner';
 import { Tag } from '@/atoms/Tag/Tag';
 import { Typography } from '@/atoms/Typography/Typography';
-import { GLASS_PANEL_CLASS } from '@/config/theme';
-import { FileController } from '@/controllers/file/file';
+import { GRAPH_PILL_CLASS, GRAPH_SURFACE_CLASS } from '@/config/theme';
+import { useFullscreenToggle } from '@/hooks/useFullscreenToggle/useFullscreenToggle';
+import { useGraphDebug } from '@/hooks/useGraphDebug/useGraphDebug';
 import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
 import { useSocialGraph } from '@/hooks/useSocialGraph/useSocialGraph';
 import type { HideableClass, TrailEntry } from '@/hooks/useSocialGraph/useSocialGraph.types';
 import { edgeKey, type SocialGraphVisualEdge, socialProof } from '@/hooks/useSocialGraph/useSocialGraph.utils';
+import { useTrackedPoint } from '@/hooks/useTrackedPoint/useTrackedPoint';
 import { cn } from '@/libs/utils/utils';
 import type { Pubky } from '@/models/models.types';
 import { CanvasAnchoredPopover } from '@/molecules/CanvasAnchoredPopover/CanvasAnchoredPopover';
@@ -23,47 +25,19 @@ import { GraphBreadcrumbs } from '@/molecules/GraphBreadcrumbs/GraphBreadcrumbs'
 import { GraphSearch } from '@/molecules/GraphSearch/GraphSearch';
 import { GraphTimeMachine } from '@/molecules/GraphTimeMachine/GraphTimeMachine';
 import { MobileFooter } from '@/molecules/MobileFooter/MobileFooter';
+import { SocialGraphAdvancedPanel } from '@/molecules/SocialGraphAdvancedPanel/SocialGraphAdvancedPanel';
 import { SocialGraphControls } from '@/molecules/SocialGraphControls/SocialGraphControls';
 import { type EdgeLegendKind, SocialGraphLegend } from '@/molecules/SocialGraphLegend/SocialGraphLegend';
-import { ProfileHoverCard } from '@/organisms/ProfileHoverCard/ProfileHoverCard';
+import { GraphUserHoverCard } from '@/organisms/GraphUserHoverCard/GraphUserHoverCard';
 import { SocialGraph } from '@/organisms/SocialGraph/SocialGraph';
 import type { SocialGraphHandle } from '@/organisms/SocialGraph/SocialGraph.types';
 import { SocialGraphNodePanel } from '@/organisms/SocialGraphNodePanel/SocialGraphNodePanel';
-import type { NexusGraphNode } from '@/services/nexus/graph/graph.types';
+import type { NexusGraphNode, NexusGraphUserNode } from '@/services/nexus/graph/graph.types';
 import { useAuthStore } from '@/stores/auth/auth.store';
 import { useGraphStore } from '@/stores/graph/graph.store';
 
 type TagEdgePopover = { labels: string[]; sourceId: string; targetId: string; x: number; y: number };
-type HoverCard = { pubky: Pubky; name: string; image: string | null; nodeId: string; x: number; y: number };
-
-/**
- * Re-samples a canvas-space point every animation frame while active, so
- * overlays spawn next to their node and track pan, zoom, and drags. Holds the
- * last point through momentary null samples.
- */
-function useTrackedPoint(compute: (() => { x: number; y: number } | null) | null): { x: number; y: number } | null {
-  const [point, setPoint] = useState<{ x: number; y: number } | null>(null);
-  useEffect(() => {
-    if (!compute) {
-      setPoint(null);
-      return;
-    }
-    let raf = 0;
-    const tick = () => {
-      const next = compute();
-      if (next) {
-        setPoint((prev) => (prev && Math.abs(prev.x - next.x) < 0.5 && Math.abs(prev.y - next.y) < 0.5 ? prev : next));
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    tick();
-    return () => {
-      cancelAnimationFrame(raf);
-      setPoint(null);
-    };
-  }, [compute]);
-  return point;
-}
+type HoverCard = { node: NexusGraphUserNode; x: number; y: number };
 
 /**
  * Graph
@@ -81,6 +55,7 @@ export function Graph() {
   const centerPubky = (searchParams.get('user') as Pubky | null) ?? currentUserPubky;
   const graph = useSocialGraph();
   const canvasRef = useRef<SocialGraphHandle>(null);
+  const { isFullscreen, toggleFullscreen } = useFullscreenToggle(() => canvasRef.current?.fit());
   // The positioned container overlays anchor against; canvas screen
   // coordinates are relative to it
   const pageRef = useRef<HTMLDivElement>(null);
@@ -91,7 +66,15 @@ export function Graph() {
   const [tagPopover, setTagPopover] = useState<TagEdgePopover | null>(null);
   const [hoverCard, setHoverCard] = useState<HoverCard | null>(null);
   const hoverCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { load, focusId } = graph;
+  const isMobile = useIsMobile();
+  const { load } = graph;
+
+  // QA/debug surface for the cypress interaction audit (debug builds only)
+  const { focusId: graphFocusId, pathIds: graphPathIds } = graph;
+  useGraphDebug(canvasRef, {
+    focusId: useCallback(() => graphFocusId, [graphFocusId]),
+    pathIds: useCallback(() => graphPathIds, [graphPathIds]),
+  });
 
   useEffect(() => {
     if (centerPubky) load(centerPubky);
@@ -133,6 +116,9 @@ export function Graph() {
     },
     [addTag, expand, flyToNode],
   );
+
+  // Advanced lens preferences (design-off defaults)
+  const { edgeChipsOn, tagHubsOn, toggleEdgeChips, toggleTagHubs } = useGraphStore();
 
   // Picks made in the global header search while on this page
   const searchTarget = useGraphStore((state) => state.searchTarget);
@@ -225,14 +211,6 @@ export function Graph() {
     [graph.edges, graph.focusId, graph.communities],
   );
 
-  // Sorted event timeline for constant-rate playback
-  const timelineStamps = useMemo(() => {
-    const stamps: number[] = [];
-    for (const edge of graph.edges) if (edge.indexed_at !== undefined) stamps.push(edge.indexed_at);
-    for (const node of graph.nodes) if (node.kind === 'post' && node.indexed_at > 0) stamps.push(node.indexed_at);
-    return stamps.sort((a, b) => a - b);
-  }, [graph.edges, graph.nodes]);
-
   const hasTies = useMemo(
     () =>
       graph.edges.some(
@@ -261,19 +239,58 @@ export function Graph() {
   const handleUserHover = useCallback((node: NexusGraphNode | null, screen: { x: number; y: number } | null) => {
     if (hoverCloseTimer.current) clearTimeout(hoverCloseTimer.current);
     if (node && node.kind === 'user' && screen) {
-      setHoverCard({
-        pubky: node.pubky,
-        name: node.name,
-        image: node.image,
-        nodeId: node.id,
-        x: screen.x,
-        y: screen.y,
-      });
+      setHoverCard({ node, x: screen.x, y: screen.y });
     } else {
       // Grace period so the pointer can travel from node to card
       hoverCloseTimer.current = setTimeout(() => setHoverCard(null), 250);
     }
   }, []);
+
+  // Design click semantics: a user click centers + focuses (and dismisses any
+  // hover card); a chip click expands its tag into the graph; posts and hubs
+  // keep the inspector panel. Touch has no hover card, so a second tap on the
+  // focused user opens the bottom-sheet panel instead.
+  const { recenter, select: graphSelect } = graph;
+  const handleNodeClick = useCallback(
+    (id: string) => {
+      if (id.startsWith('user:')) {
+        setHoverCard(null);
+        if (isMobile && graph.focusId === id) {
+          graphSelect(id);
+          return;
+        }
+        void recenter(id);
+        canvasRef.current?.centerOn(id);
+        return;
+      }
+      if (id.startsWith('ptag:')) {
+        const label = id.split(':').slice(2).join(':');
+        if (label) void handlePickTag(label);
+        return;
+      }
+      graphSelect(id);
+    },
+    [recenter, graphSelect, handlePickTag, isMobile, graph.focusId],
+  );
+
+  const handleRecenterSelf = useCallback(() => {
+    if (!currentUserPubky) return;
+    const nodeId = `user:${currentUserPubky}`;
+    if (graph.nodes.some((n) => n.id === nodeId)) {
+      void recenter(nodeId);
+      canvasRef.current?.centerOn(nodeId);
+    } else {
+      void handlePickUser(currentUserPubky);
+    }
+  }, [currentUserPubky, graph.nodes, recenter, handlePickUser]);
+
+  const handleTraceConnection = useCallback(
+    (pubky: string) => {
+      setHoverCard(null);
+      void graph.tracePath(pubky as Pubky);
+    },
+    [graph],
+  );
 
   const handleLinkClick = useCallback((edge: SocialGraphVisualEdge, screen: { x: number; y: number }) => {
     // Any tag edge is inspectable; single-label edges just show one pill
@@ -296,8 +313,7 @@ export function Graph() {
   const isEmpty = !graph.isLoading && !graph.error && !hasContent;
 
   // Tracked anchor points: overlays follow their canvas entity per frame
-  const isMobile = useIsMobile();
-  const hoverNodeId = hoverCard?.nodeId ?? null;
+  const hoverNodeId = hoverCard?.node.id ?? null;
   const computeHoverPoint = useCallback(
     () => (hoverNodeId ? (canvasRef.current?.screenPositionOf(hoverNodeId) ?? null) : null),
     [hoverNodeId],
@@ -345,18 +361,15 @@ export function Graph() {
     <div
       ref={pageRef}
       // Full-bleed on phones (the desktop header is hidden below lg); under
-      // the header on desktop via the shared offset token
-      className="relative h-svh w-full overflow-hidden lg:-mt-8 lg:h-[calc(100svh-var(--header-offset-main)+2rem)]"
+      // the header on desktop via the shared offset token. The canvas sits on
+      // the page's core-black background inside a hairline-bordered card, or
+      // covers the viewport (header included) in fullscreen.
+      className={cn(
+        'relative h-svh w-full overflow-hidden lg:-mt-8 lg:h-[calc(100svh-var(--header-offset-main)+2rem)] lg:rounded-lg lg:border lg:border-secondary',
+        isFullscreen && 'fixed inset-0 z-50 h-auto bg-background lg:mt-0 lg:h-auto lg:rounded-none lg:border-0',
+      )}
       data-cy="graph-page"
     >
-      {/* Subtle depth behind the canvas: a lime-tinted radial glow on core black */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: 'radial-gradient(ellipse 60% 50% at 50% 40%, rgba(200, 255, 0, 0.04), transparent 70%)',
-        }}
-      />
-
       <SocialGraph
         ref={canvasRef}
         nodes={graph.nodes}
@@ -364,12 +377,16 @@ export function Graph() {
         focusId={graph.focusId}
         selectedId={graph.selectedNode?.id ?? null}
         relationships={graph.relationships}
+        opacityTiers={graph.opacityTiers}
+        sizeTiers={graph.sizeTiers}
+        ringId={graph.pathIds ? (graph.pathIds.at(-1) ?? graph.focusId) : graph.focusId}
         spotlight={spotlight}
         spotlightEdges={edgeSpotlight}
         pathIds={graph.pathIds}
         communities={graph.communities}
         communityLabels={graph.communityLabels}
-        onNodeClick={graph.select}
+        edgeChipsOn={edgeChipsOn}
+        onNodeClick={handleNodeClick}
         onNodeExpand={graph.expand}
         onLinkClick={handleLinkClick}
         onUserHover={handleUserHover}
@@ -401,18 +418,9 @@ export function Graph() {
       </div>
 
       <SocialGraphControls
-        className="absolute top-1/2 right-3 -translate-y-1/2 sm:right-4"
-        declutter={graph.declutter}
-        onToggleDeclutter={graph.toggleDeclutter}
-        physicsPaused={physicsPaused}
-        onTogglePhysics={() => {
-          const next = !physicsPaused;
-          setPhysicsPaused(next);
-          canvasRef.current?.setPaused(next);
-        }}
-        onReleasePins={() => canvasRef.current?.releasePins()}
-        communitiesOn={graph.communitiesOn}
-        onToggleCommunities={graph.toggleCommunities}
+        className="absolute top-14 right-3 z-10 sm:top-3 lg:top-6 lg:right-6"
+        onZoomIn={() => canvasRef.current?.zoomIn()}
+        onZoomOut={() => canvasRef.current?.zoomOut()}
         timeMachineOn={timeMachineOn}
         timeMachineAvailable={graph.timeBounds !== null}
         onToggleTimeMachine={() => {
@@ -421,22 +429,55 @@ export function Graph() {
             return !prev;
           });
         }}
-        onZoomIn={() => canvasRef.current?.zoomIn()}
-        onZoomOut={() => canvasRef.current?.zoomOut()}
-        onFit={() => canvasRef.current?.fit()}
-        onRecenter={() => focusId && canvasRef.current?.centerOn(focusId)}
+        onRecenterSelf={currentUserPubky ? handleRecenterSelf : undefined}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={toggleFullscreen}
+        advancedContent={
+          <SocialGraphAdvancedPanel
+            declutter={graph.declutter}
+            onToggleDeclutter={graph.toggleDeclutter}
+            communitiesOn={graph.communitiesOn}
+            onToggleCommunities={graph.toggleCommunities}
+            edgeChipsOn={edgeChipsOn}
+            onToggleEdgeChips={toggleEdgeChips}
+            tagHubsOn={tagHubsOn}
+            onToggleTagHubs={toggleTagHubs}
+            physicsPaused={physicsPaused}
+            onTogglePhysics={() => {
+              const next = !physicsPaused;
+              setPhysicsPaused(next);
+              canvasRef.current?.setPaused(next);
+            }}
+            onReleasePins={() => canvasRef.current?.releasePins()}
+            onFit={() => canvasRef.current?.fit()}
+            legend={
+              <SocialGraphLegend
+                classCounts={graph.classCounts}
+                hiddenClasses={graph.hiddenClasses}
+                onHoverClass={spotlightClass}
+                onToggleClass={graph.toggleClass}
+                showRecency={hasTies && edgeChipsOn}
+                communitiesOn={graph.communitiesOn && graph.communities !== null}
+                onHoverEdges={spotlightEdgeKind}
+              />
+            }
+          />
+        }
       />
 
-      <SocialGraphLegend
-        className={cn('absolute bottom-20 left-3 lg:bottom-6 lg:left-4', graph.selectedNode && 'hidden lg:flex')}
-        classCounts={graph.classCounts}
-        hiddenClasses={graph.hiddenClasses}
-        onHoverClass={spotlightClass}
-        onToggleClass={graph.toggleClass}
-        showRecency={hasTies}
-        communitiesOn={graph.communitiesOn && graph.communities !== null}
-        onHoverEdges={spotlightEdgeKind}
-      />
+      {graph.pathIds && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(GRAPH_PILL_CLASS, 'absolute top-14 left-3 z-10 sm:top-3 lg:top-6 lg:left-6')}
+          onClick={() => graph.clearPath()}
+          aria-label={t('panel.clearPath')}
+          title={t('panel.clearPath')}
+          data-cy="graph-path-exit"
+        >
+          <X className="size-4" />
+        </Button>
+      )}
 
       {timeMachineOn && graph.timeBounds && (
         <GraphTimeMachine
@@ -445,7 +486,7 @@ export function Graph() {
             graph.selectedNode && 'lg:left-[40%] xl:left-[45%]',
           )}
           bounds={graph.timeBounds}
-          timestamps={timelineStamps}
+          timestamps={graph.timelineStamps}
           cap={graph.timeCap}
           onCapChange={graph.setTimeCap}
           onClose={() => setTimeMachineOn(false)}
@@ -464,13 +505,15 @@ export function Graph() {
           )}
 
       {hoverCard && (
-        <ProfileHoverCard
-          pubky={hoverCard.pubky}
-          userName={hoverCard.name}
-          avatarUrl={hoverCard.image ? FileController.getAvatarUrl(hoverCard.pubky) : undefined}
-          open={!graph.selectedNode || graph.selectedNode.id !== `user:${hoverCard.pubky}`}
+        <GraphUserHoverCard
+          node={hoverCard.node}
+          open={!graph.selectedNode || graph.selectedNode.id !== hoverCard.node.id}
           x={hoverPoint?.x ?? hoverCard.x}
           y={hoverPoint?.y ?? hoverCard.y}
+          nodes={graph.nodes}
+          edges={graph.edges}
+          meId={meId}
+          onTraceConnection={handleTraceConnection}
           onPointerEnter={() => {
             if (hoverCloseTimer.current) clearTimeout(hoverCloseTimer.current);
           }}
@@ -483,7 +526,7 @@ export function Graph() {
           x={tagPoint?.x ?? tagPopover.x}
           y={tagPoint?.y ?? tagPopover.y}
           offset={10}
-          className={cn(GLASS_PANEL_CLASS, 'flex w-auto max-w-56 flex-wrap gap-1.5 bg-black/70 p-2.5')}
+          className={cn(GRAPH_SURFACE_CLASS, 'flex w-auto max-w-56 flex-wrap gap-1.5 p-2.5 shadow-lg')}
           onPointerLeave={() => setTagPopover(null)}
           data-cy="graph-tag-popover"
         >
@@ -503,7 +546,7 @@ export function Graph() {
       {(graph.isExpanding || graph.isTracing || (graph.isLoading && hasContent)) && (
         <div
           className={cn(
-            GLASS_PANEL_CLASS,
+            GRAPH_SURFACE_CLASS,
             'absolute bottom-24 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full px-3.5 py-1.5',
             'animate-in zoom-in-95 fade-in',
           )}
@@ -523,8 +566,8 @@ export function Graph() {
           ) : (
             <div
               className={cn(
-                GLASS_PANEL_CLASS,
-                'pointer-events-auto flex max-w-sm flex-col items-center gap-4 p-8 text-center',
+                GRAPH_SURFACE_CLASS,
+                'pointer-events-auto flex max-w-sm flex-col items-center gap-4 p-8 text-center shadow-xl',
               )}
             >
               <Users className="size-8 text-muted-foreground" />

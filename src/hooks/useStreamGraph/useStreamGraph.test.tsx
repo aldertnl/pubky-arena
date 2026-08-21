@@ -42,17 +42,38 @@ describe('useStreamGraph', () => {
     );
   });
 
-  it('synthesizes author + post nodes from the cached stream', async () => {
+  it('synthesizes author + post nodes and always seeds the viewer node', async () => {
     const { result } = renderHook(() => useStreamGraph([COMPOSITE]));
 
-    await waitFor(() => expect(result.current.rawNodeCount).toBe(2));
-    expect(result.current.nodes.map((n) => n.id).sort()).toEqual([`post:${COMPOSITE}`, `user:${AUTHOR}`]);
+    // Stream nodes plus the locally synthesized signed-in user (no edges)
+    await waitFor(() => expect(result.current.rawNodeCount).toBe(3));
+    expect(result.current.nodes.map((n) => n.id).sort()).toEqual([
+      `post:${COMPOSITE}`,
+      `user:${AUTHOR}`,
+      'user:mepubky',
+    ]);
+    // The seed is a bare node: no neighborhood fetch, no FOLLOWS flood
+    expect(result.current.edges.filter((e) => e.type === 'FOLLOWS')).toHaveLength(0);
   });
 
   it('colors users from Dexie relationship flags read through the live query', async () => {
     const { result } = renderHook(() => useStreamGraph([COMPOSITE]));
 
     await waitFor(() => expect(result.current.relationships.get(`user:${AUTHOR}`)).toBe('following'));
-    expect(UserController.getManyRelationships).toHaveBeenCalledWith({ userIds: [AUTHOR] });
+    // The live query covers every user on canvas, viewer included
+    expect(UserController.getManyRelationships).toHaveBeenCalledWith({
+      userIds: expect.arrayContaining([AUTHOR]) as string[],
+    });
+  });
+
+  it('keeps every stream post (no design tier cap on the feed)', async () => {
+    const posts = [0, 1, 2, 3, 4].map((i) => `${AUTHOR}:0032POST${i}`);
+    vi.mocked(PostController.getDetailsByIds).mockResolvedValue(
+      posts.map((id, i) => ({ id, content: `p${i}`, kind: 'short', indexed_at: 100 + i, attachments: null })) as never,
+    );
+    const { result } = renderHook(() => useStreamGraph(posts));
+
+    // All five posts of one author stay visible; the explorer would cap at 3
+    await waitFor(() => expect(result.current.nodes.filter((n) => n.kind === 'post')).toHaveLength(5));
   });
 });

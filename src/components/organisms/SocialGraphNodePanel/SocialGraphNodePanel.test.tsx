@@ -71,6 +71,7 @@ describe('SocialGraphNodePanel', () => {
       post_id: '123',
       content: 'Hello graph world',
       post_kind: 'short',
+      is_reply: false,
       indexed_at: 1719000000,
     };
     render(<SocialGraphNodePanel node={node} {...baseProps} />);
@@ -93,5 +94,30 @@ describe('SocialGraphNodePanel', () => {
     render(<SocialGraphNodePanel node={node} {...baseProps} isExpanded />);
 
     expect(document.querySelector('[data-cy="graph-panel-expand"]')).toBeDisabled();
+  });
+
+  it('frosts the panel so its copy stays readable over the canvas', () => {
+    const node: NexusGraphNode = { kind: 'tag', id: 'tag:dev', label: 'dev', count: 113 };
+    render(<SocialGraphNodePanel node={node} {...baseProps} />);
+
+    expect(document.querySelector('[data-cy="graph-panel"]')).toHaveClass('backdrop-blur-md');
+  });
+
+  it('labels a reply as such instead of a generic post', () => {
+    const node: NexusGraphNode = {
+      kind: 'post',
+      id: 'post:abc:124',
+      author_id: 'abc',
+      post_id: '124',
+      content: '@DZ!',
+      post_kind: 'short',
+      is_reply: true,
+      indexed_at: 1719000001,
+    };
+    render(<SocialGraphNodePanel node={node} {...baseProps} />);
+
+    // The kind label (the Reply action button also says "Reply")
+    expect(document.querySelector('[data-cy="graph-panel"] .uppercase')).toHaveTextContent('Reply');
+    expect(screen.queryByText('Post')).not.toBeInTheDocument();
   });
 });

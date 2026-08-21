@@ -8,12 +8,15 @@ import { markBirths, type SimNode, useGraphCore } from '@/hooks/useGraphCore/use
 import { type HideableClass } from '@/hooks/useSocialGraph/useSocialGraph.types';
 import {
   type GraphRelationship,
+  type GraphTier,
   mergeGraph,
+  relationshipMap,
   type SocialGraphVisualEdge,
+  type VisualGraphNode,
 } from '@/hooks/useSocialGraph/useSocialGraph.utils';
 import { Logger } from '@/libs/logger/logger';
 import type { Pubky } from '@/models/models.types';
-import type { NexusGraph, NexusGraphNode } from '@/services/nexus/graph/graph.types';
+import type { NexusGraph, NexusGraphEdge, NexusGraphNode } from '@/services/nexus/graph/graph.types';
 import { useAuthStore } from '@/stores/auth/auth.store';
 import { type StreamPostInput, streamToGraph, tryParseCompositeId, viewerRelationships } from './useStreamGraph.utils';
 
@@ -21,25 +24,35 @@ type ViewerRelFlags = Map<string, { following: boolean; followed_by: boolean }>;
 const EMPTY_RELS: ViewerRelFlags = new Map();
 
 export type UseStreamGraphResult = {
-  nodes: NexusGraphNode[];
+  nodes: VisualGraphNode[];
   /** Unfiltered node count; grows only on merges (auto-fit trigger) */
   rawNodeCount: number;
   edges: SocialGraphVisualEdge[];
   relationships: Map<string, GraphRelationship>;
+  /** Focus-anchored opacity tier per visible node; path mode forces all 'center' */
+  opacityTiers: Map<string, GraphTier>;
+  /** Viewer-anchored size/chip tier per visible node */
+  sizeTiers: Map<string, GraphTier>;
   classCounts: Map<HideableClass, number>;
   focusId: string | null;
   selectedNode: NexusGraphNode | null;
   expandedIds: Set<string>;
   pathIds: string[] | null;
   timeBounds: { min: number; max: number } | null;
+  /** Sorted raw-graph event timestamps for constant-rate playback */
+  timelineStamps: number[];
   timeCap: number | null;
   declutter: boolean;
   hiddenClasses: Set<HideableClass>;
   isExpanding: boolean;
   isTracing: boolean;
   select: (id: string | null) => void;
-  expand: (nodeId: string) => Promise<void>;
+  expand: (nodeId: string, anchorId?: string) => Promise<void>;
   refreshNode: (nodeId: string) => Promise<void>;
+  /** Design click behavior: focus + one-time expand pruned around the clicked user */
+  recenter: (nodeId: string) => Promise<void>;
+  /** Merge a tag's neighborhood in and select its hub (chip click) */
+  addTag: (label: string) => Promise<void>;
   tracePath: (pubky: Pubky) => Promise<void>;
   clearPath: () => void;
   toggleClass: (cls: HideableClass) => void;
@@ -60,13 +73,28 @@ export type UseStreamGraphResult = {
 export function useStreamGraph(postIds: string[]): UseStreamGraphResult {
   const { currentUserPubky } = useAuthStore();
   const [authorRels, setAuthorRels] = useState<ViewerRelFlags>(EMPTY_RELS);
+  // Click-to-center override; null = the viewer (the design's default center)
+  const [focusOverride, setFocusOverride] = useState<string | null>(null);
   const gatherNonce = useRef(0);
+  const seededFor = useRef<Pubky | null>(null);
 
   const postKey = postIds.join(',');
+  const meNodeId = currentUserPubky ? `user:${currentUserPubky}` : null;
 
-  // Colors stream users against the signed-in viewer from cached relationship
-  // flags (there are no FOLLOWS edges in a stream graph to derive them from)
+  // Opacity tiers: viewer-anchored from cached relationship flags by default
+  // (a stream graph has no FOLLOWS edges to derive from); once a recenter
+  // targets another user, derive from the FOLLOWS topology their expansion
+  // merged in
   const deriveRelationships = useCallback(
+    (nodeIds: string[], edges: NexusGraphEdge[]) => {
+      if (focusOverride && focusOverride !== meNodeId) return relationshipMap(focusOverride, nodeIds, edges);
+      return viewerRelationships(currentUserPubky, nodeIds, authorRels);
+    },
+    [focusOverride, meNodeId, currentUserPubky, authorRels],
+  );
+
+  // Sizes/chip counts always anchor on the signed-in viewer (flags-based)
+  const deriveSizeRelationships = useCallback(
     (nodeIds: string[]) => viewerRelationships(currentUserPubky, nodeIds, authorRels),
     [currentUserPubky, authorRels],
   );
@@ -79,13 +107,15 @@ export function useStreamGraph(postIds: string[]): UseStreamGraphResult {
     [currentUserPubky],
   );
 
-  // The viewer node (when present in the graph) anchors the time-cap exemption
+  // The focused node (recentered user, else the viewer when present) anchors
+  // the time-cap exemption and default pruning
   const deriveFocusId = useCallback(
     (graph: NexusGraph) => {
+      if (focusOverride && graph.nodes.some((n) => n.id === focusOverride)) return focusOverride;
       const meId = currentUserPubky ? `user:${currentUserPubky}` : null;
       return meId && graph.nodes.some((n) => n.id === meId) ? meId : null;
     },
-    [currentUserPubky],
+    [focusOverride, currentUserPubky],
   );
 
   const core = useGraphCore({
@@ -93,8 +123,58 @@ export function useStreamGraph(postIds: string[]): UseStreamGraphResult {
     focusId: deriveFocusId,
     resolveAnchor,
     deriveRelationships,
+    deriveSizeRelationships,
+    // The feed's posts ARE the content; never thin them to the design cap
+    capPostsByTier: false,
   });
-  const { graph, setGraph } = core;
+  const { graph, setGraph, expandedIds, expand } = core;
+
+  // Design: "Always include and start with signed in user in this visual
+  // graph, even if user has no recent posts." Only the viewer's NODE is
+  // seeded, synthesized from local Dexie details: a full neighborhood fetch
+  // would flood the feed with hundreds of FOLLOWS edges (mesh glare, and it
+  // trips the auto-declutter threshold meant for the explorer).
+  useEffect(() => {
+    if (!currentUserPubky || seededFor.current === currentUserPubky) return;
+    seededFor.current = currentUserPubky;
+    (async () => {
+      try {
+        const details = await UserController.getManyDetails({ userIds: [currentUserPubky] });
+        const me = details.get(currentUserPubky);
+        core.mergeNeighborhood(
+          {
+            nodes: [
+              {
+                kind: 'user',
+                id: `user:${currentUserPubky}`,
+                pubky: currentUserPubky,
+                name: me?.name ?? '',
+                image: me?.image ?? null,
+              },
+            ],
+            edges: [],
+          },
+          null,
+          `user:${currentUserPubky}`,
+        );
+      } catch (err) {
+        // Non-fatal: the stream synthesis still renders
+        Logger.error('useStreamGraph: failed to seed viewer node', err);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUserPubky]);
+
+  /** Design click behavior: center + focus a user, expanding them once. */
+  const recenter = useCallback(
+    async (nodeId: string) => {
+      const node = graph.nodes.find((n) => n.id === nodeId && n.kind === 'user');
+      if (!node) return;
+      setFocusOverride(nodeId === meNodeId ? null : nodeId);
+      if (!expandedIds.has(nodeId)) await expand(nodeId, nodeId);
+    },
+    [graph, meNodeId, expandedIds, expand],
+  );
 
   // Gather the stream's already-cached data and merge the synthesized graph in
   useEffect(() => {
@@ -184,12 +264,15 @@ export function useStreamGraph(postIds: string[]): UseStreamGraphResult {
     rawNodeCount: graph.nodes.length,
     edges: core.edges,
     relationships: core.relationships,
+    opacityTiers: core.opacityTiers,
+    sizeTiers: core.sizeTiers,
     classCounts: core.classCounts,
     focusId,
     selectedNode: core.selectedNode,
     expandedIds: core.expandedIds,
     pathIds: core.pathIds,
     timeBounds: core.timeBounds,
+    timelineStamps: core.timelineStamps,
     timeCap: core.timeCap,
     declutter: core.declutter,
     hiddenClasses: core.hiddenClasses,
@@ -198,6 +281,8 @@ export function useStreamGraph(postIds: string[]): UseStreamGraphResult {
     select: core.select,
     expand: core.expand,
     refreshNode: core.refreshNode,
+    recenter,
+    addTag: core.addTag,
     tracePath: core.tracePath,
     clearPath: core.clearPath,
     toggleClass: core.toggleClass,

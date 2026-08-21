@@ -27,6 +27,14 @@ export const createGraphActions = (set: ZustandSet<GraphStore>): GraphActions =>
     set((state) => ({ communitiesOn: !state.communitiesOn }), false, GraphActionTypes.TOGGLE_GRAPH_COMMUNITIES);
   },
 
+  toggleTagHubs: () => {
+    set((state) => ({ tagHubsOn: !state.tagHubsOn }), false, GraphActionTypes.TOGGLE_GRAPH_TAG_HUBS);
+  },
+
+  toggleEdgeChips: () => {
+    set((state) => ({ edgeChipsOn: !state.edgeChipsOn }), false, GraphActionTypes.TOGGLE_GRAPH_EDGE_CHIPS);
+  },
+
   requestSearch: (target) => {
     set({ searchTarget: target }, false, GraphActionTypes.REQUEST_GRAPH_SEARCH);
   },

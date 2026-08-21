@@ -24,6 +24,7 @@ const post = (author: string, id: string, indexed_at: number) => ({
   post_id: id,
   content: 'x',
   post_kind: 'short',
+  is_reply: false,
   indexed_at,
 });
 

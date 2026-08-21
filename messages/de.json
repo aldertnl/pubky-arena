@@ -1470,6 +1470,7 @@
       "extended": "Erweitert",
       "user": "Nutzer",
       "post": "Beitrag",
+      "reply": "Antwort",
       "tag": "Tag",
       "sameCommunity": "Gleiche Community",
       "bridge": "Brücke",
@@ -1489,7 +1490,12 @@
       "timeMachine": "Zeitmaschine",
       "pausePhysics": "Physik pausieren",
       "resumePhysics": "Physik fortsetzen",
-      "releasePins": "Fixierte Knoten lösen"
+      "releasePins": "Fixierte Knoten lösen",
+      "advanced": "Erweitert",
+      "fullscreen": "Vollbild",
+      "exitFullscreen": "Vollbild beenden",
+      "edgeDetails": "Kantendetails",
+      "tagHubs": "Tag-Knoten"
     },
     "panel": {
       "close": "Schließen",
@@ -1504,7 +1510,9 @@
       "tagUsage": "{count, plural, one {# Mal} other {# Mal}} verwendet",
       "reply": "Antworten",
       "tracePath": "Wie bin ich verbunden?",
-      "followedBy": "gefolgt von {count}, denen du folgst"
+      "followedBy": "gefolgt von {count}, denen du folgst",
+      "howConnected": "Wie sind wir verbunden?",
+      "clearPath": "Verbindungsansicht schließen"
     },
     "states": {
       "error": "Der Graph konnte nicht geladen werden.",
@@ -1529,7 +1537,8 @@
     },
     "stream": {
       "mergeMore": "Mehr laden",
-      "empty": "Noch nichts in diesem Stream."
+      "empty": "Noch nichts in diesem Stream.",
+      "loadMore": "Mehr laden"
     }
   }
 }

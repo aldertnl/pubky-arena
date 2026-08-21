@@ -1462,6 +1462,7 @@
       "extended": "扩展",
       "user": "用户",
       "post": "帖子",
+      "reply": "回复",
       "tag": "标签",
       "sameCommunity": "同一社群",
       "bridge": "桥接",
@@ -1481,7 +1482,12 @@
       "timeMachine": "时光机",
       "pausePhysics": "暂停物理",
       "resumePhysics": "恢复物理",
-      "releasePins": "释放固定节点"
+      "releasePins": "释放固定节点",
+      "advanced": "高级",
+      "fullscreen": "全屏",
+      "exitFullscreen": "退出全屏",
+      "edgeDetails": "连线详情",
+      "tagHubs": "标签节点"
     },
     "panel": {
       "close": "关闭",
@@ -1496,7 +1502,9 @@
       "tagUsage": "使用了{count}次",
       "reply": "回复",
       "tracePath": "我如何与其相连？",
-      "followedBy": "你关注的{count}人也关注了"
+      "followedBy": "你关注的{count}人也关注了",
+      "howConnected": "我们如何相连？",
+      "clearPath": "退出连接视图"
     },
     "states": {
       "error": "无法加载关系图。",
@@ -1521,7 +1529,8 @@
     },
     "stream": {
       "mergeMore": "合并更多",
-      "empty": "该流中还没有内容。"
+      "empty": "该流中还没有内容。",
+      "loadMore": "加载更多"
     }
   }
 }

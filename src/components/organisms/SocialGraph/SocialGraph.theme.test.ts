@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { edgeRecencyColor, liftForDarkCanvas } from './SocialGraph.theme';
+import { edgeRecencyColor, followAlphaFactors, liftForDarkCanvas } from './SocialGraph.theme';
 
 /** Relative lightness as HSL L, from a #rrggbb string. */
 function lightnessOf(hex: string): number {
@@ -48,5 +48,41 @@ describe('edgeRecencyColor', () => {
 
   it('dimmed edges collapse to the spotlight alpha regardless of age', () => {
     expect(channels(edgeRecencyColor(1, true))[3]).toBeLessThanOrEqual(0.05);
+  });
+});
+
+describe('followAlphaFactors', () => {
+  const follow = (source: string, target: string) => ({ source, target, type: 'FOLLOWS' as const });
+
+  it('keeps small graphs at design brightness', () => {
+    const edges = [
+      follow('me', 'a'),
+      follow('me', 'b'),
+      { source: 'a', target: 'b', type: 'FRIEND' as const },
+      { source: 'me', target: 'post:1', type: 'AUTHORED' as const },
+    ];
+    expect(followAlphaFactors(edges, 'me')).toEqual({ spoke: 1, mesh: 0.3 });
+  });
+
+  it('dims spokes gently with degree and floors them readable', () => {
+    const spokes = Array.from({ length: 150 }, (_, i) => follow('me', `n${i}`));
+    expect(followAlphaFactors(spokes, 'me').spoke).toBeCloseTo(Math.sqrt(60 / 150), 5);
+
+    const dense = Array.from({ length: 2000 }, (_, i) => follow('me', `n${i}`));
+    expect(followAlphaFactors(dense, 'me').spoke).toBe(0.55);
+  });
+
+  it('does not let the neighbor mesh dim the spokes', () => {
+    const spokes = Array.from({ length: 40 }, (_, i) => follow('me', `n${i}`));
+    const mesh = Array.from({ length: 600 }, (_, i) => follow(`n${i % 40}`, `m${i}`));
+    const factors = followAlphaFactors([...spokes, ...mesh], 'me');
+    expect(factors.spoke).toBe(1);
+    // The mesh still recedes with total follow density
+    expect(factors.mesh).toBeCloseTo(Math.sqrt(80 / 640) * 0.3, 5);
+  });
+
+  it('treats every follow edge as mesh without a focus', () => {
+    const edges = Array.from({ length: 10 }, (_, i) => follow('me', `n${i}`));
+    expect(followAlphaFactors(edges, null)).toEqual({ spoke: 1, mesh: 0.3 });
   });
 });

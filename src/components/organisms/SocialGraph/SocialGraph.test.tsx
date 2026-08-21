@@ -49,6 +49,8 @@ describe('SocialGraph', () => {
         focusId="user:me"
         selectedId={null}
         relationships={new Map([['user:me', 'self']])}
+        opacityTiers={new Map([['user:me', 'center']])}
+        sizeTiers={new Map([['user:me', 'center']])}
         spotlight={null}
         pathIds={null}
         communities={null}
@@ -89,6 +91,43 @@ describe('SocialGraph', () => {
     });
   });
 
+  it('paints flat design hairlines at the dimmer endpoint tier by default', () => {
+    render(
+      <SocialGraph
+        nodes={nodes}
+        edges={edges}
+        focusId="user:me"
+        selectedId={null}
+        relationships={new Map([['user:me', 'self']])}
+        opacityTiers={
+          new Map([
+            ['user:me', 'center'],
+            ['user:friend', 'direct'],
+          ])
+        }
+        sizeTiers={new Map()}
+        spotlight={null}
+        pathIds={null}
+        communities={null}
+        communityLabels={new Map()}
+        onNodeClick={vi.fn()}
+        onNodeExpand={vi.fn()}
+        onBackgroundClick={vi.fn()}
+      />,
+    );
+    const props = receivedProps.at(-1) as {
+      linkColor: (link: unknown) => string;
+      linkDirectionalArrowLength: (link: unknown) => number;
+      linkCurvature: (link: unknown) => number;
+    };
+    const color = props.linkColor({ source: nodes[0], target: nodes[1], type: 'FRIEND' });
+    // 1px #525252 hairline at the dimmer endpoint's tier alpha (direct = 0.6)
+    expect(color).toBe('rgba(82, 82, 82, 0.6)');
+    // No arrowheads and no curvature in the default view
+    expect(props.linkDirectionalArrowLength({ source: 'user:me', target: 'user:friend', type: 'FOLLOWS' })).toBe(0);
+    expect(props.linkCurvature({ source: 'user:me', target: 'user:friend', type: 'TAGGED' })).toBe(0);
+  });
+
   it('colors focus edges by relationship and neighbor edges by recency', () => {
     const manyNodes: NexusGraphNode[] = [
       ...nodes,
@@ -107,6 +146,9 @@ describe('SocialGraph', () => {
         focusId="user:me"
         selectedId={null}
         relationships={new Map([['user:friend', 'friend']])}
+        opacityTiers={new Map()}
+        sizeTiers={new Map()}
+        edgeChipsOn
         spotlight={null}
         pathIds={null}
         communities={null}
@@ -139,6 +181,8 @@ describe('SocialGraph', () => {
         focusId={null}
         selectedId={null}
         relationships={new Map()}
+        opacityTiers={new Map()}
+        sizeTiers={new Map()}
         spotlight={null}
         spotlightEdges={new Set(['user:friend|FOLLOWS|user:me|'])}
         pathIds={null}
@@ -174,6 +218,9 @@ describe('SocialGraph', () => {
         focusId="user:me"
         selectedId={null}
         relationships={new Map()}
+        opacityTiers={new Map()}
+        sizeTiers={new Map()}
+        edgeChipsOn
         spotlight={null}
         pathIds={null}
         communities={

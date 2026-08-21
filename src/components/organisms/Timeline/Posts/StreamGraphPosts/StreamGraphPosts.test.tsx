@@ -10,12 +10,15 @@ vi.mock('@/hooks/useStreamGraph/useStreamGraph', () => ({
     nodes: [{ kind: 'user', id: 'user:a', pubky: 'a', name: 'Alice', image: null }],
     edges: [],
     relationships: new Map([['user:a', 'extended']]),
+    opacityTiers: new Map([['user:a', 'other']]),
+    sizeTiers: new Map([['user:a', 'other']]),
     classCounts: new Map([['extended', 1]]),
     focusId: null,
     selectedNode: null,
     expandedIds: new Set(),
     pathIds: null,
     timeBounds: { min: 1, max: 2 },
+    timelineStamps: [1, 2],
     timeCap: null,
     declutter: false,
     hiddenClasses: new Set(),
@@ -24,6 +27,8 @@ vi.mock('@/hooks/useStreamGraph/useStreamGraph', () => ({
     select: vi.fn(),
     expand: vi.fn(),
     refreshNode: vi.fn(),
+    recenter: vi.fn(),
+    addTag: vi.fn(),
     tracePath: vi.fn(),
     clearPath: vi.fn(),
     toggleClass: vi.fn(),
@@ -50,19 +55,24 @@ const props = {
 };
 
 describe('StreamGraphPosts', () => {
-  it('renders the canvas, legend, slim controls, and merge-more', () => {
+  it('renders the canvas, the design pill controls, and the load-more pill', () => {
     render(<StreamGraphPosts {...props} />);
 
     expect(screen.getByTestId('canvas-stub')).toBeInTheDocument();
     expect(document.querySelector('[data-cy="stream-graph"]')).toBeInTheDocument();
-    expect(document.querySelector('[data-cy="graph-legend"]')).toBeInTheDocument();
-    expect(document.querySelector('[data-cy="stream-graph-declutter"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-cy="graph-controls"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-cy="graph-zoom-in"]')).toBeInTheDocument();
+    // The legend lives behind the advanced popover now, not on the canvas
+    expect(document.querySelector('[data-cy="graph-legend"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-cy="graph-advanced"]')).toBeInTheDocument();
+    // Signed out: no recenter pill
+    expect(document.querySelector('[data-cy="graph-recenter"]')).not.toBeInTheDocument();
 
     fireEvent.click(document.querySelector('[data-cy="stream-graph-load-more"]')!);
     expect(props.loadMore).toHaveBeenCalled();
   });
 
-  it('hides merge-more when the stream is exhausted', () => {
+  it('hides load-more when the stream is exhausted', () => {
     render(<StreamGraphPosts {...props} hasMore={false} />);
     expect(document.querySelector('[data-cy="stream-graph-load-more"]')).not.toBeInTheDocument();
   });

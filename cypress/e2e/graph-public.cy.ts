@@ -13,7 +13,12 @@ describe('graph explorer (public deep link)', () => {
 
     // The canvas mounts once data is in
     cy.get('[data-cy="social-graph"] canvas', { timeout: 30000 }).should('exist');
-    cy.get('[data-cy="graph-legend"]').should('be.visible');
     cy.get('[data-cy="graph-controls"]').should('be.visible');
+    // Design default: no on-canvas legend; signed out also means no recenter pill
+    cy.get('[data-cy="graph-legend"]').should('not.exist');
+    cy.get('[data-cy="graph-recenter"]').should('not.exist');
+    // The legend still exists behind the advanced popover
+    cy.get('[data-cy="graph-advanced"]').click();
+    cy.get('[data-cy="graph-legend"]').should('be.visible');
   });
 });

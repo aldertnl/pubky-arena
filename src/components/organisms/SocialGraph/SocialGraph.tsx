@@ -6,25 +6,37 @@ import type { ForceGraphMethods, LinkObject, NodeObject } from 'react-force-grap
 import { useResizeObserver } from 'usehooks-ts';
 import { Skeleton } from '@/atoms/Skeleton/Skeleton';
 import { FileController } from '@/controllers/file/file';
-import { adjacencyOf, edgeKey, type SocialGraphVisualEdge } from '@/hooks/useSocialGraph/useSocialGraph.utils';
-import { cn, generateRandomColor, hexToRgba } from '@/libs/utils/utils';
-import type { NexusGraphNode } from '@/services/nexus/graph/graph.types';
 import {
+  adjacencyOf,
+  edgeKey,
+  type SocialGraphVisualEdge,
+  type VisualGraphNode,
+} from '@/hooks/useSocialGraph/useSocialGraph.utils';
+import { cn, generateRandomColor, hexToRgba } from '@/libs/utils/utils';
+import { chipMetrics, chipSprite, postGlyph, postIconSprite } from './SocialGraph.sprites';
+import {
+  AVATAR_RADIUS,
   edgeRecencyColor,
+  followAlphaFactors,
+  GRAPH_EDGE_RGB,
   GRAPH_FALLBACK_COLORS,
+  GRAPH_NODE_SURFACE,
   type GraphTheme,
   liftForDarkCanvas,
+  POST_ICON_SIZE,
+  POST_RADIUS,
   resolveGraphTheme,
+  TIER_ALPHA,
 } from './SocialGraph.theme';
 import type { SocialGraphHandle, SocialGraphProps } from './SocialGraph.types';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
   ssr: false,
-  loading: () => <Skeleton className="h-full w-full rounded-2xl bg-white/5" />,
+  loading: () => <Skeleton className="h-full w-full rounded-lg bg-white/5" />,
 });
 
 type CanvasNode = NodeObject &
-  NexusGraphNode & {
+  VisualGraphNode & {
     __bornAt?: number;
     __pinned?: boolean;
     fx?: number;
@@ -36,6 +48,8 @@ const DOUBLE_CLICK_MS = 350;
 const DIM_ALPHA = 0.12;
 const PULSE_MS = 900;
 const HOVER_INTENT_MS = 350;
+/** Hover lifts a cluster from its tier alpha to 1.0 over this ease-in. */
+const HOVER_LIFT_MS = 150;
 
 // Avatar bitmaps are shared across renders and node instances; the canvas
 // repaints continuously (autoPauseRedraw=false), so late loads pop in without
@@ -85,11 +99,15 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
     focusId,
     selectedId,
     relationships,
+    opacityTiers,
+    sizeTiers,
+    ringId,
     spotlight,
     spotlightEdges = null,
     pathIds,
     communities,
     communityLabels,
+    edgeChipsOn = false,
     onNodeClick,
     onNodeExpand,
     onBackgroundClick,
@@ -119,6 +137,12 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
   const didInitialFit = useRef(false);
   const focusPulseAt = useRef(0);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // centerOn sets this so the focus-change effect below does not re-arm the
+  // settle-time zoomToFit and undo the directed camera flight (recenter flow)
+  const suppressRefit = useRef(false);
+  // True while the simulation is cooled down (QA surface via the handle)
+  const settledRef = useRef(false);
+  const hoverLiftAt = useRef(0);
 
   useEffect(() => {
     setTheme(resolveGraphTheme());
@@ -127,10 +151,15 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
     };
   }, []);
 
-  // Re-fit the camera when the view re-centers, and pulse the new focus
+  // Re-fit the camera when the view re-centers (full loads), and pulse the
+  // new focus; recenter clicks fly the camera themselves and skip the re-fit
   useEffect(() => {
-    didInitialFit.current = false;
     focusPulseAt.current = Date.now();
+    if (suppressRefit.current) {
+      suppressRefit.current = false;
+      return;
+    }
+    didInitialFit.current = false;
   }, [focusId]);
 
   // force-graph mutates link endpoints into node references, so it cannot be
@@ -174,32 +203,117 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
     return { nodes: nodes as CanvasNode[], links };
   }, [nodes, edges, linkCache]);
 
-  // Dense follow clusters collapse under the default forces; stronger
-  // repulsion and a longer link rest length keep avatars readable.
+  // Force tuning for design-px node sizes (avatars up to r32, chips ~100
+  // wide): strong repulsion between user hubs, short leashes for satellites
+  // so chips and posts orbit their owner, long rest length between users
+  // (the design's ~3:1 user-to-user vs user-to-satellite spacing), and a
+  // collision force so chips never stack over avatars.
   useEffect(() => {
     const fg = graphRef.current;
     if (!fg) return;
-    fg.d3Force('charge')?.strength(-140);
-    const link = fg.d3Force('link') as { distance?: (d: number) => void } | undefined;
-    link?.distance?.(45);
-  }, [graphData, engineReady]);
-
-  const degreeById = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const edge of edges) {
-      map.set(edge.source, (map.get(edge.source) ?? 0) + 1);
-      map.set(edge.target, (map.get(edge.target) ?? 0) + 1);
-    }
-    return map;
-  }, [edges]);
+    const chargeOf = (nodeObj: NodeObject) => {
+      const node = nodeObj as CanvasNode;
+      return node.kind === 'user' ? -2000 : node.kind === 'profile_tag' ? -180 : -220;
+    };
+    (fg.d3Force('charge') as { strength?: (s: unknown) => void } | undefined)?.strength?.(chargeOf);
+    const link = fg.d3Force('link') as
+      | {
+          distance?: (d: unknown) => void;
+          strength?: (s: unknown) => void;
+        }
+      | undefined;
+    link?.distance?.((linkObj: LinkObject) => {
+      const l = linkObj as CanvasLink;
+      if (l.type === 'HAS_TAG') return 105;
+      if (l.type === 'AUTHORED') return 120;
+      if (l.type === 'REPLIED' || l.type === 'REPOSTED' || l.type === 'MENTIONED') return 130;
+      // Focus spokes are the constellation's skeleton; long rest length keeps
+      // a dense first ring airy like the design
+      const source = endpointId(l.source);
+      const target = endpointId(l.target);
+      if (focusId && (source === focusId || target === focusId)) return 480;
+      return 340;
+    });
+    // A real neighborhood is a dense mesh; if every follow pulls with equal
+    // force the layout collapses into a hairball. Satellites hold tight to
+    // their owner, focus spokes shape the constellation, and neighbor-to-
+    // neighbor follows barely tug (they render as faint texture anyway).
+    link?.strength?.((linkObj: LinkObject) => {
+      const l = linkObj as CanvasLink;
+      if (l.type === 'HAS_TAG') return 0.9;
+      if (l.type === 'AUTHORED' || l.type === 'REPLIED' || l.type === 'REPOSTED') return 0.7;
+      const source = endpointId(l.source);
+      const target = endpointId(l.target);
+      if (focusId && (source === focusId || target === focusId)) return 0.25;
+      return 0.02;
+    });
+    (async () => {
+      try {
+        const { forceCollide } = (await import('d3-force-3d')) as {
+          forceCollide: (r: (node: NodeObject) => number) => unknown;
+        };
+        fg.d3Force(
+          'collide',
+          forceCollide((nodeObj: NodeObject) => {
+            const node = nodeObj as CanvasNode;
+            if (node.kind === 'user') return AVATAR_RADIUS[sizeTiers.get(node.id) ?? 'other'] + 8;
+            if (node.kind === 'post') return POST_RADIUS + 6;
+            const { w } = chipMetrics(node.label, 'count' in node ? node.count : null);
+            return w / 2 + 6;
+          }) as never,
+        );
+      } catch {
+        // Collision is a nicety; the layout still works from charge + distance
+      }
+    })();
+  }, [graphData, engineReady, sizeTiers, focusId]);
 
   const hoverNeighbors = useMemo(() => (hoverId ? adjacencyOf(hoverId, edges).add(hoverId) : null), [hoverId, edges]);
-  // One dimming mechanism: an explicit spotlight outranks hover adjacency
-  const highlightSet = spotlight ?? hoverNeighbors;
+  // Advanced dimming mechanism (legend hover / social proof); the hover-lift
+  // cluster brightening below is the default-view behavior
+  const highlightSet = spotlight ?? (edgeChipsOn ? hoverNeighbors : null);
 
-  const pathIdSet = useMemo(() => (pathIds ? new Set(pathIds) : null), [pathIds]);
+  const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n as CanvasNode])), [nodes]);
 
-  // Unordered "a|b" pair keys of the traced path, for particles and glow
+  /** The user id whose cluster a node belongs to (chips/posts follow their owner). */
+  const clusterAnchorOf = useCallback((node: CanvasNode): string => {
+    if (node.kind === 'post') return `user:${node.author_id}`;
+    if (node.kind === 'profile_tag') return `user:${node.pubky}`;
+    return node.id;
+  }, []);
+
+  const hoverAnchor = useMemo(() => {
+    if (!hoverId) return null;
+    const node = nodeById.get(hoverId);
+    return node ? clusterAnchorOf(node) : null;
+  }, [hoverId, nodeById, clusterAnchorOf]);
+
+  useEffect(() => {
+    if (hoverAnchor) hoverLiftAt.current = Date.now();
+  }, [hoverAnchor]);
+
+  /**
+   * Design opacity model: the whole cluster (avatar + chips + posts + their
+   * spokes) paints at its tier alpha (1.0 / 0.6 / 0.4), the hovered cluster
+   * eases up to 1.0, and an advanced spotlight overrides everything.
+   */
+  const nodeAlpha = useCallback(
+    (node: CanvasNode): number => {
+      if (highlightSet !== null) return highlightSet.has(node.id) ? 1 : DIM_ALPHA;
+      const anchor = clusterAnchorOf(node);
+      let alpha = TIER_ALPHA[opacityTiers.get(anchor) ?? 'other'];
+      // Explicitly added tag hubs have no owner cluster; keep them readable
+      if (node.kind === 'tag') alpha = Math.max(alpha, TIER_ALPHA.direct);
+      if (anchor === hoverAnchor) {
+        const progress = Math.min(1, (Date.now() - hoverLiftAt.current) / HOVER_LIFT_MS);
+        alpha = alpha + (1 - alpha) * progress;
+      }
+      return alpha;
+    },
+    [highlightSet, clusterAnchorOf, opacityTiers, hoverAnchor],
+  );
+
+  // Unordered "a|b" pair keys of the traced path, for the lime edge paint
   const pathPairs = useMemo(() => {
     if (!pathIds || pathIds.length < 2) return null;
     const pairs = new Set<string>();
@@ -235,13 +349,17 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
     [relationships, theme],
   );
 
+  // Design sizes: avatars 64/48/32px by signed-in-anchored tier, posts 36px
   const nodeRadius = useCallback(
     (node: CanvasNode): number => {
-      if (node.kind !== 'user') return 5;
-      return 6 + Math.min(6, Math.log2(1 + (degreeById.get(node.id) ?? 0)) * 1.6);
+      if (node.kind === 'user') return AVATAR_RADIUS[sizeTiers.get(node.id) ?? 'other'];
+      return POST_RADIUS;
     },
-    [degreeById],
+    [sizeTiers],
   );
+
+  // Exactly one node carries the lime focus ring (path mode: the target)
+  const ringTarget = ringId !== undefined ? ringId : focusId;
 
   // Soft community halos, painted under everything else
   const paintCommunities = useCallback(
@@ -287,14 +405,13 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
   );
 
   const paintNode = useCallback(
-    (nodeObj: NodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
+    (nodeObj: NodeObject, ctx: CanvasRenderingContext2D) => {
       const node = nodeObj as CanvasNode;
       const x = node.x ?? 0;
       const y = node.y ?? 0;
-      const dimmed = highlightSet !== null && !highlightSet.has(node.id);
-      const onPath = pathIdSet?.has(node.id) ?? false;
+      const alpha = nodeAlpha(node);
       ctx.save();
-      ctx.globalAlpha = dimmed && !onPath ? DIM_ALPHA : 1;
+      ctx.globalAlpha = alpha;
 
       // Birth / focus pulse: an expanding, fading ring
       const pulseStart =
@@ -306,107 +423,106 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
 
       if (node.kind === 'user') {
         const r = nodeRadius(node);
-        const ringColor = relationshipColor(node.id);
 
         if (pulseStart) {
           const t = (Date.now() - pulseStart) / PULSE_MS;
           ctx.beginPath();
-          ctx.arc(x, y, r + t * 14, 0, 2 * Math.PI);
-          ctx.strokeStyle = hexToRgba(node.id === focusId ? theme.halo : ringColor, 0.6 * (1 - t));
+          ctx.arc(x, y, r + t * 24, 0, 2 * Math.PI);
+          ctx.strokeStyle = hexToRgba(theme.halo, 0.5 * (1 - t));
           ctx.lineWidth = 2;
           ctx.stroke();
         }
 
-        if (node.id === selectedId || node.id === focusId) {
-          ctx.shadowColor = node.id === selectedId ? theme.halo : ringColor;
-          ctx.shadowBlur = 14;
-        }
-
-        // Disc: avatar when loaded, else initial on a tinted disc
+        // Disc: #303034 underlay, avatar when loaded, else a white initial
         ctx.beginPath();
         ctx.arc(x, y, r, 0, 2 * Math.PI);
-        ctx.fillStyle = hexToRgba(generateRandomColor(node.pubky), 0.35);
+        ctx.fillStyle = GRAPH_NODE_SURFACE;
         ctx.fill();
-        ctx.shadowBlur = 0;
 
         const img = avatarImage(node.pubky, Boolean(node.image));
         if (img) {
           ctx.save();
           ctx.beginPath();
-          ctx.arc(x, y, r - 0.5, 0, 2 * Math.PI);
+          ctx.arc(x, y, r, 0, 2 * Math.PI);
           ctx.clip();
           ctx.drawImage(img, x - r, y - r, r * 2, r * 2);
           ctx.restore();
         } else {
-          ctx.fillStyle = theme.label;
-          ctx.font = `600 ${Math.max(4, r)}px "Inter Tight", sans-serif`;
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = `600 ${Math.max(8, r)}px "Inter Tight", sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText((node.name || node.pubky).charAt(0).toUpperCase(), x, y + 0.5);
+          ctx.fillText((node.name || node.pubky).charAt(0).toUpperCase(), x, y + 1);
         }
 
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, 2 * Math.PI);
-        ctx.strokeStyle = onPath ? theme.halo : ringColor;
-        ctx.lineWidth = node.id === focusId || onPath ? 2.4 : 1.6;
-        ctx.stroke();
+        // The design's single lime focus ring: 2px, flush inside the edge
+        if (node.id === ringTarget) {
+          ctx.beginPath();
+          ctx.arc(x, y, r - 1, 0, 2 * Math.PI);
+          ctx.strokeStyle = theme.halo;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
 
         // A small pin dot marks drag-pinned nodes
         if (node.__pinned) {
           ctx.beginPath();
-          ctx.arc(x + r * 0.75, y - r * 0.75, 1.6, 0, 2 * Math.PI);
+          ctx.arc(x + r * 0.72, y - r * 0.72, 3, 0, 2 * Math.PI);
           ctx.fillStyle = theme.halo;
           ctx.fill();
         }
-
-        // Name label when zoomed in, hovered, selected, or on the traced path
-        if (globalScale >= 1.6 || node.id === hoverId || node.id === selectedId || onPath) {
-          ctx.font = `500 ${Math.max(3.5, 10 / globalScale)}px "Inter Tight", sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'top';
-          ctx.fillStyle = hexToRgba(theme.label, dimmed && !onPath ? DIM_ALPHA : 0.85);
-          ctx.fillText(node.name || `${node.pubky.slice(0, 8)}…`, x, y + r + 1.5);
-        }
-      } else if (node.kind === 'tag') {
-        const color = labelColor(node.label);
-        const fontSize = 5;
-        ctx.font = `600 ${fontSize}px "Inter Tight", sans-serif`;
-        const textWidth = ctx.measureText(node.label).width;
-        const w = textWidth + 8;
-        const h = fontSize + 5;
+      } else if (node.kind === 'profile_tag' || node.kind === 'tag') {
+        // Tag chips: the app's PostTag recipe, pre-rasterized
+        const count = node.count;
+        const { w, h } = chipMetrics(node.label, count);
         if (pulseStart) {
           const t = (Date.now() - pulseStart) / PULSE_MS;
-          ctx.globalAlpha = Math.min(1, t * 2) * (dimmed ? DIM_ALPHA : 1);
+          ctx.globalAlpha = Math.min(1, t * 2) * alpha;
         }
-        ctx.beginPath();
-        ctx.roundRect(x - w / 2, y - h / 2, w, h, h / 2);
-        ctx.fillStyle = hexToRgba(color, 0.22);
-        ctx.fill();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
-        ctx.fillStyle = color;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(node.label, x, y + 0.5);
+        const sprite = chipSprite(node.label, count, generateRandomColor(node.label));
+        if (sprite) {
+          ctx.drawImage(sprite.canvas, x - w / 2, y - h / 2, w, h);
+        } else {
+          // Fonts still loading: paint the pill without text for this frame
+          ctx.beginPath();
+          ctx.roundRect(x - w / 2, y - h / 2, w, h, 8);
+          ctx.fillStyle = GRAPH_NODE_SURFACE;
+          ctx.fill();
+        }
+        if (node.kind === 'tag' && node.id === selectedId) {
+          ctx.beginPath();
+          ctx.roundRect(x - w / 2, y - h / 2, w, h, 8);
+          ctx.strokeStyle = theme.halo;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
       } else {
-        // post: small muted rounded square; content lives in the panel
-        const s = 4.5;
+        // Post: 36px #303034 circle with its white post-kind glyph
+        const r = POST_RADIUS;
         if (pulseStart) {
           const t = (Date.now() - pulseStart) / PULSE_MS;
-          ctx.globalAlpha = Math.min(1, t * 2) * (dimmed ? DIM_ALPHA : 1);
+          ctx.globalAlpha = Math.min(1, t * 2) * alpha;
         }
         ctx.beginPath();
-        ctx.roundRect(x - s, y - s, s * 2, s * 2, 1.5);
-        ctx.fillStyle = hexToRgba(theme.post, 0.16);
+        ctx.arc(x, y, r, 0, 2 * Math.PI);
+        ctx.fillStyle = GRAPH_NODE_SURFACE;
         ctx.fill();
-        ctx.strokeStyle = node.id === selectedId ? theme.halo : hexToRgba(theme.post, 0.7);
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
+        const icon = postIconSprite(postGlyph(node));
+        if (icon) {
+          const s = POST_ICON_SIZE;
+          ctx.drawImage(icon, x - s / 2, y - s / 2, s, s);
+        }
+        if (node.id === selectedId) {
+          ctx.beginPath();
+          ctx.arc(x, y, r - 1, 0, 2 * Math.PI);
+          ctx.strokeStyle = theme.halo;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
       }
       ctx.restore();
     },
-    [highlightSet, pathIdSet, hoverId, selectedId, focusId, nodeRadius, relationshipColor, theme],
+    [nodeAlpha, selectedId, focusId, ringTarget, nodeRadius, theme],
   );
 
   const paintPointerArea = useCallback(
@@ -414,27 +530,38 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
       const node = nodeObj as CanvasNode;
       const x = node.x ?? 0;
       const y = node.y ?? 0;
+      if (process.env.NEXT_PUBLIC_DEBUG_MODE === 'true' && typeof window !== 'undefined') {
+        // QA instrumentation: proves the shadow canvas actually paints every
+        // node kind (hit-testing regressions historically hid here)
+        const w = window as unknown as { __paintStats?: Record<string, number> };
+        const stats = (w.__paintStats = w.__paintStats ?? {});
+        stats[node.kind] = (stats[node.kind] ?? 0) + 1;
+        stats.transform = (ctx.getTransform().a * 1000) | 0;
+      }
       ctx.fillStyle = color;
-      const pad = coarsePointer ? 5 : 3;
+      const pad = coarsePointer ? 6 : 4;
       // Pointer areas paint in graph units and shrink with the camera; keep a
       // minimum on-screen grab radius so drags land at overview zoom too
       // (capped so far-out zoom does not blanket neighbors)
       const minRadius = Math.min(20, (coarsePointer ? 14 : 11) / globalScale);
-      if (node.kind === 'tag') {
-        // Same geometry as the painted pill, so long labels stay clickable
-        ctx.font = `600 5px "Inter Tight", sans-serif`;
-        const w = Math.max(ctx.measureText(node.label).width + 8 + pad * 2, minRadius * 2);
-        const h = Math.max(10 + pad * 2, minRadius * 2);
+      if (node.kind === 'tag' || node.kind === 'profile_tag') {
+        // Same geometry as the painted chip, so long labels stay clickable
+        const metrics = chipMetrics(node.label, node.count);
+        const w = Math.max(metrics.w + pad * 2, minRadius * 2);
+        const h = Math.max(metrics.h + pad * 2, minRadius * 2);
         ctx.fillRect(x - w / 2, y - h / 2, w, h);
         return;
       }
-      const r = Math.max((node.kind === 'user' ? nodeRadius(node) : 5.5) + pad, minRadius);
+      const r = Math.max(nodeRadius(node) + pad, minRadius);
       ctx.beginPath();
       ctx.arc(x, y, r, 0, 2 * Math.PI);
       ctx.fill();
     },
     [nodeRadius, coarsePointer],
   );
+
+  // Follow-edge alpha multipliers by density: spokes off the focus vs the mesh
+  const followAlpha = useMemo(() => followAlphaFactors(edges, focusId), [edges, focusId]);
 
   // Timestamp range of follow edges, for the recency ramp normalization
   const followTimeRange = useMemo(() => {
@@ -449,16 +576,23 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
     return min < max ? { min, max } : null;
   }, [edges]);
 
-  // Edge color encodes, in priority order: the traced path, the ego story
-  // (edges touching the focus keep relationship colors), community structure
-  // when communities are on (intra-community = tint, bridges = bright
-  // neutral), and recency for the remaining neighbor-to-neighbor follows
-  // (fresh = warm bright, old = faded gray; quadratic so only genuinely new
-  // connections light up).
+  /** Resolve a link endpoint to its node object (engine may hold ids or objects). */
+  const endpointNode = useCallback(
+    (end: string | number | NodeObject | undefined): CanvasNode | null => {
+      if (typeof end === 'object' && end !== null) return end as CanvasNode;
+      return nodeById.get(String(end ?? '')) ?? null;
+    },
+    [nodeById],
+  );
+
+  // Design edge model: every edge is a 1px #525252 hairline at its dimmer
+  // endpoint's cluster alpha; traced-path edges paint lime. The advanced
+  // edge-details lens restores the old encodings (ego relationship colors,
+  // community tints, recency ramp, tag hues).
   const linkColor = useCallback(
     (linkObj: LinkObject): string => {
       const link = linkObj as CanvasLink;
-      if (isPathLink(link)) return hexToRgba(theme.halo, 0.9);
+      if (isPathLink(link)) return hexToRgba(theme.halo, 0.95);
       const source = endpointId(link.source);
       const target = endpointId(link.target);
       // An explicit edge spotlight dims by edge identity; otherwise links dim
@@ -466,6 +600,22 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
       const dimmed = spotlightEdges
         ? !spotlightEdges.has(linkKeyOf(link))
         : highlightSet !== null && !(highlightSet.has(source) && highlightSet.has(target));
+
+      if (!edgeChipsOn) {
+        if (dimmed) return `rgba(${GRAPH_EDGE_RGB}, 0.04)`;
+        const a = endpointNode(link.source);
+        const b = endpointNode(link.target);
+        let alpha = Math.min(a ? nodeAlpha(a) : TIER_ALPHA.other, b ? nodeAlpha(b) : TIER_ALPHA.other);
+        // Real neighborhoods are dense meshes (hundreds of neighbor-to-
+        // neighbor follows); the design reads as hub-and-spoke, so edges not
+        // touching the focus recede to a faint texture instead of stacking
+        // into a bright web, and spokes dim more gently with the focus degree
+        if (link.type === 'FOLLOWS' || link.type === 'FRIEND') {
+          alpha *= source === focusId || target === focusId ? followAlpha.spoke : followAlpha.mesh;
+        }
+        return `rgba(${GRAPH_EDGE_RGB}, ${Number(alpha.toFixed(3))})`;
+      }
+
       const alpha = dimmed ? 0.04 : 0.5;
       switch (link.type) {
         case 'FRIEND':
@@ -495,16 +645,33 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
         }
         case 'TAGGED':
           return hexToRgba(labelColor(link.label ?? ''), alpha);
+        case 'HAS_TAG':
+          return `rgba(${GRAPH_EDGE_RGB}, ${dimmed ? 0.04 : 0.5})`;
         default:
           return hexToRgba(theme.edgeMuted, dimmed ? 0.04 : 0.8);
       }
     },
-    [highlightSet, spotlightEdges, isPathLink, focusId, relationshipColor, theme, communities, followTimeRange],
+    [
+      highlightSet,
+      spotlightEdges,
+      isPathLink,
+      edgeChipsOn,
+      endpointNode,
+      nodeAlpha,
+      focusId,
+      relationshipColor,
+      theme,
+      communities,
+      followTimeRange,
+      followAlpha,
+    ],
   );
 
-  // Count chips on aggregated tag edges, drawn over the link line
+  // Count chips on aggregated tag edges, drawn over the link line (advanced
+  // edge-details lens only; the design's default edges carry no chrome)
   const paintLink = useCallback(
     (linkObj: LinkObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
+      if (!edgeChipsOn) return;
       const link = linkObj as CanvasLink;
       if (!link.labels || link.labels.length < 2) return;
       const source = link.source as NodeObject;
@@ -539,14 +706,16 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
       ctx.fillText(text, x, y + 0.3);
       ctx.restore();
     },
-    [highlightSet, spotlightEdges],
+    [edgeChipsOn, highlightSet, spotlightEdges],
   );
 
   // The visible edges are hairlines; the interactive surface is painted much
   // fatter, and the count chip gets a generous disc so it works as the button
-  // it looks like (twice the size on touch screens)
+  // it looks like (twice the size on touch screens). Advanced lens only:
+  // default-view edges are non-interactive per the design.
   const linkPointerAreaPaint = useCallback(
     (linkObj: LinkObject, color: string, ctx: CanvasRenderingContext2D, globalScale: number) => {
+      if (!edgeChipsOn) return;
       const link = linkObj as CanvasLink;
       const source = link.source as NodeObject;
       const target = link.target as NodeObject;
@@ -573,16 +742,19 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
         ctx.fill();
       }
     },
-    [coarsePointer],
+    [edgeChipsOn, coarsePointer],
   );
 
   // Actionable edges advertise themselves with a pointer cursor
-  const handleLinkHover = useCallback((linkObj: LinkObject | null) => {
-    const link = linkObj as CanvasLink | null;
-    hoveredLinkRef.current = link !== null;
-    const canvas = containerRef.current?.querySelector('canvas');
-    if (canvas) canvas.style.cursor = link && link.type === 'TAGGED' ? 'pointer' : '';
-  }, []);
+  const handleLinkHover = useCallback(
+    (linkObj: LinkObject | null) => {
+      const link = linkObj as CanvasLink | null;
+      hoveredLinkRef.current = link !== null;
+      const canvas = containerRef.current?.querySelector('canvas');
+      if (canvas) canvas.style.cursor = edgeChipsOn && link && link.type === 'TAGGED' ? 'pointer' : '';
+    },
+    [edgeChipsOn],
+  );
 
   const screenPositionOf = useCallback((node: CanvasNode): { x: number; y: number } | null => {
     const fg = graphRef.current;
@@ -595,6 +767,7 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
     (nodeObj: NodeObject | null) => {
       const node = nodeObj as CanvasNode | null;
       hoveredNodeRef.current = node !== null;
+      hoveredIdRef.current = node ? String(node.id) : null;
       setHoverId(node ? String(node.id) : null);
       if (!onUserHover || coarsePointer) return;
       if (hoverTimer.current) clearTimeout(hoverTimer.current);
@@ -609,31 +782,37 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
     [onUserHover, coarsePointer, screenPositionOf],
   );
 
-  // Stable accessors: force-graph re-materializes per-link state (including
-  // path particles) whenever an accessor prop changes identity, so inline
-  // lambdas would reset them on every hover-driven re-render.
+  // Stable accessors: force-graph re-materializes per-link state whenever an
+  // accessor prop changes identity, so inline lambdas would reset it on every
+  // hover-driven re-render. Design defaults: uniform 1px hairlines, straight,
+  // no arrowheads; the advanced edge-details lens restores the old chrome.
   const linkWidth = useCallback(
     (link: LinkObject) => {
       const l = link as CanvasLink;
-      if (isPathLink(l)) return 2.4;
-      if (l.type === 'FRIEND') return 1.8;
+      if (isPathLink(l)) return 1.5;
+      if (edgeChipsOn && l.type === 'FRIEND') return 1.8;
       return 1;
     },
-    [isPathLink],
+    [isPathLink, edgeChipsOn],
   );
-  const linkCurvature = useCallback((link: LinkObject) => ((link as CanvasLink).type === 'TAGGED' ? 0.18 : 0), []);
+  const linkCurvature = useCallback(
+    (link: LinkObject) => (edgeChipsOn && (link as CanvasLink).type === 'TAGGED' ? 0.18 : 0),
+    [edgeChipsOn],
+  );
   const linkModeAfter = useCallback(() => 'after' as const, []);
-  const arrowLength = useCallback((link: LinkObject) => {
-    const l = link as CanvasLink;
-    if (l.type === 'FRIEND') return 0;
-    // Aggregated tag edges have a canonicalized direction: no arrow
-    if (l.type === 'TAGGED' && (l.labels?.length ?? 0) > 1) return 0;
-    // Hub edges out of a tag pill read better without arrowheads
-    if (l.type === 'TAGGED' && endpointId(l.source).startsWith('tag:')) return 0;
-    return 3;
-  }, []);
-  const particleCount = useCallback((link: LinkObject) => (isPathLink(link as CanvasLink) ? 3 : 0), [isPathLink]);
-  const particleColor = useCallback(() => theme.halo, [theme]);
+  const arrowLength = useCallback(
+    (link: LinkObject) => {
+      if (!edgeChipsOn) return 0;
+      const l = link as CanvasLink;
+      if (l.type === 'FRIEND') return 0;
+      // Aggregated tag edges have a canonicalized direction: no arrow
+      if (l.type === 'TAGGED' && (l.labels?.length ?? 0) > 1) return 0;
+      // Hub edges out of a tag pill read better without arrowheads
+      if (l.type === 'TAGGED' && endpointId(l.source).startsWith('tag:')) return 0;
+      return 6;
+    },
+    [edgeChipsOn],
+  );
 
   const handleNodeClick = useCallback(
     (nodeObj: NodeObject) => {
@@ -664,6 +843,7 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
   // mouse jitter between press and release
   const hoveredNodeRef = useRef(false);
   const hoveredLinkRef = useRef(false);
+  const hoveredIdRef = useRef<string | null>(null);
   const pressPosRef = useRef<{ x: number; y: number } | null>(null);
 
   // Single background click deselects (forwarded to the page); a quick second
@@ -713,6 +893,7 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
   }, []);
 
   const handleEngineTick = useCallback(() => {
+    settledRef.current = false;
     markEngineReady();
     flushHitCanvas();
   }, [markEngineReady, flushHitCanvas]);
@@ -769,13 +950,15 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
         const fg = graphRef.current;
         if (!node || !fg || node.x === undefined || node.y === undefined) return;
         // A directed fly consumes any pending auto-fit, which would otherwise
-        // zoom back out when the simulation settles
+        // zoom back out when the simulation settles; the flag also stops the
+        // focus-change effect from re-arming that fit (recenter clicks)
         didInitialFit.current = true;
+        suppressRefit.current = true;
         // Two phases: ease out a little, then glide onto the target
         const current = fg.zoom();
-        fg.zoom(Math.max(0.8, current * 0.85), 180);
+        fg.zoom(Math.max(0.55, current * 0.85), 180);
         fg.centerAt(node.x, node.y, 450);
-        setTimeout(() => fg.zoom(Math.max(current, 1.6), 320), 460);
+        setTimeout(() => fg.zoom(Math.max(current, 0.9), 320), 460);
       },
       setPaused: (paused: boolean) => {
         for (const node of graphData.nodes) {
@@ -799,6 +982,20 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
         }
         graphRef.current?.d3ReheatSimulation();
       },
+      nodeIds: () => {
+        const groups: Record<'user' | 'post' | 'tag' | 'profile_tag', string[]> = {
+          user: [],
+          post: [],
+          tag: [],
+          profile_tag: [],
+        };
+        for (const node of graphData.nodes) groups[node.kind].push(node.id);
+        return groups;
+      },
+      pinnedIds: () => graphData.nodes.filter((n) => n.__pinned).map((n) => n.id),
+      isSettled: () => settledRef.current,
+      zoomLevel: () => graphRef.current?.zoom() ?? null,
+      hoveredId: () => hoveredIdRef.current,
     }),
     [graphData],
   );
@@ -824,10 +1021,6 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
           linkPointerAreaPaint={linkPointerAreaPaint}
           linkDirectionalArrowLength={arrowLength}
           linkDirectionalArrowRelPos={0.92}
-          linkDirectionalParticles={particleCount}
-          linkDirectionalParticleSpeed={0.006}
-          linkDirectionalParticleWidth={3.2}
-          linkDirectionalParticleColor={particleColor}
           onNodeClick={handleNodeClick}
           onNodeHover={handleNodeHover}
           onLinkClick={handleLinkClick}
@@ -843,6 +1036,7 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
           onRenderFramePre={(ctx) => paintCommunities(ctx)}
           onRenderFramePost={(ctx, globalScale) => paintCaptions(ctx, globalScale)}
           onEngineStop={() => {
+            settledRef.current = true;
             if (!didInitialFit.current) {
               didInitialFit.current = true;
               graphRef.current?.zoomToFit(400, 60);
