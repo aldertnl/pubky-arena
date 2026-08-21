@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserStreamApplication } from '@/application/stream/users/users';
 import type { Pubky } from '@/models/models.types';
 import { buildUserCompositeId } from '@/models/stream/user/userStream.helper';
-import { UserStreamTypes } from '@/models/stream/user/userStream.types';
+import { type UserStreamId, UserStreamTypes } from '@/models/stream/user/userStream.types';
 import { UserDetailsModel } from '@/models/user/details/userDetails';
 import { LocalStreamUsersService } from '@/services/local/stream/users/users';
 import type { NexusUser } from '@/services/nexus/nexus.types';
@@ -287,6 +287,50 @@ describe('UserStreamApplication', () => {
         params: { skip: 0, limit: 3, viewer_id: DEFAULT_VIEWER_ID },
       });
       expect(result.nextPageIds).toEqual(['influencer-1', 'influencer-2', 'influencer-3']);
+    });
+
+    describe('starter pack cache isolation', () => {
+      const LIVE_STREAM_ID = 'starter_pack:all:all:bitcoin,music' as UserStreamId;
+      const MOCK_STREAM_ID = 'starter_pack_mock:all:all:bitcoin,music' as UserStreamId;
+
+      it('should persist reversed tag orders as distinct Dexie rows', async () => {
+        const forwardId = 'starter_pack_mock:all:all:travel,music' as UserStreamId;
+        const reversedId = 'starter_pack_mock:all:all:music,travel' as UserStreamId;
+
+        await LocalStreamUsersService.upsert({ streamId: forwardId, stream: ['user-a'] });
+        await LocalStreamUsersService.upsert({ streamId: reversedId, stream: ['user-b'] });
+
+        expect((await LocalStreamUsersService.findById(forwardId))?.stream).toEqual(['user-a']);
+        expect((await LocalStreamUsersService.findById(reversedId))?.stream).toEqual(['user-b']);
+      });
+
+      it('should never serve cached mock rows for live starter pack requests (mock-to-live swap regression)', async () => {
+        // Seed a mock-namespaced row exactly as a pre-swap session would have left it
+        const mockCachedIds: Pubky[] = ['mock-user-1', 'mock-user-2'];
+        await LocalStreamUsersService.upsert({ streamId: MOCK_STREAM_ID, stream: mockCachedIds });
+        await createUserDetails(mockCachedIds);
+
+        const liveUserIds: Pubky[] = ['live-user-1', 'live-user-2'];
+        const fetchSpy = vi.spyOn(NexusUserStreamService, 'fetch').mockResolvedValue(liveUserIds);
+
+        const result = await UserStreamApplication.getOrFetchStreamSlice({
+          streamId: LIVE_STREAM_ID,
+          skip: 0,
+          limit: 2,
+          viewerId: DEFAULT_VIEWER_ID,
+        });
+
+        // The live key must miss the cache and hit the network
+        expect(fetchSpy).toHaveBeenCalledWith({
+          streamId: LIVE_STREAM_ID,
+          params: { skip: 0, limit: 2, viewer_id: DEFAULT_VIEWER_ID },
+        });
+        expect(result.nextPageIds).toEqual(liveUserIds);
+
+        // Both rows stay isolated: live written fresh, mock untouched
+        expect((await LocalStreamUsersService.findById(LIVE_STREAM_ID))?.stream).toEqual(liveUserIds);
+        expect((await LocalStreamUsersService.findById(MOCK_STREAM_ID))?.stream).toEqual(mockCachedIds);
+      });
     });
 
     it('should pass viewerId to Nexus API for relationship data', async () => {

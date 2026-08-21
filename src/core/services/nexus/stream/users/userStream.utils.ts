@@ -1,12 +1,20 @@
+import { STARTER_PACK_MAX_TAGS } from '@/config/nexus';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
 import { Err } from '@/libs/error/error.factories';
 import { ErrorService } from '@/libs/error/error.types';
+import { isValidTagLabel } from '@/libs/utils/utils';
 import type { Pubky } from '@/models/models.types';
-import type { UserStreamId } from '@/models/stream/user/userStream.types';
+import { USER_STREAM_TAG_DELIMITER } from '@/models/stream/user/userStream.helper';
+import {
+  STARTER_PACK_MOCK_STREAM_SOURCE,
+  STARTER_PACK_STREAM_SOURCE,
+  type UserStreamId,
+} from '@/models/stream/user/userStream.types';
 import type { UserStreamReach, UserStreamTimeframe } from '@/services/nexus/nexus.types';
 import {
   type TUserStreamBase,
   type TUserStreamInfluencersParams,
+  type TUserStreamStarterPackParams,
   type TUserStreamWithUserIdParams,
   UserStreamSource,
 } from '@/services/nexus/stream/users/userStream.types';
@@ -102,7 +110,73 @@ export function createUserStreamParams(
     };
   }
 
-  throw new Error(`Invalid stream ID: "${streamId}". Expected 2 or 3 parts separated by "${DELIMITER}"`);
+  // If we are dealing with source:timeframe:reach:tags format (starter pack only; tags cannot
+  // contain ':' so 4 parts is exact)
+  if (parts.length === 4) {
+    const [source, timeframe, reach, tagSegment] = parts;
+
+    if (source !== STARTER_PACK_STREAM_SOURCE && source !== STARTER_PACK_MOCK_STREAM_SOURCE) {
+      throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'Only starter pack stream IDs carry a tag segment', {
+        service: ErrorService.Nexus,
+        operation: 'createUserStreamParams',
+        context: { streamId },
+      });
+    }
+
+    // Starter pack requests are always all-time/all-reach; accepting other values here would
+    // create misleading duplicate cache rows that all map to the same Nexus request
+    if (timeframe !== 'all' || reach !== 'all') {
+      throw Err.validation(
+        ValidationErrorCode.INVALID_INPUT,
+        'Starter pack stream IDs require "all" timeframe and reach segments',
+        {
+          service: ErrorService.Nexus,
+          operation: 'createUserStreamParams',
+          context: { streamId },
+        },
+      );
+    }
+
+    const tags = tagSegment.split(USER_STREAM_TAG_DELIMITER);
+    const hasInvalidLabel = tags.some((label) => label !== label.trim().toLowerCase() || !isValidTagLabel(label));
+    if (tags.length > STARTER_PACK_MAX_TAGS || hasInvalidLabel) {
+      throw Err.validation(
+        ValidationErrorCode.INVALID_INPUT,
+        `Starter pack stream IDs require 1-${STARTER_PACK_MAX_TAGS} canonical (trimmed, lowercase) tags`,
+        {
+          service: ErrorService.Nexus,
+          operation: 'createUserStreamParams',
+          context: { streamId },
+        },
+      );
+    }
+
+    // Mock namespace dispatches to most_followed, which rejects a `tags` query param — omit it
+    if (source === STARTER_PACK_MOCK_STREAM_SOURCE) {
+      return {
+        reach: 'starter_pack_mock',
+        apiParams: baseParams,
+      } as NexusParamsResult<'starter_pack_mock'>;
+    }
+
+    return {
+      reach: 'starter_pack',
+      apiParams: {
+        ...baseParams,
+        tags: tags.join(USER_STREAM_TAG_DELIMITER),
+      },
+    } as NexusParamsResult<'starter_pack'>;
+  }
+
+  throw Err.validation(
+    ValidationErrorCode.INVALID_INPUT,
+    `Invalid stream ID: expected 2, 3, or 4 parts separated by "${DELIMITER}"`,
+    {
+      service: ErrorService.Nexus,
+      operation: 'createUserStreamParams',
+      context: { streamId },
+    },
+  );
 }
 
 /**
@@ -128,6 +202,9 @@ type UserStreamApiParamsMap = {
   recommended: TUserStreamWithUserIdParams;
   influencers: TUserStreamInfluencersParams;
   most_followed: TUserStreamBase;
+  starter_pack: TUserStreamStarterPackParams;
+  // FE-only mock namespace; served by most_followed until the Nexus source is deployed (#2390)
+  starter_pack_mock: TUserStreamBase;
 };
 
 type ReachType = keyof UserStreamApiParamsMap;
