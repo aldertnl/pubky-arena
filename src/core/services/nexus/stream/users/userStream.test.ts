@@ -485,20 +485,7 @@ describe('NexusUserStreamService.fetch', () => {
       vi.mocked(queryNexus).mockResolvedValue([]);
     });
 
-    it('should dispatch mock-namespaced IDs to most_followed without a tags param', async () => {
-      await NexusUserStreamService.fetch({
-        streamId: 'starter_pack_mock:all:all:bitcoin,music' as UserStreamId,
-        params: { skip: 0, limit: 10 },
-      });
-
-      expect(queryNexus).toHaveBeenCalledTimes(1);
-      const { url } = vi.mocked(queryNexus).mock.calls[0][0];
-      expect(url).toContain('source=most_followed');
-      expect(url).not.toContain('starter_pack');
-      expect(url).not.toContain('tags=');
-    });
-
-    it('should dispatch live IDs to source=starter_pack with ordered tags', async () => {
+    it('should dispatch starter pack IDs to source=starter_pack with ordered tags', async () => {
       await NexusUserStreamService.fetch({
         streamId: 'starter_pack:all:all:bitcoin,music' as UserStreamId,
         params: { skip: 0, limit: 10, viewer_id: 'viewer-abc' as Pubky },

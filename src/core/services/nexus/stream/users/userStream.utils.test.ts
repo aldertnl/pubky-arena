@@ -327,17 +327,6 @@ describe('createUserStreamParams', () => {
       });
     });
 
-    it('should parse a mock starter pack ID into starter_pack_mock reach without a tags param', () => {
-      const streamId = 'starter_pack_mock:all:all:bitcoin,music' as UserStreamId;
-
-      const result = createUserStreamParams(streamId, baseParams);
-
-      expect(result.reach).toBe('starter_pack_mock');
-      // most_followed serves the mock and rejects a `tags` query param
-      expect(result.apiParams).toEqual(baseParams);
-      expect(result.apiParams).not.toHaveProperty('tags');
-    });
-
     it('should reject an empty tag segment', () => {
       expectValidationError(() => createUserStreamParams('starter_pack:all:all:' as UserStreamId, baseParams));
     });
@@ -373,7 +362,7 @@ describe('createUserStreamParams', () => {
     it('should reject non-"all" timeframe segments', () => {
       expectValidationError(() => createUserStreamParams('starter_pack:today:all:bitcoin' as UserStreamId, baseParams));
       expectValidationError(() =>
-        createUserStreamParams('starter_pack_mock:this_month:all:bitcoin' as UserStreamId, baseParams),
+        createUserStreamParams('starter_pack:this_month:all:bitcoin' as UserStreamId, baseParams),
       );
     });
 
@@ -382,7 +371,7 @@ describe('createUserStreamParams', () => {
         createUserStreamParams('starter_pack:all:friends:bitcoin' as UserStreamId, baseParams),
       );
       expectValidationError(() =>
-        createUserStreamParams('starter_pack_mock:all:followers:bitcoin' as UserStreamId, baseParams),
+        createUserStreamParams('starter_pack:all:followers:bitcoin' as UserStreamId, baseParams),
       );
     });
 
