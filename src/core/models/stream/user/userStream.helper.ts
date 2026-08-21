@@ -1,4 +1,4 @@
-import { STARTER_PACK_MAX_TAGS, STARTER_PACK_SOURCE_LIVE } from '@/config/nexus';
+import { STARTER_PACK_MAX_TAGS } from '@/config/nexus';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
 import { Err } from '@/libs/error/error.factories';
 import { ErrorService } from '@/libs/error/error.types';
@@ -6,7 +6,6 @@ import { isValidTagLabel } from '@/libs/utils/utils';
 import type { Pubky } from '@/models/models.types';
 import { UserStreamModelSchema } from './userStream.schema';
 import {
-  STARTER_PACK_MOCK_STREAM_SOURCE,
   STARTER_PACK_STREAM_SOURCE,
   StarterPackStreamId,
   UserStreamCompositeId,
@@ -66,13 +65,9 @@ export function parseUserCompositeId(compositeId: string): UserStreamIdParts {
  * and the Nexus starter pack limit (1-5 tags). Order is preserved: Nexus interleaves per-tag
  * rankings in the order given, so ['travel','music'] and ['music','travel'] are different streams.
  *
- * While STARTER_PACK_SOURCE_LIVE is false the ID is namespaced under `starter_pack_mock`, which
- * dispatches to `most_followed`. Flipping the flag changes every cache key, guaranteeing the first
- * live load bypasses stale mock rows.
- *
  * @example
  * buildStarterPackStreamId(['Bitcoin ', 'music'])
- * // Returns: 'starter_pack:all:all:bitcoin,music' (or 'starter_pack_mock:...' while mocked)
+ * // Returns: 'starter_pack:all:all:bitcoin,music'
  */
 export function buildStarterPackStreamId(tags: string[]): StarterPackStreamId {
   const canonical = tags.map((tag) => tag.trim().toLowerCase());
@@ -102,8 +97,7 @@ export function buildStarterPackStreamId(tags: string[]): StarterPackStreamId {
     );
   }
 
-  const source = STARTER_PACK_SOURCE_LIVE ? STARTER_PACK_STREAM_SOURCE : STARTER_PACK_MOCK_STREAM_SOURCE;
-  return `${source}:all:all:${canonical.join(USER_STREAM_TAG_DELIMITER)}` as StarterPackStreamId;
+  return `${STARTER_PACK_STREAM_SOURCE}:all:all:${canonical.join(USER_STREAM_TAG_DELIMITER)}` as StarterPackStreamId;
 }
 
 export const createDefaultUserStream = (id: UserStreamId, stream: Pubky[] = []): UserStreamModelSchema => {

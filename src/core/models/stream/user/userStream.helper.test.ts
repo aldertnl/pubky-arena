@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { AppError } from '@/libs/error/error';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
 import { ErrorCategory } from '@/libs/error/error.types';
@@ -17,19 +17,17 @@ const expectValidationError = (fn: () => unknown) => {
 };
 
 describe('buildStarterPackStreamId', () => {
-  // The checked-in STARTER_PACK_SOURCE_LIVE flag is false until Nexus deploys the
-  // starter_pack source to staging (#2390 flips it and removes the mock namespace).
-  describe('with the shipped flag value (mock namespace)', () => {
-    it('should join ordered tags under the mock namespace', () => {
-      expect(buildStarterPackStreamId(['bitcoin', 'music'])).toBe('starter_pack_mock:all:all:bitcoin,music');
+  describe('ID construction', () => {
+    it('should join ordered tags under the starter_pack source', () => {
+      expect(buildStarterPackStreamId(['bitcoin', 'music'])).toBe('starter_pack:all:all:bitcoin,music');
     });
 
     it('should preserve tag order (reversed lists yield distinct IDs)', () => {
       const forward = buildStarterPackStreamId(['travel', 'music']);
       const reversed = buildStarterPackStreamId(['music', 'travel']);
 
-      expect(forward).toBe('starter_pack_mock:all:all:travel,music');
-      expect(reversed).toBe('starter_pack_mock:all:all:music,travel');
+      expect(forward).toBe('starter_pack:all:all:travel,music');
+      expect(reversed).toBe('starter_pack:all:all:music,travel');
       expect(forward).not.toBe(reversed);
     });
 
@@ -38,15 +36,15 @@ describe('buildStarterPackStreamId', () => {
       const fromCanonical = buildStarterPackStreamId(['bitcoin', 'music']);
 
       expect(fromMixedCase).toBe(fromCanonical);
-      expect(fromMixedCase).toBe('starter_pack_mock:all:all:bitcoin,music');
+      expect(fromMixedCase).toBe('starter_pack:all:all:bitcoin,music');
     });
 
     it('should accept the maximum of 5 tags', () => {
-      expect(buildStarterPackStreamId(['a', 'b', 'c', 'd', 'e'])).toBe('starter_pack_mock:all:all:a,b,c,d,e');
+      expect(buildStarterPackStreamId(['a', 'b', 'c', 'd', 'e'])).toBe('starter_pack:all:all:a,b,c,d,e');
     });
 
     it('should accept a single tag', () => {
-      expect(buildStarterPackStreamId(['bitcoin'])).toBe('starter_pack_mock:all:all:bitcoin');
+      expect(buildStarterPackStreamId(['bitcoin'])).toBe('starter_pack:all:all:bitcoin');
     });
   });
 
@@ -84,38 +82,6 @@ describe('buildStarterPackStreamId', () => {
 
     it('should accept a label at exactly 20 chars', () => {
       expect(buildStarterPackStreamId(['a'.repeat(20)])).toContain(`:${'a'.repeat(20)}`);
-    });
-  });
-
-  describe('STARTER_PACK_SOURCE_LIVE flag', () => {
-    it('should emit the live namespace when the flag is true', async () => {
-      vi.resetModules();
-      vi.doMock('@/config/nexus', async (importOriginal) => ({
-        ...(await importOriginal<typeof import('@/config/nexus')>()),
-        STARTER_PACK_SOURCE_LIVE: true,
-      }));
-
-      const { buildStarterPackStreamId: buildWithLiveFlag } = await import('./userStream.helper');
-
-      expect(buildWithLiveFlag(['bitcoin', 'music'])).toBe('starter_pack:all:all:bitcoin,music');
-
-      vi.doUnmock('@/config/nexus');
-      vi.resetModules();
-    });
-
-    it('should emit the mock namespace when the flag is false', async () => {
-      vi.resetModules();
-      vi.doMock('@/config/nexus', async (importOriginal) => ({
-        ...(await importOriginal<typeof import('@/config/nexus')>()),
-        STARTER_PACK_SOURCE_LIVE: false,
-      }));
-
-      const { buildStarterPackStreamId: buildWithMockFlag } = await import('./userStream.helper');
-
-      expect(buildWithMockFlag(['bitcoin', 'music'])).toBe('starter_pack_mock:all:all:bitcoin,music');
-
-      vi.doUnmock('@/config/nexus');
-      vi.resetModules();
     });
   });
 });

@@ -51,10 +51,6 @@ export class NexusUserStreamService {
       case 'starter_pack':
         url = userStreamApi.starterPack(apiParams as TUserStreamStarterPackParams);
         break;
-      // TEMPORARY (#2390): mock namespace served by most_followed until Nexus deploys starter_pack
-      case 'starter_pack_mock':
-        url = userStreamApi.mostFollowed(apiParams as TUserStreamBase);
-        break;
       default: {
         const exhaustiveCheck: never = reach;
         throw Err.validation(

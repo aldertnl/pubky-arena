@@ -5,11 +5,7 @@ import { ErrorService } from '@/libs/error/error.types';
 import { isValidTagLabel } from '@/libs/utils/utils';
 import type { Pubky } from '@/models/models.types';
 import { USER_STREAM_TAG_DELIMITER } from '@/models/stream/user/userStream.helper';
-import {
-  STARTER_PACK_MOCK_STREAM_SOURCE,
-  STARTER_PACK_STREAM_SOURCE,
-  type UserStreamId,
-} from '@/models/stream/user/userStream.types';
+import { STARTER_PACK_STREAM_SOURCE, type UserStreamId } from '@/models/stream/user/userStream.types';
 import type { UserStreamReach, UserStreamTimeframe } from '@/services/nexus/nexus.types';
 import {
   type TUserStreamBase,
@@ -115,7 +111,7 @@ export function createUserStreamParams(
   if (parts.length === 4) {
     const [source, timeframe, reach, tagSegment] = parts;
 
-    if (source !== STARTER_PACK_STREAM_SOURCE && source !== STARTER_PACK_MOCK_STREAM_SOURCE) {
+    if (source !== STARTER_PACK_STREAM_SOURCE) {
       throw Err.validation(ValidationErrorCode.INVALID_INPUT, 'Only starter pack stream IDs carry a tag segment', {
         service: ErrorService.Nexus,
         operation: 'createUserStreamParams',
@@ -149,14 +145,6 @@ export function createUserStreamParams(
           context: { streamId },
         },
       );
-    }
-
-    // Mock namespace dispatches to most_followed, which rejects a `tags` query param — omit it
-    if (source === STARTER_PACK_MOCK_STREAM_SOURCE) {
-      return {
-        reach: 'starter_pack_mock',
-        apiParams: baseParams,
-      } as NexusParamsResult<'starter_pack_mock'>;
     }
 
     return {
@@ -203,8 +191,6 @@ type UserStreamApiParamsMap = {
   influencers: TUserStreamInfluencersParams;
   most_followed: TUserStreamBase;
   starter_pack: TUserStreamStarterPackParams;
-  // FE-only mock namespace; served by most_followed until the Nexus source is deployed (#2390)
-  starter_pack_mock: TUserStreamBase;
 };
 
 type ReachType = keyof UserStreamApiParamsMap;

@@ -7,9 +7,7 @@ import type { UserStreamCompositeReach } from '@/services/nexus/nexus.types';
 // - REACH (Supported in 'influencers' source): followers, following, friends, wot (u8), all
 //
 // Starter pack IDs extend the pattern with a 4th ordered-tag segment: source:timeframe:reach:tag1,tag2
-// - SOURCE: starter_pack (live Nexus source) or starter_pack_mock (FE-only cache namespace used
-//   while the Nexus source is not deployed; dispatches to most_followed — see STARTER_PACK_SOURCE_LIVE
-//   in @/config/nexus). Distinct namespaces guarantee mock rows never satisfy live requests.
+// - SOURCE: starter_pack (pubky/pubky-nexus#1024)
 // - Tag order matters: Nexus interleaves per-tag rankings in the order given.
 //
 // Note: Different from PostStreamTypes pattern (sorting:source:kind) to optimize for user-centric queries
@@ -23,15 +21,11 @@ export enum UserStreamTypes {
   // TODO: Add all possible cases
 }
 
-// Live Nexus stream source for starter packs (pubky/pubky-nexus#1024)
+// Nexus stream source for starter packs (pubky/pubky-nexus#1024)
 export const STARTER_PACK_STREAM_SOURCE = 'starter_pack' as const;
-// FE-only cache-key namespace while the Nexus source is not deployed; never sent to Nexus
-export const STARTER_PACK_MOCK_STREAM_SOURCE = 'starter_pack_mock' as const;
 
 // Starter pack ID format: source:all:all:tag1,tag2 (ordered, canonicalized tags)
-export type StarterPackStreamId =
-  | `${typeof STARTER_PACK_STREAM_SOURCE}:all:all:${string}`
-  | `${typeof STARTER_PACK_MOCK_STREAM_SOURCE}:all:all:${string}`;
+export type StarterPackStreamId = `${typeof STARTER_PACK_STREAM_SOURCE}:all:all:${string}`;
 
 // Composite ID format: userId:reach (e.g., 'user123:followers')
 export type UserStreamCompositeId = `${Pubky}:${UserStreamCompositeReach}`;
