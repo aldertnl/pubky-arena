@@ -7,6 +7,7 @@ import { APP_ROUTES, ONBOARDING_ROUTES } from '@/app/routes';
 import { Card } from '@/atoms/Card/Card';
 import { Container } from '@/atoms/Container/Container';
 import { Heading } from '@/atoms/Heading/Heading';
+import { Typography } from '@/atoms/Typography/Typography';
 import { STARTER_PACK_MAX_TAGS } from '@/config/nexus';
 import { ONBOARDING_INTERESTS_SUGGESTED_COUNT } from '@/config/tags';
 import { useHotTags } from '@/hooks/useHotTags/useHotTags';
@@ -64,9 +65,15 @@ export const TagsOfInterestForm = () => {
 
         {/* Popular Interests Section */}
         <Container className="w-full gap-6">
-          <Heading level={3} size="xl" className="text-2xl">
-            {`Popular interests (${selectedPopularCount} selected)`}
-          </Heading>
+          <Container className="gap-3">
+            <Heading level={3} size="xl" className="text-2xl">
+              {'Popular interests'}
+              <span className="font-normal text-muted-foreground">{` (${selectedPopularCount} selected)`}</span>
+            </Heading>
+            <Typography size="sm" className="font-normal text-muted-foreground">
+              {'Select which topics you find interesting.'}
+            </Typography>
+          </Container>
           <Container overrideDefaults className="flex flex-row flex-wrap content-start gap-2">
             {popularTags.map((tag) => {
               const selected = isSelected(tag.name);
@@ -87,9 +94,14 @@ export const TagsOfInterestForm = () => {
 
         {/* Your Interests Section */}
         <Container className="mt-6 w-full gap-6 lg:mt-0 lg:max-w-72">
-          <Heading level={3} size="xl" className="text-2xl">
-            {'Your interests'}
-          </Heading>
+          <Container className="gap-3">
+            <Heading level={3} size="xl" className="text-2xl">
+              {'Your interests'}
+            </Heading>
+            <Typography size="sm" className="font-normal text-muted-foreground">
+              {'Add other topics you like.'}
+            </Typography>
+          </Container>
           <Container overrideDefaults className="flex flex-col gap-3">
             <TagInput
               onTagAdd={addTag}

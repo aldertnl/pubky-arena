@@ -19,6 +19,7 @@ import { FacehashAvatar } from '@/molecules/FacehashAvatar/FacehashAvatar';
 import { InputField } from '@/molecules/InputField/InputField';
 import { ProfileNavigation } from '@/molecules/ProfileNavigation/ProfileNavigation';
 import { TextareaField } from '@/molecules/TextareaField/TextareaField';
+import { ProfileFormSkeleton } from '@/organisms/ProfileFormSkeleton/ProfileFormSkeleton';
 import { useAuthStore } from '@/stores/auth/auth.store';
 import { useOnboardingStore } from '@/stores/onboarding/onboarding.store';
 import { DialogAddLink } from '../DialogAddLink/DialogAddLink';
@@ -47,6 +48,12 @@ export const CreateProfileForm = () => {
     }) ||
     avatarFallbackSeed.charAt(0).toUpperCase() ||
     'U';
+  // Revisit mode only: isLoading stays true until the current profile hydrates the form.
+  // Rendering the interactive form before then would let edits (text, avatar file) be
+  // silently overwritten or resurface once hydration lands, so show the skeleton instead.
+  if (state.isLoading) {
+    return <ProfileFormSkeleton />;
+  }
   return (
     <>
       <Container className="flex w-full flex-1 flex-col gap-6 lg:flex-none" data-testid="create-profile-form">
@@ -218,9 +225,7 @@ export const CreateProfileForm = () => {
           className="onboarding-nav mt-auto flex-col sm:flex-row lg:pt-0"
           backButtonDisabled={!isRevisit}
           onHandleBackButton={isRevisit ? () => router.push(ONBOARDING_ROUTES.TAGS) : undefined}
-          // isLoading stays true in revisit mode until the current profile arrives; submitting
-          // the still-empty defaults would overwrite the existing bio, links, and avatar.
-          continueButtonDisabled={isSubmitDisabled || state.isLoading}
+          continueButtonDisabled={isSubmitDisabled}
           continueButtonLoading={state.isSaving}
           continueText={state.submitText}
           onContinue={handlers.handleSubmit}

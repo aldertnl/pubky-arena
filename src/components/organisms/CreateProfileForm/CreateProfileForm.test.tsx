@@ -195,8 +195,14 @@ vi.mock('@/atoms/Card/Card', () => {
 
 vi.mock('@/atoms/Container/Container', () => {
   return {
-    Container: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-      <div data-testid="container" className={className}>
+    // Forwards rest props so components that set their own data-testid (e.g. the
+    // profile form skeleton) keep it instead of the mock's fallback.
+    Container: ({
+      children,
+      className,
+      ...props
+    }: { children?: React.ReactNode; className?: string } & Record<string, unknown>) => (
+      <div data-testid="container" className={className} {...props}>
         {children}
       </div>
     ),
@@ -1094,9 +1100,10 @@ describe('CreateProfileForm', () => {
       expect(continueButton).toHaveTextContent('Save Profile');
     });
 
-    it('keeps Continue disabled while the current profile has not loaded', () => {
-      // Local miss + failed fetch: userDetails never arrives, so submitting the empty
-      // defaults would overwrite the existing bio, links, and avatar.
+    it('renders the loading skeleton instead of the interactive form until the profile arrives', () => {
+      // Local miss + pending/failed fetch: userDetails has not arrived. An interactive
+      // form here would let edits (text, avatar file) be overwritten or resurface once
+      // hydration lands, so nothing editable may render.
       vi.mocked(useCurrentUserProfile).mockReturnValue({
         userDetails: null,
         currentUserPubky: mockPubky,
@@ -1104,11 +1111,9 @@ describe('CreateProfileForm', () => {
 
       render(<CreateProfileForm />);
 
-      // Even with a valid name typed in, the loading gate must hold the submit
-      const nameInput = screen.getAllByTestId('molecules-input')[0];
-      fireEvent.change(nameInput, { target: { value: 'Valid Name' } });
-
-      expect(screen.getByTestId('continue-button')).toBeDisabled();
+      expect(screen.getByTestId('profile-form-skeleton')).toBeInTheDocument();
+      expect(screen.queryAllByTestId('molecules-input')).toHaveLength(0);
+      expect(screen.queryByTestId('continue-button')).not.toBeInTheDocument();
       expect(ProfileController.commitUpdate).not.toHaveBeenCalled();
     });
 

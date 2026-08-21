@@ -6,7 +6,9 @@ describe('TagsOfInterestHeader', () => {
   it('renders the title with the brand-highlighted word', () => {
     render(<TagsOfInterestHeader />);
 
-    expect(screen.getByRole('heading', { name: 'Tags of interest.' })).toBeInTheDocument();
+    // toHaveTextContent (not a role name query): the space sits inside the brand span,
+    // whose edge whitespace the accessible-name computation trims away.
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Tags of interest.');
     expect(screen.getByText('interest.')).toHaveClass('text-brand');
   });
 
