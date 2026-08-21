@@ -83,16 +83,16 @@ describe('TagsOfInterest', () => {
   it('updates the "(N selected)" header as popular chips are toggled', () => {
     render(<TagsOfInterest />);
 
-    expect(screen.getByText('Popular interests (0 selected)')).toBeInTheDocument();
+    expect(screen.getByText('Popular interests')).toHaveTextContent('Popular interests (0 selected)');
 
     fireEvent.click(screen.getByTestId('popular-tag-bitcoin'));
     fireEvent.click(screen.getByTestId('popular-tag-art'));
 
-    expect(screen.getByText('Popular interests (2 selected)')).toBeInTheDocument();
+    expect(screen.getByText('Popular interests')).toHaveTextContent('Popular interests (2 selected)');
 
     fireEvent.click(screen.getByTestId('popular-tag-art'));
 
-    expect(screen.getByText('Popular interests (1 selected)')).toBeInTheDocument();
+    expect(screen.getByText('Popular interests')).toHaveTextContent('Popular interests (1 selected)');
   });
 
   it('marks selected chips with accessible pressed state', () => {
@@ -126,7 +126,7 @@ describe('TagsOfInterest', () => {
 
     expect(screen.getByTestId('popular-tag-bitcoin')).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByTestId('interest-tag-bitcoin')).not.toBeInTheDocument();
-    expect(screen.getByText('Popular interests (1 selected)')).toBeInTheDocument();
+    expect(screen.getByText('Popular interests')).toHaveTextContent('Popular interests (1 selected)');
   });
 
   it('disables only unselected popular chips at the cap and keeps removal working', () => {

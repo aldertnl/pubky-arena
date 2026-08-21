@@ -65,8 +65,10 @@ describe('TagsOfInterestForm', () => {
     render(<TagsOfInterestForm />);
 
     expect(screen.getByAltText('Tags of interest')).toBeInTheDocument();
-    expect(screen.getByText('Popular interests (0 selected)')).toBeInTheDocument();
+    expect(screen.getByText('Popular interests')).toHaveTextContent('Popular interests (0 selected)');
+    expect(screen.getByText('Select which topics you find interesting.')).toBeInTheDocument();
     expect(screen.getByText('Your interests')).toBeInTheDocument();
+    expect(screen.getByText('Add other topics you like.')).toBeInTheDocument();
     const tagInput = screen.getByTestId('tag-input');
     expect(tagInput).toHaveAttribute('data-max-tags', String(STARTER_PACK_MAX_TAGS));
     expect(screen.getByRole('button', { name: /back/i })).not.toBeDisabled();
@@ -80,7 +82,7 @@ describe('TagsOfInterestForm', () => {
 
     expect(screen.getByTestId('popular-tag-bitcoin')).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByTestId('interest-tag-satoshi')).toBeInTheDocument();
-    expect(screen.getByText('Popular interests (1 selected)')).toBeInTheDocument();
+    expect(screen.getByText('Popular interests')).toHaveTextContent('Popular interests (1 selected)');
   });
 
   it('sanitizes an invalid persisted seed instead of trusting it', () => {
