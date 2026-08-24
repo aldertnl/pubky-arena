@@ -21,7 +21,7 @@ export function ProfileUnlockedCard({ post }: Pick<TUnlockedListItem, 'post'>) {
       {isArticle ? (
         <PostArticle content={post.content} attachments={null} localAttachments={media} />
       ) : (
-        <PostBody content={post.content} attachments={null} localAttachments={media} expandInPlace />
+        <PostBody content={post.content} attachments={null} localAttachments={media} />
       )}
     </Container>
   );

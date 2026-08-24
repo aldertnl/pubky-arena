@@ -84,10 +84,25 @@ exports[`PostLinkEmbeds - Snapshots > matches snapshot for YouTube embed 1`] = `
       height="auto"
       loading="lazy"
       sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox"
-      src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"
+      src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1"
       title="YouTube video dQw4w9WgXcQ"
       width="100%"
     />
+  </div>
+</div>
+`;
+
+exports[`PostLinkEmbeds - Snapshots > matches snapshot for in-app post embed 1`] = `
+<div
+  class="w-full overflow-hidden"
+  data-testid="container"
+>
+  <div
+    class="bg-muted"
+    data-post-id="o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy:0034BBBDFK83G"
+    data-testid="post-preview-card"
+  >
+    Mocked Post Preview Card
   </div>
 </div>
 `;

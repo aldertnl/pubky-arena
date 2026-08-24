@@ -52,7 +52,6 @@ export enum SETTINGS_ROUTES {
   NOTIFICATIONS = '/settings/notifications',
   PRIVACY_SAFETY = '/settings/privacy-safety',
   MUTED_USERS = '/settings/muted-users',
-  LANGUAGE = '/settings/language',
   HELP = '/settings/help',
 }
 
@@ -84,8 +83,6 @@ export const PUBLIC_ROUTES: string[] = [
   APP_ROUTES.PROFILE,
   // Copyright page should be accessible without authentication
   COPYRIGHT_ROUTES.COPYRIGHT,
-  // Language settings page is public to allow language changes without auth issues
-  SETTINGS_ROUTES.LANGUAGE,
   // Sentry verification harness must be reachable without a session on preview deploys.
   // The page returns 404 in production via isSentryTestHarnessEnabled().
   DEV_ROUTES.SENTRY_TEST,
@@ -194,10 +191,23 @@ export function matchesAllowedRoute(
   return pathname.startsWith(`${route}/`);
 }
 
+/**
+ * Matches a single post route `/post/[userId]/[postId]` and returns its params,
+ * or `null` for any other path. Shape-only matching — identifier validation is
+ * the caller's concern (mirrors `matchSingleCollectionRoute`).
+ */
+export function matchPostRoute(pathname: string): { userId: string; postId: string } | null {
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments[0] !== 'post' || segments.length !== 3) {
+    return null;
+  }
+  const [, userId, postId] = segments;
+  return { userId, postId };
+}
+
 /** `/post/[userId]/[postId]` — browsable without auth; uses explore header chrome for guests. */
 export function isPostRoute(pathname: string): boolean {
-  const segments = pathname.split('/').filter(Boolean);
-  return segments[0] === 'post' && segments.length === 3;
+  return matchPostRoute(pathname) !== null;
 }
 
 export function isCoreExploreRoute(pathname: string): boolean {

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DialogContent } from '@/atoms/Dialog/Dialog';
 import { POST_INPUT_VARIANT } from '@/organisms/PostInput/PostInput.constants';
+import { PostMainLayoutProvider } from '@/organisms/PostMain/PostMainLayoutContext';
 import { PostInput } from '../PostInput/PostInput';
 import { DialogReply } from './DialogReply';
 
@@ -123,13 +124,14 @@ vi.mock('@/atoms/Container/Container', () => {
 });
 
 vi.mock('../PostInput/PostInput', () => ({
-  PostInput: vi.fn(({ onSuccess, onContentChange, variant, postId, showThreadConnector }) => (
+  PostInput: vi.fn(({ onSuccess, onContentChange, variant, postId, showThreadConnector, layoutOverride }) => (
     <div
       data-testid="post-input"
       data-variant={variant}
       data-post-id={postId}
       data-show-thread={String(showThreadConnector)}
       data-has-content-change={String(Boolean(onContentChange))}
+      data-layout-override={layoutOverride}
     >
       <button data-testid="mock-success-btn" onClick={() => onSuccess?.('reply-post-id')}>
         Success
@@ -197,6 +199,16 @@ describe('DialogReply', () => {
     expect(screen.getByTestId('post-input')).toBeInTheDocument();
   });
 
+  it('uses inline post styling when rendered inside a List feed', () => {
+    render(
+      <PostMainLayoutProvider tagsLayout="list">
+        <DialogReply postId="test-post-123" open onOpenChangeAction={vi.fn()} />
+      </PostMainLayoutProvider>,
+    );
+
+    expect(screen.getByTestId('post-input')).toHaveAttribute('data-layout-override', 'inline');
+  });
+
   it('renders PostPreviewCard with correct postId', () => {
     const onOpenChangeAction = vi.fn();
     render(<DialogReply postId="test-post-123" open={false} onOpenChangeAction={onOpenChangeAction} />);
@@ -219,9 +231,21 @@ describe('DialogReply', () => {
         expanded: true,
         autoFocusTextarea: true,
         onContentChange: mockHandleContentChange,
+        layoutOverride: 'inline',
       },
       undefined,
     );
+  });
+
+  it('constrains the reply input wrapper for long usernames', () => {
+    const onOpenChangeAction = vi.fn();
+    render(<DialogReply postId="test-post-123" open={false} onOpenChangeAction={onOpenChangeAction} />);
+
+    const replyInputWrapper = screen
+      .getAllByTestId('container')
+      .find((container) => container.className.includes('pl-6'));
+
+    expect(replyInputWrapper).toHaveClass('w-full', 'min-w-0');
   });
 
   it('passes onOpenChangeAction to Dialog', () => {
@@ -237,6 +261,21 @@ describe('DialogReply', () => {
     render(<DialogReply postId="test-post-123" open={true} onOpenChangeAction={onOpenChangeAction} />);
 
     expect(vi.mocked(DialogContent).mock.calls.at(-1)?.[0]).toEqual(expect.objectContaining({ avoidKeyboard: true }));
+  });
+
+  it('uses the dialog body layout', () => {
+    const onOpenChangeAction = vi.fn();
+    render(<DialogReply postId="test-post-123" open={true} onOpenChangeAction={onOpenChangeAction} />);
+
+    expect(screen.getByTestId('dialog-content')).toHaveClass('flex', 'max-h-[calc(100dvh-2rem)]', 'flex-col');
+    expect(screen.getByTestId('post-preview-card').parentElement).toHaveClass(
+      'min-h-0',
+      'flex-1',
+      'overflow-x-hidden',
+      'overscroll-contain',
+    );
+    expect(screen.getByTestId('post-preview-card').parentElement).not.toHaveClass('overflow-y-auto');
+    expect(screen.getByTestId('post-input').parentElement).toHaveClass('min-w-0');
   });
 
   it('calls onOpenChangeAction when PostInput onSuccess is called', async () => {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PostPreviewNestingProvider } from '@/molecules/PostPreviewCard/PostPreviewNestingContext';
 import { PostLinkEmbeds } from './PostLinkEmbeds';
 
 vi.mock('@/atoms/Container/Container', () => {
@@ -116,6 +117,15 @@ vi.mock('./Providers/Generic/GenericPreview', () => ({
   ),
 }));
 
+// Mock PostPreviewCard to avoid pulling in local-first data hooks
+vi.mock('@/molecules/PostPreviewCard/PostPreviewCard', () => ({
+  PostPreviewCard: ({ postId, className }: { postId: string; className?: string }) => (
+    <div data-testid="post-preview-card" data-post-id={postId} className={className}>
+      Mocked Post Preview Card
+    </div>
+  ),
+}));
+
 describe('PostLinkEmbeds', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -127,7 +137,8 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1');
+      expect(iframe).not.toHaveAttribute('enablejsapi');
     });
 
     it('renders YouTube embed for youtu.be URL', () => {
@@ -135,7 +146,7 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1');
     });
 
     it('handles youtu.be URL with query parameters', () => {
@@ -143,7 +154,10 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=123');
+      expect(iframe).toHaveAttribute(
+        'src',
+        'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=123&enablejsapi=1',
+      );
     });
 
     it('renders YouTube embed for mobile youtube.com URL', () => {
@@ -151,7 +165,7 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1');
     });
 
     it('renders YouTube embed for youtube-nocookie.com URL', () => {
@@ -159,7 +173,7 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1');
     });
 
     it('renders YouTube embed for embed URL format', () => {
@@ -167,7 +181,7 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1');
     });
 
     it('renders YouTube embed for shorts URL format', () => {
@@ -175,7 +189,7 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1');
     });
 
     it('renders YouTube embed for live stream URL format', () => {
@@ -183,7 +197,7 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1');
     });
 
     it('renders YouTube embed for legacy /v URL format', () => {
@@ -191,7 +205,7 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1');
     });
 
     it('renders YouTube embed for music.youtube.com URL', () => {
@@ -199,7 +213,7 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/UTD5buLHoR4');
+      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/UTD5buLHoR4?enablejsapi=1');
     });
 
     it('handles YouTube URL with trailing punctuation', () => {
@@ -207,7 +221,7 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1');
     });
 
     it('handles YouTube URL with timestamp in seconds format', () => {
@@ -215,7 +229,10 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=123');
+      expect(iframe).toHaveAttribute(
+        'src',
+        'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=123&enablejsapi=1',
+      );
     });
 
     it('handles YouTube URL with timestamp in h/m/s format', () => {
@@ -223,7 +240,10 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=3723');
+      expect(iframe).toHaveAttribute(
+        'src',
+        'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=3723&enablejsapi=1',
+      );
     });
 
     it('handles YouTube URL with timestamp as plain number', () => {
@@ -231,7 +251,10 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=90');
+      expect(iframe).toHaveAttribute(
+        'src',
+        'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=90&enablejsapi=1',
+      );
     });
 
     it('handles YouTube URL with partial h/m/s format (minutes and seconds only)', () => {
@@ -239,7 +262,10 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=150');
+      expect(iframe).toHaveAttribute(
+        'src',
+        'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=150&enablejsapi=1',
+      );
     });
 
     it('does not render embed for YouTube video ID shorter than 11 characters', () => {
@@ -654,7 +680,7 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1');
     });
 
     it('does not render embed when only URL is inside Markdown link', () => {
@@ -695,6 +721,84 @@ describe('PostLinkEmbeds', () => {
     });
   });
 
+  describe('In-app URL embeds', () => {
+    const pubky = 'o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy';
+    const postId = '0034BBBDFK83G';
+    // jsdom serves the tests from a localhost origin — in-app URLs are built from it
+    const origin = window.location.origin;
+
+    it('renders PostPreviewCard for a current-origin post URL', () => {
+      render(<PostLinkEmbeds content={`Look at this: ${origin}/post/${pubky}/${postId}`} />);
+
+      const card = screen.getByTestId('post-preview-card');
+      expect(card).toBeInTheDocument();
+      expect(card).toHaveAttribute('data-post-id', `${pubky}:${postId}`);
+      expect(screen.queryByTestId('generic-preview')).not.toBeInTheDocument();
+    });
+
+    it('renders PostPreviewCard for a current-origin collection URL', () => {
+      render(<PostLinkEmbeds content={`My collection: ${origin}/collections/${pubky}/${postId}`} />);
+
+      const card = screen.getByTestId('post-preview-card');
+      expect(card).toBeInTheDocument();
+      expect(card).toHaveAttribute('data-post-id', `${pubky}:${postId}`);
+      expect(screen.queryByTestId('generic-preview')).not.toBeInTheDocument();
+    });
+
+    it('routes a valid-pubky URL with a nonexistent post id to the preview card (which owns the not-found state)', () => {
+      render(<PostLinkEmbeds content={`${origin}/post/${pubky}/typo`} />);
+
+      // Post ID shape is not validated; PostPreviewCard resolves the id and
+      // renders PostMissing on 404, matching repost behavior.
+      const card = screen.getByTestId('post-preview-card');
+      expect(card).toHaveAttribute('data-post-id', `${pubky}:typo`);
+      expect(screen.queryByTestId('generic-preview')).not.toBeInTheDocument();
+    });
+
+    it('falls back to generic preview for a route-shaped URL with an invalid pubky', () => {
+      render(<PostLinkEmbeds content={`${origin}/post/not-a-pubky/${postId}`} />);
+
+      expect(screen.queryByTestId('post-preview-card')).not.toBeInTheDocument();
+      expect(screen.getByTestId('generic-preview')).toBeInTheDocument();
+    });
+
+    it('falls back to generic preview for the bookmarks pseudo-collection URL', () => {
+      render(<PostLinkEmbeds content={`${origin}/collections/bookmarks`} />);
+
+      expect(screen.queryByTestId('post-preview-card')).not.toBeInTheDocument();
+      expect(screen.getByTestId('generic-preview')).toBeInTheDocument();
+    });
+
+    it('falls back to generic preview for a different-host post URL', () => {
+      render(<PostLinkEmbeds content={`https://pubky.app/post/${pubky}/${postId}`} />);
+
+      expect(screen.queryByTestId('post-preview-card')).not.toBeInTheDocument();
+      expect(screen.getByTestId('generic-preview')).toBeInTheDocument();
+    });
+
+    it('renders nothing for an in-app URL inside an embedded post preview', () => {
+      render(
+        <PostPreviewNestingProvider>
+          <PostLinkEmbeds content={`${origin}/post/${pubky}/${postId}`} />
+        </PostPreviewNestingProvider>,
+      );
+
+      expect(screen.queryByTestId('post-preview-card')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('generic-preview')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('container')).not.toBeInTheDocument();
+    });
+
+    it('still renders external embeds inside an embedded post preview', () => {
+      render(
+        <PostPreviewNestingProvider>
+          <PostLinkEmbeds content="https://www.youtube.com/watch?v=dQw4w9WgXcQ" />
+        </PostPreviewNestingProvider>,
+      );
+
+      expect(screen.getByTestId('YouTube video player')).toBeInTheDocument();
+    });
+  });
+
   describe('Edge cases', () => {
     it('does not render embed for content without URLs', () => {
       render(<PostLinkEmbeds content="Just some regular text without any links" />);
@@ -715,7 +819,7 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1');
     });
 
     it('handles URLs without protocol', () => {
@@ -723,7 +827,7 @@ describe('PostLinkEmbeds', () => {
 
       const iframe = screen.getByTestId('YouTube video player');
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+      expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1');
     });
 
     it('stops event propagation when clicking embed container', () => {
@@ -779,6 +883,13 @@ describe('PostLinkEmbeds - Snapshots', () => {
   it('matches snapshot for X.com embed', () => {
     const { container } = render(<PostLinkEmbeds content="https://x.com/user/status/1234567890123456789" />);
     screen.getByTestId('twitter-tweet');
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('matches snapshot for in-app post embed', () => {
+    const pubky = 'o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy';
+    const { container } = render(<PostLinkEmbeds content={`${window.location.origin}/post/${pubky}/0034BBBDFK83G`} />);
+    screen.getByTestId('post-preview-card');
     expect(container.firstChild).toMatchSnapshot();
   });
 

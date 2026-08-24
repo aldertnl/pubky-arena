@@ -2,6 +2,7 @@ import { createRef, type ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TIMELINE_FEED_VARIANT } from '@/config/feed';
+import { NEXUS_STREAM_MAX_LIMIT } from '@/config/nexus';
 import type { FeedLayoutResolution } from '@/hooks/useFeedLayoutResolution/useFeedLayoutResolution';
 import { useMutedUsers } from '@/hooks/useMutedUsers/useMutedUsers';
 import type { UsePullToRefreshResult } from '@/hooks/usePullToRefresh/usePullToRefresh.types';
@@ -26,11 +27,6 @@ const mockUsePullToRefresh = vi.hoisted(() =>
     }),
   ),
 );
-
-vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
-}));
-
 vi.mock('@/hooks/useStreamPagination/useStreamPagination', () => ({
   useStreamPagination: vi.fn(),
 }));
@@ -88,6 +84,9 @@ vi.mock('@/organisms/Timeline/Posts/Posts', () => {
       postIds,
       loading,
       hasMore,
+      emptyState,
+      trailingSlot,
+      showEndMessage,
     }: {
       postIds: string[];
       loading: boolean;
@@ -96,11 +95,21 @@ vi.mock('@/organisms/Timeline/Posts/Posts', () => {
       hasMore: boolean;
       loadMore: () => void;
       tagsLayout: string;
+      emptyState?: ReactNode;
+      trailingSlot?: ReactNode;
+      showEndMessage?: boolean;
     }) => (
-      <div data-testid="timeline-posts">
+      <div
+        data-testid="timeline-posts"
+        data-post-ids={postIds.join(',')}
+        data-has-trailing-slot={trailingSlot ? 'true' : undefined}
+        data-show-end-message={showEndMessage === undefined ? undefined : String(showEndMessage)}
+      >
         <span data-testid="post-count">{postIds.length}</span>
         <span data-testid="loading">{loading.toString()}</span>
         <span data-testid="has-more">{hasMore.toString()}</span>
+        {postIds.length === 0 ? emptyState : null}
+        {trailingSlot}
       </div>
     ),
   };
@@ -132,6 +141,39 @@ vi.mock('@/organisms/Timeline/Posts/GridPosts/GridPosts', () => {
   };
 });
 
+vi.mock('@/organisms/Timeline/Feed/TimelineFeed/VisualTimelinePosts', () => {
+  return {
+    VisualTimelinePosts: ({
+      postIds,
+      showEndMessage,
+      emptyState,
+      trailingSlot,
+      hiddenItemsNotice,
+      showUnavailablePosts,
+    }: {
+      postIds: string[];
+      showEndMessage?: boolean;
+      emptyState?: ReactNode;
+      trailingSlot?: ReactNode;
+      hiddenItemsNotice?: ReactNode;
+      showUnavailablePosts?: boolean;
+    }) => (
+      <div
+        data-testid="visual-timeline-posts"
+        data-show-end-message={String(showEndMessage)}
+        data-has-trailing-slot={String(Boolean(trailingSlot))}
+        data-has-hidden-items-notice={String(Boolean(hiddenItemsNotice))}
+        data-show-unavailable-posts={String(Boolean(showUnavailablePosts))}
+      >
+        <span data-testid="visual-post-count">{postIds.length}</span>
+        {postIds.length === 0 ? emptyState : null}
+        {hiddenItemsNotice}
+        {trailingSlot}
+      </div>
+    ),
+  };
+});
+
 const COLLECTION_STREAM_ID = buildCollectionItemsStreamId('author-pubky', 'collection-post');
 
 const gridLayoutResolution: FeedLayoutResolution = {
@@ -149,6 +191,18 @@ const visualGridLayoutResolution: FeedLayoutResolution = {
   effectiveLayout: LAYOUT.VISUAL,
   isVisualRequested: true,
   isVisualActive: true,
+};
+
+const visualLayoutResolution: FeedLayoutResolution = {
+  ...visualGridLayoutResolution,
+  isGridActive: false,
+};
+
+const listLayoutResolution: FeedLayoutResolution = {
+  ...gridLayoutResolution,
+  requestedLayout: LAYOUT.LIST,
+  effectiveLayout: LAYOUT.LIST,
+  isGridActive: false,
 };
 
 const mockLoadMore = vi.fn();
@@ -175,6 +229,7 @@ const defaultPaginationResult = {
   prependPosts: mockPrependPosts,
   prependOptimisticPosts: mockPrependOptimisticPosts,
   removePosts: mockRemovePosts,
+  removePostsOptimistically: vi.fn(() => ({ commit: vi.fn(), rollback: vi.fn() })),
 };
 const mockUseStreamPagination = vi.mocked(useStreamPagination);
 const mockUseMutedUsers = vi.mocked(useMutedUsers);
@@ -224,6 +279,228 @@ describe('TimelineFeedContent', () => {
       );
       expect(screen.getByTestId('child')).toBeInTheDocument();
       expect(screen.getByTestId('timeline-posts')).toBeInTheDocument();
+    });
+
+    it('renders ordinary children before the persistent header and post list', () => {
+      render(
+        <TimelineFeedWithStream
+          streamId={PostStreamTypes.TIMELINE_ALL_ALL}
+          variant={TIMELINE_FEED_VARIANT.HOME}
+          tagsLayout="inline"
+          persistentHeader={<div data-testid="persistent-header">Tagged-as headline</div>}
+        >
+          <div data-testid="child">Post input</div>
+        </TimelineFeedWithStream>,
+      );
+
+      const child = screen.getByTestId('child');
+      const persistentHeader = screen.getByTestId('persistent-header');
+      const posts = screen.getByTestId('timeline-posts');
+
+      expect(child.compareDocumentPosition(persistentHeader) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(persistentHeader.compareDocumentPosition(posts) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('keeps the persistent header visible while hiding ordinary children in Visual layout', () => {
+      render(
+        <TimelineFeedWithStream
+          streamId={PostStreamTypes.TIMELINE_ALL_ALL}
+          variant={TIMELINE_FEED_VARIANT.HOME}
+          tagsLayout="inline"
+          layoutResolution={visualLayoutResolution}
+          persistentHeader={<div data-testid="persistent-header">Tagged-as headline</div>}
+        >
+          <div data-testid="child">Post input</div>
+        </TimelineFeedWithStream>,
+      );
+
+      expect(screen.queryByTestId('child')).not.toBeInTheDocument();
+      expect(screen.getByTestId('persistent-header')).toBeInTheDocument();
+      expect(screen.getByTestId('visual-timeline-posts')).toBeInTheDocument();
+    });
+  });
+
+  describe('collection full-membership loading', () => {
+    it('requests the Nexus max page size for the collection variant', () => {
+      render(
+        <TimelineFeedWithStream
+          streamId={COLLECTION_STREAM_ID}
+          variant={TIMELINE_FEED_VARIANT.COLLECTION}
+          tagsLayout="inline"
+          collectionId="author-pubky:collection-post"
+        />,
+      );
+
+      expect(mockUseStreamPagination).toHaveBeenCalledWith({
+        streamId: COLLECTION_STREAM_ID,
+        limit: NEXUS_STREAM_MAX_LIMIT,
+      });
+    });
+
+    it('eagerly loads the next page while the collection stream has more', () => {
+      mockUseStreamPagination.mockReturnValue({ ...defaultPaginationResult, hasMore: true });
+
+      render(
+        <TimelineFeedWithStream
+          streamId={COLLECTION_STREAM_ID}
+          variant={TIMELINE_FEED_VARIANT.COLLECTION}
+          tagsLayout="inline"
+          collectionId="author-pubky:collection-post"
+        />,
+      );
+
+      expect(mockLoadMore).toHaveBeenCalled();
+    });
+
+    it('stops eager loading once the collection stream reaches its end', () => {
+      mockUseStreamPagination.mockReturnValue({ ...defaultPaginationResult, hasMore: false });
+
+      render(
+        <TimelineFeedWithStream
+          streamId={COLLECTION_STREAM_ID}
+          variant={TIMELINE_FEED_VARIANT.COLLECTION}
+          tagsLayout="inline"
+          collectionId="author-pubky:collection-post"
+        />,
+      );
+
+      expect(mockLoadMore).not.toHaveBeenCalled();
+    });
+
+    it('does not eager-load while the initial page or a next page is still in flight', () => {
+      mockUseStreamPagination.mockReturnValue({ ...defaultPaginationResult, loading: true, hasMore: true });
+      const { unmount } = render(
+        <TimelineFeedWithStream
+          streamId={COLLECTION_STREAM_ID}
+          variant={TIMELINE_FEED_VARIANT.COLLECTION}
+          tagsLayout="inline"
+          collectionId="author-pubky:collection-post"
+        />,
+      );
+      expect(mockLoadMore).not.toHaveBeenCalled();
+      unmount();
+
+      mockUseStreamPagination.mockReturnValue({ ...defaultPaginationResult, loadingMore: true, hasMore: true });
+      render(
+        <TimelineFeedWithStream
+          streamId={COLLECTION_STREAM_ID}
+          variant={TIMELINE_FEED_VARIANT.COLLECTION}
+          tagsLayout="inline"
+          collectionId="author-pubky:collection-post"
+        />,
+      );
+      expect(mockLoadMore).not.toHaveBeenCalled();
+    });
+
+    it('caps eager loading as a defensive bound against a misreported stream end', () => {
+      // Simulate completed rounds by toggling loadingMore across rerenders while
+      // the (mocked) stream keeps claiming more pages exist.
+      const renderFeed = () => (
+        <TimelineFeedWithStream
+          streamId={COLLECTION_STREAM_ID}
+          variant={TIMELINE_FEED_VARIANT.COLLECTION}
+          tagsLayout="inline"
+          collectionId="author-pubky:collection-post"
+        />
+      );
+      mockUseStreamPagination.mockReturnValue({ ...defaultPaginationResult, hasMore: true });
+      const { rerender } = render(renderFeed());
+
+      for (let round = 0; round < 6; round++) {
+        mockUseStreamPagination.mockReturnValue({ ...defaultPaginationResult, hasMore: true, loadingMore: true });
+        rerender(renderFeed());
+        mockUseStreamPagination.mockReturnValue({ ...defaultPaginationResult, hasMore: true, loadingMore: false });
+        rerender(renderFeed());
+      }
+
+      // ceil(COLLECTION_ITEMS_MAX_COUNT / NEXUS_STREAM_MAX_LIMIT) + 1 = 3.
+      expect(mockLoadMore).toHaveBeenCalledTimes(3);
+    });
+
+    it('resets the eager-load budget when the stream restarts from an initial load', () => {
+      const renderFeed = () => (
+        <TimelineFeedWithStream
+          streamId={COLLECTION_STREAM_ID}
+          variant={TIMELINE_FEED_VARIANT.COLLECTION}
+          tagsLayout="inline"
+          collectionId="author-pubky:collection-post"
+        />
+      );
+      mockUseStreamPagination.mockReturnValue({ ...defaultPaginationResult, hasMore: true });
+      const { rerender } = render(renderFeed());
+
+      for (let round = 0; round < 6; round++) {
+        mockUseStreamPagination.mockReturnValue({ ...defaultPaginationResult, hasMore: true, loadingMore: true });
+        rerender(renderFeed());
+        mockUseStreamPagination.mockReturnValue({ ...defaultPaginationResult, hasMore: true, loadingMore: false });
+        rerender(renderFeed());
+      }
+      expect(mockLoadMore).toHaveBeenCalledTimes(3);
+
+      // A refresh (pull-to-refresh / unmute) restarts the stream with an
+      // initial `loading` phase, which must re-arm the eager budget.
+      mockUseStreamPagination.mockReturnValue({ ...defaultPaginationResult, hasMore: true, loading: true });
+      rerender(renderFeed());
+      mockUseStreamPagination.mockReturnValue({ ...defaultPaginationResult, hasMore: true, loading: false });
+      rerender(renderFeed());
+
+      expect(mockLoadMore).toHaveBeenCalledTimes(4);
+    });
+
+    it('keeps lazy pagination and the default page size for non-collection variants', () => {
+      mockUseStreamPagination.mockReturnValue({ ...defaultPaginationResult, hasMore: true });
+
+      render(
+        <TimelineFeedWithStream
+          streamId={PostStreamTypes.TIMELINE_ALL_ALL}
+          variant={TIMELINE_FEED_VARIANT.HOME}
+          tagsLayout="inline"
+        />,
+      );
+
+      expect(mockUseStreamPagination).toHaveBeenCalledWith({ streamId: PostStreamTypes.TIMELINE_ALL_ALL });
+      expect(mockLoadMore).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('transformPostIds', () => {
+    it('applies the transform to the deduped stream ids before rendering', () => {
+      mockUseStreamPagination.mockReturnValue({
+        ...defaultPaginationResult,
+        postIds: ['post1', 'post2', 'post1', 'post3'],
+      });
+      const transformPostIds = vi.fn((postIds: string[]) => [...postIds].reverse());
+
+      render(
+        <TimelineFeedWithStream
+          streamId={COLLECTION_STREAM_ID}
+          variant={TIMELINE_FEED_VARIANT.COLLECTION}
+          tagsLayout="inline"
+          collectionId="author-pubky:collection-post"
+          transformPostIds={transformPostIds}
+        />,
+      );
+
+      expect(transformPostIds).toHaveBeenCalledWith(['post1', 'post2', 'post3']);
+      expect(screen.getByTestId('timeline-posts')).toHaveAttribute('data-post-ids', 'post3,post2,post1');
+    });
+
+    it('renders the deduped ids as-is when no transform is provided', () => {
+      mockUseStreamPagination.mockReturnValue({
+        ...defaultPaginationResult,
+        postIds: ['post1', 'post2', 'post1'],
+      });
+
+      render(
+        <TimelineFeedWithStream
+          streamId={COLLECTION_STREAM_ID}
+          variant={TIMELINE_FEED_VARIANT.COLLECTION}
+          tagsLayout="inline"
+          collectionId="author-pubky:collection-post"
+        />,
+      );
+
+      expect(screen.getByTestId('timeline-posts')).toHaveAttribute('data-post-ids', 'post1,post2');
     });
   });
 
@@ -624,6 +901,27 @@ describe('Grid layout variants (decisions D5/D7)', () => {
     expect(screen.getByTestId('grid-post-count')).toHaveTextContent('3');
   });
 
+  it('renders ordinary children and the persistent header before the grid', () => {
+    render(
+      <TimelineFeedWithStream
+        streamId={COLLECTION_STREAM_ID}
+        variant={TIMELINE_FEED_VARIANT.HOME}
+        tagsLayout="inline"
+        layoutResolution={gridLayoutResolution}
+        persistentHeader={<div data-testid="persistent-header">Tagged-as headline</div>}
+      >
+        <div data-testid="child">Post input</div>
+      </TimelineFeedWithStream>,
+    );
+
+    const child = screen.getByTestId('child');
+    const persistentHeader = screen.getByTestId('persistent-header');
+    const grid = screen.getByTestId('timeline-grid-posts');
+
+    expect(child.compareDocumentPosition(persistentHeader) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(persistentHeader.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('suppresses the end-of-feed message for the collection grid', () => {
     render(
       <TimelineFeedWithStream
@@ -655,19 +953,42 @@ describe('Grid layout variants (decisions D5/D7)', () => {
     expect(screen.getByTestId('custom-empty')).toBeInTheDocument();
   });
 
-  it('forwards gridTrailingSlot to the grid renderer', () => {
+  it('forwards trailingSlot to the grid renderer', () => {
     render(
       <TimelineFeedWithStream
         streamId={COLLECTION_STREAM_ID}
         variant={TIMELINE_FEED_VARIANT.COLLECTION}
         tagsLayout="inline"
         layoutResolution={gridLayoutResolution}
-        gridTrailingSlot={<div data-testid="grid-trailing-slot">Add content</div>}
+        trailingSlot={<div data-testid="grid-trailing-slot">Add content</div>}
       />,
     );
 
     expect(screen.getByTestId('timeline-grid-posts')).toHaveAttribute('data-has-trailing-slot', 'true');
     expect(screen.getByTestId('grid-trailing-slot')).toBeInTheDocument();
+  });
+
+  it('forwards the custom empty state and trailing slot to the List renderer', () => {
+    mockUseStreamPagination.mockReturnValue({
+      ...defaultPaginationResult,
+      postIds: [],
+    });
+
+    render(
+      <TimelineFeedWithStream
+        streamId={COLLECTION_STREAM_ID}
+        variant={TIMELINE_FEED_VARIANT.COLLECTION}
+        tagsLayout="list"
+        layoutResolution={listLayoutResolution}
+        emptyState={<div data-testid="custom-list-empty">Collection is empty</div>}
+        trailingSlot={<div data-testid="list-trailing-slot">Add content</div>}
+      />,
+    );
+
+    expect(screen.getByTestId('custom-list-empty')).toBeInTheDocument();
+    expect(screen.getByTestId('timeline-posts')).toHaveAttribute('data-has-trailing-slot', 'true');
+    expect(screen.getByTestId('timeline-posts')).toHaveAttribute('data-show-end-message', 'false');
+    expect(screen.getByTestId('list-trailing-slot')).toBeInTheDocument();
   });
 
   it('renders the bookmarks variant in the grid and suppresses the end-of-feed message', () => {
@@ -791,6 +1112,101 @@ describe('Grid layout variants (decisions D5/D7)', () => {
   });
 });
 
+describe('Visual layout variants', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseStreamPagination.mockReturnValue(defaultPaginationResult);
+    mockUseMutedUsers.mockReturnValue(defaultMutedUsersResult);
+    mockUsePullToRefresh.mockReturnValue({ state: 'idle' as const, pullDistance: 0 });
+  });
+
+  it('keeps the collection hero visible when the Visual mosaic is active', () => {
+    render(
+      <TimelineFeedWithStream
+        streamId={COLLECTION_STREAM_ID}
+        variant={TIMELINE_FEED_VARIANT.COLLECTION}
+        tagsLayout="inline"
+        layoutResolution={visualLayoutResolution}
+      >
+        <div data-testid="collection-hero">Collection hero</div>
+      </TimelineFeedWithStream>,
+    );
+
+    expect(screen.getByTestId('collection-hero')).toBeInTheDocument();
+    expect(screen.getByTestId('visual-timeline-posts')).toBeInTheDocument();
+    expect(screen.queryByTestId('timeline-posts')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('timeline-grid-posts')).not.toBeInTheDocument();
+  });
+
+  it('hides header children for the home variant when the Visual mosaic is active', () => {
+    render(
+      <TimelineFeedWithStream
+        streamId={PostStreamTypes.TIMELINE_ALL_ALL}
+        variant={TIMELINE_FEED_VARIANT.HOME}
+        tagsLayout="inline"
+        layoutResolution={visualLayoutResolution}
+      >
+        <div data-testid="home-header">Filter bar</div>
+      </TimelineFeedWithStream>,
+    );
+
+    expect(screen.queryByTestId('home-header')).not.toBeInTheDocument();
+    expect(screen.getByTestId('visual-timeline-posts')).toBeInTheDocument();
+  });
+
+  it('forwards the empty state, trailing slot, hidden-items notice, and end-message suppression to the visual renderer', () => {
+    mockUseStreamPagination.mockReturnValue({
+      ...defaultPaginationResult,
+      postIds: [],
+    });
+
+    render(
+      <TimelineFeedWithStream
+        streamId={COLLECTION_STREAM_ID}
+        variant={TIMELINE_FEED_VARIANT.COLLECTION}
+        tagsLayout="inline"
+        layoutResolution={visualLayoutResolution}
+        emptyState={<div data-testid="custom-visual-empty">Collection is empty</div>}
+        trailingSlot={<div data-testid="visual-trailing-slot">Add content</div>}
+        visualHiddenItemsNotice={<div data-testid="visual-hidden-items-notice">Some items are hidden</div>}
+      />,
+    );
+
+    const visualPosts = screen.getByTestId('visual-timeline-posts');
+    expect(visualPosts).toHaveAttribute('data-show-end-message', 'false');
+    expect(visualPosts).toHaveAttribute('data-has-trailing-slot', 'true');
+    expect(visualPosts).toHaveAttribute('data-has-hidden-items-notice', 'true');
+    expect(screen.getByTestId('custom-visual-empty')).toBeInTheDocument();
+    expect(screen.getByTestId('visual-trailing-slot')).toBeInTheDocument();
+    expect(screen.getByTestId('visual-hidden-items-notice')).toBeInTheDocument();
+  });
+
+  it('enables unavailable-post placeholders only for the collection variant', () => {
+    const { unmount } = render(
+      <TimelineFeedWithStream
+        streamId={COLLECTION_STREAM_ID}
+        variant={TIMELINE_FEED_VARIANT.COLLECTION}
+        tagsLayout="inline"
+        layoutResolution={visualLayoutResolution}
+      />,
+    );
+
+    expect(screen.getByTestId('visual-timeline-posts')).toHaveAttribute('data-show-unavailable-posts', 'true');
+    unmount();
+
+    render(
+      <TimelineFeedWithStream
+        streamId={PostStreamTypes.TIMELINE_ALL_ALL}
+        variant={TIMELINE_FEED_VARIANT.HOME}
+        tagsLayout="inline"
+        layoutResolution={visualLayoutResolution}
+      />,
+    );
+
+    expect(screen.getByTestId('visual-timeline-posts')).toHaveAttribute('data-show-unavailable-posts', 'false');
+  });
+});
+
 describe('TimelineFeedContent - Snapshots', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -825,6 +1241,21 @@ describe('TimelineFeedContent - Snapshots', () => {
         tagsLayout="inline"
       >
         <div>Filter bar</div>
+      </TimelineFeedWithStream>,
+    );
+    expect(container).toMatchSnapshot();
+  });
+
+  it('matches snapshot for the collection visual layout', () => {
+    const { container } = render(
+      <TimelineFeedWithStream
+        streamId={COLLECTION_STREAM_ID}
+        variant={TIMELINE_FEED_VARIANT.COLLECTION}
+        tagsLayout="inline"
+        layoutResolution={visualLayoutResolution}
+        visualHiddenItemsNotice={<div>Some items are hidden</div>}
+      >
+        <div>Collection hero</div>
       </TimelineFeedWithStream>,
     );
     expect(container).toMatchSnapshot();

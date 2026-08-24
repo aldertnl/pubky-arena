@@ -12,14 +12,14 @@ import type { PostBodyProps } from './PostBody.types';
  * normal-post and lock-teaser paths never drift apart. Used by `PostContentBase`
  * for both normal posts (→ `content`) and the lock teaser (→ `teaser_description`).
  */
-export function PostBody({ content, attachments, localAttachments, textClassName, expandInPlace }: PostBodyProps) {
+export function PostBody({ content, attachments, localAttachments, textClassName, mediaVariant }: PostBodyProps) {
   const hasContent = content.trim().length > 0;
 
   return (
     <>
-      {hasContent && <PostText content={content} className={textClassName} expandInPlace={expandInPlace} />}
+      {hasContent && <PostText content={content} className={textClassName} />}
       {hasContent && <PostLinkEmbeds content={content} />}
-      <PostAttachments attachments={attachments} localAttachments={localAttachments} />
+      <PostAttachments attachments={attachments} localAttachments={localAttachments} {...(mediaVariant ? { mediaVariant } : {})} />
     </>
   );
 }

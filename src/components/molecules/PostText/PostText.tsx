@@ -34,21 +34,15 @@ import {
  * - Hashtag parsing (#tag → clickable search link)
  * - Mention parsing (pk:... or pubky... → clickable profile link)
  * - URL detection and linking
- * - Content truncation with "Show more" on non-post pages
+ * - Content truncation with in-place "Show more" on non-post pages
  *
  * Memoization prevents unnecessary re-renders when TTL refreshes update IndexedDB records
  * without changes to the actual post content.
  */
-export const PostText = memo(function PostText({
-  content,
-  isArticle,
-  expandInPlace,
-  onLinkClick,
-  className,
-}: PostTextProps) {
+export const PostText = memo(function PostText({ content, isArticle, onLinkClick, className }: PostTextProps) {
   const pathname = usePathname();
-  const [isExpanded, setIsExpanded] = useState(false);
   const onPostPage = pathname.startsWith(POST_ROUTES.POST);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const contentTruncated = !isArticle && !onPostPage && !isExpanded ? truncatePostPreviewText(content) : null;
   const showMoreButton = Boolean(contentTruncated);
@@ -210,22 +204,16 @@ export const PostText = memo(function PostText({
         {contentTruncated || content}
       </Markdown>
 
-      {/* Without `expandInPlace`, no stopPropagation here: the click reaches the parent, which
-          navigates to the post page. */}
       {showMoreButton && (
         <Button
           overrideDefaults
+          type="button"
           aria-label="Show full post content"
-          data-allow-post-navigation
-          onClick={
-            expandInPlace
-              ? (event) => {
-                  event.stopPropagation();
-                  setIsExpanded(true);
-                }
-              : undefined
-          }
           className="mt-4 cursor-pointer text-brand transition-colors hover:text-brand/80"
+          onClick={(event) => {
+            event.stopPropagation();
+            setIsExpanded(true);
+          }}
         >
           Show more
         </Button>

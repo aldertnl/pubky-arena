@@ -11,9 +11,9 @@ import { NotificationCoordinator } from '@/coordinators/notifications/notificati
 import { StreamCoordinator } from '@/coordinators/streams/stream';
 import { TtlCoordinator } from '@/coordinators/ttl/ttl';
 import { clearDatabase } from '@/database/franky/franky.helpers';
-import * as i18nUtils from '@/i18n/utils';
 import { AppError } from '@/libs/error/error';
-import { ServerErrorCode } from '@/libs/error/error.codes';
+import { AuthErrorCode, ServerErrorCode } from '@/libs/error/error.codes';
+import { Err } from '@/libs/error/error.factories';
 import { ErrorCategory, ErrorService } from '@/libs/error/error.types';
 import { Identity } from '@/libs/identity/identity';
 import { Logger } from '@/libs/logger/logger';
@@ -75,7 +75,6 @@ const createMockSettingsState = (overrides?: Partial<SettingsState>): SettingsSt
   notifications: defaultNotificationPreferences,
   privacy: defaultPrivacyPreferences,
   muted: [],
-  language: 'en',
   updatedAt: 0,
   version: 1,
   ...overrides,
@@ -158,7 +157,6 @@ const storeMocks = vi.hoisted(() => {
   const initAuthStore = vi.fn();
   const setAuthUrlResolved = vi.fn();
   const setProfileChecked = vi.fn();
-  const setSignInError = vi.fn();
   const resetMigrationStore = vi.fn();
 
   // Factories are kept as separate constants so they can be reapplied in
@@ -184,13 +182,11 @@ const storeMocks = vi.hoisted(() => {
     reset: resetSignInStore,
     setAuthUrlResolved,
     setProfileChecked,
-    setError: setSignInError,
     authUrlResolved: false,
     profileChecked: false,
     bootstrapFetched: false,
     dataPersisted: false,
     homeserverSynced: false,
-    error: null,
   });
   const localFilesStateFactory = () => ({ reset: resetLocalFilesStore });
   const homeStateFactory = () => ({ reset: resetHomeStore });
@@ -212,7 +208,6 @@ const storeMocks = vi.hoisted(() => {
     initAuthStore,
     setAuthUrlResolved,
     setProfileChecked,
-    setSignInError,
     resetMigrationStore,
     authStateFactory,
     onboardingStateFactory,
@@ -316,10 +311,16 @@ vi.mock('@/libs/env/env', async (importOriginal) => {
   };
 });
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('AuthController', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockClearDatabase.mockReset();
+    // Default: homeserver environment check passes (non-staging test config / allowed key)
+    vi.spyOn(AuthApplication, 'assertUserHomeserverAllowed').mockResolvedValue(undefined);
     // Re-apply factory implementations: vi.restoreAllMocks() in afterEach can
     // clear vi.fn implementations whenever a property has been spied on, which
     // would leave subsequent tests with empty mocks returning undefined.
@@ -339,10 +340,6 @@ describe('AuthController', () => {
         wasDbReset: false,
       }),
     );
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   describe('bootstrapWithDelay', () => {
@@ -405,7 +402,6 @@ describe('AuthController', () => {
       };
       const remoteSettings = createMockSettingsState({
         notifications: remoteNotificationPrefs,
-        language: 'fr',
       });
       const remoteAllowedTypes = [NotificationType.Reply, NotificationType.Mention];
 
@@ -419,7 +415,6 @@ describe('AuthController', () => {
       await spyOnSleep();
 
       const loadFromHomeserverSpy = vi.fn();
-      const setLocaleCookieSpy = vi.spyOn(i18nUtils, 'setLocaleCookie').mockImplementation(() => {});
       const settingsStoreState = mockSettingsStore({ loadFromHomeserver: loadFromHomeserverSpy });
       vi.spyOn(useSettingsStore, 'getState').mockReturnValue(settingsStoreState);
 
@@ -436,9 +431,8 @@ describe('AuthController', () => {
       expect(NotificationNormalizer.toEnabledTypes).toHaveBeenCalledWith(remoteNotificationPrefs);
       // Bootstrap should use remote-derived allowedTypes
       expect(initializeSpy.mock.calls[0][0]).toEqual(expect.objectContaining({ allowedTypes: remoteAllowedTypes }));
-      // Remote settings should be applied to the store and locale cookie
+      // Remote settings should be applied to the store
       expect(loadFromHomeserverSpy).toHaveBeenCalledWith(remoteSettings);
-      expect(setLocaleCookieSpy).toHaveBeenCalledWith('fr');
     });
 
     it('should complete bootstrap when settings sync fails with AppError', async () => {
@@ -457,7 +451,6 @@ describe('AuthController', () => {
       const notification: NotificationState = { unread: 0, lastRead: 0, lastPolledTimestamp: undefined };
       const initializeSpy = vi.spyOn(BootstrapApplication, 'initialize').mockResolvedValue(notification);
       await spyOnSleep();
-      const setLocaleCookieSpy = vi.spyOn(i18nUtils, 'setLocaleCookie').mockImplementation(() => {});
 
       const loadFromHomeserverSpy = vi.fn();
       const settingsStoreState = mockSettingsStore({ loadFromHomeserver: loadFromHomeserverSpy });
@@ -478,7 +471,6 @@ describe('AuthController', () => {
       expect(authStoreState.setHasProfile).toHaveBeenCalledWith(true);
       // Remote settings should NOT be applied (sync failed, fell back to local)
       expect(loadFromHomeserverSpy).not.toHaveBeenCalled();
-      expect(setLocaleCookieSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -500,6 +492,7 @@ describe('AuthController', () => {
       const z32FromSessionSpy = vi.spyOn(Identity, 'z32FromSession').mockReturnValue(mockPubky);
       const clearDatabaseSpy = mockClearDatabase.mockResolvedValue(undefined);
       const clearAllQueryClientsSpy = await spyOnClearAllQueryClients();
+      const cancelModerationFollowSpy = vi.spyOn(BootstrapApplication, 'cancelModerationFollow');
 
       const authStore = storeMocks.getAuthState();
       vi.spyOn(useAuthStore, 'getState').mockReturnValue(mockAuthStore(authStore));
@@ -508,6 +501,9 @@ describe('AuthController', () => {
 
       expect(clearAllQueryClientsSpy).toHaveBeenCalled();
       expect(clearDatabaseSpy).toHaveBeenCalled();
+      expect(cancelModerationFollowSpy.mock.invocationCallOrder[0]).toBeLessThan(
+        clearDatabaseSpy.mock.invocationCallOrder[0]!,
+      );
       // Skip post-migration resync — new user has no homeserver data to resync
       expect(storeMocks.resetMigrationStore).toHaveBeenCalled();
       expect(keypairFromSecretKeySpy).toHaveBeenCalledWith(TEST_SECRET_KEY);
@@ -532,10 +528,14 @@ describe('AuthController', () => {
       const keypairFromSecretKeySpy = vi.spyOn(Identity, 'keypairFromSecretKey').mockReturnValue(keypair);
       const clearDatabaseSpy = mockClearDatabase.mockResolvedValue(undefined);
       const clearAllQueryClientsSpy = await spyOnClearAllQueryClients();
+      const cancelModerationFollowSpy = vi.spyOn(BootstrapApplication, 'cancelModerationFollow');
 
       await expect(AuthController.signUp({ secretKey: TEST_SECRET_KEY, signupToken })).rejects.toThrow('Signup failed');
       expect(clearAllQueryClientsSpy).toHaveBeenCalled();
       expect(clearDatabaseSpy).toHaveBeenCalled();
+      expect(cancelModerationFollowSpy.mock.invocationCallOrder[0]).toBeLessThan(
+        clearDatabaseSpy.mock.invocationCallOrder[0]!,
+      );
       expect(keypairFromSecretKeySpy).toHaveBeenCalledWith(TEST_SECRET_KEY);
       expect(signUpSpy).toHaveBeenCalledWith({
         keypair,
@@ -569,6 +569,7 @@ describe('AuthController', () => {
       const initializeSpy = vi.spyOn(BootstrapApplication, 'initialize').mockResolvedValue(mockNotification);
       const clearDatabaseSpy = mockClearDatabase.mockResolvedValue(undefined);
       const clearAllQueryClientsSpy = await spyOnClearAllQueryClients();
+      const cancelModerationFollowSpy = vi.spyOn(BootstrapApplication, 'cancelModerationFollow');
 
       const _authStore = setupAuthAndNotificationStores();
 
@@ -576,6 +577,9 @@ describe('AuthController', () => {
 
       expect(clearAllQueryClientsSpy).toHaveBeenCalled();
       expect(clearDatabaseSpy).toHaveBeenCalled();
+      expect(cancelModerationFollowSpy.mock.invocationCallOrder[0]).toBeLessThan(
+        clearDatabaseSpy.mock.invocationCallOrder[0]!,
+      );
       // Skip post-migration resync — bootstrap runs if user has profile, otherwise no data to resync
       expect(storeMocks.resetMigrationStore).toHaveBeenCalled();
       expect(keypairSpy).toHaveBeenCalledWith(mnemonic);
@@ -817,10 +821,14 @@ describe('AuthController', () => {
       };
       const generateAuthUrlSpy = vi.spyOn(AuthApplication, 'generateAuthUrl').mockResolvedValue(mockAuthUrl);
       const clearDatabaseSpy = mockClearDatabase.mockResolvedValue(undefined);
+      const cancelModerationFollowSpy = vi.spyOn(BootstrapApplication, 'cancelModerationFollow');
 
       const result = await AuthController.getAuthUrl();
 
       expect(clearDatabaseSpy).toHaveBeenCalled();
+      expect(cancelModerationFollowSpy.mock.invocationCallOrder[0]).toBeLessThan(
+        clearDatabaseSpy.mock.invocationCallOrder[0]!,
+      );
       // Skip post-migration resync — full bootstrap below covers all data
       expect(storeMocks.resetMigrationStore).toHaveBeenCalled();
       expect(result.authorizationUrl).toEqual(mockAuthUrl.authorizationUrl);
@@ -1004,6 +1012,7 @@ describe('AuthController', () => {
       const clearCookiesSpy = await spyOnClearCookies();
       await spyOnClearAllQueryClients();
       const resetSpy = vi.spyOn(PubkySpecsSingleton, 'reset');
+      const cancelModerationFollowSpy = vi.spyOn(BootstrapApplication, 'cancelModerationFollow');
       const homeStore = storeMocks.getHomeState();
       const searchStore = storeMocks.getSearchState();
       const notificationStore = storeMocks.getNotificationState();
@@ -1027,6 +1036,83 @@ describe('AuthController', () => {
       expect(settingsStore.reset).toHaveBeenCalled();
       expect(clearCookiesSpy).toHaveBeenCalled();
       expect(clearDatabaseSpy).toHaveBeenCalled();
+      expect(cancelModerationFollowSpy.mock.invocationCallOrder[0]).toBeLessThan(
+        clearDatabaseSpy.mock.invocationCallOrder[0]!,
+      );
+    });
+
+    it('should cleanup then rethrow when restore throws wrong-environment homeserver error', async () => {
+      const authStore = mockAuthStore({
+        ...storeMocks.getAuthState(),
+        hasHydrated: true,
+        session: null,
+        sessionExport: 'session-export',
+        isRestoringSession: false,
+        setIsRestoringSession: vi.fn(),
+        init: vi.fn(),
+      });
+
+      vi.spyOn(useAuthStore, 'getState').mockReturnValue(authStore);
+      vi.spyOn(AuthApplication, 'restorePersistedSession').mockRejectedValue(
+        Err.auth(AuthErrorCode.WRONG_ENVIRONMENT_HOMESERVER, 'wrong env', {
+          service: ErrorService.Homeserver,
+          operation: 'assertUserHomeserverAllowed',
+        }),
+      );
+      mockClearDatabase.mockResolvedValue(undefined);
+      await spyOnClearCookies();
+      await spyOnClearAllQueryClients();
+      const homeStore = storeMocks.getHomeState();
+      const searchStore = storeMocks.getSearchState();
+      const notificationStore = storeMocks.getNotificationState();
+      const settingsStore = storeMocks.getSettingsState();
+      vi.spyOn(useHomeStore, 'getState').mockReturnValue(mockHomeStore(homeStore));
+      vi.spyOn(useSearchStore, 'getState').mockReturnValue(mockSearchStore(searchStore));
+      vi.spyOn(useNotificationStore, 'getState').mockReturnValue(mockNotificationStore(notificationStore));
+      vi.spyOn(useSettingsStore, 'getState').mockReturnValue(mockSettingsStore(settingsStore));
+
+      await expect(AuthController.restorePersistedSession()).rejects.toMatchObject({
+        code: AuthErrorCode.WRONG_ENVIRONMENT_HOMESERVER,
+      });
+
+      expect(authStore.init).not.toHaveBeenCalled();
+      expect(authStore.reset).toHaveBeenCalled();
+    });
+
+    it('should normalize an unknown restore error before cleanup', async () => {
+      const authStore = mockAuthStore({
+        ...storeMocks.getAuthState(),
+        hasHydrated: true,
+        session: null,
+        sessionExport: 'session-export',
+        isRestoringSession: false,
+        setIsRestoringSession: vi.fn(),
+        init: vi.fn(),
+      });
+      const loggerErrorSpy = vi.spyOn(Logger, 'error');
+
+      vi.spyOn(useAuthStore, 'getState').mockReturnValue(authStore);
+      vi.spyOn(AuthApplication, 'restorePersistedSession').mockRejectedValue(new Error('unexpected restore failure'));
+      mockClearDatabase.mockResolvedValue(undefined);
+      await spyOnClearCookies();
+      await spyOnClearAllQueryClients();
+      const homeStore = storeMocks.getHomeState();
+      const searchStore = storeMocks.getSearchState();
+      const notificationStore = storeMocks.getNotificationState();
+      const settingsStore = storeMocks.getSettingsState();
+      vi.spyOn(useHomeStore, 'getState').mockReturnValue(mockHomeStore(homeStore));
+      vi.spyOn(useSearchStore, 'getState').mockReturnValue(mockSearchStore(searchStore));
+      vi.spyOn(useNotificationStore, 'getState').mockReturnValue(mockNotificationStore(notificationStore));
+      vi.spyOn(useSettingsStore, 'getState').mockReturnValue(mockSettingsStore(settingsStore));
+
+      await expect(AuthController.restorePersistedSession()).resolves.toBe(false);
+
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        `[${ErrorService.Local}:restorePersistedSession]`,
+        'unexpected restore failure',
+        undefined,
+      );
+      expect(authStore.reset).toHaveBeenCalled();
     });
   });
 
@@ -1128,7 +1214,7 @@ describe('AuthController', () => {
 
     it('should use remote settings for allowedTypes and apply them to store when initializeSettings returns non-null', async () => {
       // Goal: prove that, during session initialization, fresher remote settings
-      // drive allowedTypes computation and are applied to settings state/cookie.
+      // drive allowedTypes computation and are applied to settings state.
       const mockSession = buildMockSession();
       const mockPubky = TEST_PUBKY as Pubky;
       const remoteNotificationPrefs: NotificationPreferences = {
@@ -1144,7 +1230,6 @@ describe('AuthController', () => {
       };
       const remoteSettings = createMockSettingsState({
         notifications: remoteNotificationPrefs,
-        language: 'fr',
       });
       const remoteAllowedTypes = [NotificationType.Reply, NotificationType.Mention];
       const notification: NotificationState = { unread: 3, lastRead: 789, lastPolledTimestamp: 0 };
@@ -1157,7 +1242,6 @@ describe('AuthController', () => {
       const initializeSpy = vi.spyOn(BootstrapApplication, 'initialize').mockResolvedValue(notification);
 
       const loadFromHomeserverSpy = vi.fn();
-      const setLocaleCookieSpy = vi.spyOn(i18nUtils, 'setLocaleCookie').mockImplementation(() => {});
       vi.spyOn(useSettingsStore, 'getState').mockReturnValue(
         mockSettingsStore({ loadFromHomeserver: loadFromHomeserverSpy }),
       );
@@ -1173,9 +1257,8 @@ describe('AuthController', () => {
       expect(NotificationNormalizer.toEnabledTypes).toHaveBeenCalledWith(remoteNotificationPrefs);
       // Bootstrap should use remote-derived allowedTypes
       expect(initializeSpy.mock.calls[0][0]).toEqual(expect.objectContaining({ allowedTypes: remoteAllowedTypes }));
-      // Remote settings applied to store and locale cookie
+      // Remote settings applied to store
       expect(loadFromHomeserverSpy).toHaveBeenCalledWith(remoteSettings);
-      expect(setLocaleCookieSpy).toHaveBeenCalledWith('fr');
     });
 
     it('should complete bootstrap when settings sync fails with AppError', async () => {
@@ -1200,7 +1283,6 @@ describe('AuthController', () => {
 
       const notification: NotificationState = { unread: 0, lastRead: 0, lastPolledTimestamp: 0 };
       const initializeSpy = vi.spyOn(BootstrapApplication, 'initialize').mockResolvedValue(notification);
-      const setLocaleCookieSpy = vi.spyOn(i18nUtils, 'setLocaleCookie').mockImplementation(() => {});
 
       const loadFromHomeserverSpy = vi.fn();
       vi.spyOn(useSettingsStore, 'getState').mockReturnValue(
@@ -1221,9 +1303,59 @@ describe('AuthController', () => {
       expect(NotificationNormalizer.toEnabledTypes).toHaveBeenCalledWith(localSettings.notifications);
       // Remote settings should NOT be applied
       expect(loadFromHomeserverSpy).not.toHaveBeenCalled();
-      expect(setLocaleCookieSpy).not.toHaveBeenCalled();
       // Session flow completes normally
       expect(authStore.setHasProfile).toHaveBeenCalledWith(true);
+    });
+
+    it('should sign the session out and rethrow when homeserver environment check fails', async () => {
+      const mockSession = buildMockSession();
+      const wrongEnvError = Err.auth(AuthErrorCode.WRONG_ENVIRONMENT_HOMESERVER, 'wrong env', {
+        service: ErrorService.Homeserver,
+        operation: 'assertUserHomeserverAllowed',
+      });
+
+      vi.spyOn(Identity, 'z32FromSession').mockReturnValue(TEST_PUBKY as Pubky);
+      vi.spyOn(AuthApplication, 'assertUserHomeserverAllowed').mockRejectedValue(wrongEnvError);
+      const logoutSpy = vi.spyOn(AuthApplication, 'logout').mockResolvedValue(undefined);
+      const userIsSignedUpSpy = vi.spyOn(AuthApplication, 'userIsSignedUp');
+
+      const authStore = storeMocks.getAuthState();
+      const signInStore = storeMocks.getSignInState();
+      vi.spyOn(useAuthStore, 'getState').mockReturnValue(mockAuthStore(authStore));
+      vi.spyOn(useSignInStore, 'getState').mockReturnValue(mockSignInStore(signInStore));
+
+      await expect(AuthController.initializeAuthenticatedSession({ session: mockSession })).rejects.toMatchObject({
+        code: AuthErrorCode.WRONG_ENVIRONMENT_HOMESERVER,
+      });
+
+      expect(userIsSignedUpSpy).not.toHaveBeenCalled();
+      // The Ring-approved session lives on the user's actual homeserver — it
+      // must be signed out, not left dangling after the rejection.
+      expect(logoutSpy).toHaveBeenCalledWith({ session: mockSession });
+      // The guard runs before any store mutation, so there is nothing to reset.
+      expect(authStore.init).not.toHaveBeenCalled();
+      expect(authStore.reset).not.toHaveBeenCalled();
+      expect(signInStore.reset).not.toHaveBeenCalled();
+    });
+
+    it('should sign the session out when the environment check fails transiently', async () => {
+      // A failed PKARR lookup (not a wrong-env rejection) must not leave the
+      // just-approved session dangling on its homeserver either.
+      const mockSession = buildMockSession();
+      const lookupError = Err.server(ServerErrorCode.INTERNAL_ERROR, 'PKARR relay unavailable', {
+        service: ErrorService.Homeserver,
+        operation: 'assertUserHomeserverAllowed',
+      });
+
+      vi.spyOn(Identity, 'z32FromSession').mockReturnValue(TEST_PUBKY as Pubky);
+      vi.spyOn(AuthApplication, 'assertUserHomeserverAllowed').mockRejectedValue(lookupError);
+      const logoutSpy = vi.spyOn(AuthApplication, 'logout').mockResolvedValue(undefined);
+
+      await expect(AuthController.initializeAuthenticatedSession({ session: mockSession })).rejects.toMatchObject({
+        code: ServerErrorCode.INTERNAL_ERROR,
+      });
+
+      expect(logoutSpy).toHaveBeenCalledWith({ session: mockSession });
     });
   });
 
@@ -1267,6 +1399,7 @@ describe('AuthController', () => {
     it('should successfully logout user, clear stores, cookies and redirect', async () => {
       const logoutSpy = vi.spyOn(AuthApplication, 'logout').mockResolvedValue(undefined);
       const clearDatabaseSpy = mockClearDatabase.mockResolvedValue(undefined);
+      const cancelModerationFollowSpy = vi.spyOn(BootstrapApplication, 'cancelModerationFollow');
       const clearCookiesSpy = await spyOnClearCookies();
       const clearAllQueryClientsSpy = await spyOnClearAllQueryClients();
       const resetSpy = vi.spyOn(PubkySpecsSingleton, 'reset');
@@ -1304,6 +1437,13 @@ describe('AuthController', () => {
 
       // Homeserver logout
       expect(logoutSpy).toHaveBeenCalledWith({ session: expect.anything() });
+      expect(cancelModerationFollowSpy).toHaveBeenCalledTimes(2);
+      expect(cancelModerationFollowSpy.mock.invocationCallOrder[0]).toBeLessThan(
+        logoutSpy.mock.invocationCallOrder[0]!,
+      );
+      expect(cancelModerationFollowSpy.mock.invocationCallOrder[1]).toBeLessThan(
+        clearDatabaseSpy.mock.invocationCallOrder[0]!,
+      );
 
       // Singletons
       expect(resetSpy).toHaveBeenCalledOnce();
@@ -1326,8 +1466,8 @@ describe('AuthController', () => {
       // Query clients
       expect(clearAllQueryClientsSpy).toHaveBeenCalledOnce();
 
-      // Cookies (with locale excluded) and database
-      expect(clearCookiesSpy).toHaveBeenCalledWith(['locale']);
+      // Cookies and database
+      expect(clearCookiesSpy).toHaveBeenCalledWith();
       expect(clearDatabaseSpy).toHaveBeenCalledOnce();
 
       // Skip post-migration resync — full cleanup resets all state
@@ -1432,7 +1572,7 @@ describe('AuthController', () => {
 
       expect(restorePersistedSessionSpy).toHaveBeenCalledOnce();
       expect(logoutSpy).toHaveBeenCalledWith({ session: restoredSession });
-      expect(clearCookiesSpy).toHaveBeenCalledWith(['locale']);
+      expect(clearCookiesSpy).toHaveBeenCalledWith();
       expect(clearDatabaseSpy).toHaveBeenCalledTimes(1);
     });
 

@@ -20,11 +20,6 @@ let mockAuthState: { hasHydrated: boolean; currentUserPubky: string | null } = {
   hasHydrated: false,
   currentUserPubky: null,
 };
-
-vi.mock('next-intl', () => ({
-  useTranslations: (namespace?: string) => (key: string) => `${namespace ?? ''}.${key}`,
-}));
-
 vi.mock('dexie-react-hooks', () => ({
   useLiveQuery: vi.fn(),
 }));
@@ -71,21 +66,8 @@ vi.mock('@/molecules/AvatarStack/AvatarStack.skeleton', () => ({
 }));
 
 vi.mock('@/organisms/Collections/CollectionCard/CollectionCard', () => ({
-  CollectionCard: ({
-    authorPubky,
-    postId,
-    initialIsBookmarked,
-  }: {
-    authorPubky: string;
-    postId: string;
-    initialIsBookmarked?: boolean;
-  }) => (
-    <div
-      data-testid="collection-card"
-      data-author-pubky={authorPubky}
-      data-post-id={postId}
-      data-initial-bookmarked={String(!!initialIsBookmarked)}
-    />
+  CollectionCard: ({ authorPubky, postId }: { authorPubky: string; postId: string }) => (
+    <div data-testid="collection-card" data-author-pubky={authorPubky} data-post-id={postId} />
   ),
 }));
 
@@ -107,13 +89,15 @@ const mockGetDetailsByIds = vi.mocked(PostController.getDetailsByIds);
 function makeSlice({
   nextPageIds = [],
   reachedEnd = true,
-  timestamp = 0,
+  nextCursor = 0,
+  lastRawPostId,
 }: {
   nextPageIds?: string[];
   reachedEnd?: boolean;
-  timestamp?: number;
+  nextCursor?: number;
+  lastRawPostId?: string;
 } = {}) {
-  return asOpaque<TReadPostStreamChunkResponse>({ nextPageIds, reachedEnd, timestamp });
+  return asOpaque<TReadPostStreamChunkResponse>({ nextPageIds, reachedEnd, nextCursor, lastRawPostId });
 }
 
 beforeEach(() => {
@@ -141,7 +125,7 @@ describe('FollowedCollections', () => {
 
     render(<FollowedCollections />);
 
-    expect(screen.getByText('collections.followed.title')).toBeInTheDocument();
+    expect(screen.getByText('Followed Collections')).toBeInTheDocument();
     expect(screen.getByTestId('avatar-stack-skeleton')).toHaveAttribute('data-count', '3');
     expect(screen.getAllByTestId('collection-card-skeleton').length).toBeGreaterThan(0);
     expect(mockPrepareStreamForInitialLoad).not.toHaveBeenCalled();
@@ -150,7 +134,9 @@ describe('FollowedCollections', () => {
 
   it('post-hydration: seeds the followed-collections stream and persists slice via the controller', async () => {
     mockAuthState = { hasHydrated: true, currentUserPubky: 'me' };
-    mockGetOrFetchStreamSlice.mockResolvedValue(makeSlice({ nextPageIds: ['a:p1'], reachedEnd: true, timestamp: 123 }));
+    mockGetOrFetchStreamSlice.mockResolvedValue(
+      makeSlice({ nextPageIds: ['a:p1'], reachedEnd: true, nextCursor: 123 }),
+    );
 
     await act(async () => {
       render(<FollowedCollections />);
@@ -170,7 +156,7 @@ describe('FollowedCollections', () => {
     });
   });
 
-  it('renders one CollectionCard per live-query id with initialIsBookmarked=true', async () => {
+  it('renders one CollectionCard per live-query id', async () => {
     mockAuthState = { hasHydrated: true, currentUserPubky: 'me' };
     mockUseLiveQuery.mockReturnValue(['authorA:p1', 'authorA:p2', 'authorB:p3']);
 
@@ -184,9 +170,6 @@ describe('FollowedCollections', () => {
     expect(cards[0]).toHaveAttribute('data-post-id', 'p1');
     expect(cards[2]).toHaveAttribute('data-author-pubky', 'authorB');
     expect(cards[2]).toHaveAttribute('data-post-id', 'p3');
-    for (const card of cards) {
-      expect(card).toHaveAttribute('data-initial-bookmarked', 'true');
-    }
   });
 
   it('passes unique authors from displayed cards to AvatarStack', async () => {
@@ -275,8 +258,8 @@ describe('FollowedCollections', () => {
     await waitFor(() => {
       expect(mockGetOrFetchStreamSlice).toHaveBeenCalled();
     });
-    expect(screen.queryByText('collections.followed.empty')).not.toBeInTheDocument();
-    expect(screen.queryByText('collections.followed.title')).not.toBeInTheDocument();
+    expect(screen.queryByText("You haven't followed any collections yet.")).not.toBeInTheDocument();
+    expect(screen.queryByText('Followed Collections')).not.toBeInTheDocument();
     expect(screen.queryByTestId('collection-card')).not.toBeInTheDocument();
   });
 
@@ -290,20 +273,22 @@ describe('FollowedCollections', () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByText('collections.showMore')).not.toBeInTheDocument();
+      expect(screen.queryByText('Show more')).not.toBeInTheDocument();
     });
   });
 
-  it('shows Show More when reachedEnd is false; clicking fetches another slice', async () => {
+  it('shows Show More when reachedEnd is false; clicking resumes from the threaded nextCursor', async () => {
     mockAuthState = { hasHydrated: true, currentUserPubky: 'me' };
     mockUseLiveQuery.mockReturnValue(['a:p1']);
-    mockGetOrFetchStreamSlice.mockResolvedValue(makeSlice({ nextPageIds: ['a:p1'], reachedEnd: false, timestamp: 42 }));
+    mockGetOrFetchStreamSlice.mockResolvedValue(
+      makeSlice({ nextPageIds: ['a:p1'], reachedEnd: false, nextCursor: 42 }),
+    );
 
     await act(async () => {
       render(<FollowedCollections />);
     });
 
-    const button = await screen.findByRole('button', { name: 'collections.showMore' });
+    const button = await screen.findByRole('button', { name: 'Show more' });
     expect(button).toBeInTheDocument();
 
     const callsBefore = mockGetOrFetchStreamSlice.mock.calls.length;
@@ -312,6 +297,36 @@ describe('FollowedCollections', () => {
     });
     await waitFor(() => {
       expect(mockGetOrFetchStreamSlice.mock.calls.length).toBeGreaterThan(callsBefore);
+    });
+    // The follow-up fetch must resume from the cursor threaded back by the first page (42),
+    // proving the timestamp->nextCursor rename actually feeds pagination.
+    expect(mockGetOrFetchStreamSlice.mock.calls.at(-1)?.[0]).toMatchObject({ streamTail: 42 });
+  });
+
+  it('Show More resumes the cache walk from lastRawPostId, not the last visible id', async () => {
+    mockAuthState = { hasHydrated: true, currentUserPubky: 'me' };
+    mockUseLiveQuery.mockReturnValue(['a:p1']);
+    // The slice's raw scan ended past the visible page — e.g. a filtered tail of
+    // deleted bookmarked collections. The next request must anchor on the raw id.
+    mockGetOrFetchStreamSlice.mockResolvedValue(
+      makeSlice({ nextPageIds: ['a:p1'], reachedEnd: false, nextCursor: 42, lastRawPostId: 'a:deleted-9' }),
+    );
+
+    await act(async () => {
+      render(<FollowedCollections />);
+    });
+
+    const button = await screen.findByRole('button', { name: 'Show more' });
+    const callsBefore = mockGetOrFetchStreamSlice.mock.calls.length;
+    await act(async () => {
+      button.click();
+    });
+    await waitFor(() => {
+      expect(mockGetOrFetchStreamSlice.mock.calls.length).toBeGreaterThan(callsBefore);
+    });
+    expect(mockGetOrFetchStreamSlice.mock.calls.at(-1)?.[0]).toMatchObject({
+      lastPostId: 'a:deleted-9',
+      streamTail: 42,
     });
   });
 
@@ -331,9 +346,9 @@ describe('FollowedCollections', () => {
     // consistent across the three Collections sections.
     expect(mockToast).toHaveBeenCalledWith({
       variant: 'error',
-      description: 'collections.loadFailed',
+      description: 'Failed to load collections. Please try again.',
     });
-    expect(screen.queryByText('collections.showMore')).not.toBeInTheDocument();
+    expect(screen.queryByText('Show more')).not.toBeInTheDocument();
   });
 
   describe('FollowedCollections - Snapshots', () => {
@@ -348,12 +363,12 @@ describe('FollowedCollections', () => {
       mockAuthState = { hasHydrated: true, currentUserPubky: 'me' };
       mockUseLiveQuery.mockReturnValue(['authorA:p1', 'authorB:p2']);
       mockGetOrFetchStreamSlice.mockResolvedValue(
-        makeSlice({ nextPageIds: ['authorA:p1', 'authorB:p2'], reachedEnd: false, timestamp: 100 }),
+        makeSlice({ nextPageIds: ['authorA:p1', 'authorB:p2'], reachedEnd: false, nextCursor: 100 }),
       );
 
       const { container } = await act(async () => render(<FollowedCollections />));
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'collections.showMore' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Show more' })).toBeInTheDocument();
       });
 
       expect(container.firstChild).toMatchSnapshot();
@@ -362,7 +377,7 @@ describe('FollowedCollections', () => {
     it('matches the snapshot for the empty state (live query empty, seed resolved)', async () => {
       mockAuthState = { hasHydrated: true, currentUserPubky: 'me' };
       mockUseLiveQuery.mockReturnValue([]);
-      mockGetOrFetchStreamSlice.mockResolvedValue(makeSlice({ nextPageIds: [], reachedEnd: true, timestamp: 0 }));
+      mockGetOrFetchStreamSlice.mockResolvedValue(makeSlice({ nextPageIds: [], reachedEnd: true, nextCursor: 0 }));
 
       const { container } = await act(async () => render(<FollowedCollections />));
       await waitFor(() => {

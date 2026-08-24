@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import type { ElementType, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePostArticle } from '@/hooks/usePostArticle/usePostArticle';
+import { useHomeStore } from '@/stores/home/home.store';
+import { LAYOUT } from '@/stores/home/home.types';
 import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
 import type { AttachmentConstructed } from '../PostAttachments/PostAttachments.types';
 import { PostArticleDetail } from './PostArticleDetail';
@@ -32,7 +34,9 @@ vi.mock('@/atoms/Container/Container', () => ({
 }));
 
 vi.mock('@/atoms/Image/Image', () => ({
-  Image: ({ src, alt }: { src: string; alt: string }) => <img data-testid="cover-image" src={src} alt={alt} />,
+  Image: ({ src, alt, className }: { src: string; alt: string; className?: string }) => (
+    <img data-testid="cover-image" src={src} alt={alt} className={className} />
+  ),
 }));
 
 vi.mock('@/atoms/Typography/Typography', () => ({
@@ -145,6 +149,29 @@ vi.mock('../PostTagsPanel/PostTagsPanel', () => ({
   ),
 }));
 
+vi.mock('../PostInlineTagsActions/PostInlineTagsActions', () => ({
+  PostInlineTagsActions: ({
+    postId,
+    onReplyClick,
+    onRepostClick,
+    className,
+  }: {
+    postId: string;
+    onReplyClick: () => void;
+    onRepostClick: () => void;
+    className?: string;
+  }) => (
+    <div data-testid="post-inline-tags-actions" data-post-id={postId} className={className}>
+      <button data-testid="inline-reply-button" onClick={onReplyClick}>
+        Reply
+      </button>
+      <button data-testid="inline-repost-button" onClick={onRepostClick}>
+        Repost
+      </button>
+    </div>
+  ),
+}));
+
 const mockUsePostArticle = vi.mocked(usePostArticle);
 const mockUseLocalFilesStore = vi.mocked(useLocalFilesStore);
 
@@ -168,6 +195,7 @@ describe('PostArticleDetail', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    useHomeStore.getState().reset();
     mockUsePostArticle.mockReturnValue({
       title: 'Test Article Title',
       body: 'Test article body content',
@@ -176,14 +204,37 @@ describe('PostArticleDetail', () => {
     mockUseLocalFilesStore.mockImplementation((selector) => selector(createMockLocalFilesStore()));
   });
 
-  it('renders article detail content and both tag panels', () => {
+  it('renders article detail content with inline tags and actions in columns layout', () => {
     render(<PostArticleDetail {...defaultProps} />);
 
     expect(screen.getByText('Test Article Title')).toBeInTheDocument();
     expect(screen.getByTestId('post-header')).toHaveAttribute('data-post-id', 'user123:post456');
     expect(screen.getByTestId('post-text')).toHaveTextContent('Test article body content');
-    expect(screen.getAllByTestId('post-tags-panel')).toHaveLength(2);
+    expect(screen.getByTestId('post-inline-tags-actions')).toHaveAttribute('data-post-id', 'user123:post456');
+    expect(screen.queryByTestId('post-tags-panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('post-actions-bar')).not.toBeInTheDocument();
     expect(screen.queryByText('Replies')).not.toBeInTheDocument();
+  });
+
+  it('uses the stacked columns layout by default', () => {
+    render(<PostArticleDetail {...defaultProps} />);
+
+    const containers = screen.getAllByTestId('container');
+    expect(containers.some((el) => el.className.includes('mb-6 gap-6'))).toBe(true);
+    expect(containers.some((el) => el.className.includes('lg:grid-cols-3'))).toBe(false);
+    expect(screen.getByTestId('post-inline-tags-actions')).toHaveClass('mt-3', 'mb-6');
+  });
+
+  it('keeps the side tags grid layout in wide mode', () => {
+    useHomeStore.getState().setLayout(LAYOUT.WIDE);
+
+    render(<PostArticleDetail {...defaultProps} />);
+
+    const containers = screen.getAllByTestId('container');
+    expect(containers.some((el) => el.className.includes('lg:grid-cols-3'))).toBe(true);
+    expect(screen.getAllByTestId('post-tags-panel')).toHaveLength(2);
+    expect(screen.getByTestId('post-actions-bar')).toBeInTheDocument();
+    expect(screen.queryByTestId('post-inline-tags-actions')).not.toBeInTheDocument();
   });
 
   it('renders the article title as h1', () => {
@@ -196,7 +247,7 @@ describe('PostArticleDetail', () => {
     render(<PostArticleDetail {...defaultProps} />);
 
     expect(screen.getByTestId('post-header')).toHaveAttribute('data-post-id', 'user123:post456');
-    expect(screen.getByTestId('post-header')).toHaveAttribute('data-size', 'large');
+    expect(screen.getByTestId('post-header')).toHaveAttribute('data-size', 'extraLarge');
     expect(screen.getByTestId('post-header')).toHaveAttribute('data-time-placement', 'bottom-left');
   });
 
@@ -229,6 +280,38 @@ describe('PostArticleDetail', () => {
 
     expect(screen.getByTestId('cover-image')).toHaveAttribute('src', 'https://example.com/image.jpg');
     expect(screen.getByTestId('cover-image')).toHaveAttribute('alt', 'Cover image');
+  });
+
+  it('places inline tags and actions between the user header and cover image in columns layout', () => {
+    mockUsePostArticle.mockReturnValue({
+      title: 'Test Title',
+      body: 'Test body',
+      coverImage: {
+        src: 'https://example.com/image.jpg',
+        alt: 'Cover image',
+      },
+    });
+
+    render(<PostArticleDetail {...defaultProps} />);
+
+    const inlineTagsActions = screen.getByTestId('post-inline-tags-actions');
+    expect(screen.getByTestId('post-header').nextElementSibling).toBe(inlineTagsActions);
+    expect(inlineTagsActions.nextElementSibling).toBe(screen.getByTestId('cover-image'));
+  });
+
+  it('renders the cover image at a 16:9 ratio filling the frame', () => {
+    mockUsePostArticle.mockReturnValue({
+      title: 'Test Title',
+      body: 'Test body',
+      coverImage: {
+        src: 'https://example.com/image.jpg',
+        alt: 'Cover image',
+      },
+    });
+
+    render(<PostArticleDetail {...defaultProps} />);
+
+    expect(screen.getByTestId('cover-image')).toHaveClass('aspect-video', 'w-full', 'object-cover', 'object-center');
   });
 
   it('does not render cover image when not available', () => {
@@ -384,20 +467,20 @@ describe('PostArticleDetail', () => {
     expect(screen.queryByTestId('post-text')).not.toBeInTheDocument();
   });
 
-  it('opens reply and repost dialogs from the actions bar', () => {
+  it('opens reply and repost dialogs from the inline column actions', () => {
     render(<PostArticleDetail {...defaultProps} />);
 
-    fireEvent.click(screen.getByTestId('reply-button'));
+    fireEvent.click(screen.getByTestId('inline-reply-button'));
     expect(screen.getByTestId('dialog-reply')).toHaveAttribute('data-open', 'true');
 
-    fireEvent.click(screen.getByTestId('repost-button'));
+    fireEvent.click(screen.getByTestId('inline-repost-button'));
     expect(screen.getByTestId('dialog-repost')).toHaveAttribute('data-open', 'true');
   });
 
   it('closes reply dialog when the dialog open state changes', () => {
     render(<PostArticleDetail {...defaultProps} />);
 
-    fireEvent.click(screen.getByTestId('reply-button'));
+    fireEvent.click(screen.getByTestId('inline-reply-button'));
     expect(screen.getByTestId('dialog-reply')).toHaveAttribute('data-open', 'true');
 
     fireEvent.click(screen.getByTestId('close-reply-dialog'));
@@ -407,7 +490,7 @@ describe('PostArticleDetail', () => {
   it('closes repost dialog when the dialog open state changes', () => {
     render(<PostArticleDetail {...defaultProps} />);
 
-    fireEvent.click(screen.getByTestId('repost-button'));
+    fireEvent.click(screen.getByTestId('inline-repost-button'));
     expect(screen.getByTestId('dialog-repost')).toHaveAttribute('data-open', 'true');
 
     fireEvent.click(screen.getByTestId('close-repost-dialog'));
@@ -459,6 +542,14 @@ describe('PostArticleDetail', () => {
 
   it('matches snapshot when blurred', () => {
     const { container } = render(<PostArticleDetail {...defaultProps} isBlurred />);
+
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('matches snapshot in wide layout', () => {
+    useHomeStore.getState().setLayout(LAYOUT.WIDE);
+
+    const { container } = render(<PostArticleDetail {...defaultProps} />);
 
     expect(container.firstChild).toMatchSnapshot();
   });

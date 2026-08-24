@@ -1,6 +1,9 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AuthErrorCode } from '@/libs/error/error.codes';
+import { Err } from '@/libs/error/error.factories';
+import { ErrorService } from '@/libs/error/error.types';
 import { Logger } from '@/libs/logger/logger';
 import { RouteGuardProvider } from './RouteGuardProvider';
 
@@ -10,12 +13,16 @@ const mocks = vi.hoisted(() => {
   const mockRouterRefresh = vi.fn();
   const mockResync = vi.fn();
   const resetMigrationStore = vi.fn();
+  const mockToast = vi.fn();
+  const restorePersistedSession = vi.fn().mockResolvedValue(true);
 
   return {
     mockRouterPush,
     mockRouterRefresh,
     mockResync,
     resetMigrationStore,
+    mockToast,
+    restorePersistedSession,
     // Auth store state defaults
     hasHydrated: true,
     session: {} as unknown,
@@ -27,9 +34,6 @@ const mocks = vi.hoisted(() => {
     isLoading: false,
     // Route defaults
     pathname: '/feed',
-    // Locale defaults
-    serverLocale: 'en',
-    storeLanguage: 'en' as string | null,
   };
 });
 
@@ -37,12 +41,6 @@ const mocks = vi.hoisted(() => {
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mocks.mockRouterPush, refresh: mocks.mockRouterRefresh }),
   usePathname: () => mocks.pathname,
-}));
-
-// Mock next-intl
-vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
-  useLocale: () => mocks.serverLocale,
 }));
 
 vi.mock('@/hooks/useAuthStatus/useAuthStatus', () => ({
@@ -91,6 +89,10 @@ vi.mock('@/libs/logger/logger', () => ({
   Logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
+vi.mock('@/molecules/Toaster/use-toast', () => ({
+  toast: mocks.mockToast,
+}));
+
 // Mock auth store
 vi.mock('@/stores/auth/auth.store', () => ({
   useAuthStore: (selector: (state: Record<string, unknown>) => unknown) =>
@@ -109,13 +111,9 @@ vi.mock('@/stores/migration/migration.store', () => ({
     },
   ),
 }));
-vi.mock('@/stores/settings/settings.store', () => ({
-  useSettingsStore: (selector: (state: Record<string, unknown>) => unknown) =>
-    selector({ language: mocks.storeLanguage }),
-}));
 vi.mock('@/controllers/auth/auth', () => ({
   AuthController: {
-    restorePersistedSession: vi.fn().mockResolvedValue(true),
+    restorePersistedSession: mocks.restorePersistedSession,
   },
 }));
 vi.mock('@/controllers/migration/migration', () => ({
@@ -138,11 +136,12 @@ describe('RouteGuardProvider — migration resync', () => {
     mocks.status = 'AUTHENTICATED';
     mocks.isLoading = false;
     mocks.pathname = '/feed';
-    mocks.serverLocale = 'en';
-    mocks.storeLanguage = 'en';
     mocks.mockResync.mockReset();
     mocks.mockRouterRefresh.mockReset();
     mocks.resetMigrationStore.mockReset();
+    mocks.mockToast.mockReset();
+    mocks.restorePersistedSession.mockReset();
+    mocks.restorePersistedSession.mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -348,7 +347,7 @@ describe('RouteGuardProvider — migration resync', () => {
       </RouteGuardProvider>,
     );
 
-    expect(screen.getByText('loading')).toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('shows redirecting text when route is inaccessible and not loading', () => {
@@ -363,7 +362,7 @@ describe('RouteGuardProvider — migration resync', () => {
       </RouteGuardProvider>,
     );
 
-    expect(screen.getByText('redirecting')).toBeInTheDocument();
+    expect(screen.getByText('Redirecting...')).toBeInTheDocument();
   });
 
   it('allows unauthenticated users to render core explore routes after auth loading resolves', () => {
@@ -426,7 +425,7 @@ describe('RouteGuardProvider — migration resync', () => {
       </RouteGuardProvider>,
     );
 
-    expect(screen.getByText('redirecting')).toBeInTheDocument();
+    expect(screen.getByText('Redirecting...')).toBeInTheDocument();
     expect(screen.queryByText('Bookmarks Content')).not.toBeInTheDocument();
   });
 
@@ -458,7 +457,7 @@ describe('RouteGuardProvider — migration resync', () => {
       </RouteGuardProvider>,
     );
 
-    expect(screen.getByText('redirecting')).toBeInTheDocument();
+    expect(screen.getByText('Redirecting...')).toBeInTheDocument();
     expect(screen.queryByText('Bookmarks Content')).not.toBeInTheDocument();
   });
 
@@ -473,27 +472,35 @@ describe('RouteGuardProvider — migration resync', () => {
       </RouteGuardProvider>,
     );
 
-    expect(screen.getByText('redirecting')).toBeInTheDocument();
+    expect(screen.getByText('Redirecting...')).toBeInTheDocument();
     expect(screen.queryByText('Explore Content')).not.toBeInTheDocument();
     expect(mocks.mockRouterPush).toHaveBeenCalledWith('/create-profile');
   });
+});
 
-  it('calls router.refresh() when storeLanguage differs from serverLocale', () => {
-    mocks.storeLanguage = 'es';
-    mocks.serverLocale = 'en';
-
-    render(
-      <RouteGuardProvider>
-        <div>Protected Content</div>
-      </RouteGuardProvider>,
-    );
-
-    expect(mocks.mockRouterRefresh).toHaveBeenCalled();
+describe('RouteGuardProvider — session restore', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.hasHydrated = true;
+    mocks.session = null;
+    mocks.sessionExport = 'session-export';
+    mocks.currentUserPubky = null;
+    mocks.wasDbReset = false;
+    mocks.status = 'UNAUTHENTICATED';
+    mocks.isLoading = false;
+    mocks.pathname = '/home';
+    mocks.mockToast.mockReset();
+    mocks.restorePersistedSession.mockReset();
+    mocks.restorePersistedSession.mockResolvedValue(true);
   });
 
-  it('does NOT call router.refresh() when storeLanguage is null', () => {
-    mocks.storeLanguage = null;
-    mocks.serverLocale = 'en';
+  it('toasts when persisted session restore fails for wrong-environment homeserver', async () => {
+    mocks.restorePersistedSession.mockRejectedValue(
+      Err.auth(AuthErrorCode.WRONG_ENVIRONMENT_HOMESERVER, 'wrong env', {
+        service: ErrorService.Homeserver,
+        operation: 'assertUserHomeserverAllowed',
+      }),
+    );
 
     render(
       <RouteGuardProvider>
@@ -501,19 +508,14 @@ describe('RouteGuardProvider — migration resync', () => {
       </RouteGuardProvider>,
     );
 
-    expect(mocks.mockRouterRefresh).not.toHaveBeenCalled();
-  });
+    await act(async () => {
+      await Promise.resolve();
+    });
 
-  it('does NOT call router.refresh() when storeLanguage matches serverLocale', () => {
-    mocks.storeLanguage = 'en';
-    mocks.serverLocale = 'en';
-
-    render(
-      <RouteGuardProvider>
-        <div>Protected Content</div>
-      </RouteGuardProvider>,
-    );
-
-    expect(mocks.mockRouterRefresh).not.toHaveBeenCalled();
+    expect(mocks.mockToast).toHaveBeenCalledWith({
+      variant: 'error',
+      description: 'This key is linked to a different homeserver. Use a staging account on this site.',
+    });
+    expect(Logger.error).not.toHaveBeenCalled();
   });
 });

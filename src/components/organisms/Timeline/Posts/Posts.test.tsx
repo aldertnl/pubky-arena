@@ -57,16 +57,27 @@ vi.mock('@/molecules/Timeline/TimelineStateWrapper/TimelineStateWrapper', async 
       loading,
       error,
       hasItems,
+      hasMore,
       children,
+      emptyComponent,
     }: {
       loading: boolean;
       error: string | null;
       hasItems: boolean;
+      hasMore?: boolean;
       children: React.ReactNode;
+      emptyComponent?: React.ReactNode;
     }) => {
       if (loading) return <div data-testid="timeline-loading">Loading...</div>;
       if (error && !hasItems) return <div data-testid="timeline-initial-error">Error: {error}</div>;
-      if (!hasItems) return <div data-testid="timeline-empty">No posts</div>;
+      if (!hasItems && hasMore)
+        return (
+          <>
+            <div data-testid="timeline-loading">Loading...</div>
+            {children}
+          </>
+        );
+      if (!hasItems) return <>{emptyComponent ?? <div data-testid="timeline-empty">No posts</div>}</>;
       return <>{children}</>;
     },
   };
@@ -108,6 +119,8 @@ describe('TimelinePosts', () => {
 
     mockUseInfiniteScroll.mockReturnValue({
       sentinelRef: vi.fn(),
+      isStalled: false,
+      resumeAutoLoad: vi.fn(),
     });
 
     // Mock useLiveQuery to return no replies by default
@@ -171,6 +184,28 @@ describe('TimelinePosts', () => {
   });
 
   describe('Empty States', () => {
+    it('keeps loading and the sentinel mounted when empty but hasMore (filtered stream region)', () => {
+      // Regression: a fully-filtered first load round returns zero visible posts with
+      // hasMore=true. Showing the empty state would unmount the infinite-scroll
+      // sentinel and stall the feed permanently ("No posts found" one round away
+      // from real posts). The wrapper must keep loading + children mounted instead.
+      render(
+        <TimelinePosts
+          postIds={[]}
+          loading={false}
+          loadingMore={false}
+          error={null}
+          hasMore={true}
+          loadMore={vi.fn()}
+        />,
+      );
+
+      expect(screen.queryByTestId('timeline-empty')).not.toBeInTheDocument();
+      expect(screen.getByTestId('timeline-loading')).toBeInTheDocument();
+      // Children mounted → the feed container (and with it the sentinel) exists.
+      expect(screen.getByRole('feed')).toBeInTheDocument();
+    });
+
     it('should render empty state when no posts are returned', async () => {
       render(
         <TimelinePosts
@@ -188,6 +223,41 @@ describe('TimelinePosts', () => {
         expect(screen.queryByTestId('timeline-loading')).not.toBeInTheDocument();
         expect(screen.queryByTestId('timeline-loading-more')).not.toBeInTheDocument();
       });
+    });
+
+    it('renders a supplied empty state when no posts are returned', () => {
+      render(
+        <TimelinePosts
+          postIds={[]}
+          loading={false}
+          loadingMore={false}
+          error={null}
+          hasMore={false}
+          loadMore={vi.fn()}
+          emptyState={<div data-testid="custom-empty">Collection is empty</div>}
+        />,
+      );
+
+      expect(screen.getByTestId('custom-empty')).toBeInTheDocument();
+      expect(screen.queryByTestId('timeline-empty')).not.toBeInTheDocument();
+    });
+
+    it('renders the custom empty state followed by a trailing CTA', () => {
+      render(
+        <TimelinePosts
+          postIds={[]}
+          loading={false}
+          loadingMore={false}
+          error={null}
+          hasMore={false}
+          loadMore={vi.fn()}
+          emptyState={<div data-testid="custom-empty">Collection is empty</div>}
+          trailingSlot={<button data-testid="trailing-cta">Add content</button>}
+        />,
+      );
+
+      expect(screen.getByTestId('custom-empty')).toBeInTheDocument();
+      expect(screen.getByTestId('trailing-cta')).toBeInTheDocument();
     });
 
     it('should render end message when no more posts to load', async () => {
@@ -407,6 +477,24 @@ describe('TimelinePosts', () => {
         expect(screen.getByTestId('timeline-loading-more')).toBeInTheDocument();
       });
     });
+
+    it('renders a trailing CTA after populated List posts without an end message', () => {
+      render(
+        <TimelinePosts
+          postIds={mockPostIds}
+          loading={false}
+          loadingMore={false}
+          error={null}
+          hasMore={false}
+          loadMore={vi.fn()}
+          trailingSlot={<button data-testid="trailing-cta">Add content</button>}
+          showEndMessage={false}
+        />,
+      );
+
+      expect(screen.getByTestId('trailing-cta')).toBeInTheDocument();
+      expect(screen.queryByTestId('timeline-end-message')).not.toBeInTheDocument();
+    });
   });
 
   describe('Stream Changes', () => {
@@ -477,6 +565,8 @@ describe('TimelinePosts', () => {
     it('should render sentinel element for infinite scroll', async () => {
       mockUseInfiniteScroll.mockReturnValue({
         sentinelRef: vi.fn(),
+        isStalled: false,
+        resumeAutoLoad: vi.fn(),
       });
 
       const { container } = render(
@@ -550,6 +640,8 @@ describe('TimelinePosts - Snapshots', () => {
 
     mockUseInfiniteScroll.mockReturnValue({
       sentinelRef: vi.fn(),
+      isStalled: false,
+      resumeAutoLoad: vi.fn(),
     });
 
     // Mock useLiveQuery

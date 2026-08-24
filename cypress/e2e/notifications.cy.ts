@@ -14,6 +14,7 @@ import { searchAndFollowProfile, searchForProfileByPubky } from '../support/cont
 import {
   clickFollowButton,
   checkLatestNotification,
+  checkNotificationAt,
   addProfileTags,
   causeNotificationsToBeRead,
 } from '../support/profile';
@@ -25,14 +26,21 @@ import {
   WaitForNewPosts,
 } from '../support/types/enums';
 import { verifyNotificationCounter } from '../support/common';
-import { goToProfilePageFromHeader } from '../support/header';
+import {
+  createCollection,
+  createPostInCollection,
+  deleteCollectionFromHero,
+  findCollectionCardInSection,
+  openCollectionFromMyCollections,
+} from '../support/collections';
+import { goToCollectionsPage, goToProfilePageFromHeader } from '../support/header';
 
 const uniqueSuffix = String(Date.now()).slice(-5);
 
+// Profiles use a unique suffix so @mention autocomplete does not match stale accounts from earlier runs.
 // profile 1 and 2 are used for enabled notifications, profile 3 is used for disabled notifications
-const profile1 = { username: 'Notif #1', pubkyAlias: 'pubky_1' };
-// profile 2 and 3 have a unique suffix to avoid conflicts when mentioning profile 2 and 3 in new posts across test runs
 // todo: use space in username after bug fixed https://github.com/pubky/pubky-app/issues/1638
+const profile1 = { username: `Notif#1${uniqueSuffix}`, pubkyAlias: 'pubky_1' };
 const profile2 = { username: `Notif#2${uniqueSuffix}`, pubkyAlias: 'pubky_2' };
 const profile3 = { username: `Notif#3${uniqueSuffix}`, pubkyAlias: 'pubky_3' };
 
@@ -107,14 +115,6 @@ describe('notifications', () => {
     causeNotificationsToBeRead();
     verifyNotificationCounter(0);
     checkLatestNotification([profile2.username, 'is now your friend'], LatestNotificationReadState.Read);
-
-    // TODO: add checks for disabled notifications
-    // * profile 1 disables follow notifications
-    // * profile 2 disables friend notifications
-    // * profile 2 follows profile 1
-    // * profile 1 checks absence of notifications
-    // * profile 1 follows profile 2
-    // * profile 2 checks for follow notification? and absence of friend notification
   });
 
   it('can be notified for tagged post and profile', () => {
@@ -197,15 +197,6 @@ describe('notifications', () => {
       cy.location('pathname').should('eq', '/search');
       cy.location('search').should('eq', '?tags=first-world-problem');
     }
-
-    // TODO: add checks for disabled notifications
-    // * profile 1 disables notifications for tagged profile
-    // * profile 2 disables notifications for tagged post
-    // * profile 2 creates a post
-    // * profile 2 tags profile 1's profile
-    // * profile 1 checks for absence of notifications
-    // * profile 1 tags profile 2's post
-    // * profile 2 checks for absence of notifications
   });
 
   it('can be notified for profile being mentioned in a post', () => {
@@ -247,8 +238,7 @@ describe('notifications', () => {
     cy.signInWithEncryptedFile(backupDownloadFilePath(profile3.username));
     verifyNotificationCounter(0);
     goToProfilePageFromHeader();
-    // todo: change text when placeholder UI is updated, see https://github.com/pubky/pubky-app/issues/1789
-    cy.get('[data-cy="profile-tab-content"]').should('contain.text', 'Nothing to see here yet');
+    cy.get('[data-cy="profile-tab-content"]').should('contain.text', 'No notifications yet');
   });
 
   it('can be notified for your post being replied to', () => {
@@ -273,12 +263,6 @@ describe('notifications', () => {
     causeNotificationsToBeRead();
     verifyNotificationCounter(0);
     checkLatestNotification([profile2.username, 'replied to your post'], LatestNotificationReadState.Read);
-
-    // TODO: add checks for disabled notifications
-    // * profile 1 disables notifications for being replied to
-    // * profile 1 creates a post (2)
-    // * profile 2 replies to profile 1's post (2)
-    // * profile 1 checks for absence of notifications
   });
 
   it('can be notified for your post being reposted', () => {
@@ -305,12 +289,6 @@ describe('notifications', () => {
     causeNotificationsToBeRead();
     verifyNotificationCounter(0);
     checkLatestNotification([profile2.username, 'reposted your post'], LatestNotificationReadState.Read);
-
-    // TODO: add checks for disabled notifications
-    // * profile 1 disables notifications for being reposted
-    // * profile 1 creates a post (2)
-    // * profile 2 reposts profile 1's post (2)
-    // * profile 1 checks for absence of notifications
   });
 
   it('can be notified for a post being deleted that you replied to', () => {
@@ -345,54 +323,58 @@ describe('notifications', () => {
     causeNotificationsToBeRead();
     verifyNotificationCounter(0);
     checkLatestNotification([profile1.username, 'deleted a post'], LatestNotificationReadState.Read);
-
-    // TODO: add checks for disabled notifications
-    // * profile 2 disables notifications for being replied to
-    // * profile 1 creates a post that will be replied to and then deleted
-    // * profile 2 replies to profile 1's post
-    // * profile 1 deletes own post
-    // * profile 2 checks for absence of notifications
   });
 
-  it('can be notified for a post being deleted that you reposted', () => {
-    // * profile 1 creates a post (1) that will be reposted and then deleted
-    const postContent = `The one who reposts this post will be notified when it is deleted! ${Date.now()}`;
-    createQuickPost(postContent);
+  it('groups notifications for posts being deleted that you reposted', () => {
+    // * profile 1 creates two posts that will be reposted and then deleted. Two posts
+    // make the test self-contained: it forms a grouped row on its own, so it also passes
+    // in isolation. The copy assertions stay count-agnostic because earlier deletions by
+    // profile 1 (from the preceding test, or Cypress retries) join the same run.
+    const timestamp = Date.now();
+    const firstPostContent = `The one who reposts this post will be notified when it is deleted! ${timestamp}`;
+    const secondPostContent = `Repost this one too and hear about its deletion as well! ${timestamp}`;
+    createQuickPost(firstPostContent);
+    createQuickPost(secondPostContent);
 
-    // * profile 2 reposts profile 1's post
+    // * profile 2 reposts both of profile 1's posts
     cy.signOut(HasBackedUp.Yes);
     cy.signInWithEncryptedFile(backupDownloadFilePath(profile2.username));
-    cy.findFirstPostInFeed().innerTextContains(postContent);
-    repostPost({ repostContent: 'I reposted your post!', filterText: postContent });
+    // The newest post visible in the feed proves both have been indexed.
+    cy.findFirstPostInFeed().innerTextContains(secondPostContent);
+    repostPost({ repostContent: 'I reposted your post!', filterText: firstPostContent });
+    repostPost({ repostContent: 'I reposted this one as well!', filterText: secondPostContent });
 
-    // * profile 1 deletes own post (1)
+    // * profile 1 deletes both own posts
     cy.signOut(HasBackedUp.Yes);
     cy.signInWithEncryptedFile(backupDownloadFilePath(profile1.username));
     // Go to profile page and click Posts tab to see own posts (home feed shows followed users' posts)
     goToProfilePageFromHeader();
     cy.get('[data-cy="profile-filter-item-posts"]').click();
     cy.get('[data-cy="profile-filter-item-posts"]').closest('[data-selected="true"]').should('exist');
-    deletePost({ postIdx: 0, filterText: postContent });
+    deletePost({ postIdx: 0, filterText: firstPostContent });
+    deletePost({ postIdx: 0, filterText: secondPostContent });
 
-    // * profile 2 checks for notification for post being deleted
+    // * profile 2 checks for the grouped deletion notification
+    // (see https://github.com/pubky/pubky-app/issues/1570)
     cy.signOut(HasBackedUp.Yes);
     cy.signInWithEncryptedFile(backupDownloadFilePath(profile2.username));
-    verifyNotificationCounter(1);
+    verifyNotificationCounter(2);
     goToProfilePageFromHeader();
     verifyNotificationCounter(0);
-    checkLatestNotification([profile1.username, 'deleted a post'], LatestNotificationReadState.Unread);
+    // 'posts you interacted with' is the grouped copy; a lone row says 'deleted a post'.
+    checkLatestNotification(
+      [profile1.username, 'deleted', 'posts you interacted with'],
+      LatestNotificationReadState.Unread,
+    );
+    cy.get('[data-cy="notifications-list"]').children().first().should('have.attr', 'data-cy', 'notification-group');
 
     // * toggle tabs to check unread dot disappears
     causeNotificationsToBeRead();
     verifyNotificationCounter(0);
-    checkLatestNotification([profile1.username, 'deleted a post'], LatestNotificationReadState.Read);
-
-    // TODO: add checks for disabled notifications
-    // * profile 2 disables notifications for post being deleted that you reposted
-    // * profile 1 creates a post (2) that will be reposted and then deleted
-    // * profile 2 reposts profile 1's post (2)
-    // * profile 1 deletes own post (2)
-    // * profile 2 checks for absence of notifications
+    checkLatestNotification(
+      [profile1.username, 'deleted', 'posts you interacted with'],
+      LatestNotificationReadState.Read,
+    );
   });
 
   it('can be notified for a post being edited that you replied to', () => {
@@ -428,39 +410,151 @@ describe('notifications', () => {
     checkLatestNotification([profile1.username, 'edited a post'], LatestNotificationReadState.Read);
   });
 
-  it('can be notified for a post being edited that you reposted', () => {
-    // * profile 1 creates a post (1) that will be reposted and then edited
-    const postContent = `The one who reposts this post will be notified when it is edited! ${Date.now()}`;
-    const editedContent = `This post has been edited! ${Date.now()}`;
-    createQuickPost(postContent);
+  it('groups notifications for posts being edited that you reposted', () => {
+    // * profile 1 creates two posts that will be reposted and then edited. Two distinct
+    // posts make the test self-contained: they form a grouped row on their own (repeated
+    // edits of one post deduplicate instead), so the test also passes in isolation. The
+    // copy assertions stay count-agnostic because earlier edits by profile 1 (from the
+    // preceding test, or Cypress retries) join the same run.
+    const timestamp = Date.now();
+    const firstPostContent = `The one who reposts this post will be notified when it is edited! ${timestamp}`;
+    const secondPostContent = `Repost this one too and hear about its edit as well! ${timestamp}`;
+    createQuickPost(firstPostContent);
+    createQuickPost(secondPostContent);
 
-    // * profile 2 reposts profile 1's post
+    // * profile 2 reposts both of profile 1's posts
     cy.signOut(HasBackedUp.Yes);
     cy.signInWithEncryptedFile(backupDownloadFilePath(profile2.username));
-    cy.findFirstPostInFeed().innerTextContains(postContent);
-    repostPost({ repostContent: 'I reposted your post!', filterText: postContent });
+    // The newest post visible in the feed proves both have been indexed.
+    cy.findFirstPostInFeed().innerTextContains(secondPostContent);
+    repostPost({ repostContent: 'I reposted your post!', filterText: firstPostContent });
+    repostPost({ repostContent: 'I reposted this one as well!', filterText: secondPostContent });
 
-    // * profile 1 edits own post (1)
+    // * profile 1 edits both own posts
     cy.signOut(HasBackedUp.Yes);
     cy.signInWithEncryptedFile(backupDownloadFilePath(profile1.username));
     goToProfilePageFromHeader();
     cy.get('[data-cy="profile-filter-item-posts"]').click();
     cy.get('[data-cy="profile-filter-item-posts"]').closest('[data-selected="true"]').should('exist');
-    editPost({ newPostContent: editedContent, postIdx: 0, filterText: postContent });
+    editPost({ newPostContent: `This post has been edited! ${timestamp}`, postIdx: 0, filterText: firstPostContent });
+    editPost({
+      newPostContent: `This post has also been edited! ${timestamp}`,
+      postIdx: 0,
+      filterText: secondPostContent,
+    });
 
-    // * profile 2 checks for notification for post being edited
+    // * profile 2 checks for the grouped edit notification, which keeps a link to every
+    // edited post (see issue #1570)
+    cy.signOut(HasBackedUp.Yes);
+    cy.signInWithEncryptedFile(backupDownloadFilePath(profile2.username));
+    verifyNotificationCounter(2);
+    goToProfilePageFromHeader();
+    verifyNotificationCounter(0);
+    // 'posts you interacted with' is the grouped copy; a lone row says 'edited a post'.
+    checkLatestNotification(
+      [profile1.username, 'edited', 'posts you interacted with'],
+      LatestNotificationReadState.Unread,
+    );
+
+    // * every edited post sits behind the Show/Hide disclosure on desktop, while mobile
+    // renders the title list permanently without a toggle
+    cy.get('[data-cy="notifications-list"]').children().first().as('editedGroup');
+    if (Cypress.expose('isMobile')) {
+      cy.get('@editedGroup').find('[data-cy="notification-group-toggle"]').should('not.exist');
+      cy.get('@editedGroup').find('[data-cy="notification-group-item"]').should('have.length.at.least', 2);
+    } else {
+      cy.get('@editedGroup').find('[data-cy="notification-group-toggle"]').should('contain.text', 'Show');
+      cy.get('@editedGroup').find('[data-cy="notification-group-item"]').should('have.length', 0);
+      cy.get('@editedGroup').find('[data-cy="notification-group-toggle"]').click();
+      cy.get('@editedGroup').find('[data-cy="notification-group-item"]').should('have.length.at.least', 2);
+      cy.get('@editedGroup').find('[data-cy="notification-group-toggle"]').should('contain.text', 'Hide');
+    }
+
+    // * toggle tabs to check unread dot disappears
+    causeNotificationsToBeRead();
+    verifyNotificationCounter(0);
+    checkLatestNotification(
+      [profile1.username, 'edited', 'posts you interacted with'],
+      LatestNotificationReadState.Read,
+    );
+  });
+
+  it('can be notified when a followed collection is updated with a new post', () => {
+    const DISCOVER_SECTION = '[data-cy="discover-collections-section"]';
+    const FOLLOWED_SECTION = '[data-cy="followed-collections-section"]';
+    const collectionName = `Notif collection ${Date.now()}`;
+    const seedPostContent = `Seed post for followed collection ${Date.now()}`;
+    const addedPostContent = `Post added after follow ${Date.now()}`;
+
+    // * profile 1 creates a collection with a seed post so it is discoverable
+    goToCollectionsPage();
+    createCollection(collectionName, 'Follow me for collection update notifications.');
+    createPostInCollection(seedPostContent);
+    // wait for nexus to index the collection as discoverable
+    cy.wait(1000);
+    cy.signOut(HasBackedUp.Yes);
+
+    // * profile 2 discovers the collection and follows it from the dedicated page header
+    cy.signInWithEncryptedFile(backupDownloadFilePath(profile2.username));
+    goToCollectionsPage();
+    findCollectionCardInSection(DISCOVER_SECTION, collectionName).should('be.visible');
+    cy.intercept('PUT', '**/pub/pubky.app/bookmarks/**').as('followCollection');
+    findCollectionCardInSection(DISCOVER_SECTION, collectionName).click();
+    cy.location('pathname').should('match', /^\/collections\/[^/]+\/[^/]+$/);
+    cy.get('[data-cy="collection-hero-follow-btn"]').should('contain.text', 'Follow').click();
+    cy.wait('@followCollection').its('response.statusCode').should('eq', 201);
+    goToCollectionsPage();
+    findCollectionCardInSection(FOLLOWED_SECTION, collectionName).should('be.visible');
+
+    // * profile 1 adds a new post to the followed collection
+    cy.signOut(HasBackedUp.Yes);
+    cy.signInWithEncryptedFile(backupDownloadFilePath(profile1.username));
+    openCollectionFromMyCollections(collectionName);
+    createPostInCollection(addedPostContent);
+
+    // * profile 2 checks for notification that the collection was updated
     cy.signOut(HasBackedUp.Yes);
     cy.signInWithEncryptedFile(backupDownloadFilePath(profile2.username));
     verifyNotificationCounter(1);
     goToProfilePageFromHeader();
     verifyNotificationCounter(0);
-    checkLatestNotification([profile1.username, 'edited a post'], LatestNotificationReadState.Unread);
+    checkLatestNotification([profile1.username, 'updated collection'], LatestNotificationReadState.Unread);
 
     // * toggle tabs to check unread dot disappears
     causeNotificationsToBeRead();
     verifyNotificationCounter(0);
-    checkLatestNotification([profile1.username, 'edited a post'], LatestNotificationReadState.Read);
+    checkLatestNotification([profile1.username, 'updated collection'], LatestNotificationReadState.Read);
+
+    // clean up so the collection does not linger in Discover for later runs/retries
+    cy.signOut(HasBackedUp.Yes);
+    cy.signInWithEncryptedFile(backupDownloadFilePath(profile1.username));
+    openCollectionFromMyCollections(collectionName);
+    deleteCollectionFromHero();
   });
 
-  it('can display counter for multiple new notifications');
+  it('can display counter for multiple new notifications', () => {
+    // * profile 1 creates a post
+    const postContent = `I will get three notifications about this post! ${Date.now()}`;
+    createQuickPost(postContent);
+
+    // * profile 2 tags the post, replies to it, and creates a post mentioning profile 1
+    cy.signOut(HasBackedUp.Yes);
+    cy.signInWithEncryptedFile(backupDownloadFilePath(profile2.username));
+    cy.findFirstPostInFeedFiltered(postContent, CheckForNewPosts.Yes);
+    fastTagPostInFeed(['multi-notif'], postContent);
+    replyToPost({ replyContent: 'Replying for a second notification!', filterText: postContent });
+    createQuickPostWithMention(profile1.username);
+
+    // * profile 1 checks the counter shows 3 and all three notifications are listed
+    cy.signOut(HasBackedUp.Yes);
+    cy.signInWithEncryptedFile(backupDownloadFilePath(profile1.username));
+    verifyNotificationCounter(3);
+    goToProfilePageFromHeader();
+    verifyNotificationCounter(0);
+    cy.get('[data-cy="notifications-list"]').children().should('have.length.at.least', 3);
+    // newest first: mention, then reply, then tag
+    checkNotificationAt(0, [profile2.username, 'mentioned you in post'], LatestNotificationReadState.Unread);
+    checkNotificationAt(1, [profile2.username, 'replied to your post'], LatestNotificationReadState.Unread);
+    checkNotificationAt(2, [profile2.username, 'tagged your post'], LatestNotificationReadState.Unread);
+  });
 });

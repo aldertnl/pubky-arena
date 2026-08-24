@@ -400,6 +400,13 @@ describe('PostText', () => {
   });
 
   describe('Article mode (isArticle prop)', () => {
+    it('renders feed preview copy with the secondary foreground color', () => {
+      render(<PostText content="Article preview copy" isArticle />);
+
+      expect(screen.getByTestId('container')).toHaveClass('text-secondary-foreground');
+      expect(screen.getByTestId('container')).not.toHaveClass('text-muted-foreground');
+    });
+
     it('renders h1 heading when isArticle is true', () => {
       render(<PostText content="# Heading 1" isArticle />);
 
@@ -947,27 +954,42 @@ describe('PostText', () => {
       render(<PostText content={longContent} />);
 
       const showMoreButton = screen.getByRole('button', { name: 'Show full post content' });
-      expect(showMoreButton).toHaveAttribute('data-allow-post-navigation');
+      expect(showMoreButton).not.toHaveAttribute('data-allow-post-navigation');
+      expect(showMoreButton).toHaveAttribute('type', 'button');
       expect(showMoreButton).toHaveClass('cursor-pointer');
       expect(showMoreButton).toHaveClass('text-brand');
       expect(showMoreButton).toHaveClass('mt-4');
     });
 
-    it('does not stop event propagation on "Show more" button click', () => {
+    it('expands truncated content in place and stops event propagation on "Show more" click', () => {
       const handleParentClick = vi.fn();
-      const longContent = generateContent(600);
-
-      render(
+      const uniqueTail = ' UNIQUE_EXPAND_TAIL_MARKER';
+      const longContent = `${generateContent(600)}${uniqueTail}`;
+      const { container } = render(
         <div onClick={handleParentClick}>
           <PostText content={longContent} />
         </div>,
       );
 
-      const showMoreButton = screen.getByRole('button', { name: 'Show full post content' });
-      fireEvent.click(showMoreButton);
+      expect(container.textContent).not.toContain(uniqueTail);
 
-      // Click should propagate to parent (unlike regular links)
-      expect(handleParentClick).toHaveBeenCalled();
+      fireEvent.click(screen.getByRole('button', { name: 'Show full post content' }));
+
+      expect(handleParentClick).not.toHaveBeenCalled();
+      expect(screen.queryByRole('button', { name: 'Show full post content' })).not.toBeInTheDocument();
+      expect(container.textContent).toContain(uniqueTail);
+    });
+
+    it('expands line-truncated content in place on "Show more" click', () => {
+      const content = ['Line 1', 'Line 2', 'Line 3', 'Line 4', 'Line 5', 'Line 6', 'Line 7'].join('\n');
+      const { container } = render(<PostText content={content} />);
+
+      expect(container.textContent).not.toContain('Line 7');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Show full post content' }));
+
+      expect(screen.queryByRole('button', { name: 'Show full post content' })).not.toBeInTheDocument();
+      expect(container.textContent).toContain('Line 7');
     });
 
     it('truncates content exactly at TRUNCATION_LIMIT characters plus ellipsis', () => {
@@ -1322,54 +1344,5 @@ Even more specific information.`}
   it('matches snapshot with custom className', () => {
     const { container } = render(<PostText content="Content with custom class" className="my-custom-class" />);
     expect(container.firstChild).toMatchSnapshot();
-  });
-});
-
-describe('PostText - expandInPlace', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockUsePathname.mockReturnValue('/profile/unlocked');
-  });
-
-  // Sits past the truncation limit, so it only renders once the body is expanded.
-  const TAIL = 'tail-only-visible-when-expanded';
-  const longContent = () => `${generateContent(600)}${TAIL}`;
-
-  it('leaves the click to the parent by default, so feed cards still navigate to the post', () => {
-    const onParentClick = vi.fn();
-    render(
-      <div onClick={onParentClick}>
-        <PostText content={longContent()} />
-      </div>,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Show full post content' }));
-
-    expect(onParentClick).toHaveBeenCalledTimes(1);
-    // Still truncated and the button stays: nothing was handled here.
-    expect(screen.queryByText(new RegExp(TAIL))).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Show full post content' })).toBeInTheDocument();
-  });
-
-  it('reveals the full text and drops the button when asked to expand in place', () => {
-    render(<PostText content={longContent()} expandInPlace />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Show full post content' }));
-
-    expect(screen.getByText(new RegExp(TAIL))).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Show full post content' })).not.toBeInTheDocument();
-  });
-
-  it('stops the click from reaching a parent that would navigate away', () => {
-    const onParentClick = vi.fn();
-    render(
-      <div onClick={onParentClick}>
-        <PostText content={longContent()} expandInPlace />
-      </div>,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Show full post content' }));
-
-    expect(onParentClick).not.toHaveBeenCalled();
   });
 });

@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { TagKind } from '@/application/tag/tag.types';
+import { Card } from '@/atoms/Card/Card';
 import { Container } from '@/atoms/Container/Container';
 import { Image } from '@/atoms/Image/Image';
 import { Skeleton } from '@/atoms/Skeleton/Skeleton';
@@ -12,6 +13,7 @@ import { useIsTouchDevice } from '@/hooks/useIsTouchDevice/useIsTouchDevice';
 import { usePostNavigation } from '@/hooks/usePostNavigation/usePostNavigation';
 import { usePostReplyRepostDialogs } from '@/hooks/usePostReplyRepostDialogs/usePostReplyRepostDialogs';
 import { useRelativeTime } from '@/hooks/useRelativeTime/useRelativeTime';
+import { useRemoveDeletedPost } from '@/hooks/useRemoveDeletedPost/useRemoveDeletedPost';
 import { useUserDetails } from '@/hooks/useUserDetails/useUserDetails';
 import { useViewportObserver } from '@/hooks/useViewportObserver/useViewportObserver';
 import { cn } from '@/libs/utils/utils';
@@ -20,6 +22,7 @@ import { PostHeaderTimestamp } from '@/molecules/PostHeaderTimestamp/PostHeaderT
 import { PostHeaderUserInfo } from '@/molecules/PostHeaderUserInfo/PostHeaderUserInfo';
 import { PostText } from '@/molecules/PostText/PostText';
 import { truncateAtWordBoundary } from '@/molecules/PostText/PostText.utils';
+import { PostUnavailable } from '@/molecules/PostUnavailable/PostUnavailable';
 import { TimelineEndMessage } from '@/molecules/Timeline/TimelineEndMessage';
 import { TimelineError } from '@/molecules/Timeline/TimelineError';
 import { TimelineStateWrapper } from '@/molecules/Timeline/TimelineStateWrapper/TimelineStateWrapper';
@@ -27,6 +30,7 @@ import { ClickableTagsList } from '../../../ClickableTagsList/ClickableTagsList'
 import { PostActionsBar } from '../../../PostActionsBar/PostActionsBar';
 import { PostContentBlurred } from '../../../PostContentBlurred/PostContentBlurred';
 import {
+  appendVisualTrailingCell,
   VISUAL_GRID_MAX_WIDTH_PX,
   VISUAL_TILE_ASPECT_RATIOS,
   VISUAL_TILE_COLUMN_SPANS,
@@ -36,6 +40,7 @@ import { VisualTimelinePostsSkeleton } from './VisualTimelinePosts.skeleton';
 import type {
   VisualTileImageProps,
   VisualTileVideoProps,
+  VisualTimelinePlaceholderTileProps,
   VisualTimelinePostsProps,
   VisualTimelineRowProps,
   VisualTimelineTileOverlayProps,
@@ -156,7 +161,12 @@ function VisualTimelineTileOverlay({ tile, size, onReplyClick, onRepostClick }: 
           <Container overrideDefaults className="flex items-start justify-between gap-4">
             <Container overrideDefaults className="min-w-0 flex-1">
               {userDetails ? (
-                <PostHeaderUserInfo userId={userId} userName={userDetails.name || ''} avatarUrl={avatarUrl} />
+                <PostHeaderUserInfo
+                  userId={userId}
+                  userName={userDetails.name || ''}
+                  status={userDetails.status}
+                  avatarUrl={avatarUrl}
+                />
               ) : (
                 <Container overrideDefaults className="flex items-center gap-2">
                   <Skeleton className="size-6 rounded-full bg-white/20" />
@@ -273,22 +283,77 @@ function VisualTimelineTile({ tile, size, onNavigate }: VisualTimelineTileProps)
   );
 }
 
-function VisualTimelineRow({ cell, onNavigate }: VisualTimelineRowProps) {
+/**
+ * Deleted / not-found collection items keep their mosaic slot as a card-surface
+ * placeholder — the same PostUnavailable copy Grid and List show — so item
+ * counts stay consistent across layouts. Clickable like the Grid/List cards
+ * (navigates to the post page); no hover overlay or post actions. Owners get
+ * the same Remove CTA as Grid/List (`useRemoveDeletedPost` gates it); like the
+ * media tiles' hover overlay, the button lives inside the clickable tile and
+ * stops propagation itself.
+ */
+function VisualTimelinePlaceholderTile({ tile, size, onNavigate }: VisualTimelinePlaceholderTileProps) {
+  const removal = useRemoveDeletedPost(tile.postId);
+
+  const handleNavigate = () => {
+    onNavigate(tile.postId);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleNavigate();
+    }
+  };
+
+  return (
+    <Card
+      role="button"
+      tabIndex={0}
+      data-cy="visual-feed-placeholder-tile"
+      onClick={handleNavigate}
+      onKeyDown={handleKeyDown}
+      className="flex size-full cursor-pointer items-center justify-center rounded-md py-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      style={{ aspectRatio: VISUAL_TILE_ASPECT_RATIOS[size] }}
+    >
+      <PostUnavailable
+        message={tile.placeholderKind === 'deleted' ? 'This post has been deleted by its author.' : 'Post not found.'}
+        removeDataCy={tile.placeholderKind === 'deleted' ? 'post-deleted-remove-btn' : 'post-missing-remove-btn'}
+        onRemove={removal.canRemove ? () => void removal.remove() : undefined}
+        isRemoving={removal.isRemoving}
+      />
+    </Card>
+  );
+}
+
+function VisualTimelineRow({ cell, onNavigate, trailingSlot }: VisualTimelineRowProps) {
   return (
     <Container
       overrideDefaults
+      // Anchor for focusAdjacentGridItem: mosaic tiles are `role="button"`, not
+      // `[role="article"]` cards, so the Remove CTA's focus hand-off climbs to
+      // this cell instead.
+      data-grid-item
       className="min-w-0"
       style={{
         gridColumn: `span ${VISUAL_TILE_COLUMN_SPANS[cell.size]} / span ${VISUAL_TILE_COLUMN_SPANS[cell.size]}`,
       }}
     >
-      {cell.isSpacer || !cell.tile ? (
+      {cell.isTrailingSlot ? (
+        <Container overrideDefaults style={{ aspectRatio: VISUAL_TILE_ASPECT_RATIOS[cell.size] }}>
+          {trailingSlot}
+        </Container>
+      ) : cell.isSpacer || !cell.tile ? (
         <Container
           overrideDefaults
           aria-hidden="true"
           className="rounded-md border border-dashed border-white/10 bg-white/[0.03]"
           style={{ aspectRatio: VISUAL_TILE_ASPECT_RATIOS[cell.size] }}
         />
+      ) : cell.tile.placeholderKind ? (
+        <VisualTimelinePlaceholderTile tile={cell.tile} size={cell.size} onNavigate={onNavigate} />
       ) : (
         <VisualTimelineTile tile={cell.tile} size={cell.size} onNavigate={onNavigate} />
       )}
@@ -303,14 +368,28 @@ export function VisualTimelinePosts({
   error,
   hasMore,
   loadMore,
+  emptyState,
+  trailingSlot,
+  hiddenItemsNotice,
+  showEndMessage = true,
+  showUnavailablePosts = false,
 }: VisualTimelinePostsProps) {
   const { navigateToPost } = usePostNavigation();
-  const { rows, hasPendingTiles, hasPendingFiles } = useVisualFeedTiles({ postIds, hasMore });
+  const { rows, hiddenPostCount, hasPendingSnapshot, hasPendingTiles, hasPendingFiles, hasPendingPostDetails } =
+    useVisualFeedTiles({
+      postIds,
+      hasMore,
+      showUnavailablePosts,
+    });
   const initialBackfillInFlightRef = React.useRef(false);
   const hasRows = rows.length > 0;
-  const shouldBackfillInitialRows = !loading && !loadingMore && !error && postIds.length > 0 && !hasRows && hasMore;
+  const shouldBackfillInitialRows =
+    !loading && !loadingMore && !error && !hasPendingSnapshot && postIds.length > 0 && !hasRows && hasMore;
   const isResolvingInitialRows =
-    !error && postIds.length > 0 && !hasRows && (hasMore || loadingMore || hasPendingTiles || hasPendingFiles);
+    !error &&
+    postIds.length > 0 &&
+    !hasRows &&
+    (hasPendingSnapshot || hasMore || loadingMore || hasPendingTiles || hasPendingFiles || hasPendingPostDetails);
   const isInitialLoading = loading || isResolvingInitialRows;
 
   useEffect(() => {
@@ -325,9 +404,13 @@ export function VisualTimelinePosts({
       });
   }, [loadMore, shouldBackfillInitialRows]);
 
+  // `hasRows` keeps the observer quiet while the tile pipeline resolves rows for
+  // existing postIds (the backfill effect owns that case). A fully-filtered stream
+  // region leaves postIds itself empty — there the sentinel must stay armed so
+  // load rounds keep chaining toward the first visible posts.
   const { sentinelRef } = useInfiniteScroll({
     onLoadMore: loadMore,
-    hasMore: hasMore && hasRows,
+    hasMore: hasMore && (hasRows || postIds.length === 0),
     isLoading: loadingMore || isInitialLoading,
     threshold: 3000,
     debounceMs: 20,
@@ -340,36 +423,60 @@ export function VisualTimelinePosts({
     !hasRows &&
     !hasMore &&
     !loadingMore &&
+    !hasPendingSnapshot &&
     !hasPendingTiles &&
-    !hasPendingFiles;
+    !hasPendingFiles &&
+    !hasPendingPostDetails;
+
+  // The CTA lives outside the raw tile rows so it never satisfies or suppresses
+  // the backfill/empty logic above — it is appended for display only.
+  const displayRows = trailingSlot != null ? appendVisualTrailingCell(rows) : rows;
+  const showHiddenNotice = hiddenItemsNotice != null && hiddenPostCount > 0;
+  const hasExtras = trailingSlot != null || showHiddenNotice;
+  const showEmptyStateWithTrailingSlot = postIds.length === 0 && trailingSlot != null && emptyState != null;
 
   return (
     <TimelineStateWrapper
       loading={isInitialLoading}
       error={error}
-      hasItems={hasRows && !showFilteredEmptyState}
+      hasItems={(hasRows && !showFilteredEmptyState) || hasExtras}
+      hasMore={hasMore}
       loadingComponent={<VisualTimelinePostsSkeleton />}
+      emptyComponent={emptyState}
     >
-      {!showFilteredEmptyState ? (
+      {!showFilteredEmptyState || hasExtras ? (
         <Container data-cy="visual-feed-container">
           <Container
             overrideDefaults
             className="mx-auto flex w-full flex-col gap-6"
             style={{ maxWidth: `${VISUAL_GRID_MAX_WIDTH_PX}px` }}
           >
-            {rows.map((row) => (
+            {showEmptyStateWithTrailingSlot ? emptyState : null}
+
+            {showHiddenNotice ? hiddenItemsNotice : null}
+
+            {displayRows.map((row) => (
               <Container key={row.key} overrideDefaults className="grid grid-cols-12 gap-6">
                 {row.cells.map((cell) => (
-                  <VisualTimelineRow key={cell.key} cell={cell} onNavigate={navigateToPost} />
+                  <VisualTimelineRow
+                    key={cell.key}
+                    cell={cell}
+                    onNavigate={navigateToPost}
+                    trailingSlot={trailingSlot}
+                  />
                 ))}
               </Container>
             ))}
 
             {error && postIds.length > 0 && <TimelineError message={error} />}
 
-            {!hasMore && !loadingMore && rows.length > 0 && <TimelineEndMessage />}
+            {showEndMessage && !hasMore && !loadingMore && rows.length > 0 && <TimelineEndMessage />}
 
-            <Container overrideDefaults className="h-5" ref={sentinelRef} />
+            {/* Infinite-scroll sentinel — only mounted (and given height) while there are
+                more posts to observe for, mirroring TimelineGridPosts. Once the feed is
+                fully loaded the observer detaches, so rendering it would just leave dead
+                space below the mosaic. */}
+            {hasMore && <Container overrideDefaults className="h-5" ref={sentinelRef} />}
           </Container>
         </Container>
       ) : null}

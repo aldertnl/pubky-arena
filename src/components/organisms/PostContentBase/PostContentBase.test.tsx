@@ -104,8 +104,8 @@ vi.mock('../PostContentBlurred/PostContentBlurred', () => ({
   )),
 }));
 
-vi.mock('@/molecules/PostMissing/PostMissing', () => ({
-  PostMissing: () => <div data-testid="post-missing" />,
+vi.mock('@/molecules/PostUnavailable/PostUnavailable', () => ({
+  PostUnavailable: ({ message }: { message: string }) => <div data-testid="post-unavailable" data-message={message} />,
 }));
 
 const mockUsePostDetails = vi.mocked(usePostDetails);
@@ -200,6 +200,21 @@ describe('PostContentBase', () => {
 
     expect(mockPostAttachments).toHaveBeenCalledWith(
       { attachments: ['file-id-1'], localAttachments: mockLocalAttachments },
+      undefined,
+    );
+  });
+
+  it('renders attachments in the default content stack when there is no text content', () => {
+    const mockAttachments = ['file-id-1', 'file-id-2'];
+    mockUsePostDetails.mockReturnValue({
+      postDetails: createMockPostDetails({ content: '', attachments: mockAttachments }),
+      isLoading: false,
+    });
+
+    render(<PostContentBase postId="post-123" />);
+
+    expect(mockPostAttachments).toHaveBeenCalledWith(
+      { attachments: mockAttachments, localAttachments: undefined },
       undefined,
     );
   });
@@ -350,22 +365,22 @@ describe('PostContentBase', () => {
     expect(screen.queryByTestId('post-article')).not.toBeInTheDocument();
   });
 
-  it('renders PostMissing when the post is not found (settled null)', () => {
+  it('renders PostUnavailable when the post is not found (settled null)', () => {
     mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: false });
 
     render(<PostContentBase postId="post-missing" />);
 
-    expect(screen.getByTestId('post-missing')).toBeInTheDocument();
+    expect(screen.getByTestId('post-unavailable')).toHaveAttribute('data-message', 'Post not found.');
     expect(screen.queryByTestId('skeleton')).not.toBeInTheDocument();
   });
 
-  it('renders the skeleton (not PostMissing) while still loading', () => {
+  it('renders the skeleton (not PostUnavailable) while still loading', () => {
     mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: true });
 
     render(<PostContentBase postId="post-loading" />);
 
     expect(screen.getAllByTestId('skeleton').length).toBeGreaterThan(0);
-    expect(screen.queryByTestId('post-missing')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('post-unavailable')).not.toBeInTheDocument();
   });
 });
 

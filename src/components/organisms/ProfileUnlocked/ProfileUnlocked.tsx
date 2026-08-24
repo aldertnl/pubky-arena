@@ -1,7 +1,6 @@
 'use client';
 
 import { Check } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { Container } from '@/atoms/Container/Container';
 import { Typography } from '@/atoms/Typography/Typography';
 import { useUnlockedListContext } from '@/providers/UnlockedListProvider/UnlockedListProvider';
@@ -14,8 +13,6 @@ import { ProfileUnlockedCard } from './ProfileUnlockedCard';
  */
 export function ProfileUnlocked() {
   const { items, isLoading, isError } = useUnlockedListContext();
-  const t = useTranslations('profile.unlocked');
-  const tLock = useTranslations('post.lock');
 
   if (isLoading) return <ProfileUnlockedSkeleton />;
 
@@ -23,7 +20,7 @@ export function ProfileUnlocked() {
     return (
       <Container overrideDefaults data-cy="profile-unlocked-empty" className="w-full">
         <Typography overrideDefaults className="text-center text-base font-medium text-muted-foreground">
-          {isError ? t('error') : t('empty')}
+          {isError ? 'Couldn\'t load your unlocked content. Try again later.' : 'You haven\'t unlocked any content yet.'}
         </Typography>
       </Container>
     );
@@ -34,7 +31,7 @@ export function ProfileUnlocked() {
       <Container overrideDefaults className="flex items-center gap-1.5 text-brand">
         <Check className="size-4 shrink-0" aria-hidden />
         <Typography overrideDefaults as="span" className="text-xs leading-4 font-medium tracking-[1.2px] uppercase">
-          {tLock('unlocked')}
+          {'Unlocked'}
         </Typography>
       </Container>
 

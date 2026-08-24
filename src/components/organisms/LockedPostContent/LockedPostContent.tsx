@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Check, Lock } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { Container } from '@/atoms/Container/Container';
 import { LocksController } from '@/controllers/locks/locks';
 import { useLockFile } from '@/hooks/useLockFile/useLockFile';
@@ -50,8 +49,6 @@ export function LockedPostContent({
   const { lockFile } = useLockFile(lock);
   const { unlockedPost, applyUnlockedContent, media, isOwnLock } = useUnlockedContent({ lock, lockFile, authorId });
   const { toast } = useToast();
-  const tToast = useTranslations('toast.post');
-  const tLock = useTranslations('post.lock');
 
   if (!lockContent) return null;
 
@@ -69,7 +66,7 @@ export function LockedPostContent({
       // A dropped attachment is a permanent data error already reported to Sentry. Warn the reader
       // with a toast, but keep rendering the rest of the post — don't block the unlocked view.
       if (content.attachments.length < (content.post.attachments?.length ?? 0)) {
-        toast({ variant: 'error', description: tToast('attachmentsLoadFailed') });
+        toast({ variant: 'error', description: 'Could not load attachments' });
       }
     } catch {
       setUnlockError(true); // already logged by the Err factory
@@ -100,7 +97,7 @@ export function LockedPostContent({
                 <Check className="size-4 shrink-0" aria-hidden />
               )}
               <span className="text-xs leading-4 font-medium tracking-[1.2px] uppercase">
-                {isOwnLock ? tLock('myLockedContent') : tLock('unlocked')}
+                {isOwnLock ? 'My locked content' : 'Unlocked'}
               </span>
             </div>
             {unlockedPost.kind === 'long' && isArticleContent(unlockedPost.content) ? (

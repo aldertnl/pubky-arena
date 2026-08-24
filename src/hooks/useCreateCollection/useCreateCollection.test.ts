@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { COLLECTION_LAYOUT } from '@/config/collections';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
 import { Err } from '@/libs/error/error.factories';
 import { ErrorService } from '@/libs/error/error.types';
@@ -23,17 +24,6 @@ const mocks = vi.hoisted(() => ({
     reset: vi.fn(),
   },
 }));
-
-const translations: Record<string, string> = {
-  'collections.new.nameRequired': 'Collection title is required.',
-  'collections.new.created': 'Collection created',
-  'collections.new.createFailed': 'Failed to create collection.',
-  'toast.file.imageTooLargeGif':
-    'This GIF exceeds the {maxSize} upload limit and cannot be compressed. Please use a smaller GIF.',
-  'toast.success': 'Success',
-  'toast.error': 'Error',
-};
-
 vi.mock('@/controllers/post/post', () => ({
   PostController: {
     commitCreateCollection: (...args: unknown[]) => mocks.commitCreateCollection(...args),
@@ -58,17 +48,6 @@ vi.mock('@/stores/localFiles/localFiles.store', () => ({
     getState: () => ({ setCollectionCover: mocks.setCollectionCover }),
   },
 }));
-
-vi.mock('next-intl', () => ({
-  useTranslations:
-    (namespace: string) =>
-    (key: string, values?: Record<string, string>): string =>
-      Object.entries(values ?? {}).reduce(
-        (msg, [n, v]) => msg.replace(`{${n}}`, v),
-        translations[`${namespace}.${key}`] ?? key,
-      ),
-}));
-
 describe('useCreateCollection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -83,6 +62,7 @@ describe('useCreateCollection', () => {
     expect(result.current.form.getValues()).toEqual({
       [CREATE_COLLECTION_FORM_FIELDS.NAME]: '',
       [CREATE_COLLECTION_FORM_FIELDS.DESCRIPTION]: '',
+      [CREATE_COLLECTION_FORM_FIELDS.LAYOUT]: COLLECTION_LAYOUT.GRID,
     });
     expect(result.current.cover.file).toBeNull();
     expect(result.current.form.formState.isSubmitting).toBe(false);
@@ -118,6 +98,7 @@ describe('useCreateCollection', () => {
 
     act(() => result.current.form.setValue(CREATE_COLLECTION_FORM_FIELDS.NAME, '  Proof of Work  '));
     act(() => result.current.form.setValue(CREATE_COLLECTION_FORM_FIELDS.DESCRIPTION, 'Bitcoin writing'));
+    act(() => result.current.form.setValue(CREATE_COLLECTION_FORM_FIELDS.LAYOUT, COLLECTION_LAYOUT.LIST));
 
     let saved: string | null = null;
     await act(async () => {
@@ -130,10 +111,30 @@ describe('useCreateCollection', () => {
       name: '  Proof of Work  ',
       description: 'Bitcoin writing',
       coverImage: file,
+      layout: COLLECTION_LAYOUT.LIST,
     });
     expect(mocks.toast).toHaveBeenCalledWith({
       title: 'Collection created',
     });
+  });
+
+  it('passes the Visual layout selection to the controller', async () => {
+    mocks.commitCreateCollection.mockResolvedValue('current-user:c1');
+
+    const { result } = renderHook(() => useCreateCollection());
+
+    act(() => result.current.form.setValue(CREATE_COLLECTION_FORM_FIELDS.NAME, 'Gallery'));
+    act(() => result.current.form.setValue(CREATE_COLLECTION_FORM_FIELDS.LAYOUT, COLLECTION_LAYOUT.VISUAL));
+
+    let saved: string | null = null;
+    await act(async () => {
+      saved = await result.current.submit();
+    });
+
+    expect(saved).toBe('current-user:c1');
+    expect(mocks.commitCreateCollection).toHaveBeenCalledWith(
+      expect.objectContaining({ layout: COLLECTION_LAYOUT.VISUAL }),
+    );
   });
 
   it('seeds the local-files store with a blob URL of the picked cover File so the cover renders instantly', async () => {
@@ -243,6 +244,7 @@ describe('useCreateCollection', () => {
     expect(result.current.form.getValues()).toEqual({
       [CREATE_COLLECTION_FORM_FIELDS.NAME]: '',
       [CREATE_COLLECTION_FORM_FIELDS.DESCRIPTION]: '',
+      [CREATE_COLLECTION_FORM_FIELDS.LAYOUT]: COLLECTION_LAYOUT.GRID,
     });
     expect(mocks.cover.reset).toHaveBeenCalledTimes(1);
   });

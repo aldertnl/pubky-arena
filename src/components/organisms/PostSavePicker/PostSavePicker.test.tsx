@@ -19,19 +19,6 @@ const mockState = vi.hoisted(() => ({
   createCollectionWithPost: vi.fn(),
   setShowSignInDialog: vi.fn(),
 }));
-
-const translations: Record<string, string> = {
-  'postSave.title': 'Save post',
-  'postSave.description': 'Choose where this post should be saved.',
-  'postSave.open': 'Save post',
-  'postSave.loading': 'Loading save options',
-  'postSave.bookmarks': 'Bookmarks',
-  'postSave.newCollection': 'New Collection',
-  'postSave.collectionNamePlaceholder': 'Collection name',
-  'postSave.createCollection': 'Create collection',
-  'postSave.loadingCollections': 'Loading collections...',
-};
-
 vi.mock('@/hooks/usePostSaveTargets/usePostSaveTargets', () => ({
   usePostSaveTargets: () => ({
     isBookmarked: mockState.isBookmarked,
@@ -80,14 +67,6 @@ vi.mock('@/stores/auth/auth.store', () => ({
     }),
   },
 }));
-
-vi.mock('next-intl', () => ({
-  useTranslations:
-    (namespace: string) =>
-    (key: string): string =>
-      translations[`${namespace}.${key}`] ?? key,
-}));
-
 const TEST_STREAM_ID = 'timeline:all:all' as PostStreamId;
 
 describe('PostSavePicker', () => {
@@ -159,6 +138,7 @@ describe('PostSavePicker', () => {
     const { container } = renderPicker();
 
     expect(getTriggerIcon(container)).toHaveAttribute('data-state', 'saved');
+    expect(container.querySelector('.lucide-square-library')).toHaveClass('text-brand');
   });
 
   it('keeps the collection icon while the desktop save menu is open', async () => {

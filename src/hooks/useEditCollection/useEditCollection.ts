@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useForm, type UseFormReturn } from 'react-hook-form';
+import { DEFAULT_COLLECTION_LAYOUT } from '@/config/collections';
 import { PostController } from '@/controllers/post/post';
 import { useCoverImagePicker, type UseCoverImagePickerResult } from '@/hooks/useCoverImagePicker/useCoverImagePicker';
 import {
@@ -16,7 +16,8 @@ import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
 import { isAppError } from '@/libs/error/error.utils';
 import { getImageUploadSizeLimitToastMessage } from '@/libs/image/imageUploadSizeLimit';
 import { Logger } from '@/libs/logger/logger';
-import { parseCollectionContent, resolveCollectionCoverImage } from '@/libs/post/collectionContent';
+import { parseCollectionContent } from '@/libs/post/collectionContent';
+import { resolveCollectionCoverImage } from '@/libs/post/collectionCoverImage';
 import { useToast } from '@/molecules/Toaster/use-toast';
 import { FileVariant } from '@/services/nexus/file/file.types';
 import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
@@ -48,9 +49,6 @@ type UseEditCollectionResult = {
  * stay in `collections.new`.
  */
 export function useEditCollection({ compositeCollectionId }: UseEditCollectionParams): UseEditCollectionResult {
-  const tEdit = useTranslations('collections.edit');
-  const tForm = useTranslations('collections.new');
-  const tFile = useTranslations('toast.file');
   const { toast } = useToast();
 
   const { postDetails } = usePostDetails(compositeCollectionId);
@@ -58,6 +56,7 @@ export function useEditCollection({ compositeCollectionId }: UseEditCollectionPa
 
   const originalName = collection?.name ?? '';
   const originalDescription = collection?.description ?? '';
+  const originalLayout = collection?.layout ?? DEFAULT_COLLECTION_LAYOUT;
   // Preserve the raw envelope value so we can pass it back unchanged when the
   // user leaves the cover alone (avoids re-uploading and avoids storing the
   // CDN-resolved URL back into the envelope).
@@ -72,7 +71,7 @@ export function useEditCollection({ compositeCollectionId }: UseEditCollectionPa
   const cover = useCoverImagePicker({ initialPreviewUrl });
 
   const form = useForm<CreateCollectionFormData>({
-    resolver: zodResolver(createCollectionFormSchema(tForm)),
+    resolver: zodResolver(createCollectionFormSchema),
     defaultValues: createCollectionFormDefaults,
     // See useCreateCollection for the rationale — `onChange` (not `all`) keeps
     // blur from firing validation, so closing the dialog doesn't risk a
@@ -94,9 +93,22 @@ export function useEditCollection({ compositeCollectionId }: UseEditCollectionPa
     form.reset({
       [CREATE_COLLECTION_FORM_FIELDS.NAME]: originalName,
       [CREATE_COLLECTION_FORM_FIELDS.DESCRIPTION]: originalDescription,
+      [CREATE_COLLECTION_FORM_FIELDS.LAYOUT]: originalLayout,
     });
     hasPrefilledRef.current = true;
-  }, [form, originalName, originalDescription]);
+  }, [form, originalDescription, originalLayout, originalName]);
+
+  // Latest envelope values, readable imperatively from `reset()`. The dialog's
+  // close handler captures `reset` in the render where Save was clicked, so
+  // reading the render-scope primitives there would restore the PRE-save
+  // values: the local-first commit propagates the committed envelope through
+  // the Dexie live query while the save is still awaited — i.e. before
+  // `reset()` runs — and the prefill effect above never re-fires afterwards
+  // because its deps already changed while `hasPrefilledRef` was still armed.
+  const originalsRef = useRef({ name: originalName, description: originalDescription, layout: originalLayout });
+  useEffect(() => {
+    originalsRef.current = { name: originalName, description: originalDescription, layout: originalLayout };
+  }, [originalDescription, originalLayout, originalName]);
 
   const submit = async (): Promise<boolean> => {
     if (!collection) return false;
@@ -105,6 +117,7 @@ export function useEditCollection({ compositeCollectionId }: UseEditCollectionPa
     await form.handleSubmit(async (data) => {
       const name = data[CREATE_COLLECTION_FORM_FIELDS.NAME];
       const description = data[CREATE_COLLECTION_FORM_FIELDS.DESCRIPTION];
+      const layout = data[CREATE_COLLECTION_FORM_FIELDS.LAYOUT];
 
       // Resolve the cover argument: new file > cleared > unchanged.
       let coverArg: File | string | null;
@@ -122,6 +135,7 @@ export function useEditCollection({ compositeCollectionId }: UseEditCollectionPa
           name,
           description,
           coverImage: coverArg,
+          layout,
         });
 
         // Mirror the post-attachment / avatar pattern: stash a blob URL in the
@@ -135,7 +149,7 @@ export function useEditCollection({ compositeCollectionId }: UseEditCollectionPa
         }
 
         toast({
-          title: tEdit('updated'),
+          title: 'Collection updated',
         });
         ok = true;
       } catch (error) {
@@ -143,8 +157,8 @@ export function useEditCollection({ compositeCollectionId }: UseEditCollectionPa
         toast({
           variant: 'error',
           description:
-            getImageUploadSizeLimitToastMessage(error, tFile) ??
-            (isAppError(error) ? error.message : tEdit('updateFailed')),
+            getImageUploadSizeLimitToastMessage(error) ??
+            (isAppError(error) ? error.message : 'Failed to update collection.'),
         });
       }
     })();
@@ -152,15 +166,17 @@ export function useEditCollection({ compositeCollectionId }: UseEditCollectionPa
   };
 
   const reset = () => {
+    // Read through `originalsRef` (not the render closure) so a dialog closed
+    // right after a save resets to the values the user just committed.
     form.reset({
-      [CREATE_COLLECTION_FORM_FIELDS.NAME]: originalName,
-      [CREATE_COLLECTION_FORM_FIELDS.DESCRIPTION]: originalDescription,
+      [CREATE_COLLECTION_FORM_FIELDS.NAME]: originalsRef.current.name,
+      [CREATE_COLLECTION_FORM_FIELDS.DESCRIPTION]: originalsRef.current.description,
+      [CREATE_COLLECTION_FORM_FIELDS.LAYOUT]: originalsRef.current.layout,
     });
     cover.reset();
-    // Allow the prefill effect to re-run on the next render. Right after a
-    // successful save, the Dexie live query may not have propagated yet, so
-    // `originalName` / `originalDescription` above can still be stale. Clearing
-    // the ref lets the effect catch up once the fresh envelope arrives — so a
+    // Covers the opposite ordering: if the Dexie live query has NOT propagated
+    // yet, the values above are still the pre-save ones. Clearing the ref lets
+    // the prefill effect catch up once the fresh envelope arrives — so a
     // reopened dialog shows the committed values rather than the pre-save ones.
     hasPrefilledRef.current = false;
   };

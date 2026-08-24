@@ -1,7 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EnrichedPostDetails } from '@/application/moderation/moderation.types';
+import { TIMELINE_FEED_VARIANT } from '@/config/feed';
 import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
+import { buildCollectionItemsStreamId } from '@/models/stream/post/postStream.types';
+import type { TimelineFeedContextValue } from '../../Feed/TimelineFeed/TimelineFeed.types';
+import { TimelineFeedContext } from '../../Feed/TimelineFeed/TimelineFeedContext';
 import { TimelineFeedItem } from './TimelineFeedItem';
 
 vi.mock('@/hooks/usePostDetails/usePostDetails', () => ({
@@ -42,8 +46,21 @@ vi.mock('@/organisms/Timeline/PostReplies/PostReplies', () => {
 
 vi.mock('@/organisms/Collections/CollectionCard/CollectionCard', () => {
   return {
-    CollectionCard: ({ authorPubky, postId }: { authorPubky: string; postId: string }) => (
-      <div data-testid="collection-card" data-author-pubky={authorPubky} data-post-id={postId} />
+    CollectionCard: ({
+      authorPubky,
+      postId,
+      showDeleteAction,
+    }: {
+      authorPubky: string;
+      postId: string;
+      showDeleteAction?: boolean;
+    }) => (
+      <div
+        data-testid="collection-card"
+        data-author-pubky={authorPubky}
+        data-post-id={postId}
+        data-show-delete-action={String(showDeleteAction ?? false)}
+      />
     ),
   };
 });
@@ -61,6 +78,17 @@ function createMockPostDetails(overrides: Partial<EnrichedPostDetails> = {}): En
     is_moderated: false,
     is_blurred: false,
     ...overrides,
+  };
+}
+
+function createCollectionFeedContext(): TimelineFeedContextValue {
+  return {
+    variant: TIMELINE_FEED_VARIANT.COLLECTION,
+    streamId: buildCollectionItemsStreamId('author', 'collection'),
+    collectionId: 'author:collection',
+    prependPosts: vi.fn(async () => {}),
+    prependOptimisticPosts: vi.fn(),
+    removePosts: vi.fn(),
   };
 }
 
@@ -94,6 +122,23 @@ describe('TimelineFeedItem', () => {
     expect(screen.queryByTestId('collection-card')).not.toBeInTheDocument();
   });
 
+  it('hides inline replies for posts rendered in a collection feed', () => {
+    render(
+      <TimelineFeedContext.Provider value={createCollectionFeedContext()}>
+        <TimelineFeedItem
+          postId={mockPostId}
+          index={0}
+          totalCount={1}
+          setCardRef={mockSetCardRef}
+          onPostKeyDown={mockOnPostKeyDown}
+        />
+      </TimelineFeedContext.Provider>,
+    );
+
+    expect(screen.getByTestId(`post-${mockPostId}`)).toBeInTheDocument();
+    expect(screen.queryByTestId(`replies-${mockPostId}`)).not.toBeInTheDocument();
+  });
+
   it('renders standalone CollectionCard without replies for collection posts', () => {
     mockUsePostDetails.mockReturnValue({
       postDetails: createMockPostDetails({
@@ -117,6 +162,7 @@ describe('TimelineFeedItem', () => {
     expect(collectionCard).toBeInTheDocument();
     expect(collectionCard).toHaveAttribute('data-author-pubky', 'author-pubky');
     expect(collectionCard).toHaveAttribute('data-post-id', 'collection-id');
+    expect(collectionCard).toHaveAttribute('data-show-delete-action', 'false');
     expect(screen.queryByTestId('post-author-pubky:collection-id')).not.toBeInTheDocument();
     expect(screen.queryByTestId('replies-author-pubky:collection-id')).not.toBeInTheDocument();
   });
@@ -212,6 +258,22 @@ describe('TimelineFeedItem - Snapshots', () => {
         setCardRef={mockSetCardRef}
         onPostKeyDown={mockOnPostKeyDown}
       />,
+    );
+
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('matches snapshot for a regular post in a collection feed', () => {
+    const { container } = render(
+      <TimelineFeedContext.Provider value={createCollectionFeedContext()}>
+        <TimelineFeedItem
+          postId="author:post123"
+          index={0}
+          totalCount={1}
+          setCardRef={mockSetCardRef}
+          onPostKeyDown={mockOnPostKeyDown}
+        />
+      </TimelineFeedContext.Provider>,
     );
 
     expect(container.firstChild).toMatchSnapshot();

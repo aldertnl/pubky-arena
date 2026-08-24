@@ -1,7 +1,10 @@
 import { createRef, type ReactNode, type RefObject } from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EnrichedPostDetails } from '@/application/moderation/moderation.types';
+import { COLLECTION_LAYOUT, type CollectionLayout } from '@/config/collections';
+import { CollectionHeroSkeleton } from '@/organisms/Collections/CollectionHero/CollectionHero.skeleton';
+import { LAYOUT, type LayoutType } from '@/stores/home/home.types';
 import { asOpaque } from '@/test-utils/type-assertions';
 import { CollectionItems } from './CollectionItems';
 
@@ -11,16 +14,35 @@ import { CollectionItems } from './CollectionItems';
 
 const mockUseAuthStore = vi.fn();
 const mockTimelineFeedProps = vi.hoisted(() => vi.fn());
-
-vi.mock('next-intl', () => ({
-  useTranslations: (namespace?: string) => (key: string) => `${namespace ?? ''}.${key}`,
-  useFormatter: () => ({
-    number: (value: number, _options?: Intl.NumberFormatOptions) => String(value),
-  }),
+const mockReorderState = vi.hoisted(() => ({
+  isReorderMode: false,
+  isSaving: false,
+  draftEntries: [] as { uri: string; postId: string | null }[],
+  enterReorder: vi.fn(),
+  moveItem: vi.fn(),
+  saveOrder: vi.fn().mockResolvedValue(undefined),
+  cancelReorder: vi.fn(),
 }));
 
 vi.mock('@/stores/auth/auth.store', () => ({
   useAuthStore: (selector: (state: { currentUserPubky: string | null }) => unknown) => mockUseAuthStore(selector),
+}));
+
+vi.mock('@/hooks/useReorderCollection/useReorderCollection', () => ({
+  useReorderCollection: () => mockReorderState,
+}));
+
+vi.mock('@/organisms/Collections/CollectionReorderGrid/CollectionReorderGrid', () => ({
+  CollectionReorderGrid: ({
+    entries,
+    disabled,
+  }: {
+    entries: { uri: string; postId: string | null }[];
+    onMove: (activeUri: string, overUri: string) => void;
+    disabled?: boolean;
+  }) => (
+    <div data-testid="collection-reorder-grid" data-entry-count={entries.length} data-disabled={String(!!disabled)} />
+  ),
 }));
 
 vi.mock('@/organisms/Collections/CollectionHero/CollectionHero', () => ({
@@ -28,18 +50,34 @@ vi.mock('@/organisms/Collections/CollectionHero/CollectionHero', () => ({
     authorPubky,
     postId,
     postDetails,
+    layout,
+    onLayoutChange,
+    reorder,
   }: {
     authorPubky: string;
     postId: string;
     postDetails?: EnrichedPostDetails | null;
-  }) => (
-    <div
-      data-testid="collection-hero"
-      data-author-pubky={authorPubky}
-      data-post-id={postId}
-      data-has-post-details={String(postDetails != null)}
-    />
-  ),
+    layout: CollectionLayout;
+    onLayoutChange: (layout: CollectionLayout) => void;
+    reorder?: { isActive: boolean };
+  }) =>
+    postDetails ? (
+      <div
+        data-testid="collection-hero"
+        data-author-pubky={authorPubky}
+        data-post-id={postId}
+        data-has-post-details="true"
+        data-layout={layout}
+        data-has-reorder={String(Boolean(reorder))}
+        data-reorder-active={String(reorder?.isActive ?? false)}
+      >
+        <button type="button" onClick={() => onLayoutChange(COLLECTION_LAYOUT.GRID)}>
+          Switch to Grid
+        </button>
+      </div>
+    ) : (
+      <CollectionHeroSkeleton />
+    ),
 }));
 
 vi.mock('@/organisms/Collections/DialogAddContent/DialogAddContent', () => ({
@@ -54,20 +92,33 @@ vi.mock('@/organisms/Timeline/Feed/TimelineFeed/TimelineFeed', () => ({
     children?: ReactNode;
     emptyState?: ReactNode;
     pullToRefreshContainerRef?: RefObject<HTMLElement | null>;
-    gridTrailingSlot?: ReactNode;
+    trailingSlot?: ReactNode;
+    requestedLayout?: LayoutType;
+    visualHiddenItemsNotice?: ReactNode;
   }) => {
-    const { variant, children, emptyState, pullToRefreshContainerRef, gridTrailingSlot } = props;
-    mockTimelineFeedProps({ pullToRefreshContainerRef, gridTrailingSlot });
+    const {
+      variant,
+      children,
+      emptyState,
+      pullToRefreshContainerRef,
+      trailingSlot,
+      requestedLayout,
+      visualHiddenItemsNotice,
+    } = props;
+    mockTimelineFeedProps({ pullToRefreshContainerRef, trailingSlot, requestedLayout, visualHiddenItemsNotice });
 
     return (
       <div
         data-testid="timeline-feed"
         data-variant={variant}
         data-has-empty-state={String(Boolean(emptyState))}
-        data-has-grid-trailing-slot={String(Boolean(gridTrailingSlot))}
+        data-has-trailing-slot={String(Boolean(trailingSlot))}
+        data-has-visual-hidden-items-notice={String(Boolean(visualHiddenItemsNotice))}
+        data-requested-layout={requestedLayout}
       >
         {children}
-        {gridTrailingSlot}
+        {visualHiddenItemsNotice}
+        {trailingSlot}
       </div>
     );
   },
@@ -93,7 +144,7 @@ const COLLECTION_CONTENT_EMPTY = JSON.stringify({
   items: [],
 });
 
-function buildPostDetails(content: string): EnrichedPostDetails {
+function buildPostDetails(content: string, { isBlurred = false }: { isBlurred?: boolean } = {}): EnrichedPostDetails {
   return asOpaque<EnrichedPostDetails>({
     id: COMPOSITE_ID,
     content,
@@ -101,8 +152,8 @@ function buildPostDetails(content: string): EnrichedPostDetails {
     indexed_at: 0,
     uri: '',
     attachments: null,
-    is_moderated: false,
-    is_blurred: false,
+    is_moderated: isBlurred,
+    is_blurred: isBlurred,
   });
 }
 
@@ -112,13 +163,15 @@ function setAuthStore(currentUserPubky: string | null) {
   );
 }
 
-function renderCollectionItems({
-  postDetails = buildPostDetails(COLLECTION_CONTENT),
-  pullToRefreshContainerRef,
-}: {
+type RenderCollectionItemsOptions = {
   postDetails?: EnrichedPostDetails | null;
   pullToRefreshContainerRef?: RefObject<HTMLElement | null>;
-} = {}) {
+};
+
+function renderCollectionItems(options: RenderCollectionItemsOptions = {}) {
+  const postDetails = 'postDetails' in options ? options.postDetails : buildPostDetails(COLLECTION_CONTENT);
+  const { pullToRefreshContainerRef } = options;
+
   return render(
     <CollectionItems
       authorPubky={AUTHOR_PUBKY}
@@ -132,6 +185,9 @@ function renderCollectionItems({
 beforeEach(() => {
   vi.clearAllMocks();
   mockTimelineFeedProps.mockClear();
+  mockReorderState.isReorderMode = false;
+  mockReorderState.isSaving = false;
+  mockReorderState.draftEntries = [];
   setAuthStore(null);
 });
 
@@ -161,7 +217,7 @@ describe('CollectionItems', () => {
 
     renderCollectionItems({ pullToRefreshContainerRef });
 
-    expect(mockTimelineFeedProps).toHaveBeenCalledWith({ pullToRefreshContainerRef });
+    expect(mockTimelineFeedProps).toHaveBeenCalledWith(expect.objectContaining({ pullToRefreshContainerRef }));
   });
 
   it('renders the feed for an owner non-empty envelope with the hero inside the feed', () => {
@@ -174,12 +230,135 @@ describe('CollectionItems', () => {
     expect(screen.queryByTestId('collection-items-empty')).not.toBeInTheDocument();
   });
 
-  it('renders the feed (never the empty state) while the envelope is still loading', () => {
+  it('uses the creator List default and lets the viewer override it locally', () => {
+    renderCollectionItems({
+      postDetails: buildPostDetails(
+        JSON.stringify({
+          name: 'Reading',
+          items: ['pubky://author/pub/pubky.app/posts/a'],
+          layout: COLLECTION_LAYOUT.LIST,
+        }),
+      ),
+    });
+
+    expect(screen.getByTestId('collection-hero')).toHaveAttribute('data-layout', COLLECTION_LAYOUT.LIST);
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-requested-layout', LAYOUT.LIST);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to Grid' }));
+
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-requested-layout', LAYOUT.COLUMNS);
+  });
+
+  it('provides the collection empty state and owner CTA for an empty List collection', () => {
+    setAuthStore(AUTHOR_PUBKY);
+
+    renderCollectionItems({
+      postDetails: buildPostDetails(
+        JSON.stringify({
+          name: 'Reading',
+          items: [],
+          layout: COLLECTION_LAYOUT.LIST,
+        }),
+      ),
+    });
+
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-requested-layout', LAYOUT.LIST);
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-empty-state', 'true');
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-trailing-slot', 'true');
+    expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-cy', 'collection-add-content-list');
+    expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-trigger-variant', 'list');
+  });
+
+  it('provides the owner CTA after posts in a populated List collection', () => {
+    setAuthStore(AUTHOR_PUBKY);
+
+    renderCollectionItems({
+      postDetails: buildPostDetails(
+        JSON.stringify({
+          name: 'Reading',
+          items: ['pubky://author/pub/pubky.app/posts/a'],
+          layout: COLLECTION_LAYOUT.LIST,
+        }),
+      ),
+    });
+
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-requested-layout', LAYOUT.LIST);
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-trailing-slot', 'true');
+    expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-cy', 'collection-add-content-list');
+    expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-trigger-variant', 'list');
+  });
+
+  it('provides the collection empty state and owner CTA for an empty Visual collection', () => {
+    setAuthStore(AUTHOR_PUBKY);
+
+    renderCollectionItems({
+      postDetails: buildPostDetails(
+        JSON.stringify({
+          name: 'Reading',
+          items: [],
+          layout: COLLECTION_LAYOUT.VISUAL,
+        }),
+      ),
+    });
+
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-requested-layout', LAYOUT.VISUAL);
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-empty-state', 'true');
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-trailing-slot', 'true');
+    expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-cy', 'collection-add-content-visual');
+    expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-trigger-variant', 'visual');
+  });
+
+  it('provides the owner CTA after posts in a populated Visual collection', () => {
+    setAuthStore(AUTHOR_PUBKY);
+
+    renderCollectionItems({
+      postDetails: buildPostDetails(
+        JSON.stringify({
+          name: 'Reading',
+          items: ['pubky://author/pub/pubky.app/posts/a'],
+          layout: COLLECTION_LAYOUT.VISUAL,
+        }),
+      ),
+    });
+
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-requested-layout', LAYOUT.VISUAL);
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-trailing-slot', 'true');
+    expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-cy', 'collection-add-content-visual');
+    expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-trigger-variant', 'visual');
+  });
+
+  it('passes the hidden-items notice to the feed regardless of the active layout', () => {
+    renderCollectionItems();
+
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-requested-layout', LAYOUT.COLUMNS);
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-visual-hidden-items-notice', 'true');
+    expect(screen.getByRole('status')).toHaveAttribute('data-cy', 'collection-hidden-items-notice');
+  });
+
+  it('renders only the hero skeleton while the envelope is still loading', () => {
     renderCollectionItems({ postDetails: undefined });
 
-    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-variant', 'collection');
-    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-empty-state', 'true');
-    expect(screen.queryByTestId('collection-items-empty')).not.toBeInTheDocument();
+    expect(screen.getByTestId('collection-hero-skeleton')).toBeInTheDocument();
+    expect(screen.queryByTestId('timeline-feed')).not.toBeInTheDocument();
+    expect(mockTimelineFeedProps).not.toHaveBeenCalled();
+  });
+
+  it('mounts the feed directly in List layout once the envelope resolves', () => {
+    const { rerender } = renderCollectionItems({ postDetails: undefined });
+    const listPostDetails = buildPostDetails(
+      JSON.stringify({
+        name: 'Reading',
+        items: ['pubky://author/pub/pubky.app/posts/a'],
+        layout: COLLECTION_LAYOUT.LIST,
+      }),
+    );
+
+    rerender(<CollectionItems authorPubky={AUTHOR_PUBKY} postId={POST_ID} postDetails={listPostDetails} />);
+
+    expect(screen.queryByTestId('collection-hero-skeleton')).not.toBeInTheDocument();
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-requested-layout', LAYOUT.LIST);
+    expect(mockTimelineFeedProps).toHaveBeenCalledTimes(1);
+    expect(mockTimelineFeedProps).toHaveBeenCalledWith(expect.objectContaining({ requestedLayout: LAYOUT.LIST }));
   });
 
   it('renders the feed and passes empty state for an empty envelope owned by the viewer', () => {
@@ -189,7 +368,7 @@ describe('CollectionItems', () => {
 
     expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-variant', 'collection');
     expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-empty-state', 'true');
-    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-grid-trailing-slot', 'true');
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-trailing-slot', 'true');
     expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-cy', 'collection-add-content-grid');
     expect(screen.getByTestId('add-content-dialog')).toHaveAttribute('data-trigger-variant', 'grid');
   });
@@ -199,7 +378,7 @@ describe('CollectionItems', () => {
 
     renderCollectionItems();
 
-    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-grid-trailing-slot', 'false');
+    expect(screen.getByTestId('timeline-feed')).toHaveAttribute('data-has-trailing-slot', 'false');
     expect(screen.queryByTestId('add-content-dialog')).not.toBeInTheDocument();
   });
 
@@ -209,14 +388,101 @@ describe('CollectionItems', () => {
     renderCollectionItems({ postDetails: buildPostDetails(COLLECTION_CONTENT_EMPTY) });
 
     expect(screen.getByTestId('collection-hero')).toBeInTheDocument();
-    expect(screen.getByText('collections.single.empty')).toBeInTheDocument();
+    expect(screen.getByText('This collection is empty.')).toBeInTheDocument();
     expect(screen.queryByTestId('timeline-feed')).not.toBeInTheDocument();
+  });
+
+  describe('reorder mode', () => {
+    it('passes the reorder bridge to the hero for owners only', () => {
+      setAuthStore(AUTHOR_PUBKY);
+      const { unmount } = renderCollectionItems();
+      expect(screen.getByTestId('collection-hero')).toHaveAttribute('data-has-reorder', 'true');
+      unmount();
+
+      setAuthStore('some-other-user');
+      renderCollectionItems();
+      expect(screen.getByTestId('collection-hero')).toHaveAttribute('data-has-reorder', 'false');
+    });
+
+    it('replaces the TimelineFeed with the reorder grid while reorder mode is active', () => {
+      setAuthStore(AUTHOR_PUBKY);
+      mockReorderState.isReorderMode = true;
+      mockReorderState.draftEntries = [
+        { uri: 'pubky://author/pub/pubky.app/posts/a', postId: 'author:a' },
+        { uri: 'pubky://author/pub/pubky.app/posts/b', postId: 'author:b' },
+      ];
+
+      renderCollectionItems();
+
+      expect(screen.queryByTestId('timeline-feed')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('add-content-dialog')).not.toBeInTheDocument();
+      const grid = screen.getByTestId('collection-reorder-grid');
+      expect(grid).toHaveAttribute('data-entry-count', '2');
+      expect(grid).toHaveAttribute('data-disabled', 'false');
+      expect(screen.getByTestId('collection-hero')).toHaveAttribute('data-reorder-active', 'true');
+    });
+
+    it('disables the reorder grid while the save commit is in flight', () => {
+      setAuthStore(AUTHOR_PUBKY);
+      mockReorderState.isReorderMode = true;
+      mockReorderState.isSaving = true;
+
+      renderCollectionItems();
+
+      expect(screen.getByTestId('collection-reorder-grid')).toHaveAttribute('data-disabled', 'true');
+    });
+
+    it('auto-cancels reorder mode when the collection becomes blurred by moderation', () => {
+      // The blurred hero has no Save/Cancel controls, so staying in reorder
+      // mode would trap the user (and keep the FAB hidden app-wide).
+      setAuthStore(AUTHOR_PUBKY);
+      mockReorderState.isReorderMode = true;
+
+      renderCollectionItems({ postDetails: buildPostDetails(COLLECTION_CONTENT, { isBlurred: true }) });
+
+      expect(mockReorderState.cancelReorder).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not cancel reorder mode while the collection is not blurred', () => {
+      setAuthStore(AUTHOR_PUBKY);
+      mockReorderState.isReorderMode = true;
+
+      renderCollectionItems();
+
+      expect(mockReorderState.cancelReorder).not.toHaveBeenCalled();
+    });
   });
 });
 
 describe('CollectionItems - Snapshots', () => {
   it('matches the owner non-empty snapshot', () => {
     setAuthStore(AUTHOR_PUBKY);
+
+    const { container } = renderCollectionItems();
+
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('matches the owner Visual layout snapshot', () => {
+    setAuthStore(AUTHOR_PUBKY);
+
+    const { container } = renderCollectionItems({
+      postDetails: buildPostDetails(
+        JSON.stringify({
+          name: 'Based Bitcoin',
+          items: ['pubky://author/pub/pubky.app/posts/a'],
+          layout: COLLECTION_LAYOUT.VISUAL,
+        }),
+      ),
+    });
+
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('matches the owner reorder-mode snapshot', () => {
+    setAuthStore(AUTHOR_PUBKY);
+    mockReorderState.isReorderMode = true;
+    mockReorderState.draftEntries = [{ uri: 'pubky://author/pub/pubky.app/posts/a', postId: 'author:a' }];
 
     const { container } = renderCollectionItems();
 

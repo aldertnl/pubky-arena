@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { getLockServer } from '@/config/network';
 import { PostController } from '@/controllers/post/post';
 import { useCreateLockContent } from '@/hooks/useCreateLockContent/useCreateLockContent';
@@ -57,8 +56,6 @@ export function usePostInputLock({
   // lets the close handler tell them apart so success advances instead of reverting the switch.
   const advancingFromAuth = useRef(false);
   const { toast } = useToast();
-  const tToast = useTranslations('toast.post');
-  const tLock = useTranslations('post.lock');
   const timelineFeed = useTimelineFeedContext();
 
   const lockServerPubky = getLockServer() ?? '';
@@ -141,7 +138,7 @@ export function usePostInputLock({
     setLockDraft(captureComposer());
     setLockEnabled(true);
     // Seed the card's title with the default so it reads as real, editable text (not a placeholder).
-    setLockTitle(tLock('defaultTitle'));
+    setLockTitle('Locked post');
 
     // Gate on the Locks session: authenticated → lock content dialog; otherwise sign in first.
     if (useLocksAuthStore.getState().selectIsLocksAuthenticated()) {
@@ -199,7 +196,7 @@ export function usePostInputLock({
       return;
     }
     if (result.status === 'failed') {
-      toast({ variant: 'error', description: tToast('lockError') });
+      toast({ variant: 'error', description: 'Something went wrong. Try again.' });
       return;
     }
 

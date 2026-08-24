@@ -13,9 +13,10 @@ exports[`SinglePostContent > SinglePostContent - Snapshots > matches snapshot wi
     data-testid="card"
   >
     <div
-      data-testid="post-deleted"
+      data-message="This post has been deleted by its author."
+      data-testid="post-unavailable"
     >
-      Post deleted
+      Post unavailable
     </div>
   </div>
   <div
@@ -47,12 +48,6 @@ exports[`SinglePostContent > SinglePostContent - Snapshots > matches snapshot wi
 
 exports[`SinglePostContent > SinglePostContent - Snapshots > matches snapshot with long post (article) 1`] = `
 <div>
-  <div
-    data-post-id="author:post123"
-    data-testid="post-page-header"
-  >
-    PostPageHeader
-  </div>
   <div
     data-content="{\\"title\\":\\"Article Title\\",\\"body\\":\\"# Article Title\\\\n\\\\nArticle content\\"}"
     data-is-blurred="false"
@@ -111,6 +106,7 @@ exports[`SinglePostContent > SinglePostContent - Snapshots > matches snapshot wi
       data-is-navigable="false"
       data-pin-actions-to-bottom="true"
       data-post-id="author:post123"
+      data-show-full-content-in-list-layout="true"
       data-tags-layout="inline"
       data-testid="post-main"
     >

@@ -24,8 +24,16 @@ vi.mock('@/atoms/Dialog/Dialog', () => {
         </div>
       );
     },
-    DialogTrigger: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) => (
-      <div data-testid="dialog-trigger" data-aschild={asChild}>
+    DialogTrigger: ({
+      children,
+      asChild,
+      className,
+    }: {
+      children: React.ReactNode;
+      asChild?: boolean;
+      className?: string;
+    }) => (
+      <div data-testid="dialog-trigger" data-aschild={asChild} className={className}>
         {children}
       </div>
     ),
@@ -34,6 +42,7 @@ vi.mock('@/atoms/Dialog/Dialog', () => {
       hiddenTitle,
       showCloseButton,
       overrideDefaults,
+      centered,
       onClick,
       'aria-describedby': ariaDescribedBy,
       'data-testid': dataTestId,
@@ -42,6 +51,7 @@ vi.mock('@/atoms/Dialog/Dialog', () => {
       hiddenTitle?: string;
       showCloseButton?: boolean;
       overrideDefaults?: boolean;
+      centered?: boolean;
       onClick?: (e: React.MouseEvent) => void;
       'aria-describedby'?: string;
       'data-testid'?: string;
@@ -56,6 +66,7 @@ vi.mock('@/atoms/Dialog/Dialog', () => {
           data-hidden-title={hiddenTitle}
           data-show-close-button={showCloseButton}
           data-override-defaults={overrideDefaults}
+          data-centered={centered}
           aria-describedby={ariaDescribedBy}
           onClick={onClick}
         >
@@ -149,11 +160,15 @@ vi.mock('@/atoms/Carousel/Carousel', () => {
       opts,
       setApi,
       className,
+      ref,
+      tabIndex = 0,
     }: {
       children: React.ReactNode;
       opts?: { startIndex?: number; loop?: boolean; duration?: number; watchDrag?: boolean };
       setApi?: (api: unknown) => void;
       className?: string;
+      ref?: React.Ref<HTMLDivElement>;
+      tabIndex?: number;
     }) => {
       // Simulate setting the API in useEffect to avoid infinite re-renders
       useEffect(() => {
@@ -161,11 +176,14 @@ vi.mock('@/atoms/Carousel/Carousel', () => {
           setApi({
             selectedScrollSnap: () => 0,
             on: vi.fn(),
+            off: vi.fn(),
           });
         }
       }, [setApi]);
       return (
         <div
+          ref={ref}
+          tabIndex={tabIndex}
           data-testid="carousel"
           data-start-index={opts?.startIndex}
           data-loop={opts?.loop}
@@ -369,6 +387,41 @@ describe('PostAttachmentsImagesAndVideos', () => {
       expect(images).toHaveLength(3);
     });
 
+    it('uses a constrained smaller grid for inline media', () => {
+      const imagesAndVideos = [createMockImage(), createMockImage()];
+      render(<PostAttachmentsImagesAndVideos imagesAndVideos={imagesAndVideos} variant="list" />);
+
+      const grid = screen.getAllByTestId('container').find((element) => element.classList.contains('grid'));
+      expect(grid).toHaveClass('grid');
+      expect(grid).toHaveClass('grid-cols-[minmax(0,theme(spacing.48))]');
+      expect(grid).toHaveClass('sm:grid-cols-[repeat(2,theme(spacing.48))]');
+      expect(grid).toHaveClass('self-start');
+      expect(grid).toHaveClass('justify-self-start');
+      expect(grid).not.toHaveClass('mx-auto');
+
+      const firstTrigger = screen.getAllByTestId('dialog-trigger')[0];
+      expect(firstTrigger).toHaveClass('aspect-video');
+      expect(firstTrigger).toHaveClass('h-[theme(spacing.27)]');
+      expect(firstTrigger).not.toHaveClass('w-full');
+      expect(firstTrigger).not.toHaveClass('md:h-44');
+      expect(firstTrigger).not.toHaveClass('h-52');
+    });
+
+    it('shows only four inline media items and overlays the remaining count on the last visible item', () => {
+      const imagesAndVideos = [
+        createMockImage({ name: 'image1.jpg' }),
+        createMockImage({ name: 'image2.jpg' }),
+        createMockImage({ name: 'image3.jpg' }),
+        createMockImage({ name: 'image4.jpg' }),
+        createMockImage({ name: 'image5.jpg' }),
+        createMockImage({ name: 'image6.jpg' }),
+      ];
+      render(<PostAttachmentsImagesAndVideos imagesAndVideos={imagesAndVideos} variant="list" />);
+
+      expect(screen.getAllByTestId('image')).toHaveLength(4);
+      expect(screen.getByText('+2')).toBeInTheDocument();
+    });
+
     it('renders a single video', () => {
       const imagesAndVideos = [createMockVideo({ urls: { main: 'https://example.com/clip.mp4' } })];
       render(<PostAttachmentsImagesAndVideos imagesAndVideos={imagesAndVideos} />);
@@ -501,6 +554,14 @@ describe('PostAttachmentsImagesAndVideos', () => {
 
       const dialogContent = screen.getByTestId('dialog-content');
       expect(dialogContent).toHaveAttribute('data-hidden-title', 'Post Attachments Media Carousel');
+    });
+
+    it('opts the media preview out of the mobile drawer so it stays centered', () => {
+      setDialogOpen(true);
+      const imagesAndVideos = [createMockImage()];
+      render(<PostAttachmentsImagesAndVideos imagesAndVideos={imagesAndVideos} />);
+
+      expect(screen.getByTestId('dialog-content')).toHaveAttribute('data-centered', 'true');
     });
 
     it('does not render dialog content when closed', () => {

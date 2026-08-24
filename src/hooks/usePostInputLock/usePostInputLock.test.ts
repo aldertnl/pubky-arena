@@ -25,7 +25,6 @@ vi.mock('@/hooks/useCreateLockContent/useCreateLockContent', () => ({
   },
 }));
 vi.mock('@/molecules/Toaster/use-toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 // The announcement's optimistic commit: no timeline provider in the hook test, so prepend is a no-op
 // path (`streamId` undefined). We only assert the local-blob registration here.
 vi.mock('@/organisms/Timeline/Feed/TimelineFeed/TimelineFeedContext', () => ({
@@ -233,7 +232,7 @@ describe('usePostInputLock', () => {
     const { result } = setup();
 
     act(() => result.current.lockSwitch?.onCheckedChange(true));
-    expect(result.current.lockTitle).toBe('defaultTitle'); // seeded default (i18n key under the test mock)
+    expect(result.current.lockTitle).toBe('Locked post'); // seeded default
 
     act(() => result.current.setLockTitle('My most famous quote'));
     expect(result.current.lockTitle).toBe('My most famous quote');

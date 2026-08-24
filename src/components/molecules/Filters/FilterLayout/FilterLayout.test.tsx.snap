@@ -22,6 +22,7 @@ exports[`FilterLayout - Snapshots > matches snapshot with Columns selected tab 1
   <div
     aria-labelledby="radix-normalized"
     class=""
+    data-cy="filter-layout-radiogroup"
     data-testid="filter-layout-radiogroup"
     role="radiogroup"
   >
@@ -91,7 +92,7 @@ exports[`FilterLayout - Snapshots > matches snapshot with Columns selected tab 1
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-menu h-5 w-5"
+          class="lucide lucide-rows2 lucide-rows-2 h-5 w-5"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -102,20 +103,70 @@ exports[`FilterLayout - Snapshots > matches snapshot with Columns selected tab 1
           width="24"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <path
-            d="M4 5h16"
+          <rect
+            height="18"
+            rx="2"
+            width="18"
+            x="3"
+            y="3"
           />
           <path
-            d="M4 12h16"
-          />
-          <path
-            d="M4 19h16"
+            d="M3 12h18"
           />
         </svg>
         <span
           class=""
         >
           Wide
+        </span>
+      </button>
+      <button
+        aria-checked="false"
+        aria-label="List"
+        aria-pressed="false"
+        class="flex cursor-pointer gap-2 text-base font-medium transition-colors border-0 bg-transparent p-0 text-left items-center justify-normal text-muted-foreground hover:text-foreground/80 m-0 h-full px-0 py-1"
+        data-cy="list-layout-toggle"
+        data-selected="false"
+        data-slot="filter-item"
+        data-testid="filter-item"
+        role="radio"
+        tabindex="-1"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-rows4 lucide-rows-4 h-5 w-5"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect
+            height="18"
+            rx="2"
+            width="18"
+            x="3"
+            y="3"
+          />
+          <path
+            d="M21 7.5H3"
+          />
+          <path
+            d="M21 12H3"
+          />
+          <path
+            d="M21 16.5H3"
+          />
+        </svg>
+        <span
+          class=""
+        >
+          List
         </span>
       </button>
     </div>
@@ -145,6 +196,7 @@ exports[`FilterLayout - Snapshots > matches snapshot with Wide selected tab 1`] 
   <div
     aria-labelledby="radix-normalized"
     class=""
+    data-cy="filter-layout-radiogroup"
     data-testid="filter-layout-radiogroup"
     role="radiogroup"
   >
@@ -214,7 +266,7 @@ exports[`FilterLayout - Snapshots > matches snapshot with Wide selected tab 1`] 
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-menu h-5 w-5"
+          class="lucide lucide-rows2 lucide-rows-2 h-5 w-5"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -225,20 +277,70 @@ exports[`FilterLayout - Snapshots > matches snapshot with Wide selected tab 1`] 
           width="24"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <path
-            d="M4 5h16"
+          <rect
+            height="18"
+            rx="2"
+            width="18"
+            x="3"
+            y="3"
           />
           <path
-            d="M4 12h16"
-          />
-          <path
-            d="M4 19h16"
+            d="M3 12h18"
           />
         </svg>
         <span
           class=""
         >
           Wide
+        </span>
+      </button>
+      <button
+        aria-checked="false"
+        aria-label="List"
+        aria-pressed="false"
+        class="flex cursor-pointer gap-2 text-base font-medium transition-colors border-0 bg-transparent p-0 text-left items-center justify-normal text-muted-foreground hover:text-foreground/80 m-0 h-full px-0 py-1"
+        data-cy="list-layout-toggle"
+        data-selected="false"
+        data-slot="filter-item"
+        data-testid="filter-item"
+        role="radio"
+        tabindex="-1"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-rows4 lucide-rows-4 h-5 w-5"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect
+            height="18"
+            rx="2"
+            width="18"
+            x="3"
+            y="3"
+          />
+          <path
+            d="M21 7.5H3"
+          />
+          <path
+            d="M21 12H3"
+          />
+          <path
+            d="M21 16.5H3"
+          />
+        </svg>
+        <span
+          class=""
+        >
+          List
         </span>
       </button>
     </div>
@@ -268,6 +370,7 @@ exports[`FilterLayout - Snapshots > matches snapshot with default props 1`] = `
   <div
     aria-labelledby="radix-normalized"
     class=""
+    data-cy="filter-layout-radiogroup"
     data-testid="filter-layout-radiogroup"
     role="radiogroup"
   >
@@ -337,7 +440,7 @@ exports[`FilterLayout - Snapshots > matches snapshot with default props 1`] = `
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-menu h-5 w-5"
+          class="lucide lucide-rows2 lucide-rows-2 h-5 w-5"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -348,20 +451,70 @@ exports[`FilterLayout - Snapshots > matches snapshot with default props 1`] = `
           width="24"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <path
-            d="M4 5h16"
+          <rect
+            height="18"
+            rx="2"
+            width="18"
+            x="3"
+            y="3"
           />
           <path
-            d="M4 12h16"
-          />
-          <path
-            d="M4 19h16"
+            d="M3 12h18"
           />
         </svg>
         <span
           class=""
         >
           Wide
+        </span>
+      </button>
+      <button
+        aria-checked="false"
+        aria-label="List"
+        aria-pressed="false"
+        class="flex cursor-pointer gap-2 text-base font-medium transition-colors border-0 bg-transparent p-0 text-left items-center justify-normal text-muted-foreground hover:text-foreground/80 m-0 h-full px-0 py-1"
+        data-cy="list-layout-toggle"
+        data-selected="false"
+        data-slot="filter-item"
+        data-testid="filter-item"
+        role="radio"
+        tabindex="-1"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-rows4 lucide-rows-4 h-5 w-5"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect
+            height="18"
+            rx="2"
+            width="18"
+            x="3"
+            y="3"
+          />
+          <path
+            d="M21 7.5H3"
+          />
+          <path
+            d="M21 12H3"
+          />
+          <path
+            d="M21 16.5H3"
+          />
+        </svg>
+        <span
+          class=""
+        >
+          List
         </span>
       </button>
     </div>
@@ -391,6 +544,7 @@ exports[`FilterLayout - Snapshots > matches snapshot with disabled state 1`] = `
   <div
     aria-labelledby="radix-normalized"
     class=""
+    data-cy="filter-layout-radiogroup"
     data-testid="filter-layout-radiogroup"
     role="radiogroup"
   >
@@ -462,7 +616,7 @@ exports[`FilterLayout - Snapshots > matches snapshot with disabled state 1`] = `
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-menu h-5 w-5"
+          class="lucide lucide-rows2 lucide-rows-2 h-5 w-5"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -473,20 +627,71 @@ exports[`FilterLayout - Snapshots > matches snapshot with disabled state 1`] = `
           width="24"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <path
-            d="M4 5h16"
+          <rect
+            height="18"
+            rx="2"
+            width="18"
+            x="3"
+            y="3"
           />
           <path
-            d="M4 12h16"
-          />
-          <path
-            d="M4 19h16"
+            d="M3 12h18"
           />
         </svg>
         <span
           class=""
         >
           Wide
+        </span>
+      </button>
+      <button
+        aria-checked="false"
+        aria-disabled="true"
+        aria-label="List"
+        aria-pressed="false"
+        class="flex gap-2 text-base font-medium transition-colors border-0 bg-transparent p-0 text-left items-center justify-normal text-muted-foreground hover:text-foreground/80 m-0 h-full px-0 py-1 cursor-default opacity-40"
+        data-cy="list-layout-toggle"
+        data-selected="false"
+        data-slot="filter-item"
+        data-testid="filter-item"
+        role="radio"
+        tabindex="-1"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-rows4 lucide-rows-4 h-5 w-5"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect
+            height="18"
+            rx="2"
+            width="18"
+            x="3"
+            y="3"
+          />
+          <path
+            d="M21 7.5H3"
+          />
+          <path
+            d="M21 12H3"
+          />
+          <path
+            d="M21 16.5H3"
+          />
+        </svg>
+        <span
+          class=""
+        >
+          List
         </span>
       </button>
     </div>
@@ -516,6 +721,7 @@ exports[`FilterLayout - Snapshots > matches snapshot with hidden visual selectio
   <div
     aria-labelledby="radix-normalized"
     class=""
+    data-cy="filter-layout-radiogroup"
     data-testid="filter-layout-radiogroup"
     role="radiogroup"
   >
@@ -585,7 +791,7 @@ exports[`FilterLayout - Snapshots > matches snapshot with hidden visual selectio
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-menu h-5 w-5"
+          class="lucide lucide-rows2 lucide-rows-2 h-5 w-5"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -596,20 +802,70 @@ exports[`FilterLayout - Snapshots > matches snapshot with hidden visual selectio
           width="24"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <path
-            d="M4 5h16"
+          <rect
+            height="18"
+            rx="2"
+            width="18"
+            x="3"
+            y="3"
           />
           <path
-            d="M4 12h16"
-          />
-          <path
-            d="M4 19h16"
+            d="M3 12h18"
           />
         </svg>
         <span
           class=""
         >
           Wide
+        </span>
+      </button>
+      <button
+        aria-checked="false"
+        aria-label="List"
+        aria-pressed="false"
+        class="flex cursor-pointer gap-2 text-base font-medium transition-colors border-0 bg-transparent p-0 text-left items-center justify-normal text-muted-foreground hover:text-foreground/80 m-0 h-full px-0 py-1"
+        data-cy="list-layout-toggle"
+        data-selected="false"
+        data-slot="filter-item"
+        data-testid="filter-item"
+        role="radio"
+        tabindex="-1"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-rows4 lucide-rows-4 h-5 w-5"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect
+            height="18"
+            rx="2"
+            width="18"
+            x="3"
+            y="3"
+          />
+          <path
+            d="M21 7.5H3"
+          />
+          <path
+            d="M21 12H3"
+          />
+          <path
+            d="M21 16.5H3"
+          />
+        </svg>
+        <span
+          class=""
+        >
+          List
         </span>
       </button>
     </div>

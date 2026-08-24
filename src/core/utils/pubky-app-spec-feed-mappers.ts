@@ -40,6 +40,8 @@ export function pubkyLayoutToHomeLayout(layout: PubkyAppFeedLayout): LayoutType 
       return LAYOUT.COLUMNS;
     case PubkyAppFeedLayout.Wide:
       return LAYOUT.WIDE;
+    case PubkyAppFeedLayout.List:
+      return LAYOUT.LIST;
     case PubkyAppFeedLayout.Visual:
       return LAYOUT.VISUAL;
     default:
@@ -56,6 +58,8 @@ export function homeLayoutToPubkyLayout(layout: LayoutType): PubkyAppFeedLayout 
       return PubkyAppFeedLayout.Columns;
     case LAYOUT.WIDE:
       return PubkyAppFeedLayout.Wide;
+    case LAYOUT.LIST:
+      return PubkyAppFeedLayout.List;
     case LAYOUT.VISUAL:
       return PubkyAppFeedLayout.Visual;
     default:
@@ -79,6 +83,10 @@ export function pubkyReachToHomeReach(reach: PubkyAppFeedReach): ReachType | und
       return REACH.FRIENDS;
     case PubkyAppFeedReach.All:
       return REACH.ALL;
+    case PubkyAppFeedReach.Wot:
+      return REACH.NETWORK;
+    case PubkyAppFeedReach.Me:
+      return REACH.ME;
     case PubkyAppFeedReach.Followers:
       // No home type equivalent for Followers
       return undefined;
@@ -98,6 +106,10 @@ export function homeReachToPubkyReach(reach: ReachType): PubkyAppFeedReach | und
       return PubkyAppFeedReach.Friends;
     case REACH.ALL:
       return PubkyAppFeedReach.All;
+    case REACH.NETWORK:
+      return PubkyAppFeedReach.Wot;
+    case REACH.ME:
+      return PubkyAppFeedReach.Me;
     default:
       return undefined;
   }

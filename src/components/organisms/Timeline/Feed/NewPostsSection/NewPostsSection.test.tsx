@@ -9,10 +9,6 @@ import type { Pubky } from '@/models/models.types';
 import type { PostStreamId } from '@/models/stream/post/postStream.types';
 import { NewPostsSection } from './NewPostsSection';
 
-vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
-}));
-
 vi.mock('@/hooks/useIsScrolledFromTop/useIsScrolledFromTop', () => ({
   useIsScrolledFromTop: vi.fn(() => false),
 }));
@@ -175,6 +171,27 @@ describe('NewPostsSection', () => {
       <NewPostsSection
         {...defaultProps}
         streamId={'timeline:all:collection' as PostStreamId}
+        prependPosts={prependPosts}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('new-posts-button'));
+
+    await waitFor(() => {
+      expect(PostController.getDetailsByIds).toHaveBeenCalledWith({ compositeIds: ['new1'] });
+    });
+    expect(prependPosts).not.toHaveBeenCalled();
+  });
+
+  it('does not prepend posts whose kind does not match a wot_domain stream kind', async () => {
+    mockUseUnreadPosts.mockReturnValue({ unreadPostIds: ['new1'], unreadCount: 1 });
+    vi.mocked(PostController.getDetailsByIds).mockResolvedValue([{ kind: 'short' } as never]);
+    const prependPosts = vi.fn();
+
+    render(
+      <NewPostsSection
+        {...defaultProps}
+        streamId={'timeline:wot_domain:2:image:bitcoin' as PostStreamId}
         prependPosts={prependPosts}
       />,
     );

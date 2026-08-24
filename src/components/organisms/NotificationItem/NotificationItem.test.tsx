@@ -1,9 +1,17 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { ReactElement } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TooltipProvider } from '@/atoms/Tooltip/Tooltip';
 import { USER_NAME_MAX_LENGTH } from '@/config/user';
 import { useUserProfile } from '@/hooks/useUserProfile/useUserProfile';
-import { type FlatNotification, NotificationType } from '@/models/notification/notification.types';
+import { type FlatNotification, NotificationType, PostChangedSource } from '@/models/notification/notification.types';
+import { resetViewport, setMobileViewport } from '@/test-utils/viewport';
 import { NotificationItem } from './NotificationItem';
+
+function render(ui: ReactElement) {
+  return rtlRender(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>);
+}
 
 // Mock next/navigation
 const mockPush = vi.fn();
@@ -50,12 +58,8 @@ vi.mock('@/services/local/post/post', () => ({
     readPostDetails: vi.fn(() => Promise.resolve(null)),
   },
 }));
-vi.mock('@/controllers/post/post', () => ({
-  PostController: {
-    get getOrFetch() {
-      return mockGetOrFetch;
-    },
-  },
+vi.mock('@/hooks/usePostDetails/usePostDetails', () => ({
+  usePostDetails: (compositeId: string | null) => mockUsePostDetails(compositeId),
 }));
 vi.mock('@/controllers/file/file', () => ({
   FileController: {
@@ -88,12 +92,31 @@ vi.mock('@/organisms/AvatarWithFallback/AvatarWithFallback', () => {
 });
 
 // Mock molecules
-const mockToast = vi.fn();
-const mockGetOrFetch = vi.fn<() => Promise<{ kind: string; content: string } | null>>(() => Promise.resolve(null));
+// Hoisted so the module-level `toast` export can be mocked with it directly.
+const mockToast = vi.hoisted(() => vi.fn());
+/** The post the mocked live query currently reports; null models "not found". */
+const mockPostDetails = { value: null as { kind: string; content: string } | null };
+const mockUsePostDetails = vi.fn((compositeId: string | null) => ({
+  postDetails: compositeId ? mockPostDetails.value : null,
+  isLoading: false,
+}));
 vi.mock('@/molecules/NotificationIcon/NotificationIcon', () => {
   return {
-    NotificationIcon: ({ type, showBadge }: { type: NotificationType; showBadge?: boolean }) => (
-      <div data-testid="notification-icon" data-type={type} data-badge={showBadge ? 'true' : 'false'}>
+    NotificationIcon: ({
+      type,
+      postKind,
+      showBadge,
+    }: {
+      type: NotificationType;
+      postKind?: string;
+      showBadge?: boolean;
+    }) => (
+      <div
+        data-testid="notification-icon"
+        data-type={type}
+        data-post-kind={postKind}
+        data-badge={showBadge ? 'true' : 'false'}
+      >
         Icon
       </div>
     ),
@@ -120,6 +143,7 @@ vi.mock('@/molecules/PostTag/PostTag', () => {
 
 vi.mock('@/molecules/Toaster/use-toast', () => {
   return {
+    toast: mockToast,
     useToast: () => ({ toast: mockToast }),
   };
 });
@@ -165,8 +189,8 @@ describe('NotificationItem', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockToast.mockClear();
-    mockGetOrFetch.mockClear();
-    mockGetOrFetch.mockResolvedValue(null);
+    mockUsePostDetails.mockClear();
+    mockPostDetails.value = null;
     vi.mocked(useUserProfile).mockReturnValue({
       profile: { name: 'User', avatarUrl: undefined },
       isLoading: false,
@@ -197,7 +221,30 @@ describe('NotificationItem', () => {
   it('renders timestamp', () => {
     render(<NotificationItem notification={baseNotification} isUnread={false} />);
     expect(screen.getByText('30m')).toBeInTheDocument();
-    expect(screen.getByText('30 MINUTES AGO')).toBeInTheDocument();
+  });
+
+  it('shows exact date in tooltip on hover', async () => {
+    const user = userEvent.setup();
+    const expectedExactLabel = new Date(baseNotification.timestamp).toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'medium',
+    });
+    render(<NotificationItem notification={baseNotification} isUnread={false} />);
+
+    await user.hover(screen.getByText('30m'));
+
+    await vi.waitFor(() => {
+      expect(screen.getByRole('tooltip')).toHaveTextContent(expectedExactLabel);
+    });
+  });
+
+  it('does not show tooltip on mobile after hover', async () => {
+    const user = userEvent.setup();
+    render(<NotificationItem notification={baseNotification} isUnread={false} isMobile />);
+
+    await user.hover(screen.getByText('30m'));
+
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
   });
 
   it('renders notification icon', () => {
@@ -373,10 +420,10 @@ describe('NotificationItem', () => {
       body: '## Introduction\n\nArticle body content here in **Markdown** format.',
     });
 
-    mockGetOrFetch.mockResolvedValue({
+    mockPostDetails.value = {
       kind: 'long',
       content: articleContent,
-    });
+    };
 
     const mentionNotification = {
       id: 'mention:123:user1',
@@ -398,10 +445,10 @@ describe('NotificationItem', () => {
   it('falls back to raw content without toast when article JSON parsing fails', async () => {
     const invalidJson = 'not valid json content';
 
-    mockGetOrFetch.mockResolvedValue({
+    mockPostDetails.value = {
       kind: 'long',
       content: invalidJson,
-    });
+    };
 
     const mentionNotification = {
       id: 'mention:123:user1',
@@ -426,10 +473,10 @@ describe('NotificationItem', () => {
       items: ['user1:post1'],
     });
 
-    mockGetOrFetch.mockResolvedValue({
+    mockPostDetails.value = {
       kind: 'collection',
       content: collectionContent,
-    });
+    };
 
     const mentionNotification = {
       id: 'mention:123:user1',
@@ -449,10 +496,10 @@ describe('NotificationItem', () => {
   it('falls back to raw content and shows toast when collection JSON parsing fails', async () => {
     const invalidJson = 'not valid json content';
 
-    mockGetOrFetch.mockResolvedValue({
+    mockPostDetails.value = {
       kind: 'collection',
       content: invalidJson,
-    });
+    };
 
     const mentionNotification = {
       id: 'mention:123:user1',
@@ -473,10 +520,10 @@ describe('NotificationItem', () => {
   });
 
   it('uses content directly for short posts', async () => {
-    mockGetOrFetch.mockResolvedValue({
+    mockPostDetails.value = {
       kind: 'short',
       content: 'This is a short post content',
-    });
+    };
 
     const mentionNotification = {
       id: 'mention:123:user1',
@@ -496,10 +543,10 @@ describe('NotificationItem', () => {
   });
 
   it('shows deleted message when post is deleted', async () => {
-    mockGetOrFetch.mockResolvedValue({
+    mockPostDetails.value = {
       kind: 'short',
       content: '[DELETED]',
-    });
+    };
 
     const mentionNotification = {
       id: 'mention:123:user1',
@@ -517,6 +564,26 @@ describe('NotificationItem', () => {
     await vi.waitFor(() => {
       expect(screen.getByText("'This post has been d...'")).toBeInTheDocument();
     });
+  });
+
+  it('renders a deleted notification without any post link', () => {
+    // Design decision on PR #2314: the deleted post has no destination, so the row is
+    // informational — only the avatar and username may link (to the actor's profile).
+    const deletedNotification = {
+      id: 'post_deleted:123:user1',
+      type: NotificationType.PostDeleted,
+      timestamp: Date.now() - 1000 * 60 * 30,
+      delete_source: PostChangedSource.Repost,
+      deleted_by: 'user1',
+      deleted_uri: 'pubky://user1/pub/pubky.app/posts/post123',
+      linked_uri: 'pubky://viewer/pub/pubky.app/posts/linked123',
+    } as FlatNotification;
+
+    const { container } = render(<NotificationItem notification={deletedNotification} isUnread={false} />);
+
+    expect(screen.getByText('deleted a post').closest('a')).toBeNull();
+    const hrefs = [...container.querySelectorAll('a')].map((anchor) => anchor.getAttribute('href'));
+    expect(hrefs).toEqual(['/profile/user1', '/profile/user1']);
   });
 
   it('links to parent post (not the reply) for Reply notifications', () => {
@@ -538,6 +605,67 @@ describe('NotificationItem', () => {
 
     // Verify the href points to the PARENT post, not the reply
     expect(actionLink.closest('a')).toHaveAttribute('href', '/post/original-author/parent-post-id');
+  });
+
+  it('renders updated collection copy and links to the collection detail page', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-16T12:00:00Z'));
+
+    try {
+      const collectionNotification = {
+        id: 'post_edited:123:collection-owner',
+        type: NotificationType.PostEdited,
+        timestamp: new Date('2026-07-16T11:30:00Z').getTime(),
+        edit_source: PostChangedSource.Repost,
+        edited_by: 'collection-owner',
+        edited_uri: 'pubky://collection-owner/pub/pubky.app/posts/collection-id',
+        linked_uri: 'pubky://viewer/pub/pubky.app/posts/repost-id',
+        post_kind: 'collection',
+      } satisfies FlatNotification;
+
+      render(<NotificationItem notification={collectionNotification} isUnread={false} />);
+
+      expect(screen.getByText('updated collection').closest('a')).toHaveAttribute(
+        'href',
+        '/collections/collection-owner/collection-id',
+      );
+      expect(screen.getByTestId('notification-icon')).toHaveAttribute('data-post-kind', 'collection');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('hides the muted collection preview below the sm breakpoint', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-16T12:00:00Z'));
+
+    try {
+      mockPostDetails.value = {
+        kind: 'collection',
+        content: JSON.stringify({ name: 'Based Bitcoin', description: '', items: [] }),
+      };
+
+      const collectionNotification = {
+        id: 'post_edited:123:collection-owner',
+        type: NotificationType.PostEdited,
+        timestamp: new Date('2026-07-16T11:30:00Z').getTime(),
+        edit_source: PostChangedSource.Repost,
+        edited_by: 'collection-owner',
+        edited_uri: 'pubky://collection-owner/pub/pubky.app/posts/collection-id',
+        linked_uri: 'pubky://viewer/pub/pubky.app/posts/repost-id',
+        post_kind: 'collection',
+      } satisfies FlatNotification;
+
+      render(<NotificationItem notification={collectionNotification} isUnread={false} />);
+
+      await vi.waitFor(() => {
+        const preview = screen.getByText("'Based Bitcoin'");
+        expect(preview).toHaveClass('hidden', 'sm:block', 'text-muted-foreground');
+      });
+      expect(mockUsePostDetails).toHaveBeenCalledWith('collection-owner:collection-id');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('navigates to notification link when clicking empty space in the row', () => {
@@ -678,6 +806,17 @@ describe('NotificationItem', () => {
 });
 
 describe('NotificationItem - Snapshots', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockPostDetails.value = null;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-16T12:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('matches snapshot for Follow notification', () => {
     const notification = {
       id: 'follow:123:user1',
@@ -711,6 +850,49 @@ describe('NotificationItem - Snapshots', () => {
       post_uri: 'user1:post123',
     } as FlatNotification;
     const { container } = render(<NotificationItem notification={notification} isUnread={false} />);
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('matches snapshot for an edited collection with a title preview', async () => {
+    mockPostDetails.value = {
+      kind: 'collection',
+      content: JSON.stringify({ name: 'Based Bitcoin', description: '', items: [] }),
+    };
+    const notification = {
+      id: 'post_edited:123:collection-owner',
+      type: NotificationType.PostEdited,
+      timestamp: new Date('2026-07-16T11:30:00Z').getTime(),
+      edit_source: PostChangedSource.Repost,
+      edited_by: 'collection-owner',
+      edited_uri: 'pubky://collection-owner/pub/pubky.app/posts/collection-id',
+      linked_uri: 'pubky://viewer/pub/pubky.app/posts/repost-id',
+      post_kind: 'collection',
+    } satisfies FlatNotification;
+
+    render(<NotificationItem notification={notification} isUnread={false} />);
+
+    // Collection names derive synchronously from the live query's value.
+    expect(screen.getByText("'Based Bitcoin'")).toMatchSnapshot();
+  });
+});
+
+describe('NotificationItem - Mobile Snapshots', () => {
+  beforeEach(() => {
+    setMobileViewport();
+  });
+
+  afterEach(() => {
+    resetViewport();
+  });
+
+  it('matches snapshot on mobile viewport', () => {
+    const notification = {
+      id: 'follow:123:user1',
+      type: NotificationType.Follow,
+      timestamp: Date.now() - 1000 * 60 * 30,
+      followed_by: 'user1',
+    } as FlatNotification;
+    const { container } = render(<NotificationItem notification={notification} isUnread={false} isMobile />);
     expect(container.firstChild).toMatchSnapshot();
   });
 });

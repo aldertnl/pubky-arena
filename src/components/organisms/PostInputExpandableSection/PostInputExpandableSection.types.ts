@@ -1,12 +1,10 @@
 import type { ComponentType, ReactNode } from 'react';
 import type {
-  CharacterLimit,
   PostInputActionBarProps,
   PostInputActionSubmitMode,
 } from '../PostInputActionBar/PostInputActionBar.types';
 
 export interface PostInputExpandableSectionProps {
-  isExpanded: boolean;
   content: string;
   tags: string[];
   isSubmitting: boolean;
@@ -30,13 +28,6 @@ export interface PostInputExpandableSectionProps {
   onEmojiSelect: (emoji: { native: string }) => void;
   onImageClick?: () => void;
   onArticleClick?: () => void;
-  className?: string;
-  /**
-   * Optional compensation for vertical parent gap (in px) so spacing can animate out
-   * together with height during exit.
-   */
-  parentGapPx?: number;
-  characterLimit?: CharacterLimit;
   /** Creator-only "lock content" toggle in the action bar. Rendered only when provided. */
   lockSwitch?: PostInputActionBarProps['lockSwitch'];
   /**

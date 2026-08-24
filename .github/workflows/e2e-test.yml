@@ -26,7 +26,7 @@ jobs:
             image: "pubky-nexus"
 
           - app: "homeserver"
-            submodule_dir: "pubky-stack/pubky-core/"
+            submodule_dir: "pubky-stack/pubky-homeserver/"
             image: "homeserver-testnet"
 
     steps:
@@ -110,7 +110,7 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chrome]
-        spec: ["contacts.cy.ts", "feed.cy.ts", "notifications.cy.ts", "onboarding.cy.ts", "posts.cy.ts", "profile.cy.ts", "search.cy.ts", "settings.cy.ts"]
+        spec: ["contacts.cy.ts", "feed.cy.ts", "notifications.cy.ts", "onboarding.cy.ts", "posts.cy.ts", "profile.cy.ts", "search.cy.ts", "settings.cy.ts", "collections.cy.ts"]
 
     steps:
       - name: Validate envs from rebuild_images job

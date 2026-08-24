@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { Container } from '@/atoms/Container/Container';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/atoms/Dialog/Dialog';
 import { useConfirmableDialog } from '@/hooks/useConfirmableDialog/useConfirmableDialog';
@@ -21,17 +20,15 @@ interface DialogNewPostProps {
 }
 
 export function DialogNewPost({ open, onOpenChangeAction, onPostCreated }: DialogNewPostProps) {
-  const t = useTranslations('dialogs.newPost');
   const [isArticle, setIsArticle] = useState(false);
   const [isLockEnabled, setIsLockEnabled] = useState(false);
   // A locked post is never an article, so the lock title wins.
-  let titleKey = 'newPost';
+  let title = 'New Post';
   if (isLockEnabled) {
-    titleKey = 'newLockedPost';
+    title = 'New Locked Post';
   } else if (isArticle) {
-    titleKey = 'newArticle';
+    title = 'New Article';
   }
-  const title = t(titleKey);
   const { showConfirmDialog, setShowConfirmDialog, resetKey, handleContentChange, handleOpenChange, handleDiscard } =
     useConfirmableDialog({
       onClose: () => onOpenChangeAction(false),
@@ -50,7 +47,7 @@ export function DialogNewPost({ open, onOpenChangeAction, onPostCreated }: Dialo
       <DialogContent avoidKeyboard className="w-3xl" hiddenTitle={title}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription className="sr-only">{t('description', { title })}</DialogDescription>
+          <DialogDescription className="sr-only">{`${title} dialog`}</DialogDescription>
         </DialogHeader>
         <Container className="gap-3">
           <PostInput
@@ -62,6 +59,7 @@ export function DialogNewPost({ open, onOpenChangeAction, onPostCreated }: Dialo
             onContentChange={handleContentChange}
             onArticleModeChange={setIsArticle}
             onLockModeChange={setIsLockEnabled}
+            layoutOverride="inline"
           />
         </Container>
         {/* Nested inside parent dialog to avoid mobile touch event issues with sibling portals */}

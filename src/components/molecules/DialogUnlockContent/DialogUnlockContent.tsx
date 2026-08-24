@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Link } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { Button, ButtonVariant } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/atoms/Dialog/Dialog';
@@ -33,9 +32,6 @@ export function DialogUnlockContent({
   error,
 }: DialogUnlockContentProps) {
   const [password, setPassword] = useState('');
-  const t = useTranslations('dialogs.unlockContent');
-  const tLock = useTranslations('post.lock');
-  const tCommon = useTranslations('common');
 
   const close = (next: boolean) => {
     if (!next) setPassword('');
@@ -52,19 +48,19 @@ export function DialogUnlockContent({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="w-full max-w-md rounded-xl border-x-0 border-y border-brand bg-card sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogTitle>{'Password to Unlock'}</DialogTitle>
         </DialogHeader>
 
         <Container overrideDefaults className="flex items-center gap-2 rounded-md bg-muted p-6">
           <Link className="size-6 shrink-0 text-muted-foreground" aria-hidden />
           <Typography className="min-w-0 flex-1 truncate text-xl font-bold text-foreground">
-            {lockTitle || tLock('defaultTitle')}
+            {lockTitle || 'Locked post'}
           </Typography>
         </Container>
 
         <form onSubmit={(event) => event.preventDefault()} className="flex flex-col gap-2">
           <Label htmlFor="unlock-password" className={FIELD_LABEL_CLASS}>
-            {t('passwordLabel')}
+            {'Password'}
           </Label>
           <Input
             id="unlock-password"
@@ -80,14 +76,14 @@ export function DialogUnlockContent({
           />
           {error && (
             <Typography size="sm" className="text-destructive">
-              {t('error')}
+              {'Couldn\'t unlock this content. Please try again.'}
             </Typography>
           )}
         </form>
 
         <DialogFooter>
           <Button variant={ButtonVariant.OUTLINE} size="lg" className="flex-1" onClick={() => close(false)}>
-            {tCommon('cancel')}
+            {'Cancel'}
           </Button>
           <Button
             variant={ButtonVariant.DEFAULT}
@@ -96,7 +92,7 @@ export function DialogUnlockContent({
             onClick={handleSubmit}
             disabled={!password || loading}
           >
-            {loading ? <Spinner size="sm" /> : t('viewContent')}
+            {loading ? <Spinner size="sm" /> : 'View Content'}
           </Button>
         </DialogFooter>
       </DialogContent>

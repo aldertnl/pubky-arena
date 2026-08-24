@@ -1,4 +1,4 @@
-import { APP_ROUTES, POST_ROUTES, PROFILE_ROUTES } from '@/app/routes';
+import { APP_ROUTES, getCollectionRoute, POST_ROUTES, PROFILE_ROUTES } from '@/app/routes';
 import { Logger } from '@/libs/logger/logger';
 import { truncateString } from '@/libs/utils/utils';
 import { CompositeIdDomain } from '@/models/models.types';
@@ -11,27 +11,57 @@ import { USER_CENTRIC_NOTIFICATION_TYPES } from './NotificationItem.constants';
 // ============================================================================
 
 /**
- * Translation keys for notification action text
- * Returns the i18n key to be used with useTranslations('notifications.actions')
+ * Action text for each notification type (rendered after the actor's username)
  */
-const NOTIFICATION_ACTION_KEY: Record<NotificationType, string> = {
-  [NotificationType.Follow]: 'followedYou',
-  [NotificationType.NewFriend]: 'newFriend',
-  [NotificationType.TagPost]: 'taggedPost',
-  [NotificationType.TagProfile]: 'taggedProfile',
-  [NotificationType.Reply]: 'repliedToPost',
-  [NotificationType.Repost]: 'repostedPost',
-  [NotificationType.Mention]: 'mentionedYou',
-  [NotificationType.PostDeleted]: 'deletedPost',
-  [NotificationType.PostEdited]: 'editedPost',
+const NOTIFICATION_ACTION_TEXT: Record<NotificationType, string> = {
+  [NotificationType.Follow]: 'followed you',
+  [NotificationType.NewFriend]: 'is now your friend',
+  [NotificationType.TagPost]: 'tagged your post',
+  [NotificationType.TagProfile]: 'tagged your profile',
+  [NotificationType.Reply]: 'replied to your post',
+  [NotificationType.Repost]: 'reposted your post',
+  [NotificationType.Mention]: 'mentioned you in post',
+  [NotificationType.PostDeleted]: 'deleted a post',
+  [NotificationType.PostEdited]: 'edited a post you have interacted with',
+};
+
+type SpecificPostKind = 'collection' | 'long';
+
+/** The three post-kind variants the notification copy distinguishes. */
+export type NotificationKindBucket = SpecificPostKind | 'post';
+
+type KindSpecificNotificationAction = Partial<Record<NotificationType, Record<SpecificPostKind, string>>>;
+
+const KIND_SPECIFIC_NOTIFICATION_ACTION_TEXT: KindSpecificNotificationAction = {
+  [NotificationType.TagPost]: { collection: 'tagged your collection', long: 'tagged your article' },
+  [NotificationType.Reply]: { collection: 'replied to your collection', long: 'replied to your article' },
+  [NotificationType.Repost]: { collection: 'reposted your collection', long: 'reposted your article' },
+  [NotificationType.Mention]: { collection: 'mentioned you in a collection', long: 'mentioned you in an article' },
+  [NotificationType.PostDeleted]: { collection: 'deleted a collection', long: 'deleted an article' },
+  [NotificationType.PostEdited]: { collection: 'updated collection', long: 'updated an article' },
 };
 
 /**
- * Get notification action translation key (without the username) based on type
- * Returns the i18n key to be used with useTranslations('notifications.actions')
+ * Buckets a notification's post kind into the three variants the copy distinguishes.
+ * Anything Nexus sends that is not a collection or an article reads as a plain post.
  */
-export function getNotificationActionKey(notification: FlatNotification): string {
-  return NOTIFICATION_ACTION_KEY[notification.type] ?? 'fallback';
+export function getNotificationKindBucket(notification: FlatNotification): NotificationKindBucket {
+  const postKind = 'post_kind' in notification ? notification.post_kind : undefined;
+  if (postKind === 'collection' || postKind === 'long') return postKind;
+  return 'post';
+}
+
+/**
+ * Get notification action text (without the username) based on type
+ */
+export function getNotificationActionText(notification: FlatNotification): string {
+  const kindBucket = getNotificationKindBucket(notification);
+  if (kindBucket !== 'post') {
+    const actionText = KIND_SPECIFIC_NOTIFICATION_ACTION_TEXT[notification.type]?.[kindBucket];
+    if (actionText) return actionText;
+  }
+
+  return NOTIFICATION_ACTION_TEXT[notification.type] ?? 'New notification';
 }
 
 /**
@@ -65,14 +95,13 @@ export function getUserIdFromNotification(notification: FlatNotification): strin
 // ============================================================================
 
 /**
- * Convert a pubky URI or composite ID to a URL path format (userId/postId).
+ * Convert a pubky URI or composite ID to collection/post route parameters.
  * Uses shared composite ID utilities.
  * Supports:
  * - pubky:// URI format: pubky://userId/pub/pubky.app/posts/postId
  * - Composite ID format: userId:postId
- * Returns: userId/postId
  */
-function uriToUrlPath(uri: string | undefined): string | null {
+function uriToRouteParams(uri: string | undefined): { authorPubky: string; postId: string } | null {
   if (!uri) return null;
 
   let compositeId: string | null = null;
@@ -89,9 +118,9 @@ function uriToUrlPath(uri: string | undefined): string | null {
   if (!compositeId) return null;
 
   try {
-    // Parse the composite ID to get userId and postId
+    // Parse the composite ID to get route parameters
     const { pubky, id } = parseCompositeId(compositeId);
-    return `${pubky}/${id}`;
+    return { authorPubky: pubky, postId: id };
   } catch (error) {
     Logger.debug('Failed to parse composite ID', { compositeId, error });
     return null;
@@ -104,19 +133,23 @@ function uriToUrlPath(uri: string | undefined): string | null {
  */
 function getPostLink(notification: FlatNotification): string | null {
   let uri: string | undefined;
+  let targetIsSubject = false;
 
   switch (notification.type) {
     case NotificationType.Reply:
       // Navigate to parent post so user sees the full thread with the reply in context
       uri = notification.parent_post_uri;
+      targetIsSubject = true;
       break;
 
     case NotificationType.Mention:
       uri = notification.post_uri;
+      targetIsSubject = true;
       break;
 
     case NotificationType.TagPost:
       uri = notification.post_uri;
+      targetIsSubject = true;
       break;
 
     case NotificationType.Repost:
@@ -124,11 +157,13 @@ function getPostLink(notification: FlatNotification): string | null {
       break;
 
     case NotificationType.PostDeleted:
-      uri = notification.linked_uri;
-      break;
+      // Deleted-post rows are informational by design — the deleted post has no
+      // destination, so the row offers no post link (matching the flat grouped row).
+      return null;
 
     case NotificationType.PostEdited:
       uri = notification.edited_uri;
+      targetIsSubject = true;
       break;
 
     case NotificationType.Follow:
@@ -144,15 +179,20 @@ function getPostLink(notification: FlatNotification): string | null {
       return null;
   }
 
-  // Convert URI to URL path format
-  const urlPath = uriToUrlPath(uri);
-  return urlPath ? `${POST_ROUTES.POST}/${urlPath}` : null;
+  const routeParams = uriToRouteParams(uri);
+  if (!routeParams) return null;
+
+  if (targetIsSubject && 'post_kind' in notification && notification.post_kind === 'collection') {
+    return getCollectionRoute(routeParams.authorPubky, routeParams.postId);
+  }
+
+  return `${POST_ROUTES.POST}/${routeParams.authorPubky}/${routeParams.postId}`;
 }
 
 /**
  * Get the user profile link for the notification actor
  */
-function getUserProfileLink(userId: string): string {
+export function getUserProfileLink(userId: string): string {
   return `${APP_ROUTES.PROFILE}/${userId}`;
 }
 
@@ -249,7 +289,9 @@ export function formatPreviewText(content: string | null | undefined): string | 
 /**
  * Check if notification type has post preview
  */
-export function hasPostPreview(notificationType: NotificationType): boolean {
+export function hasPostPreview(notificationType: NotificationType, postKind?: string): boolean {
+  if (notificationType === NotificationType.PostEdited) return postKind === 'collection';
+
   return [NotificationType.Reply, NotificationType.Mention, NotificationType.Repost, NotificationType.TagPost].includes(
     notificationType,
   );

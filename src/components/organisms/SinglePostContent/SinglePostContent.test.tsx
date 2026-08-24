@@ -10,29 +10,6 @@ import { useHomeStore } from '@/stores/home/home.store';
 import { LAYOUT } from '@/stores/home/home.types';
 import { SinglePostContent } from './SinglePostContent';
 
-const mockHomeStore = vi.hoisted(() => {
-  const state = {
-    layout: 'columns',
-    setLayout: (layout: string) => {
-      state.layout = layout;
-    },
-    reset: () => {
-      state.layout = 'columns';
-    },
-  };
-
-  return { state };
-});
-
-vi.mock('@/stores/home/home.store', () => ({
-  useHomeStore: Object.assign(
-    (selector: (state: typeof mockHomeStore.state) => unknown) => selector(mockHomeStore.state),
-    {
-      getState: () => mockHomeStore.state,
-    },
-  ),
-}));
-
 // Mock hooks
 const SHORT_POST_DETAILS = {
   id: 'author:post123',
@@ -183,9 +160,13 @@ vi.mock('@/atoms/Skeleton/Skeleton', () => {
 });
 
 // Mock molecules
-vi.mock('@/molecules/PostDeleted/PostDeleted', () => {
+vi.mock('@/molecules/PostUnavailable/PostUnavailable', () => {
   return {
-    PostDeleted: () => <div data-testid="post-deleted">Post deleted</div>,
+    PostUnavailable: ({ message }: { message: string }) => (
+      <div data-testid="post-unavailable" data-message={message}>
+        Post unavailable
+      </div>
+    ),
   };
 });
 
@@ -215,10 +196,12 @@ vi.mock('@/organisms/PostMain/PostMain', async () => {
       postId,
       pinActionsToBottom,
       isNavigable,
+      showFullContentInListLayout,
     }: {
       postId: string;
       pinActionsToBottom?: boolean;
       isNavigable?: boolean;
+      showFullContentInListLayout?: boolean;
     }) => {
       const inheritedTagsLayout = usePostMainLayout();
       return (
@@ -227,6 +210,7 @@ vi.mock('@/organisms/PostMain/PostMain', async () => {
           data-post-id={postId}
           data-pin-actions-to-bottom={String(pinActionsToBottom)}
           data-is-navigable={String(isNavigable)}
+          data-show-full-content-in-list-layout={String(showFullContentInListLayout)}
           data-tags-layout={inheritedTagsLayout}
         >
           PostMain
@@ -273,7 +257,7 @@ describe('SinglePostContent', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useHomeStore.getState().reset();
+    useHomeStore.setState({ layout: LAYOUT.COLUMNS });
     vi.mocked(usePostCounts).mockReturnValue(mockUsePostCounts());
     vi.mocked(usePostAncestors).mockReturnValue(mockUsePostAncestors());
     vi.mocked(useUserDetailsFromIds).mockReturnValue(mockUseUserDetailsFromIds());
@@ -287,16 +271,25 @@ describe('SinglePostContent', () => {
       expect(screen.getByTestId('post-main')).toHaveAttribute('data-post-id', mockPostId);
       expect(screen.getByTestId('post-main')).toHaveAttribute('data-pin-actions-to-bottom', 'true');
       expect(screen.getByTestId('post-main')).toHaveAttribute('data-is-navigable', 'false');
+      expect(screen.getByTestId('post-main')).toHaveAttribute('data-show-full-content-in-list-layout', 'true');
       expect(screen.getByTestId('post-main')).toHaveAttribute('data-tags-layout', 'inline');
       expect(screen.queryByTestId('post-article-detail')).not.toBeInTheDocument();
     });
 
     it('derives side tags layout for the single-post surface when the app is in wide mode', () => {
-      useHomeStore.getState().setLayout(LAYOUT.WIDE);
+      useHomeStore.setState({ layout: LAYOUT.WIDE });
 
       render(<SinglePostContent postId={mockPostId} postDetails={SHORT_POST_DETAILS} />);
 
       expect(screen.getByTestId('post-main')).toHaveAttribute('data-tags-layout', 'side');
+    });
+
+    it('uses the List layout selected in the Home store', () => {
+      useHomeStore.setState({ layout: LAYOUT.LIST });
+
+      render(<SinglePostContent postId={mockPostId} postDetails={SHORT_POST_DETAILS} />);
+
+      expect(screen.getByTestId('post-main')).toHaveAttribute('data-tags-layout', 'list');
     });
 
     it('renders PostArticleDetail for long posts', () => {
@@ -304,6 +297,12 @@ describe('SinglePostContent', () => {
 
       expect(screen.getByTestId('post-article-detail')).toBeInTheDocument();
       expect(screen.queryByTestId('post-main')).not.toBeInTheDocument();
+    });
+
+    it('hides PostPageHeader for article posts', () => {
+      render(<SinglePostContent postId={mockPostId} postDetails={ARTICLE_POST_DETAILS} />);
+
+      expect(screen.queryByTestId('post-page-header')).toBeNull();
     });
 
     it('renders malformed long posts through PostMain', () => {
@@ -347,10 +346,13 @@ describe('SinglePostContent', () => {
       expect(tree).toHaveAttribute('data-show-quick-reply', 'false');
     });
 
-    it('renders PostDeleted component instead of post content when post is deleted', () => {
+    it('renders PostUnavailable instead of post content when post is deleted', () => {
       render(<SinglePostContent postId={mockPostId} postDetails={DELETED_SHORT_POST_DETAILS} />);
 
-      expect(screen.getByTestId('post-deleted')).toBeInTheDocument();
+      expect(screen.getByTestId('post-unavailable')).toHaveAttribute(
+        'data-message',
+        'This post has been deleted by its author.',
+      );
       expect(screen.queryByTestId('post-main')).not.toBeInTheDocument();
       expect(screen.queryByTestId('post-article-detail')).not.toBeInTheDocument();
     });
@@ -384,7 +386,7 @@ describe('SinglePostContent', () => {
 
     beforeEach(() => {
       vi.clearAllMocks();
-      useHomeStore.getState().reset();
+      useHomeStore.setState({ layout: LAYOUT.COLUMNS });
       vi.mocked(usePostCounts).mockReturnValue(mockUsePostCounts());
       vi.mocked(usePostAncestors).mockReturnValue(mockUsePostAncestors());
       vi.mocked(useUserDetailsFromIds).mockReturnValue(mockUseUserDetailsFromIds());

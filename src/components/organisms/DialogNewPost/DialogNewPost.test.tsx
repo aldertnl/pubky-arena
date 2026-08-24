@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DialogContent } from '@/atoms/Dialog/Dialog';
 import { useConfirmableDialog } from '@/hooks/useConfirmableDialog/useConfirmableDialog';
+import { PostMainLayoutProvider } from '@/organisms/PostMain/PostMainLayoutContext';
 import { DialogNewPost } from './DialogNewPost';
 
 vi.mock('@/atoms/Dialog/Dialog', () => {
@@ -91,6 +92,7 @@ vi.mock('@/organisms/PostInput/PostInput', () => {
         onContentChange,
         onArticleModeChange,
         onLockModeChange,
+        layoutOverride,
       }: {
         variant: string;
         onSuccess?: (createdPostId: string) => void;
@@ -98,8 +100,14 @@ vi.mock('@/organisms/PostInput/PostInput', () => {
         onContentChange?: (content: string, tags: string[]) => void;
         onArticleModeChange?: (isArticle: boolean) => void;
         onLockModeChange?: (isLockEnabled: boolean) => void;
+        layoutOverride?: string;
       }) => (
-        <div data-testid="post-input" data-variant={variant} data-expanded={expanded}>
+        <div
+          data-testid="post-input"
+          data-variant={variant}
+          data-expanded={expanded}
+          data-layout-override={layoutOverride}
+        >
           <button data-testid="mock-success-btn" onClick={() => onSuccess?.('author:post123')}>
             Success
           </button>
@@ -167,6 +175,16 @@ describe('DialogNewPost', () => {
     expect(screen.getByTestId('dialog-content')).toBeInTheDocument();
     expect(screen.getByTestId('dialog-title')).toHaveTextContent('New Post');
     expect(screen.getByTestId('post-input')).toBeInTheDocument();
+  });
+
+  it('uses inline post styling when rendered inside a List feed', () => {
+    render(
+      <PostMainLayoutProvider tagsLayout="list">
+        <DialogNewPost open onOpenChangeAction={vi.fn()} />
+      </PostMainLayoutProvider>,
+    );
+
+    expect(screen.getByTestId('post-input')).toHaveAttribute('data-layout-override', 'inline');
   });
 
   it('calls onOpenChangeAction when PostInput onSuccess is called', async () => {

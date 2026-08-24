@@ -25,8 +25,8 @@ vi.mock('@/hooks/usePostDetails/usePostDetails', () => ({
   usePostDetails: vi.fn(),
 }));
 
-vi.mock('@/molecules/PostMissing/PostMissing', () => ({
-  PostMissing: () => <div data-testid="post-missing" />,
+vi.mock('@/molecules/PostUnavailable/PostUnavailable', () => ({
+  PostUnavailable: ({ message }: { message: string }) => <div data-testid="post-unavailable" data-message={message} />,
 }));
 
 // Mock organisms
@@ -162,6 +162,13 @@ describe('PostPreviewCard', () => {
     expect(screen.getByTestId('post-header')).toHaveAttribute('data-time-ago-placement', 'bottom-left');
   });
 
+  it('constrains the preview card surface so long author names can truncate', () => {
+    render(<PostPreviewCard postId="test-post-123" />);
+
+    expect(screen.getByTestId('card')).toHaveClass('w-full', 'max-w-full', 'min-w-0');
+    expect(screen.getByTestId('card-content')).toHaveClass('w-full', 'max-w-full', 'min-w-0');
+  });
+
   it('has correct accessibility attributes', () => {
     render(<PostPreviewCard postId="test-post-123" />);
 
@@ -210,24 +217,55 @@ describe('PostPreviewCard', () => {
     expect(mockNavigateToPost).not.toHaveBeenCalled();
   });
 
-  it('renders PostMissing (not header/content) when the original post is not found', () => {
+  it('renders PostUnavailable (not header/content) when the original post is not found', () => {
     mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: false });
 
     render(<PostPreviewCard postId="missing-post" />);
 
-    // PostMissing replaces the inner CardContent so the header doesn't skeleton.
-    expect(screen.getByTestId('post-missing')).toBeInTheDocument();
+    // PostUnavailable replaces the inner CardContent so the header doesn't skeleton.
+    expect(screen.getByTestId('post-unavailable')).toHaveAttribute('data-message', 'Post not found.');
     expect(screen.queryByTestId('card-content')).not.toBeInTheDocument();
     expect(screen.queryByTestId('post-header')).not.toBeInTheDocument();
     expect(screen.queryByTestId('post-content-base')).not.toBeInTheDocument();
   });
 
-  it('renders header/content (not PostMissing) while the original post is still loading', () => {
+  it('renders PostUnavailable (not header/content) when the original post is deleted', () => {
+    mockUsePostDetails.mockReturnValue({
+      postDetails: { id: 'deleted-post', kind: 'short', content: '[DELETED]' } as never,
+      isLoading: false,
+    });
+
+    render(<PostPreviewCard postId="deleted-post" />);
+
+    // PostUnavailable replaces the inner CardContent so no header is shown —
+    // matching how PostMain renders deleted posts.
+    expect(screen.getByTestId('post-unavailable')).toHaveAttribute(
+      'data-message',
+      'This post has been deleted by its author.',
+    );
+    expect(screen.queryByTestId('card-content')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('post-header')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('post-content-base')).not.toBeInTheDocument();
+  });
+
+  it('renders PostUnavailable (not CollectionCard) when a collection original is deleted', () => {
+    mockUsePostDetails.mockReturnValue({
+      postDetails: { id: COLLECTION_COMPOSITE_ID, kind: 'collection', content: '[DELETED]' } as never,
+      isLoading: false,
+    });
+
+    render(<PostPreviewCard postId={COLLECTION_COMPOSITE_ID} />);
+
+    expect(screen.getByTestId('post-unavailable')).toBeInTheDocument();
+    expect(screen.queryByTestId('collection-card')).not.toBeInTheDocument();
+  });
+
+  it('renders header/content (not PostUnavailable) while the original post is still loading', () => {
     mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: true });
 
     render(<PostPreviewCard postId="loading-post" />);
 
-    expect(screen.queryByTestId('post-missing')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('post-unavailable')).not.toBeInTheDocument();
     expect(screen.getByTestId('post-header')).toBeInTheDocument();
     expect(screen.getByTestId('post-content-base')).toBeInTheDocument();
   });

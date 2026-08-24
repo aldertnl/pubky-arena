@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+/.vitest-attachments
 
 # next.js
 /.next/
@@ -79,3 +80,6 @@ public/sw.js.map
 
 # Serena
 .serena
+
+# AI PR Descriptions
+.prs

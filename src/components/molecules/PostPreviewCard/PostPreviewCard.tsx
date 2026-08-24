@@ -1,13 +1,13 @@
 'use client';
-
 import { Card, CardContent } from '@/atoms/Card/Card';
 import { Container } from '@/atoms/Container/Container';
 import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
 import { usePostNavigation } from '@/hooks/usePostNavigation/usePostNavigation';
 import { useTtlSubscription } from '@/hooks/useTtlSubscription/useTtlSubscription';
-import { cn } from '@/libs/utils/utils';
+import { cn, isPostDeleted } from '@/libs/utils/utils';
 import { parseCompositeId } from '@/models/models.utils';
-import { PostMissing } from '@/molecules/PostMissing/PostMissing';
+import { PostPreviewNestingProvider } from '@/molecules/PostPreviewCard/PostPreviewNestingContext';
+import { PostUnavailable } from '@/molecules/PostUnavailable/PostUnavailable';
 import { CollectionCard } from '@/organisms/Collections/CollectionCard/CollectionCard';
 import { PostContentBase } from '@/organisms/PostContentBase/PostContentBase';
 import { PostHeader } from '@/organisms/PostHeader/PostHeader';
@@ -35,6 +35,9 @@ interface PostPreviewCardProps {
  * Uses PostContentBase instead of PostContent to prevent infinite repost nesting.
  * If PostContent were used, it would detect the nested post as a repost and render
  * another PostPreviewCard, creating an infinite loop.
+ * Both branches also provide PostPreviewNestingContext so PostLinkEmbeds suppresses
+ * in-app link embeds inside the preview — mutually-linking posts would otherwise
+ * recurse through PostContentBase → PostLinkEmbeds → PostPreviewCard.
  *
  * Collection originals skip the post-card shell and render `CollectionCard` with
  * `presentation="embed"`. Pass `interactiveActions={false}` from share/repost
@@ -60,9 +63,12 @@ export function PostPreviewCard({ postId, className, interactiveActions = true }
   // A settled `null` means the original post 404'd. Handle it at the card level
   // (not just in PostContentBase): the PostHeader below also waits on
   // `postDetails`, so it would skeleton forever for a missing original. Render
-  // PostMissing as a direct Card child (it IS a CardContent) so it isn't nested
-  // inside the inner CardContent — matching how PostMain renders PostDeleted.
+  // PostUnavailable as a direct Card child (it IS a CardContent) so it isn't nested
+  // inside the inner CardContent — matching how PostMain renders unavailable posts.
   const isMissing = postDetails === null && !isLoading;
+  // Deleted originals are also handled at the card level so the header is
+  // hidden — matching PostMain's isMissing → isDeleted → content ladder.
+  const isDeleted = isPostDeleted(postDetails?.content);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -77,40 +83,49 @@ export function PostPreviewCard({ postId, className, interactiveActions = true }
     }
   };
 
-  if (postDetails?.kind === 'collection') {
+  if (postDetails?.kind === 'collection' && !isDeleted) {
     const { pubky, id } = parseCompositeId(postId);
     return (
-      <Container ref={ttlRef} data-cy="post-preview-card" overrideDefaults className="min-w-0">
-        <CollectionCard
-          authorPubky={pubky}
-          postId={id}
-          presentation="embed"
-          interactiveActions={interactiveActions}
-          className="w-full"
-        />
-      </Container>
+      <PostPreviewNestingProvider>
+        <Container ref={ttlRef} data-cy="post-preview-card" overrideDefaults className="min-w-0">
+          <CollectionCard
+            authorPubky={pubky}
+            postId={id}
+            presentation="embed"
+            interactiveActions={interactiveActions}
+            className="w-full"
+          />
+        </Container>
+      </PostPreviewNestingProvider>
     );
   }
 
   return (
-    <Card
-      ref={ttlRef}
-      data-cy="post-preview-card"
-      className={cn('min-w-0 cursor-pointer rounded-md py-0 transition-colors hover:bg-accent/50', className)}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role="link"
-      tabIndex={0}
-      aria-label="View original post"
-    >
-      {isMissing ? (
-        <PostMissing />
-      ) : (
-        <CardContent className="flex min-w-0 flex-col gap-4 p-6">
-          <PostHeader postId={postId} showPopover={false} timeAgoPlacement="bottom-left" />
-          <PostContentBase postId={postId} />
-        </CardContent>
-      )}
-    </Card>
+    <PostPreviewNestingProvider>
+      <Card
+        ref={ttlRef}
+        data-cy="post-preview-card"
+        className={cn(
+          'w-full max-w-full min-w-0 cursor-pointer rounded-md py-0 transition-colors hover:bg-accent/50',
+          className,
+        )}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        role="link"
+        tabIndex={0}
+        aria-label="View original post"
+      >
+        {isMissing ? (
+          <PostUnavailable message={'Post not found.'} />
+        ) : isDeleted ? (
+          <PostUnavailable message={'This post has been deleted by its author.'} />
+        ) : (
+          <CardContent className="flex w-full max-w-full min-w-0 flex-col gap-4 p-6">
+            <PostHeader postId={postId} showPopover={false} timeAgoPlacement="bottom-left" />
+            <PostContentBase postId={postId} />
+          </CardContent>
+        )}
+      </Card>
+    </PostPreviewNestingProvider>
   );
 }

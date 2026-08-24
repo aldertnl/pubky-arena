@@ -87,20 +87,39 @@ vi.mock('@/molecules/PostHeaderUserInfo/PostHeaderUserInfo', () => {
       ({
         userId,
         userName,
-        characterLimit,
+        status,
         size,
         timeAgo,
+        showUserInfo = true,
+        visuallyHideAvatar = false,
+        characterLimitPlacement,
+        characterLimit,
       }: {
         userId: string;
         userName: string;
-        characterLimit?: { count: number; max: number };
-        size?: 'normal' | 'large';
+        status?: string | null;
+        size?: 'normal' | 'large' | 'extraLarge';
         timeAgo?: string | null;
+        showUserInfo?: boolean;
+        visuallyHideAvatar?: boolean;
+        characterLimitPlacement?: string;
+        characterLimit?: { count: number; max: number };
       }) => (
-        <div data-testid="post-header-user-info" data-size={size}>
+        <div
+          data-testid="post-header-user-info"
+          data-status={status || undefined}
+          data-size={size}
+          data-show-user-info={showUserInfo}
+          data-visually-hide-avatar={visuallyHideAvatar || undefined}
+          data-character-limit-placement={characterLimitPlacement}
+        >
           <div data-testid="avatar" />
-          <div>{userName}</div>
-          <div>@{userId.substring(0, 8)}</div>
+          {showUserInfo && (
+            <>
+              <div>{userName}</div>
+              <div>@{userId.substring(0, 8)}</div>
+            </>
+          )}
           {characterLimit && (
             <div>
               {characterLimit.count}/{characterLimit.max}
@@ -138,6 +157,34 @@ describe('PostHeader', () => {
     expect(screen.getAllByRole('generic').some((el) => el.getAttribute('data-slot') === 'skeleton')).toBe(true);
   });
 
+  it('shows skeleton (never author info) when the post is deleted', () => {
+    mockUsePostDetails.mockReturnValue({
+      postDetails: {
+        id: 'userpubkykey:post456',
+        indexed_at: Date.now(),
+        kind: 'short' as const,
+        uri: 'pubky://userpubkykey/pub/pubky.app/posts/post456',
+        content: '[DELETED]',
+        attachments: null,
+        is_moderated: false,
+        is_blurred: false,
+      } as EnrichedPostDetails,
+      isLoading: false,
+    });
+    mockUseUserDetails.mockReturnValue({
+      userDetails: { id: 'userpubkykey', name: 'Test User', image: 'test-image-id' } as NexusUserDetails,
+      isLoading: false,
+    });
+    mockUseAvatarUrl.mockReturnValue('https://example.com/avatar/userpubkykey.png');
+
+    renderPostHeader(<PostHeader postId="userpubkykey:post456" />);
+
+    // Parents render the deleted state from their own query instance, which can
+    // resolve later — author info must never appear for a deleted post.
+    expect(screen.queryByText('Test User')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('generic').some((el) => el.getAttribute('data-slot') === 'skeleton')).toBe(true);
+  });
+
   it('renders user name, handle and time', () => {
     mockUsePostDetails.mockReturnValue({
       postDetails: {
@@ -153,7 +200,12 @@ describe('PostHeader', () => {
       isLoading: false,
     });
     mockUseUserDetails.mockReturnValue({
-      userDetails: { id: 'userpubkykey', name: 'Test User', image: 'test-image-id' } as NexusUserDetails,
+      userDetails: {
+        id: 'userpubkykey',
+        name: 'Test User',
+        image: 'test-image-id',
+        status: 'vacationing',
+      } as NexusUserDetails,
       isLoading: false,
     });
     mockUseAvatarUrl.mockReturnValue('https://example.com/avatar/userpubkykey.png');
@@ -162,6 +214,31 @@ describe('PostHeader', () => {
 
     expect(screen.getByTestId('avatar')).toBeInTheDocument();
     expect(screen.getByText('Test User')).toBeInTheDocument();
+    expect(screen.getByTestId('post-header-user-info')).toHaveAttribute('data-status', 'vacationing');
+    expect(screen.getByText('2h')).toBeInTheDocument();
+  });
+
+  it('renders a real post when the author profile query settles without details', () => {
+    mockUsePostDetails.mockReturnValue({
+      postDetails: {
+        id: 'userpubkykey:post456',
+        indexed_at: Date.now(),
+        kind: 'short' as const,
+        uri: 'pubky://userpubkykey/pub/pubky.app/posts/post456',
+        content: '',
+        attachments: null,
+        is_moderated: false,
+        is_blurred: false,
+      } as EnrichedPostDetails,
+      isLoading: false,
+    });
+    mockUseUserDetails.mockReturnValue({ userDetails: null, isLoading: false });
+    mockUseAvatarUrl.mockReturnValue(undefined);
+
+    renderPostHeader(<PostHeader postId="userpubkykey:post456" />);
+
+    expect(screen.getAllByRole('generic').some((el) => el.getAttribute('data-slot') === 'skeleton')).toBe(false);
+    expect(screen.getByTestId('avatar')).toBeInTheDocument();
     expect(screen.getByText('2h')).toBeInTheDocument();
   });
 
@@ -182,14 +259,144 @@ describe('PostHeader', () => {
     expect(container.querySelector('.lucide-clock')).not.toBeInTheDocument();
   });
 
-  it('shows skeleton when user details are not available and isReplyInput is true', () => {
+  it('shows skeleton while user details are still loading and isReplyInput is true', () => {
     mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: false });
-    mockUseUserDetails.mockReturnValue({ userDetails: null, isLoading: false });
+    mockUseUserDetails.mockReturnValue({ userDetails: null, isLoading: true });
     mockUseAvatarUrl.mockReturnValue(undefined);
 
     renderPostHeader(<PostHeader postId="userpubkykey:post456" isReplyInput={true} />);
 
     expect(screen.getAllByRole('generic').some((el) => el.getAttribute('data-slot') === 'skeleton')).toBe(true);
+  });
+
+  it('shows only the avatar skeleton when user info is hidden', () => {
+    mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: false });
+    mockUseUserDetails.mockReturnValue({ userDetails: null, isLoading: true });
+    mockUseAvatarUrl.mockReturnValue(undefined);
+
+    const { container } = renderPostHeader(
+      <PostHeader postId="userpubkykey" isReplyInput={true} showUserInfo={false} />,
+    );
+
+    const skeletons = container.querySelectorAll('[data-slot="skeleton"]');
+    expect(skeletons).toHaveLength(1);
+    expect(skeletons[0]).toHaveClass('size-10', 'rounded-full');
+  });
+
+  it('keeps an avatar-sized invisible spacer skeleton when the avatar is visually hidden', () => {
+    mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: false });
+    mockUseUserDetails.mockReturnValue({ userDetails: null, isLoading: true });
+    mockUseAvatarUrl.mockReturnValue(undefined);
+
+    const { container } = renderPostHeader(
+      <PostHeader
+        postId="userpubkykey"
+        isReplyInput={true}
+        showUserInfo={false}
+        visuallyHideAvatar={true}
+        size="extraLarge"
+      />,
+    );
+
+    const skeleton = container.querySelector('[data-slot="skeleton"]');
+    expect(skeleton).toHaveClass('size-16', 'invisible');
+  });
+
+  it('renders provided user details without showing a remount skeleton', () => {
+    const providedUserDetails = {
+      id: 'userpubkykey',
+      name: 'Provided User',
+      image: null,
+      bio: '',
+      links: null,
+      status: null,
+      indexed_at: Date.now(),
+    } as NexusUserDetails;
+    mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: false });
+    mockUseUserDetails.mockReturnValue({ userDetails: undefined, isLoading: true });
+    mockUseAvatarUrl.mockReturnValue(undefined);
+
+    renderPostHeader(<PostHeader postId="userpubkykey" isReplyInput={true} userDetails={providedUserDetails} />);
+
+    expect(screen.getAllByRole('generic').some((el) => el.getAttribute('data-slot') === 'skeleton')).toBe(false);
+    expect(screen.getByText('Provided User')).toBeInTheDocument();
+    expect(mockUseUserDetails).toHaveBeenCalledWith(null);
+    expect(mockUseAvatarUrl).toHaveBeenCalledWith(providedUserDetails);
+  });
+
+  it('falls back to querying user details when provided user details are null', () => {
+    mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: false });
+    mockUseUserDetails.mockReturnValue({ userDetails: null, isLoading: true });
+    mockUseAvatarUrl.mockReturnValue(undefined);
+
+    renderPostHeader(<PostHeader postId="userpubkykey" isReplyInput={true} userDetails={null} />);
+
+    expect(screen.getAllByRole('generic').some((element) => element.getAttribute('data-slot') === 'skeleton')).toBe(
+      true,
+    );
+    expect(mockUseUserDetails).toHaveBeenCalledWith('userpubkykey');
+    expect(mockUseAvatarUrl).toHaveBeenCalledWith(null);
+  });
+
+  it('renders the header and character counter when the profile query settles without details', () => {
+    mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: false });
+    mockUseUserDetails.mockReturnValue({ userDetails: null, isLoading: false });
+    mockUseAvatarUrl.mockReturnValue(undefined);
+
+    renderPostHeader(
+      <PostHeader postId="userpubkykey" isReplyInput={true} characterLimit={{ count: 12, max: 2000 }} />,
+    );
+
+    expect(screen.getAllByRole('generic').some((el) => el.getAttribute('data-slot') === 'skeleton')).toBe(false);
+    expect(screen.getByTestId('avatar')).toBeInTheDocument();
+    expect(screen.getByText('12/2000')).toBeInTheDocument();
+  });
+
+  it('passes showUserInfo to PostHeaderUserInfo', () => {
+    mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: false });
+    mockUseUserDetails.mockReturnValue({
+      userDetails: { id: 'userpubkykey', name: 'Test User', image: 'test-image-id' } as NexusUserDetails,
+      isLoading: false,
+    });
+    mockUseAvatarUrl.mockReturnValue('https://example.com/avatar/userpubkykey.png');
+
+    renderPostHeader(<PostHeader postId="userpubkykey" isReplyInput={true} showUserInfo={false} />);
+
+    expect(screen.getByTestId('post-header-user-info')).toHaveAttribute('data-show-user-info', 'false');
+    expect(screen.queryByText('Test User')).not.toBeInTheDocument();
+  });
+
+  it('passes visuallyHideAvatar to PostHeaderUserInfo', () => {
+    mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: false });
+    mockUseUserDetails.mockReturnValue({
+      userDetails: { id: 'userpubkykey', name: 'Test User', image: 'test-image-id' } as NexusUserDetails,
+      isLoading: false,
+    });
+    mockUseAvatarUrl.mockReturnValue('https://example.com/avatar/userpubkykey.png');
+
+    renderPostHeader(<PostHeader postId="userpubkykey" isReplyInput={true} visuallyHideAvatar={true} />);
+
+    expect(screen.getByTestId('post-header-user-info')).toHaveAttribute('data-visually-hide-avatar', 'true');
+  });
+
+  it('passes the character limit placement to PostHeaderUserInfo', () => {
+    mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: false });
+    mockUseUserDetails.mockReturnValue({
+      userDetails: { id: 'userpubkykey', name: 'Test User', image: 'test-image-id' } as NexusUserDetails,
+      isLoading: false,
+    });
+    mockUseAvatarUrl.mockReturnValue('https://example.com/avatar/userpubkykey.png');
+
+    renderPostHeader(
+      <PostHeader
+        postId="userpubkykey"
+        isReplyInput={true}
+        characterLimit={{ count: 21, max: 2000 }}
+        characterLimitPlacement="name-row"
+      />,
+    );
+
+    expect(screen.getByTestId('post-header-user-info')).toHaveAttribute('data-character-limit-placement', 'name-row');
   });
 
   it('passes size prop to PostHeaderUserInfo', () => {
@@ -215,6 +422,37 @@ describe('PostHeader', () => {
     renderPostHeader(<PostHeader postId="userpubkykey:post456" size="large" />);
 
     expect(screen.getByTestId('post-header-user-info')).toHaveAttribute('data-size', 'large');
+  });
+
+  it('constrains the user info slot so long names can truncate', () => {
+    mockUsePostDetails.mockReturnValue({
+      postDetails: {
+        id: 'userpubkykey:post456',
+        indexed_at: Date.now(),
+        kind: 'short' as const,
+        uri: 'pubky://userpubkykey/pub/pubky.app/posts/post456',
+        content: '',
+        attachments: null,
+        is_moderated: false,
+        is_blurred: false,
+      } as EnrichedPostDetails,
+      isLoading: false,
+    });
+    mockUseUserDetails.mockReturnValue({
+      userDetails: {
+        id: 'userpubkykey',
+        name: 'ThisNameIsLongEnoughToOverflowTheReplyDialogWithoutAConstrainedHeaderSlot',
+        image: 'test-image-id',
+      } as NexusUserDetails,
+      isLoading: false,
+    });
+    mockUseAvatarUrl.mockReturnValue('https://example.com/avatar/userpubkykey.png');
+
+    renderPostHeader(<PostHeader postId="userpubkykey:post456" />);
+
+    const userInfoSlot = screen.getByTestId('post-header-user-info').parentElement;
+
+    expect(userInfoSlot).toHaveClass('w-full', 'max-w-full', 'min-w-0');
   });
 
   it('renders time in top-right by default', () => {
@@ -267,6 +505,22 @@ describe('PostHeader', () => {
 
     expect(screen.getAllByText('2h')).toHaveLength(1);
     expect(screen.getByTestId('bottom-left-time')).toHaveTextContent('2h');
+  });
+
+  it('renders characterLimit in the top-right instead of timestamp', () => {
+    mockUsePostDetails.mockReturnValue({ postDetails: null, isLoading: false });
+    mockUseUserDetails.mockReturnValue({
+      userDetails: { id: 'userpubkykey', name: 'Test User', image: 'test-image-id' } as NexusUserDetails,
+      isLoading: false,
+    });
+    mockUseAvatarUrl.mockReturnValue('https://example.com/avatar/userpubkykey.png');
+
+    renderPostHeader(
+      <PostHeader postId="userpubkykey" isReplyInput={true} characterLimit={{ count: 21, max: 2000 }} />,
+    );
+
+    expect(screen.getByText('21/2000')).toBeInTheDocument();
+    expect(screen.queryByText('2h')).not.toBeInTheDocument();
   });
 });
 

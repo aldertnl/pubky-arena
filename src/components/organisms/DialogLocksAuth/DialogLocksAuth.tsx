@@ -14,7 +14,6 @@
 import { type ReactNode, useEffect } from 'react';
 import type { Session as LocksSdkSession } from '@pubky/locks-sdk';
 import { LoaderCircle } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { Button, ButtonVariant } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import {
@@ -53,8 +52,6 @@ function StepImage({ src, alt }: { src: string; alt: string }) {
 
 export function DialogLocksAuth({ open, onOpenChange, onSuccess }: DialogLocksAuthProps) {
   const { status, connectUrl, session, error, iframeRef, prepare, start, reset } = useLocksAuthFlow();
-  const t = useTranslations('dialogs.locksAuth');
-  const tCommon = useTranslations('common');
 
   // Probe the Lock Server's readiness when the modal opens; reset when it closes. "Continue" only
   // starts the auth flow once the probe says the server is ready.
@@ -75,19 +72,23 @@ export function DialogLocksAuth({ open, onOpenChange, onSuccess }: DialogLocksAu
     status === LocksAuthFlowStatus.AWAITING_APPROVAL ||
     status === LocksAuthFlowStatus.EXCHANGING;
 
-  let title = t('intro.title');
-  let description: ReactNode = t('intro.description');
+  let title = 'Lock Content';
+  let description: ReactNode = 'Pubky Locks allows you to lock content with payments or passwords.';
   if (isSuccess) {
-    title = t('success.title');
-    description = t('success.description');
+    title = 'Locks Enabled';
+    description = 'You authorized the Locks server to manage your Locks data.';
   } else if (isEnableStep) {
-    title = t('enable.title');
-    description = t.rich('enable.description', {
-      bold: (chunks) => <strong className="font-bold text-foreground">{chunks}</strong>,
-    });
+    title = 'Enable Locks';
+    description = (
+      <>
+        {'Use '}
+        <strong className="font-bold text-foreground">{'Pubky Ring'}</strong>
+        {' to authorize Locks server to manage your Locks data.'}
+      </>
+    );
   } else if (isError) {
-    title = t('error.title');
-    description = t('error.description');
+    title = 'Enable Locks';
+    description = 'Something went wrong while authorizing the Lock Server.';
   }
 
   return (
@@ -115,7 +116,7 @@ export function DialogLocksAuth({ open, onOpenChange, onSuccess }: DialogLocksAu
 
         {isServerUnavailable && (
           <Typography size="sm" className="text-center text-destructive">
-            {t('serverUnavailable')}
+            {'The Lock Server is unavailable right now. Please try again later.'}
           </Typography>
         )}
 
@@ -127,7 +128,7 @@ export function DialogLocksAuth({ open, onOpenChange, onSuccess }: DialogLocksAu
               <iframe
                 ref={iframeRef}
                 src={connectUrl}
-                title={t('iframeTitle')}
+                title={'Lock Server authorization'}
                 // The parent accepts the auth code only from the configured Lock Server origin.
                 // Without allow-same-origin, sandboxed postMessage uses origin "null" and gets rejected.
                 // The other flags let /connect run JS, submit its approval form, and open Pubky Ring.
@@ -144,14 +145,14 @@ export function DialogLocksAuth({ open, onOpenChange, onSuccess }: DialogLocksAu
 
         {isError && (
           <Typography size="sm" className="text-destructive">
-            {error?.message ?? t('error.fallback')}
+            {error?.message ?? 'Lock authorization failed.'}
           </Typography>
         )}
 
         {isIntroPhase && (
           <DialogFooter className="flex-row gap-4">
             <Button variant={ButtonVariant.OUTLINE} size="lg" className="flex-1" onClick={close}>
-              {tCommon('cancel')}
+              {'Cancel'}
             </Button>
             {/* Enabled only once the server is confirmed ready; a spinner shows while probing. */}
             <Button
@@ -161,7 +162,7 @@ export function DialogLocksAuth({ open, onOpenChange, onSuccess }: DialogLocksAu
               disabled={status !== LocksAuthFlowStatus.IDLE}
               onClick={start}
             >
-              {isCheckingServer ? <LoaderCircle className="size-5 animate-spin" /> : tCommon('continue')}
+              {isCheckingServer ? <LoaderCircle className="size-5 animate-spin" /> : 'Continue'}
             </Button>
           </DialogFooter>
         )}
@@ -169,7 +170,7 @@ export function DialogLocksAuth({ open, onOpenChange, onSuccess }: DialogLocksAu
         {isSuccess && (
           <DialogFooter className="flex-row gap-4">
             <Button variant={ButtonVariant.OUTLINE} size="lg" className="flex-1" onClick={close}>
-              {tCommon('cancel')}
+              {'Cancel'}
             </Button>
             <Button
               variant={ButtonVariant.DEFAULT}
@@ -180,7 +181,7 @@ export function DialogLocksAuth({ open, onOpenChange, onSuccess }: DialogLocksAu
                 close();
               }}
             >
-              {tCommon('continue')}
+              {'Continue'}
             </Button>
           </DialogFooter>
         )}
@@ -188,10 +189,10 @@ export function DialogLocksAuth({ open, onOpenChange, onSuccess }: DialogLocksAu
         {isError && (
           <DialogFooter className="flex-row gap-4">
             <Button variant={ButtonVariant.OUTLINE} size="lg" className="flex-1" onClick={close}>
-              {tCommon('cancel')}
+              {'Cancel'}
             </Button>
             <Button variant={ButtonVariant.DEFAULT} size="lg" className="flex-1" onClick={start}>
-              {t('tryAgain')}
+              {'Try again'}
             </Button>
           </DialogFooter>
         )}

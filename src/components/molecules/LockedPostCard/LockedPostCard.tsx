@@ -2,7 +2,6 @@
 
 import { type MouseEvent, useEffect, useRef, useState } from 'react';
 import { Check, LockOpen, Pencil, Shield, StickyNote } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { Button, ButtonVariant } from '@/atoms/Button/Button';
 import { Image } from '@/atoms/Image/Image';
 import { cn } from '@/libs/utils/utils';
@@ -39,7 +38,6 @@ export function LockedPostCard({
   editableTitle,
   className,
 }: LockedPostCardProps) {
-  const t = useTranslations('post.lock');
   const isDisabled = disabled ?? !onUnlock;
 
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -100,10 +98,10 @@ export function LockedPostCard({
                 onChange={(event) => editableTitle.onChange(event.target.value)}
                 onFocus={() => setIsEditing(true)}
                 onBlur={() => setIsEditing(false)}
-                placeholder={t('defaultTitle')}
+                placeholder={'Locked post'}
                 disabled={editableTitle.disabled}
                 maxLength={editableTitle.maxLength}
-                aria-label={t('titleLabel')}
+                aria-label={'Lock title'}
                 data-cy="lock-title-input"
                 // Marks the input for the composer's outside-click collapse exclusion (usePostInput).
                 data-lock-title-input=""
@@ -117,7 +115,7 @@ export function LockedPostCard({
             <>
               <StickyNote className="size-6 shrink-0 text-muted-foreground" aria-hidden />
               <h4 className="min-w-0 flex-1 text-xl leading-7 font-bold text-foreground">
-                {title?.trim() || t('defaultTitle')}
+                {title?.trim() || 'Locked post'}
               </h4>
             </>
           )}
@@ -141,7 +139,7 @@ export function LockedPostCard({
             className="relative z-10 h-10 gap-2 rounded-full px-4 transition-transform ease-out"
           >
             <LockOpen className="size-4 shrink-0" aria-hidden />
-            {t('unlock')}
+            {'Unlock'}
           </Button>
           <div ref={maskRef} className="flex items-center gap-1.5 px-4 text-brand">
             <Shield className="size-4 shrink-0" aria-hidden />

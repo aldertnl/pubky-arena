@@ -107,18 +107,14 @@ describe('NotificationNormalizer', () => {
         expect(typeof result.last_read.timestamp).toBe('bigint');
       });
 
-      /**
-       * Note: createLastRead() takes no parameters, so validation only happens
-       * at singleton initialization. Once initialized, invalid pubkys don't throw.
-       */
       it.each([
         ['empty', INVALID_INPUTS.EMPTY],
         ['null', INVALID_INPUTS.NULL],
         ['undefined', INVALID_INPUTS.UNDEFINED],
-      ])('should not throw for %s pubky (singleton already initialized)', (_, invalidPubky) => {
-        NotificationNormalizer.to(TEST_PUBKY.USER_1); // Initialize
-        const result = NotificationNormalizer.to(invalidPubky);
-        expect(result).toBeDefined();
+      ])('should reject a %s pubky identity switch after initialization', (_, invalidPubky) => {
+        NotificationNormalizer.to(TEST_PUBKY.USER_1);
+
+        expect(() => NotificationNormalizer.to(invalidPubky)).toThrow(AppError);
       });
     });
   });
@@ -180,6 +176,20 @@ describe('NotificationNormalizer', () => {
         expect(result.type).toBe(NotificationType.Reply);
         expect(result).toHaveProperty('replied_by', TEST_PUBKY.USER_2);
         expect(result).toHaveProperty('reply_uri');
+      });
+
+      it('should preserve the subject post kind from Nexus', () => {
+        const nexusNotification = createNexusNotification(NotificationType.PostEdited, {
+          edited_by: TEST_PUBKY.USER_2,
+          edit_source: 'repost',
+          edited_uri: 'pubky://author/pub/pubky.app/posts/collection123',
+          linked_uri: 'pubky://viewer/pub/pubky.app/posts/repost123',
+          post_kind: 'collection',
+        });
+
+        const result = NotificationNormalizer.toFlatNotification(nexusNotification);
+
+        expect(result).toHaveProperty('post_kind', 'collection');
       });
 
       it.each([

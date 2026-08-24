@@ -9,11 +9,6 @@ vi.mock('@/controllers/moderation/moderation', () => ({
     unBlur: (...args: unknown[]) => mockUnblur(...args),
   },
 }));
-
-vi.mock('next-intl', () => ({
-  useTranslations: (namespace?: string) => (key: string) => `${namespace ?? ''}.${key}`,
-}));
-
 // Mock Atoms
 vi.mock('@/atoms/Button/Button', () => {
   return {
@@ -108,7 +103,7 @@ describe('PostContentBlurred', () => {
   it('displays the moderated post message', () => {
     render(<PostContentBlurred {...defaultProps} />);
 
-    expect(screen.getByText('moderation.postContentModerated')).toBeInTheDocument();
+    expect(screen.getByText('Post content moderated.')).toBeInTheDocument();
   });
 
   it('displays blurred placeholder text', () => {
@@ -166,6 +161,13 @@ describe('PostContentBlurred', () => {
     expect(button).toHaveAttribute('data-override-defaults', 'true');
   });
 
+  it('uses a horizontal, constrained overlay for the compact variant', () => {
+    render(<PostContentBlurred {...defaultProps} variant="compact" />);
+
+    expect(screen.getByTestId('blurred-content-button')).toHaveClass('h-6', 'overflow-hidden');
+    expect(screen.getByTestId('container')).toHaveClass('flex-row', 'justify-start', '[&_svg]:size-4');
+  });
+
   it('sets aria-hidden on blurred placeholder text', () => {
     render(<PostContentBlurred {...defaultProps} />);
 
@@ -186,6 +188,11 @@ describe('PostContentBlurred - Snapshots', () => {
 
   it('matches snapshot with custom className', () => {
     const { container } = render(<PostContentBlurred postId="snapshot-post-2" className="mt-4 rounded-lg" />);
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('matches snapshot with compact variant', () => {
+    const { container } = render(<PostContentBlurred postId="snapshot-post-3" variant="compact" />);
     expect(container.firstChild).toMatchSnapshot();
   });
 });

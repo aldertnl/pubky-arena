@@ -100,6 +100,18 @@ export enum PostStreamTypes {
 export type ReplyStreamCompositeId = `${StreamSource.REPLIES}:${string}`;
 export type AuthorStreamCompositeId = `${StreamSource.AUTHOR}:${string}`;
 export type AuthorRepliesStreamCompositeId = `${StreamSource.AUTHOR_REPLIES}:${string}`;
+export type PostStreamKindSegment = 'all' | StreamKind;
+export type WotDomainDepth = 0 | 1 | 2;
+export type StreamDependencyScope = 'follow_graph' | 'friends' | 'profile_tag';
+export type WotStreamId =
+  | `${StreamSorting}:${StreamSource.WOT}:${PostStreamKindSegment}`
+  | `${StreamSorting}:${StreamSource.WOT}:${PostStreamKindSegment}:${string}`;
+export type WotDomainStreamCompositeId =
+  | `${StreamSorting}:${StreamSource.WOT_DOMAIN}:${WotDomainDepth}:${PostStreamKindSegment}:${string}`
+  | `${StreamSorting}:${StreamSource.WOT_DOMAIN}:${WotDomainDepth}:${PostStreamKindSegment}:${string}:${string}`;
+export type SortedAuthorStreamCompositeId =
+  | `${StreamSorting}:${StreamSource.AUTHOR}:${string}:${PostStreamKindSegment}`
+  | `${StreamSorting}:${StreamSource.AUTHOR}:${string}:${PostStreamKindSegment}:${string}`;
 
 // Collections feature (see `.plans/2026/may/collections-feature-foundation.md`).
 //
@@ -125,6 +137,30 @@ export function buildPostReplyStreamId(compositePostId: string): ReplyStreamComp
   return `${StreamSource.REPLIES}:${compositePostId}`;
 }
 
+export function buildWotDomainStreamId(
+  sorting: StreamSorting,
+  depth: WotDomainDepth,
+  kind: PostStreamKindSegment,
+  domainTags: string[],
+  postTags: string[] = [],
+): WotDomainStreamCompositeId {
+  const canonicalDomainTags = [...domainTags].sort().join(',');
+  const baseStreamId = `${sorting}:${StreamSource.WOT_DOMAIN}:${depth}:${kind}:${canonicalDomainTags}`;
+  return (postTags.length > 0 ? `${baseStreamId}:${postTags.join(',')}` : baseStreamId) as WotDomainStreamCompositeId;
+}
+
+export function buildSortedAuthorStreamId(
+  sorting: StreamSorting,
+  authorPubky: Pubky,
+  kind: PostStreamKindSegment,
+  postTags: string[] = [],
+): SortedAuthorStreamCompositeId {
+  const baseStreamId = `${sorting}:${StreamSource.AUTHOR}:${authorPubky}:${kind}`;
+  return (
+    postTags.length > 0 ? `${baseStreamId}:${postTags.join(',')}` : baseStreamId
+  ) as SortedAuthorStreamCompositeId;
+}
+
 export function buildAuthorCollectionsStreamId(authorPubky: Pubky): AuthorCollectionsStreamId {
   return `${authorPubky}:${StreamSource.AUTHOR}:${StreamKind.COLLECTION}`;
 }
@@ -134,13 +170,12 @@ export function buildAuthorCollectionsStreamId(authorPubky: Pubky): AuthorCollec
  * (viewing someone's profile shows their full timeline, same as bookmarks #1804).
  */
 export function isAuthorStreamSkippingMuteFilter(streamId: string): boolean {
-  if (streamId.startsWith(`${StreamSource.AUTHOR}:`)) {
-    return true;
-  }
-  if (streamId.startsWith(`${StreamSource.AUTHOR_REPLIES}:`)) {
-    return true;
-  }
-  return streamId.endsWith(`:${StreamSource.AUTHOR}:${StreamKind.COLLECTION}`);
+  const [firstSegment, secondSegment] = streamId.split(':');
+  return (
+    firstSegment === StreamSource.AUTHOR ||
+    firstSegment === StreamSource.AUTHOR_REPLIES ||
+    secondSegment === StreamSource.AUTHOR
+  );
 }
 
 export function buildFollowedCollectionsStreamId(): FollowedCollectionsStreamId {
@@ -151,12 +186,135 @@ export function buildDiscoverCollectionsStreamId(): DiscoverCollectionsStreamId 
   return `${StreamSorting.ENGAGEMENT}:${StreamSource.ALL}:${StreamKind.COLLECTION}`;
 }
 
+/** The global "Discover Collections" stream (engagement-sorted, all sources, collection kind). */
+export function isDiscoverCollectionsStream(streamId: string): boolean {
+  return streamId === buildDiscoverCollectionsStreamId();
+}
+
 export function buildCollectionItemsStreamId(authorPubky: Pubky, postId: string): CollectionItemsStreamCompositeId {
   return `${StreamSource.COLLECTION}:${authorPubky}:${postId}`;
 }
 
 export function isCollectionItemsStream(streamId: string): streamId is CollectionItemsStreamCompositeId {
   return streamId.startsWith(`${StreamSource.COLLECTION}:`);
+}
+
+export function isWotDomainStream(streamId: string): streamId is WotDomainStreamCompositeId {
+  return streamId.split(':')[1] === StreamSource.WOT_DOMAIN;
+}
+
+export function isWotStream(streamId: string): streamId is WotStreamId {
+  return streamId.split(':')[1] === StreamSource.WOT;
+}
+
+/**
+ * Web-of-Trust-sourced streams ('My network' `wot`, 'Tagged as' `wot_domain`)
+ * never contain the viewer's own posts: Nexus filters them out server-side
+ * (`author.id <> observer_id`) and the local create path never writes into
+ * these streams. Consumers must not optimistically insert the viewer's own
+ * new posts into them (#2308).
+ */
+export function isViewerExcludedWotStream(streamId: string): boolean {
+  return isWotStream(streamId) || isWotDomainStream(streamId);
+}
+
+const POST_STREAM_KIND_SEGMENTS: ReadonlySet<string> = new Set(['all', ...Object.values<string>(StreamKind)]);
+
+function toPostStreamKindSegment(segment: string | undefined): PostStreamKindSegment | undefined {
+  return segment !== undefined && POST_STREAM_KIND_SEGMENTS.has(segment)
+    ? (segment as PostStreamKindSegment)
+    : undefined;
+}
+
+/**
+ * Extracts the post kind segment from any known stream id shape, or `undefined`
+ * for shapes that encode no kind (`author:<pubky>`, `author_replies:<pubky>`,
+ * `post_replies:<pubky>:<postId>`, `collection:<pubky>:<postId>`).
+ *
+ * This is the canonical kind parser: consumers gating posts by kind (e.g.
+ * `postKindBelongsToStream`) must use it instead of splitting the id themselves.
+ */
+export function getPostStreamKind(streamId: string): PostStreamKindSegment | undefined {
+  const parts = streamId.split(':');
+  const [first, second] = parts;
+
+  // `${sorting}:wot_domain:<depth>:<kind>:<domainTags>[:postTags]`
+  if (second === StreamSource.WOT_DOMAIN) {
+    return toPostStreamKindSegment(parts[3]);
+  }
+
+  const isSortingFirst = Object.values<string>(StreamSorting).includes(first);
+
+  // Sorted-author shape (#2190): `${sorting}:author:<pubky>:<kind>[:tags]`.
+  // Must precede the generic sorting-first branch or the pubky reads as the kind.
+  if (isSortingFirst && second === StreamSource.AUTHOR) {
+    return toPostStreamKindSegment(parts[3]);
+  }
+
+  // `${sorting}:source:<kind>[:tags]` (timeline enums, wot, bookmarks, tag streams).
+  if (isSortingFirst) {
+    return toPostStreamKindSegment(parts[2]);
+  }
+
+  // Author-kind shape: `<pubky>:author:<kind>`.
+  if (second === StreamSource.AUTHOR) {
+    return toPostStreamKindSegment(parts[2]);
+  }
+
+  return undefined;
+}
+
+const NO_DEPENDENCY_SCOPES: ReadonlySet<StreamDependencyScope> = new Set();
+
+/**
+ * Classifies streams whose cached membership depends on local mutations:
+ *
+ * - `follow_graph`: follow/unfollow changes membership — Following, My network
+ *   (`wot`) and `wot_domain` depths 1–2, whose reach is graph-derived.
+ * - `friends`: only friendship transitions change membership. Depth-1 domain
+ *   streams are deliberately graph-scoped instead: Following and Friends both
+ *   serialize to depth 1, so their original reach cannot be reconstructed
+ *   from the stream id.
+ * - `profile_tag`: profile-tag create/delete changes membership — `wot_domain`
+ *   at every depth, since the domain tag set defines the trust set (#2302).
+ */
+export function getStreamDependencyScopes(streamId: string): ReadonlySet<StreamDependencyScope> {
+  const parts = streamId.split(':');
+  const [sorting, source, thirdSegment] = parts;
+  const isKnownSorting = Object.values<string>(StreamSorting).includes(sorting);
+
+  if (!isKnownSorting || !getPostStreamKind(streamId)) {
+    return NO_DEPENDENCY_SCOPES;
+  }
+
+  if (source === StreamSource.WOT_DOMAIN) {
+    if (parts.length < 5 || parts.length > 6 || !parts[4] || (parts.length === 6 && !parts[5])) {
+      return NO_DEPENDENCY_SCOPES;
+    }
+    if (thirdSegment === '0') {
+      return new Set(['profile_tag']);
+    }
+    if (thirdSegment === '1' || thirdSegment === '2') {
+      return new Set(['follow_graph', 'profile_tag']);
+    }
+    return NO_DEPENDENCY_SCOPES;
+  }
+
+  // The existing custom-feed builder emits a trailing colon for an empty post-tag
+  // list. The request parser treats that segment as absent, so classification does too.
+  if (parts.length > 4) {
+    return NO_DEPENDENCY_SCOPES;
+  }
+
+  if (source === StreamSource.FRIENDS) {
+    return new Set(['friends']);
+  }
+
+  if (source === StreamSource.FOLLOWING || source === StreamSource.WOT) {
+    return new Set(['follow_graph']);
+  }
+
+  return NO_DEPENDENCY_SCOPES;
 }
 
 /**
@@ -179,6 +337,9 @@ export function isDeletedRetainingStream(streamId: string): boolean {
 
 export type PostStreamId =
   | PostStreamTypes
+  | WotStreamId
+  | WotDomainStreamCompositeId
+  | SortedAuthorStreamCompositeId
   | ReplyStreamCompositeId
   | AuthorStreamCompositeId
   | AuthorRepliesStreamCompositeId
@@ -199,6 +360,23 @@ export type PostStreamId =
 export function isSkipPaginatedStream(streamId: string): boolean {
   const head = streamId.split(':')[0];
   return head === StreamSorting.ENGAGEMENT || isCollectionItemsStream(streamId);
+}
+
+/**
+ * Advance a stream's pagination cursor by RAW backend data only, never by the post-filter
+ * visible count - so a fully-filtered page still moves forward and never re-requests posts.
+ * Skip streams: advance the `skip` offset by the raw page size. Score streams: resume from
+ * the last raw `last_post_score` (hold position when it's absent, e.g. an empty page).
+ */
+export function advanceCursor(
+  streamId: string,
+  prevCursor: number,
+  rawPage: { ids: string[]; lastScore: number | null | undefined },
+): number {
+  if (isSkipPaginatedStream(streamId)) {
+    return prevCursor + rawPage.ids.length;
+  }
+  return rawPage.lastScore ?? prevCursor;
 }
 
 /**

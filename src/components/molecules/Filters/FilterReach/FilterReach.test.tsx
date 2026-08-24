@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { REACH } from '@/stores/home/home.types';
-import { FilterReach } from './FilterReach';
+import { FilterReach, TAGGED_AS_FILTER_KEY } from './FilterReach';
 
 describe('FilterReach', () => {
   it('renders with default selected tab and proper ARIA attributes', () => {
@@ -43,6 +44,62 @@ describe('FilterReach', () => {
     });
   });
 
+  it('renders the standalone Tagged-as Home order', () => {
+    const mockOnTabChange = vi.fn();
+    render(<FilterReach showTaggedAs onTabChange={mockOnTabChange} />);
+
+    const tabs = [
+      { value: REACH.NETWORK, label: 'My network' },
+      { value: TAGGED_AS_FILTER_KEY, label: 'Tagged as' },
+      { value: REACH.FOLLOWING, label: 'Following' },
+      { value: REACH.FRIENDS, label: 'Friends' },
+      { value: REACH.ME, label: 'Me' },
+      { value: REACH.ALL, label: 'All' },
+    ];
+
+    expect(screen.getAllByRole('radio').map((radio) => radio.getAttribute('aria-label'))).toEqual(
+      tabs.map(({ label }) => label),
+    );
+
+    tabs.forEach(({ value, label }) => {
+      const element = screen.getByLabelText(label);
+      fireEvent.click(element);
+      expect(mockOnTabChange).toHaveBeenCalledWith(value);
+    });
+  });
+
+  it('renders the profile tag editor immediately after Tagged as', () => {
+    render(
+      <FilterReach
+        showTaggedAs
+        selectedTab={TAGGED_AS_FILTER_KEY}
+        profileTags={['bitcoin']}
+        onProfileTagAdd={vi.fn()}
+        onProfileTagRemove={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('bitcoin')).toBeInTheDocument();
+    const input = screen.getByPlaceholderText('profile tag');
+    expect(input).toBeInTheDocument();
+    expect(screen.getByLabelText('Tagged as').nextElementSibling).toContainElement(input);
+  });
+
+  it('disables the profile tag editor when profileTagsDisabled is true', () => {
+    render(
+      <FilterReach
+        showTaggedAs
+        selectedTab={REACH.ALL}
+        profileTags={[]}
+        onProfileTagAdd={vi.fn()}
+        onProfileTagRemove={vi.fn()}
+        profileTagsDisabled
+      />,
+    );
+
+    expect(screen.getByPlaceholderText('profile tag')).toBeDisabled();
+  });
+
   it('has proper ARIA attributes for radio items', () => {
     render(<FilterReach selectedTab={REACH.FOLLOWING} />);
 
@@ -60,6 +117,18 @@ describe('FilterReach', () => {
     expect(followingRadio).toHaveAttribute('aria-label', 'Following');
     expect(friendsRadio).toHaveAttribute('aria-label', 'Friends');
   });
+
+  it('preserves data-cy selectors for e2e tests', () => {
+    render(<FilterReach showTaggedAs />);
+
+    expect(screen.getByLabelText('All')).toHaveAttribute('data-cy', 'all-reach-toggle');
+    expect(screen.getByLabelText('Following')).toHaveAttribute('data-cy', 'following-reach-toggle');
+    expect(screen.getByLabelText('Friends')).toHaveAttribute('data-cy', 'friends-reach-toggle');
+    expect(screen.getByLabelText('Me')).toHaveAttribute('data-cy', 'me-reach-toggle');
+    expect(screen.getByLabelText('My network')).toHaveAttribute('data-cy', 'network-reach-toggle');
+    expect(screen.getByLabelText('Tagged as')).toHaveAttribute('data-cy', 'tagged-as-reach-toggle');
+  });
+
   it('renders all items as disabled when disabled prop is true', () => {
     render(<FilterReach disabled />);
 
@@ -90,6 +159,64 @@ describe('FilterReach', () => {
 });
 
 describe('FilterReach - Keyboard Navigation', () => {
+  it('allows Tab to enter the enabled Tagged-as editor', async () => {
+    const user = userEvent.setup();
+    render(
+      <FilterReach
+        showTaggedAs
+        selectedTab={TAGGED_AS_FILTER_KEY}
+        profileTags={[]}
+        onProfileTagAdd={vi.fn()}
+        onProfileTagRemove={vi.fn()}
+      />,
+    );
+
+    screen.getByLabelText('Tagged as').focus();
+    await user.tab();
+
+    expect(document.activeElement).toBe(screen.getByPlaceholderText('profile tag'));
+  });
+
+  it('skips the Tagged-as editor during radio arrow navigation', () => {
+    render(
+      <FilterReach
+        showTaggedAs
+        selectedTab={TAGGED_AS_FILTER_KEY}
+        profileTags={[]}
+        onProfileTagAdd={vi.fn()}
+        onProfileTagRemove={vi.fn()}
+      />,
+    );
+
+    const taggedAs = screen.getByLabelText('Tagged as');
+    taggedAs.focus();
+    fireEvent.keyDown(taggedAs, { key: 'ArrowDown' });
+
+    expect(document.activeElement).toBe(screen.getByLabelText('Following'));
+  });
+
+  it('does not change Reach when arrow keys are used inside the tag input', () => {
+    const onTabChange = vi.fn();
+    render(
+      <FilterReach
+        showTaggedAs
+        selectedTab={TAGGED_AS_FILTER_KEY}
+        onTabChange={onTabChange}
+        profileTags={[]}
+        onProfileTagAdd={vi.fn()}
+        onProfileTagRemove={vi.fn()}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText('profile tag');
+    input.focus();
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    fireEvent.keyDown(input, { key: 'ArrowLeft' });
+
+    expect(document.activeElement).toBe(input);
+    expect(onTabChange).not.toHaveBeenCalled();
+  });
+
   it('manages tabIndex correctly for keyboard navigation', () => {
     render(<FilterReach selectedTab={REACH.FRIENDS} />);
 

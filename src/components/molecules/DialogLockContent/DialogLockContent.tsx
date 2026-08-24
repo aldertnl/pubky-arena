@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Minus, Shield, Wallet } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { Button, ButtonVariant } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/atoms/Dialog/Dialog';
@@ -19,8 +18,13 @@ const PASSWORD_RULES = ['length', 'number', 'special'] as const;
 const PASSWORD_FIELD_CLASS = 'h-14 rounded-md border border-dashed border-input py-4 pr-5 pl-6 text-base shadow-xs';
 const FIELD_LABEL_CLASS = 'text-xs font-medium tracking-widest text-muted-foreground uppercase';
 
+const PASSWORD_RULE_LABELS: Record<string, string> = {
+  length: 'At least 8 characters',
+  number: 'At least 1 number',
+  special: 'At least 1 special character',
+};
+
 export function DialogLockContent({ open, onOpenChange, onApplied }: DialogLockContentProps) {
-  const t = useTranslations('dialogs.lockContent');
 
   const [method, setMethod] = useState<LockMethod>('password');
   const [password, setPassword] = useState('');
@@ -62,21 +66,21 @@ export function DialogLockContent({ open, onOpenChange, onApplied }: DialogLockC
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="max-w-md rounded-xl border-x-0 border-y border-brand bg-card sm:max-w-xl"
-        hiddenTitle={t('title')}
+        hiddenTitle={'Lock Content'}
       >
         <DialogHeader>
-          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogTitle>{'Lock Content'}</DialogTitle>
         </DialogHeader>
 
         <Tabs value={method} onValueChange={(value) => setMethod(value as LockMethod)}>
           <TabsList>
             <TabsTrigger value="password" id="lock-tab-password">
               <Shield className="size-5 shrink-0" />
-              {t('tabs.password')}
+              {'Password'}
             </TabsTrigger>
             <TabsTrigger value="payment" id="lock-tab-payment">
               <Wallet className="size-5 shrink-0" />
-              {t('tabs.payment')}
+              {'Payment'}
             </TabsTrigger>
           </TabsList>
 
@@ -98,11 +102,11 @@ export function DialogLockContent({ open, onOpenChange, onApplied }: DialogLockC
               aria-hidden={!isPassword}
               className={cn('col-start-1 row-start-1 flex flex-col gap-6', !isPassword && 'invisible')}
             >
-              <Typography className="text-base text-secondary-foreground">{t('password.description')}</Typography>
+              <Typography className="text-base text-secondary-foreground">{'Set the password people need to enter to unlock your content.'}</Typography>
 
               <Container overrideDefaults className="flex flex-col gap-2">
                 <Label htmlFor="lock-password" className={FIELD_LABEL_CLASS}>
-                  {t('password.label')}
+                  {'Password'}
                 </Label>
                 <Input
                   id="lock-password"
@@ -126,7 +130,7 @@ export function DialogLockContent({ open, onOpenChange, onApplied }: DialogLockC
                         className="flex flex-row items-center gap-2"
                       >
                         <Minus className="size-3.5 shrink-0 text-muted-foreground" />
-                        <Typography className="text-xs text-muted-foreground">{t(`password.rules.${rule}`)}</Typography>
+                        <Typography className="text-xs text-muted-foreground">{PASSWORD_RULE_LABELS[rule]}</Typography>
                       </Container>
                     ))}
                   </Container>
@@ -135,7 +139,7 @@ export function DialogLockContent({ open, onOpenChange, onApplied }: DialogLockC
 
               <Container overrideDefaults className="flex flex-col gap-2">
                 <Label htmlFor="lock-repeat-password" className={FIELD_LABEL_CLASS}>
-                  {t('password.repeatLabel')}
+                  {'Repeat Password'}
                 </Label>
                 <Input
                   id="lock-repeat-password"
@@ -151,7 +155,7 @@ export function DialogLockContent({ open, onOpenChange, onApplied }: DialogLockC
                 />
                 {showMismatch && (
                   <Typography size="sm" className="pt-3 text-xs leading-3 font-medium text-destructive">
-                    {t('password.mismatch')}
+                    {'Passwords do not match.'}
                   </Typography>
                 )}
               </Container>
@@ -159,7 +163,7 @@ export function DialogLockContent({ open, onOpenChange, onApplied }: DialogLockC
 
             {!isPassword && (
               <Container overrideDefaults className="col-start-1 row-start-1 flex items-center justify-center">
-                <Typography className="text-base text-muted-foreground">{t('payment.toBeDeveloped')}</Typography>
+                <Typography className="text-base text-muted-foreground">{'To be developed'}</Typography>
               </Container>
             )}
           </Container>
@@ -172,7 +176,7 @@ export function DialogLockContent({ open, onOpenChange, onApplied }: DialogLockC
             onClick={() => handleOpenChange(false)}
             data-cy="lock-content-cancel"
           >
-            {t('cancel')}
+            {'Cancel'}
           </Button>
           <Button
             variant={ButtonVariant.DEFAULT}
@@ -181,7 +185,7 @@ export function DialogLockContent({ open, onOpenChange, onApplied }: DialogLockC
             disabled={!canApply}
             data-cy="lock-content-apply"
           >
-            {t('apply')}
+            {'Apply Lock'}
           </Button>
         </DialogFooter>
       </DialogContent>

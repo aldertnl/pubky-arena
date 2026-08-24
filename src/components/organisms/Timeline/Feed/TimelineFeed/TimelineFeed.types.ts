@@ -1,6 +1,8 @@
 import type { ReactNode, RefObject } from 'react';
 import { TIMELINE_FEED_VARIANT, type TimelineFeedVariant } from '@/config/feed';
+import type { OptimisticPostRemoval } from '@/hooks/useStreamPagination/useStreamPagination.types';
 import type { PostStreamId } from '@/models/stream/post/postStream.types';
+import type { LayoutType } from '@/stores/home/home.types';
 
 interface TimelineFeedPropsBase {
   /**
@@ -21,6 +23,19 @@ interface TimelineFeedPropsBase {
   children?: ReactNode;
 }
 
+export type HomeTimelineFeedProps = TimelineFeedPropsBase & {
+  variant: typeof TIMELINE_FEED_VARIANT.HOME;
+  /**
+   * Optional header rendered after ordinary children and before timeline
+   * content. Unlike children, it stays visible in Visual layout.
+   */
+  persistentHeader?: ReactNode;
+  emptyState?: never;
+  trailingSlot?: never;
+  pullToRefreshContainerRef?: never;
+  requestedLayout?: never;
+};
+
 type TimelineFeedPullToRefreshContainerRef = RefObject<HTMLElement | null>;
 
 type BookmarksTimelineFeedProps = TimelineFeedPropsBase & {
@@ -29,23 +44,29 @@ type BookmarksTimelineFeedProps = TimelineFeedPropsBase & {
    * Empty state for finite collection-like feeds.
    */
   emptyState?: ReactNode;
-  /**
-   * Last grid cell on the bookmarks feed (Add Content CTA for the signed-in user).
-   */
-  gridTrailingSlot?: ReactNode;
+  /** Add Content CTA rendered after bookmarked posts. */
+  trailingSlot?: ReactNode;
   pullToRefreshContainerRef?: never;
+  requestedLayout?: never;
+  visualHiddenItemsNotice?: never;
 };
 
 type CollectionTimelineFeedProps = TimelineFeedPropsBase & {
   variant: typeof TIMELINE_FEED_VARIANT.COLLECTION;
+  /** Collection-scoped Grid/List/Visual choice; never sourced from the persisted home store. */
+  requestedLayout?: LayoutType;
   /**
    * Empty state for finite collection-like feeds.
    */
   emptyState?: ReactNode;
+  /** Owner-only Add Content CTA rendered after collection posts. */
+  trailingSlot?: ReactNode;
   /**
-   * Last grid cell on the collection feed (owner-only Add Content CTA).
+   * Rendered above the Visual mosaic when the collection contains non-media
+   * items the layout hides. Shown to owners and visitors alike; other layouts
+   * ignore it.
    */
-  gridTrailingSlot?: ReactNode;
+  visualHiddenItemsNotice?: ReactNode;
   /**
    * Optional element that should own pull-to-refresh touch events. Defaults to
    * the feed container.
@@ -56,14 +77,20 @@ type CollectionTimelineFeedProps = TimelineFeedPropsBase & {
 type StandardTimelineFeedProps = TimelineFeedPropsBase & {
   variant: Exclude<
     TimelineFeedVariant,
-    typeof TIMELINE_FEED_VARIANT.BOOKMARKS | typeof TIMELINE_FEED_VARIANT.COLLECTION
+    typeof TIMELINE_FEED_VARIANT.HOME | typeof TIMELINE_FEED_VARIANT.BOOKMARKS | typeof TIMELINE_FEED_VARIANT.COLLECTION
   >;
   emptyState?: never;
-  gridTrailingSlot?: never;
+  trailingSlot?: never;
   pullToRefreshContainerRef?: never;
+  requestedLayout?: never;
+  visualHiddenItemsNotice?: never;
 };
 
-export type TimelineFeedProps = BookmarksTimelineFeedProps | CollectionTimelineFeedProps | StandardTimelineFeedProps;
+export type TimelineFeedProps =
+  | HomeTimelineFeedProps
+  | BookmarksTimelineFeedProps
+  | CollectionTimelineFeedProps
+  | StandardTimelineFeedProps;
 
 export interface TimelineFeedContextValue {
   /**
@@ -94,8 +121,17 @@ export interface TimelineFeedContextValue {
    */
   prependOptimisticPosts: (postIds: string | string[]) => void;
   /**
-   * Remove post(s) from the timeline
+   * Permanently remove post(s) from the timeline.
    * @param postIds - A single post ID or array of post IDs to remove
    */
   removePosts: (postIds: string | string[]) => void;
+  /**
+   * Hide post(s) immediately while persistence is pending.
+   * The returned transaction must be committed or rolled back.
+   *
+   * Optional as a capability flag: consumers (e.g. `useRemoveDeletedPost`)
+   * treat its absence as "this surface does not support transactional
+   * removal" — unlike `UseStreamPaginationResult`, where it is always present.
+   */
+  removePostsOptimistically?: (postIds: string | string[]) => OptimisticPostRemoval;
 }

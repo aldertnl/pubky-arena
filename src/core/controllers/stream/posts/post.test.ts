@@ -24,12 +24,14 @@ describe('StreamPostsController', () => {
   describe('getOrFetchStreamSlice', () => {
     it('should return posts when no cache misses', async () => {
       const nextPageIds = ['user-1:post-1', 'user-1:post-2'];
-      const timestamp = 1000000;
+      const nextCursor = 1000000;
+      const lastRawPostId = 'user-1:post-2';
 
       const getOrFetchStreamSliceSpy = vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds: [],
-        timestamp,
+        nextCursor,
+        lastRawPostId,
       });
 
       const fetchMissingPostsSpy = vi.spyOn(PostStreamApplication, 'fetchMissingPostsFromNexus');
@@ -50,19 +52,22 @@ describe('StreamPostsController', () => {
       expect(fetchMissingPostsSpy).not.toHaveBeenCalled();
       expect(result).toEqual({
         nextPageIds,
-        timestamp,
+        nextCursor,
+        lastRawPostId,
       });
     });
 
     it('should fetch missing posts and re-filter stream posts when cacheMissPostIds exist', async () => {
       const nextPageIds = ['user-1:post-1', 'user-1:post-2'];
       const cacheMissPostIds = ['user-1:post-3', 'user-1:post-4'];
-      const timestamp = 1000000;
+      const nextCursor = 1000000;
+      const lastRawPostId = 'user-1:post-4';
 
       const getOrFetchStreamSliceSpy = vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds,
-        timestamp,
+        nextCursor,
+        lastRawPostId,
       });
 
       const fetchMissingPostsSpy = vi.spyOn(PostStreamApplication, 'fetchMissingPostsFromNexus').mockResolvedValue();
@@ -89,19 +94,47 @@ describe('StreamPostsController', () => {
       expect(filterStreamPostsSpy).toHaveBeenCalledWith({ streamId, postIds: nextPageIds });
       expect(result).toEqual({
         nextPageIds,
-        timestamp,
+        nextCursor,
+        lastRawPostId,
       });
+    });
+
+    it('preserves lastRawPostId when the second-pass filter empties the page', async () => {
+      // A page whose ids were fail-open on missing details, then all dropped after
+      // hydration (e.g. a freshly-fetched run of collection posts in the home feed).
+      const nextPageIds = ['user-1:coll-1', 'user-1:coll-2'];
+      const cacheMissPostIds = ['user-1:coll-1', 'user-1:coll-2'];
+
+      vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
+        nextPageIds,
+        cacheMissPostIds,
+        nextCursor: 2000000,
+        lastRawPostId: 'user-1:coll-2',
+      });
+      vi.spyOn(PostStreamApplication, 'fetchMissingPostsFromNexus').mockResolvedValue();
+      vi.spyOn(PostStreamApplication, 'filterStreamPosts').mockResolvedValue([]);
+
+      const result = await StreamPostsController.getOrFetchStreamSlice({
+        streamId,
+        streamTail: 0,
+      });
+
+      // The visible page shrinks to nothing, but the raw anchor survives so the
+      // caller can resume the cache walk past the filtered run.
+      expect(result.nextPageIds).toEqual([]);
+      expect(result.lastRawPostId).toBe('user-1:coll-2');
+      expect(result.nextCursor).toBe(2000000);
     });
 
     it('should remove posts hidden by stream filters after cache-miss fetch', async () => {
       const nextPageIds = ['user-1:post-1', 'user-1:post-2', 'user-1:post-3'];
       const cacheMissPostIds = ['user-1:post-2'];
-      const timestamp = 1000000;
+      const nextCursor = 1000000;
 
       vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds,
-        timestamp,
+        nextCursor,
       });
 
       vi.spyOn(PostStreamApplication, 'fetchMissingPostsFromNexus').mockResolvedValue();
@@ -114,7 +147,7 @@ describe('StreamPostsController', () => {
       });
 
       expect(result.nextPageIds).toEqual(['user-1:post-1', 'user-1:post-3']);
-      expect(result.timestamp).toBe(timestamp);
+      expect(result.nextCursor).toBe(nextCursor);
     });
 
     it('should pass lastPostId and streamTail to getOrFetchStreamSlice', async () => {
@@ -125,7 +158,7 @@ describe('StreamPostsController', () => {
       const getOrFetchStreamSliceSpy = vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds: [],
-        timestamp: 1000005,
+        nextCursor: 1000005,
       });
 
       const result = await StreamPostsController.getOrFetchStreamSlice({
@@ -143,7 +176,7 @@ describe('StreamPostsController', () => {
         viewerId,
       });
       expect(result.nextPageIds).toEqual(nextPageIds);
-      expect(result.timestamp).toBe(1000005);
+      expect(result.nextCursor).toBe(1000005);
     });
 
     it('should use default limit when not provided', async () => {
@@ -151,7 +184,7 @@ describe('StreamPostsController', () => {
       const getOrFetchStreamSliceSpy = vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds: [],
-        timestamp: undefined,
+        nextCursor: undefined,
       });
 
       await StreamPostsController.getOrFetchStreamSlice({
@@ -171,12 +204,12 @@ describe('StreamPostsController', () => {
 
     it('should not fetch missing posts when cacheMissPostIds is empty array', async () => {
       const nextPageIds = ['user-1:post-1', 'user-1:post-2'];
-      const timestamp = 1000000;
+      const nextCursor = 1000000;
 
       vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds: [],
-        timestamp,
+        nextCursor,
       });
 
       const fetchMissingPostsSpy = vi.spyOn(PostStreamApplication, 'fetchMissingPostsFromNexus');
@@ -189,13 +222,13 @@ describe('StreamPostsController', () => {
       expect(fetchMissingPostsSpy).not.toHaveBeenCalled();
     });
 
-    it('should handle undefined timestamp in response', async () => {
+    it('should handle undefined nextCursor in response', async () => {
       const nextPageIds = ['user-1:post-1'];
 
       vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds: [],
-        timestamp: undefined,
+        nextCursor: undefined,
       });
 
       const result = await StreamPostsController.getOrFetchStreamSlice({
@@ -203,7 +236,7 @@ describe('StreamPostsController', () => {
         streamTail: 0,
       });
 
-      expect(result.timestamp).toBeUndefined();
+      expect(result.nextCursor).toBeUndefined();
       expect(result.nextPageIds).toEqual(nextPageIds);
     });
 
@@ -215,12 +248,12 @@ describe('StreamPostsController', () => {
       });
 
       const nextPageIds = ['user-1:post-1', 'user-1:post-2'];
-      const timestamp = 1000000;
+      const nextCursor = 1000000;
 
       const getOrFetchStreamSliceSpy = vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds: [],
-        timestamp,
+        nextCursor,
       });
 
       const result = await StreamPostsController.getOrFetchStreamSlice({
@@ -239,7 +272,7 @@ describe('StreamPostsController', () => {
       });
       expect(result).toEqual({
         nextPageIds,
-        timestamp,
+        nextCursor,
       });
     });
 
@@ -278,13 +311,13 @@ describe('StreamPostsController', () => {
     it('should fetch missing posts and propagate errors if fetch fails', async () => {
       const nextPageIds = ['user-1:post-1', 'user-1:post-2'];
       const cacheMissPostIds = ['user-1:post-3', 'user-1:post-4'];
-      const timestamp = 1000000;
+      const nextCursor = 1000000;
 
       // Mock getOrFetchStreamSlice to return cache misses
       vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds,
-        timestamp,
+        nextCursor,
       });
 
       // Mock fetchMissingPostsFromNexus to throw error
@@ -316,7 +349,7 @@ describe('StreamPostsController', () => {
       const getOrFetchStreamSliceSpy = vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds: [],
-        timestamp: 1000005,
+        nextCursor: 1000005,
       });
 
       const result = await StreamPostsController.getOrFetchStreamSlice({
@@ -343,7 +376,7 @@ describe('StreamPostsController', () => {
       const getOrFetchStreamSliceSpy = vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds: [],
-        timestamp: undefined,
+        nextCursor: undefined,
       });
 
       await StreamPostsController.getOrFetchStreamSlice({
@@ -367,12 +400,12 @@ describe('StreamPostsController', () => {
     it('should handle engagement:all:images streamId', async () => {
       const engagementStreamId = 'engagement:all:images' as PostStreamTypes;
       const nextPageIds = ['user-1:post-1', 'user-1:post-2'];
-      const timestamp = 1000000;
+      const nextCursor = 1000000;
 
       const getOrFetchStreamSliceSpy = vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds: [],
-        timestamp,
+        nextCursor,
       });
 
       const result = await StreamPostsController.getOrFetchStreamSlice({
@@ -390,8 +423,29 @@ describe('StreamPostsController', () => {
       });
       expect(result).toEqual({
         nextPageIds,
-        timestamp,
+        nextCursor,
       });
+    });
+  });
+
+  describe('fetchMissingPostsByUris', () => {
+    it('delegates to PostStreamApplication.fetchOriginalPostsByUris with the viewer id', async () => {
+      const fetchOriginalPostsSpy = vi
+        .spyOn(PostStreamApplication, 'fetchOriginalPostsByUris')
+        .mockResolvedValue(undefined);
+      const uris = ['pubky://author_a/pub/pubky.app/posts/aaa', 'pubky://author_b/pub/pubky.app/posts/bbb'];
+
+      await StreamPostsController.fetchMissingPostsByUris({ uris });
+
+      expect(fetchOriginalPostsSpy).toHaveBeenCalledWith({ repostedUris: uris, viewerId });
+    });
+
+    it('short-circuits without calling the application layer when no URIs are given', async () => {
+      const fetchOriginalPostsSpy = vi.spyOn(PostStreamApplication, 'fetchOriginalPostsByUris');
+
+      await StreamPostsController.fetchMissingPostsByUris({ uris: [] });
+
+      expect(fetchOriginalPostsSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -556,7 +610,7 @@ describe('StreamPostsController', () => {
       const getOrFetchStreamSliceSpy = vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds: [],
-        timestamp: undefined,
+        nextCursor: undefined,
       });
 
       await StreamPostsController.getOrFetchStreamSlice({
@@ -581,7 +635,7 @@ describe('StreamPostsController', () => {
       const getOrFetchStreamSliceSpy = vi.spyOn(PostStreamApplication, 'getOrFetchStreamSlice').mockResolvedValue({
         nextPageIds,
         cacheMissPostIds: [],
-        timestamp: undefined,
+        nextCursor: undefined,
       });
 
       await StreamPostsController.getOrFetchStreamSlice({

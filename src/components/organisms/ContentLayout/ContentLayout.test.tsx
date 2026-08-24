@@ -25,6 +25,7 @@ vi.mock('@/stores/home/home.types', () => ({
   LAYOUT: {
     COLUMNS: 'columns',
     WIDE: 'wide',
+    LIST: 'list',
     VISUAL: 'visual',
   },
 }));
@@ -158,13 +159,6 @@ vi.mock('@/organisms/FeedbackCard/FeedbackCard', () => {
 vi.mock('@/organisms/WhoToFollowSidebar/WhoToFollowSidebar', () => {
   return {
     WhoToFollowSidebar: () => <div data-testid="who-to-follow">Who to Follow</div>,
-  };
-});
-
-// Mock the organisms
-vi.mock('@/organisms/LeftSidebar/LeftSidebar', () => {
-  return {
-    LeftSidebar: () => <div data-testid="left-sidebar">Left Sidebar</div>,
   };
 });
 
@@ -345,6 +339,27 @@ describe('ContentLayout', () => {
     expect(screen.getByText('Inline Right Sidebar')).toBeInTheDocument();
     expect(screen.queryByTestId('button-filters-left')).not.toBeInTheDocument();
     expect(screen.queryByTestId('button-filters-right')).not.toBeInTheDocument();
+  });
+
+  it('uses an explicit List layout override for the wide shell', () => {
+    render(
+      <ContentLayout
+        layoutOverride="list"
+        showLeftSidebar
+        showRightSidebar
+        leftSidebarContent={<div>Left Sidebar</div>}
+        rightSidebarContent={<div>Right Sidebar</div>}
+        leftDrawerContent={<div>Left Drawer</div>}
+        rightDrawerContent={<div>Right Drawer</div>}
+      >
+        <div>Test Content</div>
+      </ContentLayout>,
+    );
+
+    expect(screen.queryByText('Left Sidebar')).not.toBeInTheDocument();
+    expect(screen.queryByText('Right Sidebar')).not.toBeInTheDocument();
+    expect(screen.getByTestId('button-filters-left')).toBeInTheDocument();
+    expect(screen.getByTestId('button-filters-right')).toBeInTheDocument();
   });
 });
 

@@ -10,8 +10,8 @@ import { z } from 'zod';
  *    them; partial config fails loudly instead of silently resolving to staging defaults.
  *  - OPTIONAL observability values (sentry*): absent means the feature is disabled (DSN) or
  *    a documented default applies (sample rates).
- *  - DEFAULTED app/deployer values: public operational, moderation, metadata, analytics,
- *    Prelude, and external-link values that deployers may override without rebuilding.
+ *  - OPTIONAL/DEFAULTED app/deployer values: public operational, moderation, metadata,
+ *    analytics, Prelude, and external-link values that deployers may override without rebuilding.
  *
  * This module is a leaf (zod only, no `Env`, no logger) so the runtime-config resolver never
  * pulls in the heavy `env -> libs/error -> logger -> env` import cycle.
@@ -29,11 +29,23 @@ import { z } from 'zod';
 
 const urlValue = z.url();
 const homeserverValue = z.string().min(1);
+/**
+ * Declared deploy identity. Drives environment-gated behavior (e.g. the staging
+ * homeserver sign-in guard) — declared explicitly instead of inferred from
+ * network values, so config drift can never silently flip it (see
+ * `isStagingHomeserverDeploy` in `@/config/network`).
+ */
+const deployEnvValue = z.enum(['production', 'staging']);
+export type DeployEnv = z.infer<typeof deployEnvValue>;
 const pkarrRelaysValue = z.array(z.url()).min(1);
 const testnetValue = z.boolean();
 const sampleRateValue = z.number().min(0).max(1);
 const positiveIntValue = z.number().int().positive();
 const nonEmptyStringValue = z.string().min(1);
+const pubkyValue = z
+  .string()
+  .trim()
+  .regex(/^[ybndrfg8ejkmcpqxot1uwisza345h769]{52}$/, 'Expected a 52-character z-base-32 Pubky');
 
 /** Parse a JSON-array-of-strings env value into a string[]. Throws on malformed input. */
 function parseJsonStringArray(val: string, label = 'value'): string[] {
@@ -107,7 +119,9 @@ const optionalStringArrayFromString = (label: string) =>
         return z.NEVER;
       }
     })
-    .pipe(z.array(nonEmptyStringValue).min(1).optional());
+    // Empty arrays are intentional (e.g. MODERATED_TAGS=[] means no moderated tags).
+    // Unset / blank strings stay `undefined` so the value-schema default still applies.
+    .pipe(z.array(nonEmptyStringValue).optional());
 
 /**
  * Optional-tier env strings: a missing OR empty/whitespace value means "unset".
@@ -157,7 +171,7 @@ export const APP_RUNTIME_DEFAULTS = {
   ttlPostMaxBatchSize: 20,
   ttlUserMaxBatchSize: 20,
   ttlRetryDelayMs: 60_000,
-  moderationId: 'euwmq57zefw5ynnkhh37b3gcmhs7g3cptdbw1doaxj1pbmzp3wro',
+  moderationId: 'nto4u7kkagk5hfjk4wgueemzy61nssic811hid1ty9u81uatmqzy',
   moderatedTags: ['nudity'],
   exchangeRateApi: 'https://api1.blocktank.to/api/fx/rates/btc',
   preludeSdkTimeoutMs: 5_000,
@@ -171,6 +185,7 @@ export const APP_RUNTIME_DEFAULTS = {
   defaultUrl: 'https://pubky.app',
   pubkyRingUrl: 'https://pubkyring.app/',
   pubkyCoreUrl: 'https://pubky.org',
+  nexusScoutUrl: 'https://nexus-scout.pubky.app',
   twitterUrl: 'https://x.com/pubky',
   twitterGetpubkyUrl: 'https://x.com/getpubky',
   telegramUrl: 'https://t.me/pubkychat',
@@ -198,6 +213,7 @@ export const networkConfigValueSchema = z.object({
   defaultHttpRelay: urlValue,
   pkarrRelays: pkarrRelaysValue,
   testnet: testnetValue,
+  deployEnv: deployEnvValue,
 });
 
 export type NetworkRuntimeConfig = z.infer<typeof networkConfigValueSchema>;
@@ -229,11 +245,8 @@ export const runtimeConfigValueSchema = networkConfigValueSchema.extend({
   ttlPostMaxBatchSize: positiveIntValue.default(APP_RUNTIME_DEFAULTS.ttlPostMaxBatchSize),
   ttlUserMaxBatchSize: positiveIntValue.default(APP_RUNTIME_DEFAULTS.ttlUserMaxBatchSize),
   ttlRetryDelayMs: positiveIntValue.default(APP_RUNTIME_DEFAULTS.ttlRetryDelayMs),
-  moderationId: nonEmptyStringValue.default(APP_RUNTIME_DEFAULTS.moderationId),
-  moderatedTags: z
-    .array(nonEmptyStringValue)
-    .min(1)
-    .default([...APP_RUNTIME_DEFAULTS.moderatedTags]),
+  moderationId: pubkyValue.optional(),
+  moderatedTags: z.array(nonEmptyStringValue).default([...APP_RUNTIME_DEFAULTS.moderatedTags]),
   exchangeRateApi: urlValue.default(APP_RUNTIME_DEFAULTS.exchangeRateApi),
   preludeSdkKey: nonEmptyStringValue.optional(),
   preludeSdkTimeoutMs: positiveIntValue.default(APP_RUNTIME_DEFAULTS.preludeSdkTimeoutMs),
@@ -249,6 +262,7 @@ export const runtimeConfigValueSchema = networkConfigValueSchema.extend({
   defaultUrl: urlValue.default(APP_RUNTIME_DEFAULTS.defaultUrl),
   pubkyRingUrl: urlValue.default(APP_RUNTIME_DEFAULTS.pubkyRingUrl),
   pubkyCoreUrl: urlValue.default(APP_RUNTIME_DEFAULTS.pubkyCoreUrl),
+  nexusScoutUrl: urlValue.default(APP_RUNTIME_DEFAULTS.nexusScoutUrl),
   twitterUrl: urlValue.default(APP_RUNTIME_DEFAULTS.twitterUrl),
   twitterGetpubkyUrl: urlValue.default(APP_RUNTIME_DEFAULTS.twitterGetpubkyUrl),
   telegramUrl: urlValue.default(APP_RUNTIME_DEFAULTS.telegramUrl),
@@ -260,14 +274,19 @@ export const runtimeConfigValueSchema = networkConfigValueSchema.extend({
   lockServer: nonEmptyStringValue.optional(),
 });
 
+const lenientRuntimeConfigValueSchema = runtimeConfigValueSchema.extend({
+  // Zod v4 `.default()` bypasses validation; `.prefault()` sends the staging fallback through pubkyValue.
+  moderationId: pubkyValue.prefault(APP_RUNTIME_DEFAULTS.moderationId),
+});
+
 export type RuntimeConfig = z.infer<typeof runtimeConfigValueSchema>;
 
 /**
  * Strict env-input schema (string inputs -> parsed `RuntimeConfig`). NO defaults for the
  * required network tier: a missing value THROWS. Used for the production parse of
  * `PUBKY_RUNTIME_*` so partial deploy config fails loudly instead of silently resolving to a
- * staging URL. The optional Sentry tier stays optional here (absent = disabled / documented
- * sample-rate default).
+ * staging URL. Optional public values stay optional here (for example, absent moderationId
+ * disables moderation behavior; absent Sentry DSN disables Sentry).
  */
 export const runtimeEnvInputSchema = z
   .object({
@@ -279,6 +298,7 @@ export const runtimeEnvInputSchema = z
     defaultHttpRelay: urlValue,
     pkarrRelays: pkarrRelaysFromString,
     testnet: testnetFromString,
+    deployEnv: deployEnvValue,
     lockServer: optionalTrimmedString,
     sentryDsn: optionalTrimmedString,
     sentryEnvironment: optionalTrimmedString,
@@ -317,6 +337,7 @@ export const runtimeEnvInputSchema = z
     defaultUrl: optionalUrlFromString,
     pubkyRingUrl: optionalUrlFromString,
     pubkyCoreUrl: optionalUrlFromString,
+    nexusScoutUrl: optionalUrlFromString,
     twitterUrl: optionalUrlFromString,
     twitterGetpubkyUrl: optionalUrlFromString,
     telegramUrl: optionalUrlFromString,
@@ -339,6 +360,7 @@ export const NETWORK_RUNTIME_DEFAULTS: NetworkRuntimeConfig = {
   defaultHttpRelay: 'https://httprelay.staging.pubky.app/inbox',
   pkarrRelays: ['https://pkarr.pubky.app', 'https://pkarr.pubky.org'],
   testnet: false,
+  deployEnv: 'staging',
 };
 
 /**
@@ -355,6 +377,7 @@ export const runtimeEnvInputSchemaWithDefaults = z
     defaultHttpRelay: urlValue.default(NETWORK_RUNTIME_DEFAULTS.defaultHttpRelay),
     pkarrRelays: z.string().default(JSON.stringify(NETWORK_RUNTIME_DEFAULTS.pkarrRelays)).pipe(pkarrRelaysFromString),
     testnet: z.string().default(String(NETWORK_RUNTIME_DEFAULTS.testnet)).pipe(testnetFromString),
+    deployEnv: deployEnvValue.default(NETWORK_RUNTIME_DEFAULTS.deployEnv),
     lockServer: optionalTrimmedString,
     sentryDsn: optionalTrimmedString,
     sentryEnvironment: optionalTrimmedString,
@@ -393,6 +416,7 @@ export const runtimeEnvInputSchemaWithDefaults = z
     defaultUrl: optionalUrlFromString,
     pubkyRingUrl: optionalUrlFromString,
     pubkyCoreUrl: optionalUrlFromString,
+    nexusScoutUrl: optionalUrlFromString,
     twitterUrl: optionalUrlFromString,
     twitterGetpubkyUrl: optionalUrlFromString,
     telegramUrl: optionalUrlFromString,
@@ -401,7 +425,7 @@ export const runtimeEnvInputSchemaWithDefaults = z
     appStoreUrl: optionalUrlFromString,
     playStoreUrl: optionalUrlFromString,
   })
-  .pipe(runtimeConfigValueSchema);
+  .pipe(lenientRuntimeConfigValueSchema);
 
 // ---------------------------------------------------------------------------
 // Env-name <-> config-key mapping
@@ -420,6 +444,7 @@ const NETWORK_RUNTIME_ENV_NAMES: Record<keyof NetworkRuntimeConfig, string> = {
   defaultHttpRelay: 'PUBKY_RUNTIME_DEFAULT_HTTP_RELAY',
   pkarrRelays: 'PUBKY_RUNTIME_PKARR_RELAYS',
   testnet: 'PUBKY_RUNTIME_TESTNET',
+  deployEnv: 'PUBKY_RUNTIME_ENV',
 };
 
 export const PUBKY_RUNTIME_ENV_NAMES: Record<keyof RuntimeConfig, string> = {
@@ -462,6 +487,7 @@ export const PUBKY_RUNTIME_ENV_NAMES: Record<keyof RuntimeConfig, string> = {
   defaultUrl: 'PUBKY_RUNTIME_DEFAULT_URL',
   pubkyRingUrl: 'PUBKY_RUNTIME_PUBKY_RING_URL',
   pubkyCoreUrl: 'PUBKY_RUNTIME_PUBKY_CORE_URL',
+  nexusScoutUrl: 'PUBKY_RUNTIME_NEXUS_SCOUT_URL',
   twitterUrl: 'PUBKY_RUNTIME_TWITTER_URL',
   twitterGetpubkyUrl: 'PUBKY_RUNTIME_TWITTER_GETPUBKY_URL',
   telegramUrl: 'PUBKY_RUNTIME_TELEGRAM_URL',

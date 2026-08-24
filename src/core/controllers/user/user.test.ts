@@ -3,45 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserApplication } from '@/application/user/user';
 import { HttpMethod } from '@/libs/http/http.types';
 import type { Pubky } from '@/models/models.types';
-import type { PostStreamTypes } from '@/models/stream/post/postStream.types';
 import type { UserCountsModel } from '@/models/user/counts/userCounts';
 import { FollowNormalizer } from '@/pipes/follow/follow.normalizer';
 import type { NexusTag, NexusTaggers, NexusUserCounts, NexusUserDetails } from '@/services/nexus/nexus.types';
-import { useHomeStore } from '@/stores/home/home.store';
-import { CONTENT, REACH, SORT } from '@/stores/home/home.types';
-import { getStreamId } from '@/stores/home/home.utils';
 import { asOpaque } from '@/test-utils/type-assertions';
 import { UserController } from './user';
-
-vi.mock('@/stores/home/home.store', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/stores/home/home.store')>();
-  const useHomeStoreMock = Object.assign(vi.fn(), {
-    getState: vi.fn(),
-  });
-  return {
-    ...actual,
-    useHomeStore: useHomeStoreMock,
-  };
-});
-
-vi.mock('@/stores/home/home.utils', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/stores/home/home.utils')>();
-  return {
-    ...actual,
-    getStreamId: vi.fn(),
-  };
-});
-
-const mockUseHomeStore = vi.mocked(useHomeStore);
-const mockUseHomeStoreGetState = vi.mocked(useHomeStore.getState);
-const mockGetStreamId = vi.mocked(getStreamId);
-
-const createMockHomeState = () =>
-  asOpaque<ReturnType<typeof useHomeStore.getState>>({
-    sort: SORT.TIMELINE,
-    reach: REACH.ALL,
-    content: CONTENT.ALL,
-  });
 
 // Valid 52-character z-base32 encoded pubky IDs for testing
 const TEST_PUBKY = {
@@ -52,9 +18,6 @@ const TEST_PUBKY = {
 describe('UserController', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseHomeStore.mockReset();
-    mockUseHomeStoreGetState.mockReset();
-    mockGetStreamId.mockReset();
   });
 
   afterEach(() => {
@@ -408,8 +371,6 @@ describe('UserController', () => {
         }),
       );
 
-      // Mock useHomeStore to return null for activeStreamId (not on /home route)
-      mockUseHomeStoreGetState.mockReturnValue(createMockHomeState());
       const followSpy = vi.spyOn(UserApplication, 'commitFollow').mockResolvedValue(undefined);
 
       await UserController.commitFollow(HttpMethod.PUT, { follower, followee });
@@ -422,7 +383,6 @@ describe('UserController', () => {
         followJson: mockFollowJson,
         follower,
         followee,
-        activeStreamId: null,
       });
     });
 
@@ -441,8 +401,6 @@ describe('UserController', () => {
         }),
       );
 
-      // Mock useHomeStore to return null for activeStreamId (not on /home route)
-      mockUseHomeStoreGetState.mockReturnValue(createMockHomeState());
       const followSpy = vi.spyOn(UserApplication, 'commitFollow').mockResolvedValue(undefined);
 
       await UserController.commitFollow(HttpMethod.DELETE, { follower, followee });
@@ -453,7 +411,6 @@ describe('UserController', () => {
         followJson: mockFollowJson,
         follower,
         followee,
-        activeStreamId: null,
       });
     });
 
@@ -484,51 +441,11 @@ describe('UserController', () => {
         }),
       );
 
-      // Mock useHomeStore to return null for activeStreamId (not on /home route)
-      mockUseHomeStoreGetState.mockReturnValue(createMockHomeState());
       vi.spyOn(UserApplication, 'commitFollow').mockRejectedValue(new Error('delegate-fail'));
 
       await expect(UserController.commitFollow(HttpMethod.PUT, { follower, followee })).rejects.toThrow(
         'delegate-fail',
       );
-    });
-
-    it('should pass activeStreamId when on /home route', async () => {
-      const follower = TEST_PUBKY.USER_1;
-      const followee = TEST_PUBKY.USER_2;
-      const mockStreamId = 'home:all:all' as PostStreamTypes;
-
-      const mockFollowJson = { foo: 'bar' } as Record<string, unknown>;
-      const mockToJson = vi.fn(() => mockFollowJson);
-      const mockMeta = { url: 'https://example.com/follow' } as { url: string };
-
-      vi.spyOn(FollowNormalizer, 'to').mockReturnValue(
-        asOpaque<FollowResult>({
-          meta: mockMeta,
-          follow: { toJson: mockToJson },
-        }),
-      );
-
-      // Mock window.location.pathname to be /home
-      Object.defineProperty(window, 'location', {
-        value: { pathname: '/home' },
-        writable: true,
-      });
-      // Mock useHomeStore and getStreamId to return the mock stream ID
-      mockUseHomeStoreGetState.mockReturnValue(createMockHomeState());
-      mockGetStreamId.mockReturnValue(mockStreamId);
-      const followSpy = vi.spyOn(UserApplication, 'commitFollow').mockResolvedValue(undefined);
-
-      await UserController.commitFollow(HttpMethod.PUT, { follower, followee });
-
-      expect(followSpy).toHaveBeenCalledWith({
-        eventType: HttpMethod.PUT,
-        followUrl: mockMeta.url,
-        followJson: mockFollowJson,
-        follower,
-        followee,
-        activeStreamId: mockStreamId,
-      });
     });
   });
 
