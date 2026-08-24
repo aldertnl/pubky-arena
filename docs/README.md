@@ -11,6 +11,7 @@ Single source of truth for all project standards, conventions, and architectural
 | `src/libs/env/`         | `environment.md`                                                                  |
 | Writing tests           | `component-testing.md`                                                            |
 | Making commits          | `commit-message.md`                                                               |
+| Cutting a release       | `release.md`                                                                      |
 | Architectural decisions | `adr-guidelines.md`, `adr/`                                                       |
 
 ## Documentation Files
@@ -26,6 +27,7 @@ Single source of truth for all project standards, conventions, and architectural
 | `skeleton-architecture.md` | Skeleton loader placement, naming, and testing patterns                                               |
 | `z-index.md`               | Z-index layering conventions                                                                          |
 | `commit-message.md`        | Conventional commit format                                                                            |
+| `release.md`               | Cutting a production release from `dev` onto `master`                                                 |
 | `environment.md`           | Environment variable configuration                                                                    |
 | `adr-guidelines.md`        | When and how to write ADRs                                                                            |
 
@@ -57,3 +59,4 @@ When making significant changes to:
 - **Error handling**: Update `error-handling.md`
 - **Testing patterns**: Update `component-testing.md`
 - **Environment variables**: Update `environment.md`
+- **Release process**: Update `release.md`
