@@ -33,6 +33,7 @@ import { extractStatusCode, handleError } from './error.utils';
 import type {
   PubPath,
   TGenerateSignupAuthUrlParams,
+  THomeserverBytesResult,
   THomeserverFetchParams,
   THomeserverListAllParams,
   THomeserverListParams,
@@ -527,14 +528,18 @@ export class HomeserverService {
   }
 
   /**
-   * Bytes of an owned resource, or null when it is absent (404) — WITHOUT logging. For existence
-   * checks (e.g. unlock detection) where "not there" is an expected outcome, not an error to report.
-   * Calls the SDK directly so a 404 bypasses `handleError`/Sentry, mirroring `list`'s 404 fallback.
+   * Bytes of an owned resource plus the server's `Last-Modified`, or null when it is absent (404) —
+   * WITHOUT logging. For existence checks (e.g. unlock detection) where "not there" is an expected
+   * outcome, not an error to report. Calls the SDK directly so a 404 bypasses `handleError`/Sentry,
+   * mirroring `list`'s 404 fallback.
    *
    * Only a 404 means "absent": every other failure (403, 5xx, network) rejects, since the resource
    * may well exist and a null would let the caller record a missing file as a confirmed absence.
+   *
+   * `modifiedAt` is the homeserver's own write timestamp (`entry.modified_at`), so callers get an
+   * ordering key the client cannot forge. `null` if the header is missing or unparseable.
    */
-  static async getBytesIfExists(url: string): Promise<Uint8Array | null> {
+  static async getBytesIfExists(url: string): Promise<THomeserverBytesResult | null> {
     const owned = this.resolveOwnedSessionPath(url);
     // Unreadable without a session — return null rather than fire an unauthenticated request.
     if (!owned) return null;
@@ -543,7 +548,11 @@ export class HomeserverService {
       const response = await owned.session.storage.get(owned.path);
       if (response.status === HttpStatusCode.NOT_FOUND) return null;
       await assertOk({ response, url, operation: 'getBytesIfExists' });
-      return new Uint8Array(await response.arrayBuffer());
+      const lastModified = Date.parse(response.headers.get('last-modified') ?? '');
+      return {
+        bytes: new Uint8Array(await response.arrayBuffer()),
+        modifiedAt: Number.isNaN(lastModified) ? null : lastModified,
+      };
     } catch (error) {
       if (extractStatusCode(error) === HttpStatusCode.NOT_FOUND) return null;
       return handleError({ error, additionalContext: { url, method: HttpMethod.GET } });

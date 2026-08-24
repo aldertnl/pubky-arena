@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
   fetchUnlockedContent: vi.fn(),
   replicateUnlockedContent: vi.fn(),
   fetchReplicatedContent: vi.fn(),
+  fetchUnlockedList: vi.fn(),
   fetchOwnContent: vi.fn(),
 }));
 
@@ -41,6 +42,7 @@ vi.mock('@/application/locks/locks', () => ({
     fetchUnlockedContent: mocks.fetchUnlockedContent,
     replicateUnlockedContent: mocks.replicateUnlockedContent,
     fetchReplicatedContent: mocks.fetchReplicatedContent,
+    fetchUnlockedList: mocks.fetchUnlockedList,
     fetchOwnContent: mocks.fetchOwnContent,
   },
 }));
@@ -323,6 +325,17 @@ describe('LocksController.fetchReplicatedContent', () => {
 
     await expect(LocksController.fetchReplicatedContent(params)).resolves.toEqual(content);
     expect(mocks.fetchReplicatedContent).toHaveBeenCalledWith(params);
+  });
+});
+
+describe('LocksController.fetchUnlockedList', () => {
+  it('delegates listing the reader-unlocked content to the application', async () => {
+    const params = { readerPubky: 'pubkyreader' };
+    const items = [{ lockId: 'LOCK1', post: { content: 'a', kind: 'short', attachments: null }, unlockedAt: 1 }];
+    mocks.fetchUnlockedList.mockResolvedValue(items);
+
+    await expect(LocksController.fetchUnlockedList(params)).resolves.toEqual(items);
+    expect(mocks.fetchUnlockedList).toHaveBeenCalledWith(params);
   });
 });
 
