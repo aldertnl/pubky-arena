@@ -6,6 +6,8 @@ The goal is that **`master` and `dev` share the same commit history** after the 
 
 Pushing a `v*` tag from `master` is what publishes the production Docker image (see [What the tag publishes](#what-the-tag-publishes)).
 
+For a patch on the current production line **without** taking `dev` HEAD, see [hotfix.md](./hotfix.md).
+
 ## Overview
 
 ```
@@ -231,7 +233,7 @@ The `release-<version>` branch can be deleted after this PR is merged.
 
 `next.config.ts` sets `NEXT_PUBLIC_APP_VERSION` from `package.json` `version` unless the env var is already set. Docker CI currently still passes the commit SHA as that build arg, so the published image's Sentry release is the SHA; the SemVer lives in `package.json` and in any build that does not override the env var.
 
-## Checklist
+## Release checklist
 
 - [ ] `dev` has the promised work (or remaining work will land on `dev` and be rebased or cherry-picked in)
 - [ ] Branch `release-<version>` created from up-to-date `dev` and pushed
