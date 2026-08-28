@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { NexusGraph, NexusGraphEdge } from '@/services/nexus/graph/graph.types';
-import { adjacencyOf, collapseMutualFollows, mergeGraph, pruneToBudget, relationshipMap } from './useSocialGraph.utils';
+import {
+  adjacencyOf,
+  collapseMutualFollows,
+  isFragmented,
+  mergeGraph,
+  pruneToBudget,
+  relationshipMap,
+} from './useSocialGraph.utils';
 
 const user = (pubky: string, name = pubky) => ({
   kind: 'user' as const,
@@ -131,5 +138,31 @@ describe('pruneToBudget', () => {
 
     expect(graph.nodes.map((n) => n.id)).not.toContain('user:island');
     expect(graph.nodes).toHaveLength(4);
+  });
+});
+
+describe('isFragmented', () => {
+  const edge = (source: string, target: string) => ({ source, target, type: 'AUTHORED' as const });
+
+  it('is false for one connected component', () => {
+    expect(isFragmented([{ id: 'a' }, { id: 'b' }, { id: 'c' }], [edge('a', 'b'), edge('b', 'c')])).toBe(false);
+  });
+
+  it('is true when a stream leaves unrelated author stars side by side', () => {
+    const nodes = [{ id: 'u1' }, { id: 'p1' }, { id: 'u2' }, { id: 'p2' }];
+    expect(isFragmented(nodes, [edge('u1', 'p1'), edge('u2', 'p2')])).toBe(true);
+  });
+
+  it('is true for a lone node next to a connected pair', () => {
+    expect(isFragmented([{ id: 'a' }, { id: 'b' }, { id: 'orphan' }], [edge('a', 'b')])).toBe(true);
+  });
+
+  it('ignores edges pointing at nodes that are not on canvas', () => {
+    expect(isFragmented([{ id: 'a' }, { id: 'b' }], [edge('a', 'b'), edge('b', 'ghost')])).toBe(false);
+  });
+
+  it('treats an empty or single-node graph as whole', () => {
+    expect(isFragmented([], [])).toBe(false);
+    expect(isFragmented([{ id: 'a' }], [])).toBe(false);
   });
 });

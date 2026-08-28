@@ -26,7 +26,7 @@ export function GraphBreadcrumbs({ trail, onHop, className }: GraphBreadcrumbsPr
     <div
       className={cn(
         GRAPH_SURFACE_CLASS,
-        'flex max-w-[70vw] items-center gap-1 overflow-x-auto rounded-full px-2 py-1',
+        'flex max-w-full items-center gap-1 overflow-x-auto rounded-full px-2 py-1',
         className,
       )}
       data-cy="graph-breadcrumbs"

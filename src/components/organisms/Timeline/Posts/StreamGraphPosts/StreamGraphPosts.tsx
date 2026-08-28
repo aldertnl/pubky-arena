@@ -9,6 +9,7 @@ import { Typography } from '@/atoms/Typography/Typography';
 import { GRAPH_PILL_CLASS } from '@/config/theme';
 import { useFullscreenToggle } from '@/hooks/useFullscreenToggle/useFullscreenToggle';
 import { useGraphDebug } from '@/hooks/useGraphDebug/useGraphDebug';
+import { useSearchTags } from '@/hooks/useSearchStreamId/useSearchStreamId';
 import type { HideableClass } from '@/hooks/useSocialGraph/useSocialGraph.types';
 import { socialProof } from '@/hooks/useSocialGraph/useSocialGraph.utils';
 import { useStreamGraph } from '@/hooks/useStreamGraph/useStreamGraph';
@@ -56,7 +57,10 @@ export function StreamGraphPosts({
 }: StreamGraphPostsProps) {
   const t = useTranslations('graph');
   const { currentUserPubky } = useAuthStore();
-  const graph = useStreamGraph(postIds);
+  // On /search the URL's tags are the reason these posts are here; pin their
+  // hubs so the results visibly hang off what was searched (empty elsewhere)
+  const searchedTags = useSearchTags();
+  const graph = useStreamGraph(postIds, searchedTags);
   const canvasRef = useRef<SocialGraphHandle>(null);
   const { isFullscreen, toggleFullscreen } = useFullscreenToggle(() => canvasRef.current?.fit());
   const [spotlight, setSpotlight] = useState<Set<string> | null>(null);
@@ -295,7 +299,9 @@ export function StreamGraphPosts({
 
       {graph.selectedNode && (
         <SocialGraphNodePanel
-          className="absolute top-3 right-3 max-h-[calc(100%-1.5rem)] max-w-[calc(100%-5rem)] overflow-y-auto"
+          // Above the controls (z-10) so the pills never cover the panel's
+          // close button, below the sticky header (20) this card scrolls under
+          className="absolute top-3 right-3 z-[15] max-h-[calc(100%-1.5rem)] max-w-[calc(100%-5rem)] overflow-y-auto"
           node={graph.selectedNode}
           relationship={graph.relationships.get(graph.selectedNode.id) ?? 'extended'}
           isExpanded={graph.expandedIds.has(graph.selectedNode.id)}

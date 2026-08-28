@@ -31,6 +31,31 @@ export const GRAPH_NODE_SURFACE = '#303034';
 export const TIER_ALPHA: Record<GraphTier, number> = { center: 1, direct: 0.6, other: 0.4 };
 /** Avatar radius (graph units = design px) by tier: 64/48/32px diameters. */
 export const AVATAR_RADIUS: Record<GraphTier, number> = { center: 32, direct: 24, other: 16 };
+/**
+ * Label whose color an edge should paint while a tag is highlighted, else null.
+ *
+ * Covers both tag shapes: a shared hub (`tag:x`) joined to its posts and
+ * taggers, and a per-user chip (`ptag:pubky:x`) whose edge carries no label of
+ * its own. A user-to-user edge aggregates every label between the pair, so it
+ * matches on the whole set rather than the representative one.
+ */
+export function tagEdgeLabel(
+  highlighted: { id: string; label: string } | null,
+  edge: { source: string; target: string; type: string; label?: string; labels?: string[] },
+): string | null {
+  if (!highlighted?.label) return null;
+  const { id, label } = highlighted;
+  if (edge.source === id || edge.target === id) return label;
+  if (edge.type === 'TAGGED' && (edge.label === label || edge.labels?.includes(label))) return label;
+  return null;
+}
+
+/** Floor alpha for the highlighted tag's lines, so they read at overview zoom. */
+export const TAG_EDGE_ALPHA = 0.75;
+
+/** Weak pull toward the origin that keeps disconnected components in one readable cloud. */
+export const CENTER_PULL = 0.05;
+
 /** Post nodes are fixed 36px circles with a 20px kind glyph. */
 export const POST_RADIUS = 18;
 export const POST_ICON_SIZE = 20;

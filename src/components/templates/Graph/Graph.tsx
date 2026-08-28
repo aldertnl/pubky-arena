@@ -24,7 +24,6 @@ import { CanvasAnchoredPopover } from '@/molecules/CanvasAnchoredPopover/CanvasA
 import { GraphBreadcrumbs } from '@/molecules/GraphBreadcrumbs/GraphBreadcrumbs';
 import { GraphSearch } from '@/molecules/GraphSearch/GraphSearch';
 import { GraphTimeMachine } from '@/molecules/GraphTimeMachine/GraphTimeMachine';
-import { MobileFooter } from '@/molecules/MobileFooter/MobileFooter';
 import { SocialGraphAdvancedPanel } from '@/molecules/SocialGraphAdvancedPanel/SocialGraphAdvancedPanel';
 import { SocialGraphControls } from '@/molecules/SocialGraphControls/SocialGraphControls';
 import { type EdgeLegendKind, SocialGraphLegend } from '@/molecules/SocialGraphLegend/SocialGraphLegend';
@@ -360,13 +359,13 @@ export function Graph() {
   return (
     <div
       ref={pageRef}
-      // Full-bleed on phones (the desktop header is hidden below lg); under
-      // the header on desktop via the shared offset token. The canvas sits on
-      // the page's core-black background inside a hairline-bordered card, or
-      // covers the viewport (header included) in fullscreen.
+      // Full-bleed on phones (the desktop header is hidden below lg); on
+      // desktop a hairline-bordered card inside the shell's container, below
+      // the header with the same gutter as the feed's graph layout. Fullscreen
+      // covers the viewport, header included.
       className={cn(
-        'relative h-svh w-full overflow-hidden lg:-mt-8 lg:h-[calc(100svh-var(--header-offset-main)+2rem)] lg:rounded-lg lg:border lg:border-secondary',
-        isFullscreen && 'fixed inset-0 z-50 h-auto bg-background lg:mt-0 lg:h-auto lg:rounded-none lg:border-0',
+        'relative h-svh w-full overflow-hidden lg:h-[calc(100svh-var(--header-offset-main)-40px)] lg:rounded-lg lg:border lg:border-secondary',
+        isFullscreen && 'fixed inset-0 z-50 h-auto bg-background lg:h-auto lg:rounded-none lg:border-0',
       )}
       data-cy="graph-page"
     >
@@ -482,7 +481,7 @@ export function Graph() {
       {timeMachineOn && graph.timeBounds && (
         <GraphTimeMachine
           className={cn(
-            'absolute bottom-44 left-1/2 max-w-[94vw] -translate-x-1/2 lg:bottom-6',
+            'absolute bottom-44 left-1/2 max-w-[92%] -translate-x-1/2 lg:bottom-6',
             graph.selectedNode && 'lg:left-[40%] xl:left-[45%]',
           )}
           bounds={graph.timeBounds}
@@ -500,7 +499,7 @@ export function Graph() {
         : graph.selectedNode &&
           selectedPoint && (
             <CanvasAnchoredPopover x={selectedPoint.x} y={selectedPoint.y} offset={18}>
-              {renderNodePanel('max-h-[calc(100svh-10rem)] w-80 overflow-y-auto')}
+              {renderNodePanel('max-h-[calc(100%-1.5rem)] w-80 overflow-y-auto')}
             </CanvasAnchoredPopover>
           )}
 
@@ -589,8 +588,6 @@ export function Graph() {
           )}
         </div>
       )}
-
-      <MobileFooter />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { FileController } from '@/controllers/file/file';
 import {
   adjacencyOf,
   edgeKey,
+  isFragmented,
   type SocialGraphVisualEdge,
   type VisualGraphNode,
 } from '@/hooks/useSocialGraph/useSocialGraph.utils';
@@ -16,6 +17,7 @@ import { cn, generateRandomColor, hexToRgba } from '@/libs/utils/utils';
 import { chipMetrics, chipSprite, postGlyph, postIconSprite } from './SocialGraph.sprites';
 import {
   AVATAR_RADIUS,
+  CENTER_PULL,
   edgeRecencyColor,
   followAlphaFactors,
   GRAPH_EDGE_RGB,
@@ -26,6 +28,8 @@ import {
   POST_ICON_SIZE,
   POST_RADIUS,
   resolveGraphTheme,
+  TAG_EDGE_ALPHA,
+  tagEdgeLabel,
   TIER_ALPHA,
 } from './SocialGraph.theme';
 import type { SocialGraphHandle, SocialGraphProps } from './SocialGraph.types';
@@ -213,7 +217,9 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
     if (!fg) return;
     const chargeOf = (nodeObj: NodeObject) => {
       const node = nodeObj as CanvasNode;
-      return node.kind === 'user' ? -2000 : node.kind === 'profile_tag' ? -180 : -220;
+      // Hubs are ~100px chips shared by many posts; they need more room than a
+      // post circle, less than a user
+      return node.kind === 'user' ? -2000 : node.kind === 'tag' ? -600 : node.kind === 'profile_tag' ? -180 : -220;
     };
     (fg.d3Force('charge') as { strength?: (s: unknown) => void } | undefined)?.strength?.(chargeOf);
     const link = fg.d3Force('link') as
@@ -226,6 +232,9 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
       const l = linkObj as CanvasLink;
       if (l.type === 'HAS_TAG') return 105;
       if (l.type === 'AUTHORED') return 120;
+      // A shared hub holds its posts on a short leash, else the star it makes
+      // dwarfs the graph and the fit zooms everything to dust
+      if (l.type === 'TAGGED') return 180;
       if (l.type === 'REPLIED' || l.type === 'REPOSTED' || l.type === 'MENTIONED') return 130;
       // Focus spokes are the constellation's skeleton; long rest length keeps
       // a dense first ring airy like the design
@@ -242,6 +251,7 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
       const l = linkObj as CanvasLink;
       if (l.type === 'HAS_TAG') return 0.9;
       if (l.type === 'AUTHORED' || l.type === 'REPLIED' || l.type === 'REPOSTED') return 0.7;
+      if (l.type === 'TAGGED') return 0.55;
       const source = endpointId(l.source);
       const target = endpointId(l.target);
       if (focusId && (source === focusId || target === focusId)) return 0.25;
@@ -249,12 +259,18 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
     });
     (async () => {
       try {
-        const { forceCollide } = (await import('d3-force-3d')) as {
-          forceCollide: (r: (node: NodeObject) => number) => unknown;
-        };
+        const { forceCollide, forceX, forceY } = await import('d3-force-3d');
+        // A stream graph is many unrelated author stars with no edge between
+        // them, so charge alone pushes the components apart until the engine
+        // cools and the fit zooms out to dust. A weak pull toward the origin
+        // holds them in one readable cloud; a neighborhood is a single
+        // component and keeps its designed spacing untouched.
+        const pull = isFragmented(graphData.nodes, edges) ? CENTER_PULL : 0;
+        fg.d3Force('x', forceX(0).strength(pull) as never);
+        fg.d3Force('y', forceY(0).strength(pull) as never);
         fg.d3Force(
           'collide',
-          forceCollide((nodeObj: NodeObject) => {
+          forceCollide((nodeObj: unknown) => {
             const node = nodeObj as CanvasNode;
             if (node.kind === 'user') return AVATAR_RADIUS[sizeTiers.get(node.id) ?? 'other'] + 8;
             if (node.kind === 'post') return POST_RADIUS + 6;
@@ -266,7 +282,7 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
         // Collision is a nicety; the layout still works from charge + distance
       }
     })();
-  }, [graphData, engineReady, sizeTiers, focusId]);
+  }, [graphData, edges, engineReady, sizeTiers, focusId]);
 
   const hoverNeighbors = useMemo(() => (hoverId ? adjacencyOf(hoverId, edges).add(hoverId) : null), [hoverId, edges]);
   // Advanced dimming mechanism (legend hover / social proof); the hover-lift
@@ -274,6 +290,16 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
   const highlightSet = spotlight ?? (edgeChipsOn ? hoverNeighbors : null);
 
   const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n as CanvasNode])), [nodes]);
+
+  // A hovered or selected tag lends its color to the lines that connect it;
+  // hover wins so pointing at a second chip retargets immediately
+  const highlightedTag = useMemo(() => {
+    for (const id of [hoverId, selectedId]) {
+      const node = id ? nodeById.get(id) : undefined;
+      if (node && (node.kind === 'tag' || node.kind === 'profile_tag')) return { id: node.id, label: node.label };
+    }
+    return null;
+  }, [hoverId, selectedId, nodeById]);
 
   /** The user id whose cluster a node belongs to (chips/posts follow their owner). */
   const clusterAnchorOf = useCallback((node: CanvasNode): string => {
@@ -613,6 +639,8 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
         if (link.type === 'FOLLOWS' || link.type === 'FRIEND') {
           alpha *= source === focusId || target === focusId ? followAlpha.spoke : followAlpha.mesh;
         }
+        const tagLabel = tagEdgeLabel(highlightedTag, link);
+        if (tagLabel) return hexToRgba(labelColor(tagLabel), Math.max(alpha, TAG_EDGE_ALPHA));
         return `rgba(${GRAPH_EDGE_RGB}, ${Number(alpha.toFixed(3))})`;
       }
 
@@ -664,6 +692,7 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
       communities,
       followTimeRange,
       followAlpha,
+      highlightedTag,
     ],
   );
 
@@ -791,9 +820,11 @@ export const SocialGraph = forwardRef<SocialGraphHandle, SocialGraphProps>(funct
       const l = link as CanvasLink;
       if (isPathLink(l)) return 1.5;
       if (edgeChipsOn && l.type === 'FRIEND') return 1.8;
+      // A colored hairline needs a touch more body to read as the tag's line
+      if (tagEdgeLabel(highlightedTag, l)) return 1.5;
       return 1;
     },
-    [isPathLink, edgeChipsOn],
+    [isPathLink, edgeChipsOn, highlightedTag],
   );
   const linkCurvature = useCallback(
     (link: LinkObject) => (edgeChipsOn && (link as CanvasLink).type === 'TAGGED' ? 0.18 : 0),

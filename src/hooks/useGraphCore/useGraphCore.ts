@@ -265,6 +265,10 @@ export function useGraphCore({
     async (label: string) => {
       const nodeId = `tag:${label}`;
       if (graph.nodes.some((n) => n.id === nodeId)) {
+        // Already on the raw graph (the feed synthesizes hubs from its posts),
+        // so it only needs revealing: the shared-hub filter keeps ids nobody
+        // asked for hidden
+        setExpandedIds((prev) => (prev.has(nodeId) ? prev : new Set(prev).add(nodeId)));
         setSelectedId(nodeId);
         return;
       }

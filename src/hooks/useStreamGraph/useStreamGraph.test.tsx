@@ -1,5 +1,6 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { GraphController } from '@/controllers/graph/graph';
 import { PostController } from '@/controllers/post/post';
 import { UserController } from '@/controllers/user/user';
 import { useGraphStore } from '@/stores/graph/graph.store';
@@ -75,5 +76,43 @@ describe('useStreamGraph', () => {
 
     // All five posts of one author stay visible; the explorer would cap at 3
     await waitFor(() => expect(result.current.nodes.filter((n) => n.kind === 'post')).toHaveLength(5));
+  });
+
+  it('keeps the searched tags visible without a click, and reveals a hub when its chip is clicked', async () => {
+    vi.mocked(PostController.getTags).mockResolvedValue([
+      { id: COMPOSITE, tags: [{ label: 'dev', taggers: [], taggers_count: 3, relationship: false }] },
+    ] as never);
+
+    const { result, rerender } = renderHook(({ pinned }: { pinned: string[] }) => useStreamGraph([COMPOSITE], pinned), {
+      initialProps: { pinned: [] as string[] },
+    });
+
+    // The stream synthesizes the hub, but shared hubs stay hidden by default
+    await waitFor(() => expect(result.current.rawNodeCount).toBe(4));
+    expect(result.current.nodes.some((n) => n.id === 'tag:dev')).toBe(false);
+
+    // A searched tag is the reason the results exist: pin it and it shows
+    rerender({ pinned: ['dev'] });
+    await waitFor(() => expect(result.current.nodes.some((n) => n.id === 'tag:dev')).toBe(true));
+    expect(result.current.expandedIds.has('tag:dev')).toBe(true);
+  });
+
+  it('marks an already-synthesized hub expanded when addTag short-circuits', async () => {
+    vi.mocked(PostController.getTags).mockResolvedValue([
+      { id: COMPOSITE, tags: [{ label: 'dev', taggers: [], taggers_count: 3, relationship: false }] },
+    ] as never);
+
+    const { result } = renderHook(() => useStreamGraph([COMPOSITE]));
+    await waitFor(() => expect(result.current.rawNodeCount).toBe(4));
+
+    await act(async () => {
+      await result.current.addTag('dev');
+    });
+
+    // No neighborhood fetch: the hub is already on the raw graph, it was only hidden
+    expect(GraphController.fetchNeighborhood).not.toHaveBeenCalled();
+    expect(result.current.expandedIds.has('tag:dev')).toBe(true);
+    expect(result.current.nodes.some((n) => n.id === 'tag:dev')).toBe(true);
+    expect(result.current.selectedNode?.id).toBe('tag:dev');
   });
 });

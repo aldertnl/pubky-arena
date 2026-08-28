@@ -70,7 +70,7 @@ export type UseStreamGraphResult = {
  * graph core; relationship colors read Dexie reactively, so follows and TTL
  * refreshes repaint the graph without a reload.
  */
-export function useStreamGraph(postIds: string[]): UseStreamGraphResult {
+export function useStreamGraph(postIds: string[], pinnedTagLabels: string[] = []): UseStreamGraphResult {
   const { currentUserPubky } = useAuthStore();
   const [authorRels, setAuthorRels] = useState<ViewerRelFlags>(EMPTY_RELS);
   // Click-to-center override; null = the viewer (the design's default center)
@@ -164,6 +164,20 @@ export function useStreamGraph(postIds: string[]): UseStreamGraphResult {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserPubky]);
+
+  // The searched tags are why these results exist, so their hubs stay on
+  // canvas: the shared-hub filter honours ids that were explicitly added.
+  // Re-checked against the graph, since a prune can drop an id again.
+  const pinnedKey = pinnedTagLabels.join(',');
+  useEffect(() => {
+    if (pinnedTagLabels.length === 0) return;
+    core.setExpandedIds((prev) => {
+      const next = new Set(prev);
+      for (const label of pinnedTagLabels) next.add(`tag:${label}`);
+      return next.size === prev.size ? prev : next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pinnedKey, graph]);
 
   /** Design click behavior: center + focus a user, expanding them once. */
   const recenter = useCallback(

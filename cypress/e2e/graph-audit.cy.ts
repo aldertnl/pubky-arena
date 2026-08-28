@@ -135,6 +135,30 @@ function realDrag(x: number, y: number, dx: number, dy: number) {
   );
 }
 
+/**
+ * A point inside the canvas with no node near it. The corner used to be safe
+ * enough, but the card is container-sized now and the layout can reach it.
+ */
+function backgroundPoint(win: Window, dbg: DebugSurface): { x: number; y: number } {
+  const canvas = win.document.querySelector('[data-cy="social-graph"] canvas')!;
+  const rect = canvas.getBoundingClientRect();
+  const ids = Object.values(dbg.nodeIds()).flat();
+  const taken = ids.map((id) => dbg.screenPositionOf(id)).filter((p): p is { x: number; y: number } => p !== null);
+  let best = { x: 30, y: rect.height - 30 };
+  let bestGap = -1;
+  for (let x = 24; x < rect.width - 24; x += 40) {
+    for (let y = 24; y < rect.height - 24; y += 40) {
+      let gap = Infinity;
+      for (const p of taken) gap = Math.min(gap, Math.hypot(p.x - x, p.y - y));
+      if (gap > bestGap) {
+        bestGap = gap;
+        best = { x, y };
+      }
+    }
+  }
+  return { x: rect.left + best.x, y: rect.top + best.y };
+}
+
 /** Click a hover-verified node at its verified coordinates. */
 function clickResolved(out: { ok: boolean; x: number; y: number }) {
   cy.then(() => {
@@ -345,18 +369,20 @@ describe('graph interaction audit (desktop)', () => {
     // double-click window and split them into two single clicks.
     // The CDP drag parks the real pointer on the dragged node; hover must
     // clear before background clicks are honored
-    cy.get('[data-cy="social-graph"] canvas').then(($c) => {
-      const rect = $c[0].getBoundingClientRect();
-      hoverAt(rect.left + 30, rect.top + rect.height - 30);
+    const empty = { x: 0, y: 0 };
+    withDebug((dbg, win) => {
+      const point = backgroundPoint(win, dbg);
+      empty.x = point.x;
+      empty.y = point.y;
+      hoverAt(point.x, point.y);
     });
     cy.wait(600);
     withDebug((dbg) => {
       const zoomBefore = dbg.zoom();
       cy.window().then((win) => {
         const canvas = win.document.querySelector('[data-cy="social-graph"] canvas')!;
-        const rect = canvas.getBoundingClientRect();
-        const x = rect.left + 30;
-        const y = rect.top + rect.height - 30;
+        const x = empty.x;
+        const y = empty.y;
         const opts = { bubbles: true, cancelable: true, view: win, clientX: x, clientY: y, button: 0 };
         for (let i = 0; i < 2; i++) {
           canvas.dispatchEvent(new win.PointerEvent('pointerdown', opts));

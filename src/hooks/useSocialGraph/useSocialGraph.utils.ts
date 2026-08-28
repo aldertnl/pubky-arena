@@ -124,6 +124,41 @@ export function relationshipMap(
 }
 
 /** Neighbor node ids of a node, in both edge directions. */
+/**
+ * Whether the graph is more than one connected component.
+ *
+ * A stream graph is a handful of unrelated author stars with nothing joining
+ * them, which the layout has to hold together itself; a neighborhood hangs off
+ * its center and needs no help.
+ */
+export function isFragmented(nodes: { id: string }[], edges: Pick<NexusGraphEdge, 'source' | 'target'>[]): boolean {
+  if (nodes.length < 2) return false;
+  const parent = new Map<string, string>(nodes.map((node) => [node.id, node.id]));
+  const find = (id: string): string => {
+    let root = id;
+    while (parent.get(root) !== root) root = parent.get(root)!;
+    // Path compression keeps repeated lookups flat on wide stars
+    let walk = id;
+    while (parent.get(walk) !== root) {
+      const next = parent.get(walk)!;
+      parent.set(walk, root);
+      walk = next;
+    }
+    return root;
+  };
+  let components = nodes.length;
+  for (const edge of edges) {
+    // Edges can point at nodes pruned from the canvas; they join nothing
+    if (!parent.has(edge.source) || !parent.has(edge.target)) continue;
+    const a = find(edge.source);
+    const b = find(edge.target);
+    if (a === b) continue;
+    parent.set(a, b);
+    components--;
+  }
+  return components > 1;
+}
+
 export function adjacencyOf(nodeId: string, edges: Pick<NexusGraphEdge, 'source' | 'target'>[]): Set<string> {
   const neighbors = new Set<string>();
   for (const edge of edges) {

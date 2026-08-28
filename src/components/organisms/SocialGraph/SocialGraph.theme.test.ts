@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { edgeRecencyColor, followAlphaFactors, liftForDarkCanvas } from './SocialGraph.theme';
+import { edgeRecencyColor, followAlphaFactors, liftForDarkCanvas, tagEdgeLabel } from './SocialGraph.theme';
 
 /** Relative lightness as HSL L, from a #rrggbb string. */
 function lightnessOf(hex: string): number {
@@ -84,5 +84,36 @@ describe('followAlphaFactors', () => {
   it('treats every follow edge as mesh without a focus', () => {
     const edges = Array.from({ length: 10 }, (_, i) => follow('me', `n${i}`));
     expect(followAlphaFactors(edges, null)).toEqual({ spoke: 1, mesh: 0.3 });
+  });
+});
+
+describe('tagEdgeLabel', () => {
+  const hub = { id: 'tag:dev', label: 'dev' };
+  const chip = { id: 'ptag:alice:dev', label: 'dev' };
+
+  it('paints the hub edges of the highlighted tag', () => {
+    expect(tagEdgeLabel(hub, { source: 'tag:dev', target: 'post:a:1', type: 'TAGGED', label: 'dev' })).toBe('dev');
+    expect(tagEdgeLabel(hub, { source: 'user:a', target: 'tag:dev', type: 'TAGGED', label: 'dev' })).toBe('dev');
+  });
+
+  it('paints a profile-tag chip edge, which carries no label of its own', () => {
+    expect(tagEdgeLabel(chip, { source: 'user:alice', target: 'ptag:alice:dev', type: 'HAS_TAG' })).toBe('dev');
+  });
+
+  it('matches an aggregated user-to-user edge on any of its labels', () => {
+    const edge = { source: 'user:a', target: 'user:b', type: 'TAGGED', label: 'apple', labels: ['apple', 'zebra'] };
+    expect(tagEdgeLabel({ id: 'tag:zebra', label: 'zebra' }, edge)).toBe('zebra');
+    expect(tagEdgeLabel({ id: 'tag:apple', label: 'apple' }, edge)).toBe('apple');
+  });
+
+  it('leaves unrelated edges alone', () => {
+    expect(tagEdgeLabel(hub, { source: 'user:a', target: 'user:b', type: 'FOLLOWS' })).toBeNull();
+    expect(tagEdgeLabel(hub, { source: 'user:a', target: 'ptag:alice:art', type: 'HAS_TAG' })).toBeNull();
+    expect(tagEdgeLabel(hub, { source: 'user:a', target: 'user:b', type: 'TAGGED', label: 'art' })).toBeNull();
+  });
+
+  it('paints nothing without a highlighted tag or a usable label', () => {
+    expect(tagEdgeLabel(null, { source: 'tag:dev', target: 'post:a:1', type: 'TAGGED', label: 'dev' })).toBeNull();
+    expect(tagEdgeLabel({ id: 'tag:', label: '' }, { source: 'tag:', target: 'post:a:1', type: 'TAGGED' })).toBeNull();
   });
 });
