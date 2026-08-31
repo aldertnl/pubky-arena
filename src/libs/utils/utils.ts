@@ -153,6 +153,18 @@ export async function copyToClipboard({ text }: CopyToClipboardProps) {
   }
 }
 
+/**
+ * Read text from the clipboard. Throws when the Clipboard API is unavailable
+ * (non-secure context, unsupported browser) or the read is denied.
+ */
+export async function readFromClipboard(): Promise<string> {
+  if (typeof navigator === 'undefined' || !navigator.clipboard?.readText) {
+    throw new Error('Clipboard API not supported');
+  }
+
+  return navigator.clipboard.readText();
+}
+
 const customCases = [
   { name: 'bitcoin', color: '#FF9900' },
   { name: 'synonym', color: '#FF6600' },
@@ -623,7 +635,7 @@ export function isValidTagLabel(value: string): boolean {
 export function canSubmitPost(
   variant: PostInputVariant,
   content: string,
-  attachments: File[],
+  attachments: ReadonlyArray<unknown>,
   isSubmitting: boolean,
   isArticle?: boolean,
   articleTitle?: string,
@@ -638,9 +650,7 @@ export function canSubmitPost(
     return !!content.trim() && !!articleTitle?.trim();
   }
 
-  // Edit mode requires content to submit
-  if (variant === 'edit') return !!content.trim();
-
+  // Posts, replies, and edits require content or attachments (edits count kept + new)
   return Boolean(content.trim()) || attachments.length > 0;
 }
 

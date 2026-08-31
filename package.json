@@ -1,6 +1,6 @@
 {
   "name": "franky",
-  "version": "1.5.0",
+  "version": "1.8.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -22,6 +22,7 @@
     "test:snapshots": "vitest run --project unit --reporter=verbose --testNamePattern=\"[Ss]napshots?\"",
     "test:update-snapshots": "vitest run --project unit --update --testNamePattern=\"[Ss]napshots?\"",
     "test:vrt": "vitest run --project vrt",
+    "test:vrt:check-baselines": "bash src/test-utils/vrt.screenshot-siblings.sh",
     "test:vrt:regenerate-baseline": "vitest run --project vrt --update",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\" --ignore-path .prettierignore",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\" --ignore-path .prettierignore",
@@ -65,7 +66,7 @@
     "motion": "12.39.0",
     "next": "16.2.6",
     "next-themes": "0.4.6",
-    "pubky-app-specs": "0.6.2",
+    "pubky-app-specs": "0.7.0",
     "qrcode.react": "4.2.0",
     "radix-ui": "1.4.3",
     "react": "19.2.6",

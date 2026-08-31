@@ -4,6 +4,7 @@ import { AppError } from '@/libs/error/error';
 import { AuthErrorCode, ClientErrorCode, ServerErrorCode, ValidationErrorCode } from '@/libs/error/error.codes';
 import { ErrorCategory, ErrorService } from '@/libs/error/error.types';
 import { HttpMethod } from '@/libs/http/http.types';
+import { Logger } from '@/libs/logger/logger';
 import { asOpaque } from '@/test-utils/type-assertions';
 
 // =============================================================================
@@ -19,6 +20,7 @@ const mockState = vi.hoisted(() => ({
   sessionSignout: vi.fn(),
   // Session storage
   sessionStorageGet: vi.fn(),
+  sessionStorageExists: vi.fn(),
   sessionStoragePutJson: vi.fn(),
   sessionStoragePutBytes: vi.fn(),
   sessionStorageDelete: vi.fn(),
@@ -27,6 +29,7 @@ const mockState = vi.hoisted(() => ({
   clientFetch: vi.fn(),
   // Public storage
   publicStorageGet: vi.fn(),
+  publicStorageExists: vi.fn(),
   publicStorageList: vi.fn(),
   // Pubky methods
   getHomeserverOf: vi.fn(),
@@ -83,6 +86,7 @@ vi.mock('@synonymdev/pubky', () => {
     },
     publicStorage: {
       get: (...args: unknown[]) => mockState.publicStorageGet(...args),
+      exists: (...args: unknown[]) => mockState.publicStorageExists(...args),
       list: (...args: unknown[]) => mockState.publicStorageList(...args),
     },
     signer: () => ({
@@ -132,6 +136,7 @@ const createMockSession = (): Session =>
     },
     storage: {
       get: (...args: unknown[]) => mockState.sessionStorageGet(...args),
+      exists: (...args: unknown[]) => mockState.sessionStorageExists(...args),
       putJson: (...args: unknown[]) => mockState.sessionStoragePutJson(...args),
       putBytes: (...args: unknown[]) => mockState.sessionStoragePutBytes(...args),
       delete: (...args: unknown[]) => mockState.sessionStorageDelete(...args),
@@ -150,6 +155,37 @@ const createMockKeypair = (): Keypair =>
     } as PublicKey,
     secret: vi.fn(() => new Uint8Array(32).fill(1)),
   });
+
+/**
+ * Temporarily declare a staging deploy (PUBKY_RUNTIME_ENV=staging) and point
+ * runtime config at canonical staging homeserver values.
+ */
+async function withStagingHomeserverEnv(
+  run: () => Promise<void>,
+  { keepTestHomeserver = false }: { keepTestHomeserver?: boolean } = {},
+): Promise<void> {
+  const { resetRuntimeConfigForTests } = await import('@/libs/runtime-config/runtime-config');
+  const { NETWORK_RUNTIME_DEFAULTS } = await import('@/libs/runtime-config/runtime-config.schema');
+
+  const previousDeployEnv = process.env.PUBKY_RUNTIME_ENV;
+  const previousHomeserver = process.env.PUBKY_RUNTIME_HOMESERVER;
+  const previousHomeserverUrl = process.env.PUBKY_RUNTIME_HOMESERVER_URL;
+  process.env.PUBKY_RUNTIME_ENV = 'staging';
+  if (!keepTestHomeserver) {
+    process.env.PUBKY_RUNTIME_HOMESERVER = NETWORK_RUNTIME_DEFAULTS.homeserver;
+    process.env.PUBKY_RUNTIME_HOMESERVER_URL = NETWORK_RUNTIME_DEFAULTS.homeserverUrl;
+  }
+  resetRuntimeConfigForTests();
+
+  try {
+    await run();
+  } finally {
+    process.env.PUBKY_RUNTIME_ENV = previousDeployEnv;
+    process.env.PUBKY_RUNTIME_HOMESERVER = previousHomeserver;
+    process.env.PUBKY_RUNTIME_HOMESERVER_URL = previousHomeserverUrl;
+    resetRuntimeConfigForTests();
+  }
+}
 
 // =============================================================================
 // TEST SUITE
@@ -170,10 +206,12 @@ describe('HomeserverService', () => {
     mockState.publishHomeserverForce.mockResolvedValue(undefined);
     mockState.clientFetch.mockResolvedValue(new Response('{}', { status: 200 }));
     mockState.publicStorageGet.mockResolvedValue(new Response('{}', { status: 200 }));
+    mockState.publicStorageExists.mockResolvedValue(true);
     mockState.publicStorageList.mockResolvedValue([]);
     mockState.getHomeserverOf.mockResolvedValue('https://test-homeserver.com');
     mockState.sessionSignout.mockResolvedValue(undefined);
     mockState.sessionStorageGet.mockResolvedValue(new Response('{}', { status: 200 }));
+    mockState.sessionStorageExists.mockResolvedValue(true);
     mockState.sessionStoragePutJson.mockResolvedValue(undefined);
     mockState.sessionStoragePutBytes.mockResolvedValue(undefined);
     mockState.sessionStorageDelete.mockResolvedValue(undefined);
@@ -213,7 +251,9 @@ describe('HomeserverService', () => {
         'putBlob',
         'list',
         'delete',
+        'deleteIdempotent',
         'get',
+        'exists',
         'generateSignupToken',
         'subscribeUserEventStreamForPath',
       ] as const;
@@ -351,6 +391,14 @@ describe('HomeserverService', () => {
     });
 
     describe('signIn', () => {
+      it('should skip homeserver resolution when the deploy is not staging', async () => {
+        const keypair = createMockKeypair();
+
+        await HomeserverService.assertUserHomeserverAllowed({ publicKey: keypair.publicKey });
+
+        expect(mockState.getHomeserverOf).not.toHaveBeenCalled();
+      });
+
       it('should return session on successful signin', async () => {
         const keypair = createMockKeypair();
         const expectedSession = createMockSession();
@@ -374,19 +422,33 @@ describe('HomeserverService', () => {
         expect(mockState.getHomeserverOf).toHaveBeenCalledWith(keypair.publicKey);
       });
 
-      it('should attempt to republish homeserver and return undefined when checkHomeserver fails', async () => {
+      it('should attempt to republish homeserver and return undefined when the record is provably absent', async () => {
         // NOTE: This is intentional behavior - after republishing the homeserver,
         // the method returns undefined to signal the caller should retry signin.
-        // The republish is a recovery mechanism when PKARR records are stale.
+        // The republish is a recovery mechanism when PKARR records are stale,
+        // and only fires when the lookup RESOLVED to "no record".
         const keypair = createMockKeypair();
 
-        // checkHomeserver throws because no homeserver found
         mockState.getHomeserverOf.mockResolvedValue(null);
 
         const result = await HomeserverService.signIn({ keypair });
 
         expect(mockState.publishHomeserverForce).toHaveBeenCalled();
         expect(result).toBeUndefined();
+      });
+
+      it('should not republish when the homeserver lookup fails outside staging', async () => {
+        // A thrown lookup does not prove the record is absent — republishing on
+        // it could overwrite an existing record that points elsewhere.
+        const keypair = createMockKeypair();
+
+        mockState.getHomeserverOf.mockRejectedValue(new Error('PKARR relay unavailable'));
+
+        await expect(HomeserverService.signIn({ keypair })).rejects.toMatchObject({
+          category: ErrorCategory.Server,
+        });
+        expect(mockState.signin).not.toHaveBeenCalled();
+        expect(mockState.publishHomeserverForce).not.toHaveBeenCalled();
       });
 
       it('should throw SESSION_EXPIRED error when both signin and republish fail', async () => {
@@ -400,6 +462,91 @@ describe('HomeserverService', () => {
           category: ErrorCategory.Auth,
           code: AuthErrorCode.SESSION_EXPIRED,
         });
+      });
+
+      it('should reject mismatched homeserver on staging without republishing', async () => {
+        await withStagingHomeserverEnv(async () => {
+          const keypair = createMockKeypair();
+          mockState.getHomeserverOf.mockResolvedValue({
+            z32: () => 'prod-homeserver-public-key-z32',
+          });
+
+          await expect(HomeserverService.signIn({ keypair })).rejects.toMatchObject({
+            category: ErrorCategory.Auth,
+            code: AuthErrorCode.WRONG_ENVIRONMENT_HOMESERVER,
+          });
+          expect(mockState.signin).not.toHaveBeenCalled();
+          expect(mockState.publishHomeserverForce).not.toHaveBeenCalled();
+        });
+      });
+
+      it('should reject an absent homeserver record on staging without republishing', async () => {
+        // Absence cannot prove the key belongs to this deploy — it is rejected
+        // like a mismatch (deterministic, non-retryable) rather than surfaced
+        // as a transient server error.
+        await withStagingHomeserverEnv(async () => {
+          const keypair = createMockKeypair();
+          mockState.getHomeserverOf.mockResolvedValue(null);
+
+          await expect(HomeserverService.signIn({ keypair })).rejects.toMatchObject({
+            category: ErrorCategory.Auth,
+            code: AuthErrorCode.WRONG_ENVIRONMENT_HOMESERVER,
+          });
+          expect(mockState.signin).not.toHaveBeenCalled();
+          expect(mockState.publishHomeserverForce).not.toHaveBeenCalled();
+        });
+      });
+
+      it('should not republish when homeserver resolution fails on staging', async () => {
+        await withStagingHomeserverEnv(async () => {
+          const keypair = createMockKeypair();
+          mockState.getHomeserverOf.mockRejectedValue(new Error('PKARR relay unavailable'));
+
+          await expect(HomeserverService.signIn({ keypair })).rejects.toMatchObject({
+            category: ErrorCategory.Server,
+          });
+          expect(mockState.signin).not.toHaveBeenCalled();
+          expect(mockState.publishHomeserverForce).not.toHaveBeenCalled();
+        });
+      });
+
+      it('should allow signin on staging when PKARR homeserver matches configured homeserver', async () => {
+        await withStagingHomeserverEnv(async () => {
+          const { NETWORK_RUNTIME_DEFAULTS } = await import('@/libs/runtime-config/runtime-config.schema');
+          const keypair = createMockKeypair();
+          const expectedSession = createMockSession();
+          mockState.getHomeserverOf.mockResolvedValue({
+            z32: () => NETWORK_RUNTIME_DEFAULTS.homeserver,
+          });
+          mockState.signin.mockResolvedValue(expectedSession);
+
+          const result = await HomeserverService.signIn({ keypair });
+
+          expect(result).toEqual({ session: expectedSession });
+          expect(mockState.publishHomeserverForce).not.toHaveBeenCalled();
+        });
+      });
+
+      it('should keep the staging guard active when homeserver config drifts from the canonical defaults', async () => {
+        // Regression: the guard is driven by the declared PUBKY_RUNTIME_ENV, not
+        // by config equality with the compiled-in staging defaults — drift used
+        // to silently disable it and re-enable the force-republish path.
+        await withStagingHomeserverEnv(
+          async () => {
+            const keypair = createMockKeypair();
+            mockState.getHomeserverOf.mockResolvedValue({
+              z32: () => 'prod-homeserver-public-key-z32',
+            });
+
+            await expect(HomeserverService.signIn({ keypair })).rejects.toMatchObject({
+              category: ErrorCategory.Auth,
+              code: AuthErrorCode.WRONG_ENVIRONMENT_HOMESERVER,
+            });
+            expect(mockState.signin).not.toHaveBeenCalled();
+            expect(mockState.publishHomeserverForce).not.toHaveBeenCalled();
+          },
+          { keepTestHomeserver: true },
+        );
       });
     });
 
@@ -878,6 +1025,102 @@ describe('HomeserverService', () => {
       });
     });
 
+    describe('deleteIdempotent', () => {
+      const testUrl = 'pubky://user/pub/pubky.app/files/file123';
+
+      it('should resolve on a successful first delete', async () => {
+        mockState.currentSession = createMockSession();
+
+        await expect(HomeserverService.deleteIdempotent(testUrl)).resolves.toBeUndefined();
+
+        expect(mockState.sessionStorageDelete).toHaveBeenCalledTimes(1);
+        expect(mockState.sessionStorageDelete).toHaveBeenCalledWith('/pub/pubky.app/files/file123');
+      });
+
+      it('should treat 404 as success without retrying (already gone = desired end state)', async () => {
+        mockState.currentSession = createMockSession();
+        mockState.sessionStorageDelete.mockRejectedValue({
+          name: 'RequestError',
+          message: 'Not Found',
+          data: { statusCode: 404 },
+        });
+
+        await expect(HomeserverService.deleteIdempotent(testUrl)).resolves.toBeUndefined();
+
+        expect(mockState.sessionStorageDelete).toHaveBeenCalledTimes(1);
+      });
+
+      it('should retry a transient failure and resolve once a later attempt succeeds', async () => {
+        vi.useFakeTimers();
+        try {
+          mockState.currentSession = createMockSession();
+          mockState.sessionStorageDelete
+            .mockRejectedValueOnce({ name: 'RequestError', message: 'Bad Gateway', data: { statusCode: 502 } })
+            .mockResolvedValueOnce(undefined);
+
+          const pending = HomeserverService.deleteIdempotent(testUrl);
+          await vi.runAllTimersAsync(); // skips the 500ms backoff between attempts
+
+          await expect(pending).resolves.toBeUndefined();
+          expect(mockState.sessionStorageDelete).toHaveBeenCalledTimes(2);
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+
+      it('should throw the last error after exhausting all 3 attempts on persistent failure', async () => {
+        vi.useFakeTimers();
+        try {
+          mockState.currentSession = createMockSession();
+          mockState.sessionStorageDelete.mockRejectedValue({
+            name: 'RequestError',
+            message: 'Service Unavailable',
+            data: { statusCode: 503 },
+          });
+
+          const pending = HomeserverService.deleteIdempotent(testUrl);
+          // Attach the rejection expectation before advancing timers so the
+          // rejection is never unhandled
+          const rejection = expect(pending).rejects.toMatchObject({
+            category: ErrorCategory.Server,
+            code: ServerErrorCode.SERVICE_UNAVAILABLE,
+          });
+          await vi.runAllTimersAsync();
+          await rejection;
+
+          expect(mockState.sessionStorageDelete).toHaveBeenCalledTimes(3);
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+
+      it('should not retry non-transient auth failures beyond the retry budget on 403', async () => {
+        // 403 is not 404, so it goes through the retry loop like any other
+        // failure and still surfaces after the budget is spent
+        vi.useFakeTimers();
+        try {
+          mockState.currentSession = createMockSession();
+          mockState.sessionStorageDelete.mockRejectedValue({
+            name: 'RequestError',
+            message: 'Forbidden',
+            data: { statusCode: 403 },
+          });
+
+          const pending = HomeserverService.deleteIdempotent(testUrl);
+          const rejection = expect(pending).rejects.toMatchObject({
+            category: ErrorCategory.Auth,
+            code: AuthErrorCode.FORBIDDEN,
+          });
+          await vi.runAllTimersAsync();
+          await rejection;
+
+          expect(mockState.sessionStorageDelete).toHaveBeenCalledTimes(3);
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+    });
+
     describe('get', () => {
       it('should use publicStorage.get for fetching', async () => {
         const testUrl = 'pubky://user/pub/public.json';
@@ -921,6 +1164,114 @@ describe('HomeserverService', () => {
         await expect(HomeserverService.get(testUrl)).rejects.toMatchObject({
           category: ErrorCategory.Server,
           code: ServerErrorCode.INTERNAL_ERROR,
+        });
+      });
+    });
+
+    describe('exists', () => {
+      const testUrl = 'pubky://user/pub/resource.json';
+
+      it('should return true for an owned resource that exists', async () => {
+        mockState.currentSession = createMockSession();
+        mockState.sessionStorageExists.mockResolvedValue(true);
+
+        await expect(HomeserverService.exists(testUrl)).resolves.toBe(true);
+
+        expect(mockState.sessionStorageExists).toHaveBeenCalledWith('/pub/resource.json');
+        expect(mockState.publicStorageExists).not.toHaveBeenCalled();
+      });
+
+      it('should return false without error logging when an owned resource is missing', async () => {
+        mockState.currentSession = createMockSession();
+        mockState.sessionStorageExists.mockResolvedValue(false);
+
+        await expect(HomeserverService.exists(testUrl)).resolves.toBe(false);
+
+        expect(Logger.error).not.toHaveBeenCalled();
+      });
+
+      it('should normalize unexpected owned-storage failures', async () => {
+        mockState.currentSession = createMockSession();
+        mockState.sessionStorageExists.mockRejectedValue(new Error('Network failure'));
+
+        await expect(HomeserverService.exists(testUrl)).rejects.toMatchObject({
+          category: ErrorCategory.Server,
+          code: ServerErrorCode.INTERNAL_ERROR,
+        });
+      });
+
+      it('should preserve session-expiration handling for owned-storage failures', async () => {
+        mockState.currentSession = createMockSession();
+        mockState.sessionStorageExists.mockRejectedValue({
+          name: 'RequestError',
+          message: 'Session expired',
+          data: { statusCode: 401 },
+        });
+
+        await expect(HomeserverService.exists(testUrl)).rejects.toMatchObject({
+          category: ErrorCategory.Auth,
+          code: AuthErrorCode.SESSION_EXPIRED,
+        });
+      });
+
+      it('should use publicStorage.exists when the resource is not owned', async () => {
+        mockState.publicStorageExists.mockResolvedValue(true);
+
+        await expect(HomeserverService.exists(testUrl)).resolves.toBe(true);
+
+        expect(mockState.publicStorageExists).toHaveBeenCalledWith(testUrl);
+        expect(mockState.sessionStorageExists).not.toHaveBeenCalled();
+      });
+
+      it('should return false without error logging when a public resource is missing', async () => {
+        mockState.publicStorageExists.mockResolvedValue(false);
+
+        await expect(HomeserverService.exists(testUrl)).resolves.toBe(false);
+
+        expect(Logger.error).not.toHaveBeenCalled();
+      });
+
+      it('should normalize unexpected public-storage failures', async () => {
+        mockState.publicStorageExists.mockRejectedValue(new Error('Network failure'));
+
+        await expect(HomeserverService.exists(testUrl)).rejects.toMatchObject({
+          category: ErrorCategory.Server,
+          code: ServerErrorCode.INTERNAL_ERROR,
+        });
+      });
+
+      it('should return true for a successful HTTP response', async () => {
+        const httpUrl = 'https://example.com/resource.json';
+        mockState.clientFetch.mockResolvedValue(new Response('{}', { status: 200 }));
+
+        await expect(HomeserverService.exists(httpUrl)).resolves.toBe(true);
+
+        expect(mockState.clientFetch).toHaveBeenCalledWith(httpUrl);
+      });
+
+      it('should return false without error logging for an HTTP 404', async () => {
+        mockState.clientFetch.mockResolvedValue(new Response('', { status: 404 }));
+
+        await expect(HomeserverService.exists('https://example.com/missing.json')).resolves.toBe(false);
+
+        expect(Logger.error).not.toHaveBeenCalled();
+      });
+
+      it('should normalize an unexpected HTTP response', async () => {
+        mockState.clientFetch.mockResolvedValue(new Response('Server error', { status: 500 }));
+
+        await expect(HomeserverService.exists('https://example.com/broken.json')).rejects.toMatchObject({
+          category: ErrorCategory.Server,
+          code: ServerErrorCode.INTERNAL_ERROR,
+        });
+      });
+
+      it('should preserve session-expiration handling for HTTP responses', async () => {
+        mockState.clientFetch.mockResolvedValue(new Response('Session expired', { status: 401 }));
+
+        await expect(HomeserverService.exists('https://example.com/private.json')).rejects.toMatchObject({
+          category: ErrorCategory.Auth,
+          code: AuthErrorCode.SESSION_EXPIRED,
         });
       });
     });

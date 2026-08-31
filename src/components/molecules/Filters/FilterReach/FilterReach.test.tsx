@@ -1,8 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { TAGGED_AS_FILTER_KEY } from '@/config/feed';
 import { REACH } from '@/stores/home/home.types';
-import { FilterReach, TAGGED_AS_FILTER_KEY } from './FilterReach';
+import { FilterReach } from './FilterReach';
 
 describe('FilterReach', () => {
   it('renders with default selected tab and proper ARIA attributes', () => {
@@ -117,6 +118,18 @@ describe('FilterReach', () => {
     expect(followingRadio).toHaveAttribute('aria-label', 'Following');
     expect(friendsRadio).toHaveAttribute('aria-label', 'Friends');
   });
+
+  it('preserves data-cy selectors for e2e tests', () => {
+    render(<FilterReach showTaggedAs />);
+
+    expect(screen.getByLabelText('All')).toHaveAttribute('data-cy', 'all-reach-toggle');
+    expect(screen.getByLabelText('Following')).toHaveAttribute('data-cy', 'following-reach-toggle');
+    expect(screen.getByLabelText('Friends')).toHaveAttribute('data-cy', 'friends-reach-toggle');
+    expect(screen.getByLabelText('Me')).toHaveAttribute('data-cy', 'me-reach-toggle');
+    expect(screen.getByLabelText('My network')).toHaveAttribute('data-cy', 'network-reach-toggle');
+    expect(screen.getByLabelText('Tagged as')).toHaveAttribute('data-cy', 'tagged-as-reach-toggle');
+  });
+
   it('renders all items as disabled when disabled prop is true', () => {
     render(<FilterReach disabled />);
 

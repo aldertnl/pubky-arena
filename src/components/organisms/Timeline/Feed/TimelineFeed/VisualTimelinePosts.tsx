@@ -161,7 +161,12 @@ function VisualTimelineTileOverlay({ tile, size, onReplyClick, onRepostClick }: 
           <Container overrideDefaults className="flex items-start justify-between gap-4">
             <Container overrideDefaults className="min-w-0 flex-1">
               {userDetails ? (
-                <PostHeaderUserInfo userId={userId} userName={userDetails.name || ''} avatarUrl={avatarUrl} />
+                <PostHeaderUserInfo
+                  userId={userId}
+                  userName={userDetails.name || ''}
+                  status={userDetails.status}
+                  avatarUrl={avatarUrl}
+                />
               ) : (
                 <Container overrideDefaults className="flex items-center gap-2">
                   <Skeleton className="size-6 rounded-full bg-white/20" />
@@ -399,9 +404,13 @@ export function VisualTimelinePosts({
       });
   }, [loadMore, shouldBackfillInitialRows]);
 
+  // `hasRows` keeps the observer quiet while the tile pipeline resolves rows for
+  // existing postIds (the backfill effect owns that case). A fully-filtered stream
+  // region leaves postIds itself empty — there the sentinel must stay armed so
+  // load rounds keep chaining toward the first visible posts.
   const { sentinelRef } = useInfiniteScroll({
     onLoadMore: loadMore,
-    hasMore: hasMore && hasRows,
+    hasMore: hasMore && (hasRows || postIds.length === 0),
     isLoading: loadingMore || isInitialLoading,
     threshold: 3000,
     debounceMs: 20,
@@ -431,6 +440,7 @@ export function VisualTimelinePosts({
       loading={isInitialLoading}
       error={error}
       hasItems={(hasRows && !showFilteredEmptyState) || hasExtras}
+      hasMore={hasMore}
       loadingComponent={<VisualTimelinePostsSkeleton />}
       emptyComponent={emptyState}
     >
