@@ -31,6 +31,7 @@ import {
   isValidTagLabel,
   minutesAgo,
   radixIdSerializer,
+  readFromClipboard,
   resolveDisplayName,
   sanitizeTagInput,
   shouldBypassLinkConfirmation,
@@ -419,6 +420,37 @@ describe('Utils', () => {
       });
 
       await expect(copyToClipboard({ text: 'test' })).rejects.toThrow('Fallback copy command was unsuccessful');
+    });
+  });
+
+  describe('readFromClipboard', () => {
+    afterEach(() => {
+      Object.defineProperty(navigator, 'clipboard', { value: undefined, writable: true });
+    });
+
+    it('should resolve with the clipboard text', async () => {
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { readText: vi.fn().mockResolvedValue('clipboard text') },
+        writable: true,
+      });
+
+      await expect(readFromClipboard()).resolves.toBe('clipboard text');
+    });
+
+    it('should throw when the Clipboard API is unavailable', async () => {
+      Object.defineProperty(navigator, 'clipboard', { value: undefined, writable: true });
+
+      await expect(readFromClipboard()).rejects.toThrow('Clipboard API not supported');
+    });
+
+    it('should propagate read rejections', async () => {
+      const denied = new Error('denied');
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { readText: vi.fn().mockRejectedValue(denied) },
+        writable: true,
+      });
+
+      await expect(readFromClipboard()).rejects.toThrow('denied');
     });
   });
 
@@ -1291,11 +1323,11 @@ describe('Utils', () => {
         expect(canSubmitPost('edit', 'Updated content', [], false)).toBe(true);
       });
 
-      it('should return false when content is empty', () => {
+      it('should return false when no content and no attachments', () => {
         expect(canSubmitPost('edit', '', [], false)).toBe(false);
       });
 
-      it('should return false for whitespace-only content', () => {
+      it('should return false for whitespace-only content without attachments', () => {
         expect(canSubmitPost('edit', '   ', [], false)).toBe(false);
         expect(canSubmitPost('edit', '\n\t', [], false)).toBe(false);
       });
@@ -1304,9 +1336,12 @@ describe('Utils', () => {
         expect(canSubmitPost('edit', 'Updated content', [], false)).toBe(true);
       });
 
-      it('should return false with attachments but no content', () => {
+      it('should return true with attachments but no content', () => {
+        // Attachment-only edits are valid, matching post/reply behavior — the
+        // edit composer counts kept homeserver URIs as well as new Files.
         const mockFile = new File(['test'], 'test.png', { type: 'image/png' });
-        expect(canSubmitPost('edit', '', [mockFile], false)).toBe(false);
+        expect(canSubmitPost('edit', '', [mockFile], false)).toBe(true);
+        expect(canSubmitPost('edit', '', ['pubky://author/pub/pubky.app/files/kept1'], false)).toBe(true);
       });
 
       it('should require both content and title when isArticle is true', () => {
