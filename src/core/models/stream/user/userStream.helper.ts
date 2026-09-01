@@ -2,12 +2,12 @@ import { STARTER_PACK_MAX_TAGS } from '@/config/nexus';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
 import { Err } from '@/libs/error/error.factories';
 import { ErrorService } from '@/libs/error/error.types';
-import { isValidTagLabel } from '@/libs/utils/utils';
+import { canonicalizeTagLabel, isValidTagLabel } from '@/libs/utils/utils';
 import type { Pubky } from '@/models/models.types';
 import { UserStreamModelSchema } from './userStream.schema';
 import {
   STARTER_PACK_STREAM_SOURCE,
-  StarterPackStreamId,
+  type StarterPackStreamId,
   UserStreamCompositeId,
   UserStreamId,
 } from './userStream.types';
@@ -69,15 +69,16 @@ export function parseUserCompositeId(compositeId: string): UserStreamIdParts {
  * buildStarterPackStreamId(['Bitcoin ', 'music'])
  * // Returns: 'starter_pack:all:all:bitcoin,music'
  */
+// Exported for the starter-pack onboarding consumer (#2388).
 export function buildStarterPackStreamId(tags: string[]): StarterPackStreamId {
-  const canonical = tags.map((tag) => tag.trim().toLowerCase());
+  const canonical = [...new Set(tags.map(canonicalizeTagLabel))];
 
   if (canonical.length === 0 || canonical.length > STARTER_PACK_MAX_TAGS) {
     throw Err.validation(
       ValidationErrorCode.INVALID_INPUT,
       `Starter pack streams require 1-${STARTER_PACK_MAX_TAGS} tags`,
       {
-        service: ErrorService.Nexus,
+        service: ErrorService.Local,
         operation: 'buildStarterPackStreamId',
         context: { tagCount: canonical.length },
       },
@@ -90,14 +91,14 @@ export function buildStarterPackStreamId(tags: string[]): StarterPackStreamId {
       ValidationErrorCode.INVALID_INPUT,
       'Starter pack tags must be 1-20 characters without banned characters',
       {
-        service: ErrorService.Nexus,
+        service: ErrorService.Local,
         operation: 'buildStarterPackStreamId',
         context: { invalidLabels },
       },
     );
   }
 
-  return `${STARTER_PACK_STREAM_SOURCE}:all:all:${canonical.join(USER_STREAM_TAG_DELIMITER)}` as StarterPackStreamId;
+  return `${STARTER_PACK_STREAM_SOURCE}:all:all:${canonical.join(USER_STREAM_TAG_DELIMITER)}`;
 }
 
 export const createDefaultUserStream = (id: UserStreamId, stream: Pubky[] = []): UserStreamModelSchema => {

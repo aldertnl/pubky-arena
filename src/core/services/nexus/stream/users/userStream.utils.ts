@@ -2,7 +2,7 @@ import { STARTER_PACK_MAX_TAGS } from '@/config/nexus';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
 import { Err } from '@/libs/error/error.factories';
 import { ErrorService } from '@/libs/error/error.types';
-import { isValidTagLabel } from '@/libs/utils/utils';
+import { canonicalizeTagLabel, isValidTagLabel } from '@/libs/utils/utils';
 import type { Pubky } from '@/models/models.types';
 import { USER_STREAM_TAG_DELIMITER } from '@/models/stream/user/userStream.helper';
 import { STARTER_PACK_STREAM_SOURCE, type UserStreamId } from '@/models/stream/user/userStream.types';
@@ -33,9 +33,10 @@ function throwMutedStreamUnsupported(streamId: UserStreamId): never {
  * Transforms stream identifiers into type-safe parameters for userStreamApi methods.
  * The apiParams type is automatically mapped to the correct type based on reach.
  *
- * Handles two formats:
+ * Handles three formats:
  * - 2 parts: `userId:reach` (e.g., 'user123:followers')
  * - 3 parts: `source:timeframe:reach` (e.g., 'influencers:today:all')
+ * - 4 parts: `source:timeframe:reach:tags` (e.g., 'starter_pack:all:all:bitcoin,music')
  *
  * @param streamId - Stream identifier
  * @param baseParams - Base pagination/query parameters
@@ -58,6 +59,17 @@ export function createUserStreamParams(
     if (reach === 'muted') {
       throwMutedStreamUnsupported(streamId);
     }
+    if (reach === STARTER_PACK_STREAM_SOURCE) {
+      throw Err.validation(
+        ValidationErrorCode.INVALID_INPUT,
+        'Starter pack stream IDs require the source:all:all:tags format',
+        {
+          service: ErrorService.Nexus,
+          operation: 'createUserStreamParams',
+          context: { streamId },
+        },
+      );
+    }
     return {
       reach: reach as ReachType,
       apiParams: { user_id: userId as Pubky, ...baseParams } as UserStreamApiParamsMap[ReachType],
@@ -69,6 +81,17 @@ export function createUserStreamParams(
     const [source, timeframe, reach] = parts;
     if (source === 'muted') {
       throwMutedStreamUnsupported(streamId);
+    }
+    if (source === STARTER_PACK_STREAM_SOURCE) {
+      throw Err.validation(
+        ValidationErrorCode.INVALID_INPUT,
+        'Starter pack stream IDs require the source:all:all:tags format',
+        {
+          service: ErrorService.Nexus,
+          operation: 'createUserStreamParams',
+          context: { streamId },
+        },
+      );
     }
 
     // Influencers need timeframe and optionally reach in params
@@ -134,11 +157,12 @@ export function createUserStreamParams(
     }
 
     const tags = tagSegment.split(USER_STREAM_TAG_DELIMITER);
-    const hasInvalidLabel = tags.some((label) => label !== label.trim().toLowerCase() || !isValidTagLabel(label));
-    if (tags.length > STARTER_PACK_MAX_TAGS || hasInvalidLabel) {
+    const hasInvalidLabel = tags.some((label) => label !== canonicalizeTagLabel(label) || !isValidTagLabel(label));
+    const hasDuplicateLabel = new Set(tags).size !== tags.length;
+    if (tags.length > STARTER_PACK_MAX_TAGS || hasInvalidLabel || hasDuplicateLabel) {
       throw Err.validation(
         ValidationErrorCode.INVALID_INPUT,
-        `Starter pack stream IDs require 1-${STARTER_PACK_MAX_TAGS} canonical (trimmed, lowercase) tags`,
+        `Starter pack stream IDs require 1-${STARTER_PACK_MAX_TAGS} unique canonical (trimmed, lowercase) tags`,
         {
           service: ErrorService.Nexus,
           operation: 'createUserStreamParams',
@@ -151,7 +175,7 @@ export function createUserStreamParams(
       reach: 'starter_pack',
       apiParams: {
         ...baseParams,
-        tags: tags.join(USER_STREAM_TAG_DELIMITER),
+        tags: tagSegment,
       },
     } as NexusParamsResult<'starter_pack'>;
   }

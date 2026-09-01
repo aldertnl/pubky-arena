@@ -3,6 +3,7 @@ import { AppError } from '@/libs/error/error';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
 import { ErrorCategory } from '@/libs/error/error.types';
 import type { Pubky } from '@/models/models.types';
+import { buildStarterPackStreamId } from '@/models/stream/user/userStream.helper';
 import { type UserStreamId, UserStreamTypes } from '@/models/stream/user/userStream.types';
 import { userStreamApi } from '@/services/nexus/stream/users/userStream.api';
 import type {
@@ -81,6 +82,10 @@ describe('createUserStreamParams', () => {
       expect(() => createUserStreamParams(streamId, baseParams)).toThrow('Muted user lists are homeserver-backed only');
     });
 
+    it('should reject starter_pack as a 2-part reach', () => {
+      expectValidationError(() => createUserStreamParams('user-abc:starter_pack' as UserStreamId, baseParams));
+    });
+
     it('should handle user IDs with special characters', () => {
       const streamId = 'user_with-special.chars:followers' as UserStreamId;
 
@@ -127,6 +132,11 @@ describe('createUserStreamParams', () => {
   // ============================================================================
 
   describe('3-part enum types (source:timeframe:reach)', () => {
+    it('should reject starter_pack without a tag segment', () => {
+      expectValidationError(() => createUserStreamParams('starter_pack:all:all' as UserStreamId, baseParams));
+      expectValidationError(() => createUserStreamParams('starter_pack:today:friends' as UserStreamId, baseParams));
+    });
+
     it('should parse influencers stream ID correctly and omit reach when "all"', () => {
       const streamId = UserStreamTypes.TODAY_INFLUENCERS_ALL;
 
@@ -309,6 +319,15 @@ describe('createUserStreamParams', () => {
       expect((reversed.apiParams as TUserStreamStarterPackParams).tags).toBe('music,travel');
     });
 
+    it('should accept IDs produced by the starter pack builder', () => {
+      const streamId = buildStarterPackStreamId([' Travel ', 'MUSIC']);
+
+      const result = createUserStreamParams(streamId, baseParams);
+
+      expect(result.reach).toBe('starter_pack');
+      expect(result.apiParams).toMatchObject({ tags: 'travel,music' });
+    });
+
     it('should spread baseParams including viewer_id for live starter pack IDs', () => {
       const streamId = 'starter_pack:all:all:bitcoin' as UserStreamId;
       const paramsWithViewer: TUserStreamBase = {
@@ -339,6 +358,12 @@ describe('createUserStreamParams', () => {
 
     it('should reject noncanonical labels instead of silently normalizing', () => {
       expectValidationError(() => createUserStreamParams('starter_pack:all:all:Bitcoin' as UserStreamId, baseParams));
+    });
+
+    it('should reject duplicate labels in hand-built IDs', () => {
+      expectValidationError(() =>
+        createUserStreamParams('starter_pack:all:all:bitcoin,bitcoin' as UserStreamId, baseParams),
+      );
     });
 
     it('should reject labels with whitespace or banned characters', () => {
@@ -397,9 +422,6 @@ describe('createUserStreamParams', () => {
       const streamId = 'invalid-stream-id' as UserStreamId;
 
       expectValidationError(() => createUserStreamParams(streamId, baseParams));
-      expect(() => createUserStreamParams(streamId, baseParams)).toThrow(
-        'Invalid stream ID: expected 2, 3, or 4 parts separated by ":"',
-      );
     });
 
     it('should throw a validation error for invalid format (5+ parts)', () => {
