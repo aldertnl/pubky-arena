@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ValidationErrorCode } from '@/libs/error/error.codes';
+import { ErrorCategory } from '@/libs/error/error.types';
 import type { Pubky } from '@/models/models.types';
 import { buildUserCompositeId } from '@/models/stream/user/userStream.helper';
 import { type UserStreamId, UserStreamTypes } from '@/models/stream/user/userStream.types';
@@ -496,6 +498,20 @@ describe('NexusUserStreamService.fetch', () => {
       expect(url).toContain('source=starter_pack');
       expect(url).toContain('tags=bitcoin%2Cmusic');
       expect(url).toContain('viewer_id=viewer-abc');
+    });
+
+    it('should reject unsupported runtime sources without querying Nexus', async () => {
+      await expect(
+        NexusUserStreamService.fetch({
+          streamId: 'unsupported:all:all' as UserStreamId,
+          params: { skip: 0, limit: 10 },
+        }),
+      ).rejects.toMatchObject({
+        category: ErrorCategory.Validation,
+        code: ValidationErrorCode.INVALID_INPUT,
+      });
+
+      expect(queryNexus).not.toHaveBeenCalled();
     });
   });
 

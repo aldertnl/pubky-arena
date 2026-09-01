@@ -11,7 +11,8 @@ import { Typography } from '@/atoms/Typography/Typography';
 import { STARTER_PACK_MAX_TAGS } from '@/config/nexus';
 import { ONBOARDING_INTERESTS_SUGGESTED_COUNT } from '@/config/tags';
 import { useHotTags } from '@/hooks/useHotTags/useHotTags';
-import { canonicalizeInterestTag, useInterestTags } from '@/hooks/useInterestTags/useInterestTags';
+import { useInterestTags } from '@/hooks/useInterestTags/useInterestTags';
+import { canonicalizeTagLabel } from '@/libs/utils/utils';
 import { PostTag } from '@/molecules/PostTag/PostTag';
 import { ProfileNavigation } from '@/molecules/ProfileNavigation/ProfileNavigation';
 import { TagInput } from '@/molecules/TagInput/TagInput';
@@ -36,7 +37,7 @@ export const TagsOfInterestForm = () => {
     setInterestTags(selectedTags);
   }, [selectedTags, setInterestTags]);
 
-  const popularLabels = new Set(popularTags.map((tag) => canonicalizeInterestTag(tag.name)));
+  const popularLabels = new Set(popularTags.map((tag) => canonicalizeTagLabel(tag.name)));
   const selectedPopularCount = selectedTags.filter((tag) => popularLabels.has(tag)).length;
   const customTags = selectedTags.filter((tag) => !popularLabels.has(tag));
 
@@ -85,7 +86,7 @@ export const TagsOfInterestForm = () => {
                   // At the cap only unselected chips lock; selected chips stay interactive for deselection
                   disabled={isAtLimit && !selected}
                   onClick={() => toggleTag(tag.name)}
-                  data-testid={`popular-tag-${canonicalizeInterestTag(tag.name)}`}
+                  data-testid={`popular-tag-${canonicalizeTagLabel(tag.name)}`}
                 />
               );
             })}

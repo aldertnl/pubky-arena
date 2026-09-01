@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AppError } from '@/libs/error/error';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
-import { ErrorCategory } from '@/libs/error/error.types';
+import { ErrorCategory, ErrorService } from '@/libs/error/error.types';
 import { buildStarterPackStreamId, USER_STREAM_TAG_DELIMITER } from './userStream.helper';
 
 const expectValidationError = (fn: () => unknown) => {
@@ -13,6 +13,7 @@ const expectValidationError = (fn: () => unknown) => {
     const appError = error as AppError;
     expect(appError.category).toBe(ErrorCategory.Validation);
     expect(appError.code).toBe(ValidationErrorCode.INVALID_INPUT);
+    expect(appError.service).toBe(ErrorService.Local);
   }
 };
 
@@ -37,6 +38,16 @@ describe('buildStarterPackStreamId', () => {
 
       expect(fromMixedCase).toBe(fromCanonical);
       expect(fromMixedCase).toBe('starter_pack:all:all:bitcoin,music');
+    });
+
+    it('should deduplicate canonical labels while preserving first-seen order', () => {
+      expect(buildStarterPackStreamId(['Bitcoin ', 'music', 'bitcoin', 'MUSIC', 'art'])).toBe(
+        'starter_pack:all:all:bitcoin,music,art',
+      );
+    });
+
+    it('should enforce the tag cap after canonical duplicates are removed', () => {
+      expect(buildStarterPackStreamId(['a', 'A', 'b', 'B', 'c', 'C'])).toBe('starter_pack:all:all:a,b,c');
     });
 
     it('should accept the maximum of 5 tags', () => {
@@ -81,7 +92,7 @@ describe('buildStarterPackStreamId', () => {
     });
 
     it('should accept a label at exactly 20 chars', () => {
-      expect(buildStarterPackStreamId(['a'.repeat(20)])).toContain(`:${'a'.repeat(20)}`);
+      expect(buildStarterPackStreamId(['a'.repeat(20)])).toBe(`starter_pack:all:all:${'a'.repeat(20)}`);
     });
   });
 });

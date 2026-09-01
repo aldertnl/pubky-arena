@@ -2,13 +2,8 @@
 
 import { useState } from 'react';
 import { STARTER_PACK_MAX_TAGS } from '@/config/nexus';
-import { isValidTagLabel } from '@/libs/utils/utils';
+import { canonicalizeTagLabel, isValidTagLabel } from '@/libs/utils/utils';
 import type { UseInterestTagsResult } from './useInterestTags.types';
-
-/** Canonical form shared with starter pack stream IDs: trimmed + lowercase. */
-export function canonicalizeInterestTag(raw: string): string {
-  return raw.trim().toLowerCase();
-}
 
 /**
  * Restores a previously persisted selection while re-enforcing the selection invariants
@@ -18,7 +13,7 @@ export function canonicalizeInterestTag(raw: string): string {
 function sanitizeInterestTags(tags: string[]): string[] {
   const sanitized: string[] = [];
   for (const raw of tags) {
-    const tag = canonicalizeInterestTag(raw);
+    const tag = canonicalizeTagLabel(raw);
     if (!isValidTagLabel(tag) || sanitized.includes(tag)) continue;
     sanitized.push(tag);
     if (sanitized.length >= STARTER_PACK_MAX_TAGS) break;
@@ -40,16 +35,16 @@ export function useInterestTags(initialTags?: string[]): UseInterestTagsResult {
 
   const isAtLimit = selectedTags.length >= STARTER_PACK_MAX_TAGS;
 
-  const isSelected = (raw: string): boolean => selectedTags.includes(canonicalizeInterestTag(raw));
+  const isSelected = (raw: string): boolean => selectedTags.includes(canonicalizeTagLabel(raw));
 
   const addTag = (raw: string): void => {
-    const tag = canonicalizeInterestTag(raw);
+    const tag = canonicalizeTagLabel(raw);
     if (!isValidTagLabel(tag)) return;
     setSelectedTags((prev) => (prev.includes(tag) || prev.length >= STARTER_PACK_MAX_TAGS ? prev : [...prev, tag]));
   };
 
   const removeTag = (raw: string): void => {
-    const tag = canonicalizeInterestTag(raw);
+    const tag = canonicalizeTagLabel(raw);
     setSelectedTags((prev) => prev.filter((t) => t !== tag));
   };
 

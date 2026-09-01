@@ -55,7 +55,7 @@ export class NexusUserStreamService {
         const exhaustiveCheck: never = reach;
         throw Err.validation(
           ValidationErrorCode.INVALID_INPUT,
-          `Unsupported user stream reach: ${String(exhaustiveCheck)}`,
+          `Unsupported user stream source: ${String(exhaustiveCheck)}`,
           {
             service: ErrorService.Nexus,
             operation: 'fetch',
