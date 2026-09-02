@@ -8,10 +8,12 @@ import { useOnboardingStore } from '@/stores/onboarding/onboarding.store';
 import { useStarterPackSuggestions } from './useStarterPackSuggestions';
 
 const mockToggleFollow = vi.fn();
+let mockFollowIsLoading = false;
 vi.mock('@/hooks/useFollowUser/useFollowUser', () => ({
   useFollowUser: () => ({
     toggleFollow: mockToggleFollow,
     isUserLoading: () => false,
+    isLoading: mockFollowIsLoading,
   }),
 }));
 
@@ -52,6 +54,7 @@ describe('useStarterPackSuggestions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockToggleFollow.mockResolvedValue(true);
+    mockFollowIsLoading = false;
     useOnboardingStore.setState({ hasHydrated: true, interestTags: [] });
     mockStream([]);
   });
@@ -120,6 +123,14 @@ describe('useStarterPackSuggestions', () => {
     expect(vi.mocked(useUserStream)).toHaveBeenLastCalledWith(
       expect.objectContaining({ preserveFollowedUserIds: ['a', 'b'] }),
     );
+  });
+
+  it('surfaces whether a per-card follow is still committing', () => {
+    mockFollowIsLoading = true;
+
+    const { result } = renderHook(() => useStarterPackSuggestions());
+
+    expect(result.current.isFollowPending).toBe(true);
   });
 
   it('surfaces loading and error state from the stream', () => {

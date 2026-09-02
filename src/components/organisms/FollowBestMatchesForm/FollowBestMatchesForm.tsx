@@ -32,11 +32,16 @@ export const FollowBestMatchesForm = () => {
     error,
     handleFollowClick,
     isUserLoading,
+    isFollowPending,
     preserveFollowedUser,
   } = useStarterPackSuggestions();
   const { followAll, isRunning: isFollowingAll, progress } = useFollowAll({ onFollowed: preserveFollowedUser });
 
   const showFollowAll = !isLoading && (unfollowedUsers.length > 0 || isFollowingAll);
+  // Finish decides the landing feed from `followedCount`, which is derived from the relationships
+  // live query and only updates once a follow's local write lands. Lock navigation while any
+  // follow (single card or Follow all) is in flight so Finish never reads a stale count.
+  const isNavigationLocked = isFollowingAll || isFollowPending;
 
   const handleFollowAll = () => {
     void followAll(unfollowedUsers.map(({ id, isFollowing }) => ({ id, isFollowing })));
@@ -138,8 +143,8 @@ export const FollowBestMatchesForm = () => {
         className="onboarding-nav mt-auto flex-col sm:flex-row lg:pt-0"
         backText={'Back'}
         onHandleBackButton={handleBack}
-        backButtonDisabled={isFollowingAll}
-        continueButtonDisabled={isFollowingAll}
+        backButtonDisabled={isNavigationLocked}
+        continueButtonDisabled={isNavigationLocked}
         continueText={'Finish'}
         onContinue={handleFinish}
       />

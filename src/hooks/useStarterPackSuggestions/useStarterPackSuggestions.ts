@@ -23,7 +23,7 @@ export function useStarterPackSuggestions(): UseStarterPackSuggestionsResult {
   const interestTags = useOnboardingStore((state) => state.interestTags);
   const streamId = resolveSuggestionsStreamId(interestTags);
 
-  const { preservedFollowedUserIds, handleFollowClick, isUserLoading, preserveFollowedUser } =
+  const { preservedFollowedUserIds, handleFollowClick, isUserLoading, isFollowPending, preserveFollowedUser } =
     useWhoToFollowFollowPreservation({ resetKey: streamId });
 
   const { users, isLoading, error } = useUserStream({
@@ -52,6 +52,7 @@ export function useStarterPackSuggestions(): UseStarterPackSuggestionsResult {
     error,
     handleFollowClick,
     isUserLoading,
+    isFollowPending,
     preserveFollowedUser,
   };
 }

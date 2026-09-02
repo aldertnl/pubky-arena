@@ -18,6 +18,8 @@ export interface UseStarterPackSuggestionsResult {
   /** Per-card follow toggle with optimistic list preservation */
   handleFollowClick: (userId: Pubky, isCurrentlyFollowing: boolean, displayName: string) => Promise<void>;
   isUserLoading: (userId: Pubky) => boolean;
+  /** True while a per-card follow is still committing; `followedCount` lags until it clears */
+  isFollowPending: boolean;
   /** Keep a user visible after a follow committed outside `handleFollowClick` */
   preserveFollowedUser: (userId: Pubky) => void;
 }

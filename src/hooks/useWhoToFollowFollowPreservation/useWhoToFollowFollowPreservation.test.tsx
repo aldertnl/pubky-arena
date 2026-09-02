@@ -4,11 +4,13 @@ import { useWhoToFollowFollowPreservation } from './useWhoToFollowFollowPreserva
 
 const mockToggleFollow = vi.fn();
 const mockIsUserLoading = vi.fn(() => false);
+let mockIsLoading = false;
 
 vi.mock('@/hooks/useFollowUser/useFollowUser', () => ({
   useFollowUser: () => ({
     toggleFollow: mockToggleFollow,
     isUserLoading: mockIsUserLoading,
+    isLoading: mockIsLoading,
   }),
 }));
 
@@ -17,6 +19,7 @@ describe('useWhoToFollowFollowPreservation', () => {
     vi.clearAllMocks();
     mockToggleFollow.mockResolvedValue(true);
     mockIsUserLoading.mockReturnValue(false);
+    mockIsLoading = false;
   });
 
   it('preserves newly followed users before the follow request resolves', async () => {
@@ -92,5 +95,15 @@ describe('useWhoToFollowFollowPreservation', () => {
     const { result } = renderHook(() => useWhoToFollowFollowPreservation());
 
     expect(result.current.isUserLoading('user-1')).toBe(true);
+  });
+
+  it('exposes whether any follow is still committing', () => {
+    const { result, rerender } = renderHook(() => useWhoToFollowFollowPreservation());
+    expect(result.current.isFollowPending).toBe(false);
+
+    mockIsLoading = true;
+    rerender();
+
+    expect(result.current.isFollowPending).toBe(true);
   });
 });

@@ -51,7 +51,7 @@ function makeUser(id: string, overrides: Partial<SuggestedUser> = {}): Suggested
 }
 
 const mockHandleFollowClick = vi.fn();
-const mockIsUserLoading = vi.fn(() => false);
+const mockIsUserLoading = vi.fn((_userId: string) => false);
 const mockPreserveFollowedUser = vi.fn();
 const mockFollowAll = vi.fn();
 
@@ -68,6 +68,7 @@ function mockSuggestions(
     error: null,
     handleFollowClick: mockHandleFollowClick,
     isUserLoading: mockIsUserLoading,
+    isFollowPending: false,
     preserveFollowedUser: mockPreserveFollowedUser,
     ...overrides,
   });
@@ -171,6 +172,21 @@ describe('FollowBestMatchesForm', () => {
     expect(screen.getByRole('button', { name: /finish/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /back/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Follow User a' })).toBeDisabled();
+  });
+
+  it('locks Back and Finish while a per-card follow is still committing', () => {
+    // Finish reads `followedCount`, which lags the click until the local follow write lands;
+    // navigating during that window would decide the landing feed from a stale count.
+    mockSuggestions([makeUser('a'), makeUser('b')], { isFollowPending: true });
+    mockIsUserLoading.mockImplementation((id: string) => id === 'a');
+
+    render(<FollowBestMatchesForm />);
+
+    expect(screen.getByRole('button', { name: /finish/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /back/i })).toBeDisabled();
+    // Follow all stays available: it has its own lock and other cards are still actionable
+    expect(screen.getByTestId('follow-all-btn')).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Follow User b' })).not.toBeDisabled();
   });
 
   it('forwards per-card follow clicks to the preservation-aware handler', () => {
