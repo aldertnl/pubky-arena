@@ -8,12 +8,10 @@ import { useOnboardingStore } from '@/stores/onboarding/onboarding.store';
 import { useStarterPackSuggestions } from './useStarterPackSuggestions';
 
 const mockToggleFollow = vi.fn();
-let mockFollowIsLoading = false;
 vi.mock('@/hooks/useFollowUser/useFollowUser', () => ({
   useFollowUser: () => ({
     toggleFollow: mockToggleFollow,
     isUserLoading: () => false,
-    isLoading: mockFollowIsLoading,
   }),
 }));
 
@@ -54,7 +52,6 @@ describe('useStarterPackSuggestions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockToggleFollow.mockResolvedValue(true);
-    mockFollowIsLoading = false;
     useOnboardingStore.setState({ hasHydrated: true, interestTags: [] });
     mockStream([]);
   });
@@ -125,12 +122,26 @@ describe('useStarterPackSuggestions', () => {
     );
   });
 
-  it('surfaces whether a per-card follow is still committing', () => {
-    mockFollowIsLoading = true;
-
+  it('surfaces whether a per-card follow is still committing', async () => {
+    let resolveFollow!: (ok: boolean) => void;
+    mockToggleFollow.mockReturnValue(
+      new Promise<boolean>((res) => {
+        resolveFollow = res;
+      }),
+    );
+    mockStream([makeUser('a')]);
     const { result } = renderHook(() => useStarterPackSuggestions());
+    expect(result.current.isFollowPending).toBe(false);
 
+    act(() => {
+      void result.current.handleFollowClick('a', false, 'User a');
+    });
     expect(result.current.isFollowPending).toBe(true);
+
+    await act(async () => {
+      resolveFollow(true);
+    });
+    expect(result.current.isFollowPending).toBe(false);
   });
 
   it('surfaces loading and error state from the stream', () => {

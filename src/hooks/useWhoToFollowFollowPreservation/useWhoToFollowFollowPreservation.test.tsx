@@ -4,22 +4,27 @@ import { useWhoToFollowFollowPreservation } from './useWhoToFollowFollowPreserva
 
 const mockToggleFollow = vi.fn();
 const mockIsUserLoading = vi.fn(() => false);
-let mockIsLoading = false;
 
 vi.mock('@/hooks/useFollowUser/useFollowUser', () => ({
   useFollowUser: () => ({
     toggleFollow: mockToggleFollow,
     isUserLoading: mockIsUserLoading,
-    isLoading: mockIsLoading,
   }),
 }));
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
 
 describe('useWhoToFollowFollowPreservation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockToggleFollow.mockResolvedValue(true);
     mockIsUserLoading.mockReturnValue(false);
-    mockIsLoading = false;
   });
 
   it('preserves newly followed users before the follow request resolves', async () => {
@@ -97,13 +102,58 @@ describe('useWhoToFollowFollowPreservation', () => {
     expect(result.current.isUserLoading('user-1')).toBe(true);
   });
 
-  it('exposes whether any follow is still committing', () => {
-    const { result, rerender } = renderHook(() => useWhoToFollowFollowPreservation());
+  it('reports a pending follow until it settles', async () => {
+    const follow = deferred<boolean>();
+    mockToggleFollow.mockReturnValue(follow.promise);
+    const { result } = renderHook(() => useWhoToFollowFollowPreservation());
     expect(result.current.isFollowPending).toBe(false);
 
-    mockIsLoading = true;
-    rerender();
-
+    act(() => {
+      void result.current.handleFollowClick('user-1', false, 'User One');
+    });
     expect(result.current.isFollowPending).toBe(true);
+
+    await act(async () => {
+      follow.resolve(true);
+      await follow.promise;
+    });
+    expect(result.current.isFollowPending).toBe(false);
+  });
+
+  it('stays pending until every concurrent follow settles', async () => {
+    const first = deferred<boolean>();
+    const second = deferred<boolean>();
+    mockToggleFollow.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    const { result } = renderHook(() => useWhoToFollowFollowPreservation());
+
+    act(() => {
+      void result.current.handleFollowClick('user-1', false, 'User One');
+      void result.current.handleFollowClick('user-2', false, 'User Two');
+    });
+    expect(result.current.isFollowPending).toBe(true);
+
+    await act(async () => {
+      first.resolve(true);
+      await first.promise;
+    });
+    // The second follow is still writing; a shared boolean would already have flipped here
+    expect(result.current.isFollowPending).toBe(true);
+
+    await act(async () => {
+      second.resolve(true);
+      await second.promise;
+    });
+    expect(result.current.isFollowPending).toBe(false);
+  });
+
+  it('clears pending when a follow fails', async () => {
+    mockToggleFollow.mockResolvedValue(false);
+    const { result } = renderHook(() => useWhoToFollowFollowPreservation());
+
+    await act(async () => {
+      await result.current.handleFollowClick('user-1', false, 'User One');
+    });
+
+    expect(result.current.isFollowPending).toBe(false);
   });
 });
