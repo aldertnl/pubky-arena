@@ -9,6 +9,7 @@ import { useCurrentUserProfile } from '@/hooks/useCurrentUserProfile/useCurrentU
 import { ServerErrorCode } from '@/libs/error/error.codes';
 import { Err } from '@/libs/error/error.factories';
 import { ErrorService } from '@/libs/error/error.types';
+import { toast } from '@/molecules/Toaster/toast';
 import { UserValidator } from '@/pipes/user/user.validator';
 import { useAuthStore } from '@/stores/auth/auth.store';
 import { useOnboardingStore } from '@/stores/onboarding/onboarding.store';
@@ -107,9 +108,8 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
-const { mockCropImageToBlob, mockToast } = vi.hoisted(() => ({
+const { mockCropImageToBlob } = vi.hoisted(() => ({
   mockCropImageToBlob: vi.fn(async () => new Blob(['cropped-image'], { type: 'image/png' })),
-  mockToast: vi.fn(),
 }));
 
 vi.mock('@/libs/image/cropImage', async () => {
@@ -382,13 +382,7 @@ vi.mock('@/molecules/ProfileNavigation/ProfileNavigation', () => {
   };
 });
 
-vi.mock('@/molecules/Toaster/use-toast', () => {
-  return {
-    useToast: () => ({
-      toast: mockToast,
-    }),
-  };
-});
+vi.mock('@/molecules/Toaster/toast');
 
 vi.mock('@/organisms/DialogAddLink/DialogAddLink', () => {
   return {
@@ -481,7 +475,7 @@ describe('CreateProfileForm', () => {
 
     // Reset all mock functions
     mockPush.mockReset();
-    mockToast.mockReset();
+    vi.mocked(toast).mockReset();
     vi.mocked(FileController.commitCreate).mockReset();
     vi.mocked(ProfileController.commitCreate).mockReset();
     vi.mocked(ProfileController.commitUpdate).mockReset();
