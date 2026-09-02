@@ -821,7 +821,7 @@ describe('CreateProfileForm', () => {
       render(<CreateProfileForm />);
       const continueButton = screen.getByTestId('continue-button');
       expect(continueButton).toBeInTheDocument();
-      expect(continueButton).toHaveTextContent('Finish');
+      expect(continueButton).toHaveTextContent('Continue');
     });
 
     it('should have form fields available', () => {
@@ -1091,7 +1091,7 @@ describe('CreateProfileForm', () => {
       });
 
       const continueButton = screen.getByTestId('continue-button');
-      expect(continueButton).toHaveTextContent('Save Profile');
+      expect(continueButton).toHaveTextContent('Continue');
     });
 
     it('renders the loading skeleton instead of the interactive form until the profile arrives', () => {
@@ -1124,10 +1124,29 @@ describe('CreateProfileForm', () => {
       expect(ProfileController.commitCreate).not.toHaveBeenCalled();
     });
 
-    it('submits via commitUpdate (not commitCreate) and returns to the tags step', async () => {
+    it('continues without saving or showing a toast when the profile is unchanged', async () => {
+      render(<CreateProfileForm />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('molecules-input')[0]).toHaveValue('Existing Name');
+      });
+
+      fireEvent.click(screen.getByTestId('continue-button'));
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith(ONBOARDING_ROUTES.TAGS);
+      });
+
+      expect(ProfileController.commitUpdate).not.toHaveBeenCalled();
+      expect(ProfileController.commitCreate).not.toHaveBeenCalled();
+      expect(AuthController.bootstrapWithDelay).not.toHaveBeenCalled();
+      expect(toast).not.toHaveBeenCalled();
+    });
+
+    it('submits a changed profile via commitUpdate and returns to the tags step', async () => {
       vi.mocked(UserValidator.check).mockReturnValue({
         data: {
-          name: 'Existing Name',
+          name: 'Updated Name',
           bio: 'Existing bio',
           links: [],
         },
@@ -1140,6 +1159,8 @@ describe('CreateProfileForm', () => {
       await waitFor(() => {
         expect(screen.getAllByTestId('molecules-input')[0]).toHaveValue('Existing Name');
       });
+
+      fireEvent.change(screen.getAllByTestId('molecules-input')[0], { target: { value: 'Updated Name' } });
 
       fireEvent.click(screen.getByTestId('continue-button'));
 

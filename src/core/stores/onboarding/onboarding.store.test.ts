@@ -60,6 +60,24 @@ describe('OnboardingStore', () => {
   });
 
   describe('State Management', () => {
+    it('clears completion only for the deleted profile', () => {
+      const firstPubky = 'first-pubky';
+      const secondPubky = 'second-pubky';
+
+      useOnboardingStore.getState().markExperienceCompleted(firstPubky);
+      useOnboardingStore.getState().markExperienceCompleted(secondPubky);
+      useOnboardingStore.getState().clearExperienceCompleted(firstPubky);
+
+      expect(useOnboardingStore.getState().experienceCompletedByPubky).toEqual({ [secondPubky]: true });
+    });
+
+    it('leaves existing completion entries intact when clearing an unknown profile', () => {
+      useOnboardingStore.getState().markExperienceCompleted('known-pubky');
+      useOnboardingStore.getState().clearExperienceCompleted('unknown-pubky');
+
+      expect(useOnboardingStore.getState().experienceCompletedByPubky).toEqual({ 'known-pubky': true });
+    });
+
     it('should clear keys correctly while preserving hydration state', () => {
       const mockSecrets = createMockSecrets();
       // Set some state

@@ -16,6 +16,7 @@ import { safeExternalUrlSchema } from '@/libs/utils/safeExternalUrl';
 import { generateRandomUsername } from '@/libs/utils/utils';
 import { toast } from '@/molecules/Toaster/toast';
 import { UserValidator } from '@/pipes/user/user.validator';
+import type { NexusUserDetails } from '@/services/nexus/nexus.types';
 import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
 import {
   PROFILE_SUBMIT_TEXT,
@@ -40,12 +41,29 @@ const bioSchema = z
   .trim()
   .max(USER_BIO_MAX_LENGTH, `Bio must be no more than ${USER_BIO_MAX_LENGTH} characters`);
 
+function getProfileFormLinks(userDetails: NexusUserDetails): ProfileLink[] {
+  const formattedLinks = (userDetails.links ?? []).map((link) => ({
+    label: link.title.toUpperCase(),
+    url: link.url,
+  }));
+  return formattedLinks.length > 0 ? formattedLinks : DEFAULT_LINKS;
+}
+
+function areProfileLinksEqual(left: ProfileLink[], right: ProfileLink[]): boolean {
+  return (
+    left.length === right.length &&
+    left.every((link, index) => link.label === right[index]?.label && link.url === right[index]?.url)
+  );
+}
+
 export function useProfileForm(props: UseProfileFormProps): UseProfileFormReturn {
   const { mode, pubky } = props;
   // Extract userDetails for edit mode to avoid object reference issues in useEffect
   const userDetails = props.mode === 'edit' ? props.userDetails : undefined;
   const editRedirectTo = props.mode === 'edit' ? props.redirectTo : undefined;
   const setShowWelcomeDialog = props.mode === 'create' ? props.setShowWelcomeDialog : undefined;
+  const idleSubmitText =
+    mode === 'create' || editRedirectTo ? PROFILE_SUBMIT_TEXT.continue : PROFILE_SUBMIT_TEXT.saveProfile;
 
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -61,9 +79,7 @@ export function useProfileForm(props: UseProfileFormProps): UseProfileFormReturn
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(mode === 'edit');
-  const [submitText, setSubmitText] = useState<SubmitText>(
-    mode === 'create' ? PROFILE_SUBMIT_TEXT.finish : PROFILE_SUBMIT_TEXT.saveProfile,
-  );
+  const [submitText, setSubmitText] = useState<SubmitText>(idleSubmitText);
 
   // Edit mode specific state
   const [originalAvatarUrl, setOriginalAvatarUrl] = useState<string | null>(null);
@@ -87,12 +103,7 @@ export function useProfileForm(props: UseProfileFormProps): UseProfileFormReturn
       setBio(userDetails.bio || '');
 
       // Convert links from NexusUserLink format to form format
-      const formattedLinks = (userDetails.links ?? []).map((link) => ({
-        label: link.title.toUpperCase(),
-        url: link.url,
-      }));
-
-      setLinks(formattedLinks.length > 0 ? formattedLinks : DEFAULT_LINKS);
+      setLinks(getProfileFormLinks(userDetails));
 
       // Set avatar if exists
       // Note: We intentionally don't use the local store's blob URL here because:
@@ -111,6 +122,15 @@ export function useProfileForm(props: UseProfileFormProps): UseProfileFormReturn
       setIsLoading(false);
     }
   }, [mode, userDetails, pubky]);
+
+  const isEditProfileDirty =
+    mode === 'edit' &&
+    userDetails !== undefined &&
+    userDetails !== null &&
+    (name !== (userDetails.name || '') ||
+      bio !== (userDetails.bio || '') ||
+      !areProfileLinksEqual(links, getProfileFormLinks(userDetails)) ||
+      avatarChanged);
 
   // Cleanup blob URLs on unmount
   useEffect(() => {
@@ -276,13 +296,18 @@ export function useProfileForm(props: UseProfileFormProps): UseProfileFormReturn
   const handleSubmit = useCallback(async () => {
     if (!pubky) return;
 
+    if (mode === 'edit' && editRedirectTo && !isEditProfileDirty) {
+      router.push(editRedirectTo);
+      return;
+    }
+
     setIsSaving(true);
     setSubmitText(PROFILE_SUBMIT_TEXT.saving);
 
     try {
       const user = validateUser();
       if (!user) {
-        setSubmitText(mode === 'create' ? PROFILE_SUBMIT_TEXT.finish : PROFILE_SUBMIT_TEXT.saveProfile);
+        setSubmitText(idleSubmitText);
         return;
       }
 
@@ -406,6 +431,8 @@ export function useProfileForm(props: UseProfileFormProps): UseProfileFormReturn
     originalAvatarUrl,
     userDetails,
     editRedirectTo,
+    idleSubmitText,
+    isEditProfileDirty,
     setShowWelcomeDialog,
     router,
   ]);

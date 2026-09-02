@@ -8,16 +8,17 @@ import { Card } from '@/atoms/Card/Card';
 import { Container } from '@/atoms/Container/Container';
 import { Heading } from '@/atoms/Heading/Heading';
 import { Typography } from '@/atoms/Typography/Typography';
-import { STARTER_PACK_MAX_TAGS } from '@/config/nexus';
+import { STARTER_PACK_MAX_TAGS, STARTER_PACK_RESERVED_TAGS } from '@/config/nexus';
 import { ONBOARDING_INTERESTS_SUGGESTED_COUNT } from '@/config/tags';
 import { useHotTags } from '@/hooks/useHotTags/useHotTags';
 import { useInterestTags } from '@/hooks/useInterestTags/useInterestTags';
-import { canonicalizeTagLabel } from '@/libs/utils/utils';
+import { canonicalizeTagLabel, isStarterPackReservedTag } from '@/libs/utils/utils';
 import { PostTag } from '@/molecules/PostTag/PostTag';
 import { ProfileNavigation } from '@/molecules/ProfileNavigation/ProfileNavigation';
 import { TagInput } from '@/molecules/TagInput/TagInput';
 import { useAuthStore } from '@/stores/auth/auth.store';
 import { useOnboardingStore } from '@/stores/onboarding/onboarding.store';
+import { PopularInterestTagsSkeleton } from './TagsOfInterestForm.skeleton';
 
 export const TagsOfInterestForm = () => {
   const router = useRouter();
@@ -25,7 +26,10 @@ export const TagsOfInterestForm = () => {
   const setInterestTags = useOnboardingStore((state) => state.setInterestTags);
   const markExperienceCompleted = useOnboardingStore((state) => state.markExperienceCompleted);
 
-  const { tags: popularTags } = useHotTags({ limit: ONBOARDING_INTERESTS_SUGGESTED_COUNT });
+  const { tags: fetchedPopularTags, isLoading: arePopularTagsLoading } = useHotTags({
+    limit: ONBOARDING_INTERESTS_SUGGESTED_COUNT,
+  });
+  const popularTags = fetchedPopularTags.filter((tag) => !isStarterPackReservedTag(tag.name));
   // Seed from the persisted selection (frozen at mount) so a round trip to the profile
   // step — Back button or browser back — restores the tags and their order.
   const [initialTags] = useState(() => useOnboardingStore.getState().interestTags);
@@ -39,7 +43,7 @@ export const TagsOfInterestForm = () => {
 
   const popularLabels = new Set(popularTags.map((tag) => canonicalizeTagLabel(tag.name)));
   const selectedPopularCount = selectedTags.filter((tag) => popularLabels.has(tag)).length;
-  const customTags = selectedTags.filter((tag) => !popularLabels.has(tag));
+  const customTags = arePopularTagsLoading ? [] : selectedTags.filter((tag) => !popularLabels.has(tag));
 
   const handleContinue = () => {
     // Selection is already persisted by the sync effect above.
@@ -49,7 +53,7 @@ export const TagsOfInterestForm = () => {
     if (pubky) {
       markExperienceCompleted(pubky);
     }
-    router.push(APP_ROUTES.HOME);
+    router.replace(APP_ROUTES.HOME);
   };
 
   const handleBack = () => {
@@ -69,28 +73,38 @@ export const TagsOfInterestForm = () => {
           <Container className="gap-3">
             <Heading level={3} size="xl" className="text-2xl">
               {'Popular interests'}
-              <span className="font-normal text-muted-foreground">{` (${selectedPopularCount} selected)`}</span>
+              {!arePopularTagsLoading && (
+                <span className="font-normal text-muted-foreground">{` (${selectedPopularCount} selected)`}</span>
+              )}
             </Heading>
             <Typography size="sm" className="font-normal text-muted-foreground">
               {'Select which topics you find interesting.'}
             </Typography>
           </Container>
-          <Container overrideDefaults className="flex flex-row flex-wrap content-start gap-2">
-            {popularTags.map((tag) => {
-              const selected = isSelected(tag.name);
-              return (
-                <PostTag
-                  key={tag.name}
-                  label={tag.name}
-                  selected={selected}
-                  // At the cap only unselected chips lock; selected chips stay interactive for deselection
-                  disabled={isAtLimit && !selected}
-                  onClick={() => toggleTag(tag.name)}
-                  data-testid={`popular-tag-${canonicalizeTagLabel(tag.name)}`}
-                />
-              );
-            })}
-          </Container>
+          {arePopularTagsLoading ? (
+            <PopularInterestTagsSkeleton />
+          ) : popularTags.length === 0 ? (
+            <Typography size="sm" className="font-normal text-muted-foreground" data-testid="popular-interests-empty">
+              {'Popular interests are unavailable. You can still add your own.'}
+            </Typography>
+          ) : (
+            <Container overrideDefaults className="flex flex-row flex-wrap content-start gap-2">
+              {popularTags.map((tag) => {
+                const selected = isSelected(tag.name);
+                return (
+                  <PostTag
+                    key={tag.name}
+                    label={tag.name}
+                    selected={selected}
+                    // At the cap only unselected chips lock; selected chips stay interactive for deselection
+                    disabled={isAtLimit && !selected}
+                    onClick={() => toggleTag(tag.name)}
+                    data-testid={`popular-tag-${canonicalizeTagLabel(tag.name)}`}
+                  />
+                );
+              })}
+            </Container>
+          )}
         </Container>
 
         {/* Your Interests Section */}
@@ -107,13 +121,14 @@ export const TagsOfInterestForm = () => {
             <TagInput
               onTagAdd={addTag}
               placeholder={'add tag'}
-              existingTags={selectedTags.map((label) => ({ label }))}
+              viewerTags={selectedTags.map((label) => ({ label }))}
               maxTags={STARTER_PACK_MAX_TAGS}
               currentTagsCount={selectedTags.length}
               limitReachedPlaceholder={`${STARTER_PACK_MAX_TAGS} tags max`}
+              clearOnLimitReached
               showEmojiButton={!isAtLimit}
               enableApiSuggestions
-              excludeFromApiSuggestions={selectedTags}
+              excludeFromApiSuggestions={[...selectedTags, ...STARTER_PACK_RESERVED_TAGS]}
               addOnSuggestionClick
               containerVariant="dashed"
             />

@@ -52,6 +52,16 @@ describe('useInterestTags', () => {
     expect(result.current.selectedTags).toEqual([]);
   });
 
+  it('rejects Nexus-reserved starter-pack labels but keeps ordinary moderation labels valid', () => {
+    const { result } = renderHook(() => useInterestTags());
+
+    act(() => result.current.addTag(' HateSpeech '));
+    act(() => result.current.addTag('harassement'));
+    act(() => result.current.addTag('nudity'));
+
+    expect(result.current.selectedTags).toEqual(['nudity']);
+  });
+
   it(`caps the selection at STARTER_PACK_MAX_TAGS (${STARTER_PACK_MAX_TAGS})`, () => {
     const { result } = renderHook(() => useInterestTags());
 
@@ -129,7 +139,18 @@ describe('useInterestTags', () => {
 
     it('sanitizes the seed: canonicalizes, drops invalid labels, dedupes, and caps', () => {
       const { result } = renderHook(() =>
-        useInterestTags([' Bitcoin ', 'bitcoin', 'bad tag', 'a'.repeat(21), 't1', 't2', 't3', 't4', 't5']),
+        useInterestTags([
+          ' Bitcoin ',
+          'bitcoin',
+          'bad tag',
+          'hatespeech',
+          'a'.repeat(21),
+          't1',
+          't2',
+          't3',
+          't4',
+          't5',
+        ]),
       );
 
       expect(result.current.selectedTags).toEqual(['bitcoin', 't1', 't2', 't3', 't4']);

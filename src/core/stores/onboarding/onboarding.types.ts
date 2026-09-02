@@ -33,6 +33,7 @@ export interface OnboardingActions {
   setShowWelcomeDialog: (show: boolean) => void;
   setInterestTags: (interestTags: string[]) => void;
   markExperienceCompleted: (pubky: Pubky) => void;
+  clearExperienceCompleted: (pubky: Pubky) => void;
 }
 
 export interface OnboardingSelectors {
@@ -61,6 +62,7 @@ export enum OnboardingActionTypes {
   SET_INVITE_CODE = 'SET_INVITE_CODE',
   SET_INTEREST_TAGS = 'SET_INTEREST_TAGS',
   MARK_EXPERIENCE_COMPLETED = 'MARK_EXPERIENCE_COMPLETED',
+  CLEAR_EXPERIENCE_COMPLETED = 'CLEAR_EXPERIENCE_COMPLETED',
   SET_SECRET_KEY = 'SET_SECRET_KEY',
   SET_MNEMONIC = 'SET_MNEMONIC',
   SET_KEYPAIR_FROM_MNEMONIC = 'SET_KEYPAIR_FROM_MNEMONIC',

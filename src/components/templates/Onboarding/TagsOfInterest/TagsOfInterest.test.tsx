@@ -159,7 +159,10 @@ describe('TagsOfInterest', () => {
     const state = useOnboardingStore.getState();
     expect(state.interestTags).toEqual([]);
     expect(state.experienceCompletedByPubky[ACTIVE_PUBKY]).toBe(true);
-    expect(mockPush).toHaveBeenCalledWith(APP_ROUTES.HOME);
+    expect(mockReplace).toHaveBeenCalledTimes(1);
+    expect(mockReplace).toHaveBeenCalledWith(APP_ROUTES.HOME);
+    expect(mockPush).not.toHaveBeenCalledWith(APP_ROUTES.HOME);
+    expect(screen.getByTestId('tags-of-interest-content')).toBeInTheDocument();
   });
 
   it('persists the ordered selection and marks completion on Continue', () => {
@@ -174,7 +177,9 @@ describe('TagsOfInterest', () => {
     const state = useOnboardingStore.getState();
     expect(state.interestTags).toEqual(['music', 'satoshi', 'bitcoin']);
     expect(state.experienceCompletedByPubky[ACTIVE_PUBKY]).toBe(true);
-    expect(mockPush).toHaveBeenCalledWith(APP_ROUTES.HOME);
+    expect(mockReplace).toHaveBeenCalledTimes(1);
+    expect(mockReplace).toHaveBeenCalledWith(APP_ROUTES.HOME);
+    expect(mockPush).not.toHaveBeenCalledWith(APP_ROUTES.HOME);
   });
 
   it('navigates back to the profile step without completing', () => {

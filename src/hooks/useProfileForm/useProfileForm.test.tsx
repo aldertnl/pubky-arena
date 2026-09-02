@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ONBOARDING_ROUTES, PROFILE_ROUTES } from '@/app/routes';
 import { ProfileController } from '@/controllers/profile/profile';
+import { toast } from '@/molecules/Toaster/toast';
 import type { NexusUserDetails } from '@/services/nexus/nexus.types';
 import { useProfileForm } from './useProfileForm';
 
@@ -101,6 +102,8 @@ describe('useProfileForm post-save navigation', () => {
   it('redirects to the onboarding tags step after a successful create', async () => {
     const { result } = renderHook(() => useProfileForm({ mode: 'create', pubky, setShowWelcomeDialog: vi.fn() }));
 
+    expect(result.current.state.submitText).toBe('Continue');
+
     act(() => {
       result.current.handlers.setName('Valid User');
     });
@@ -117,6 +120,7 @@ describe('useProfileForm post-save navigation', () => {
     const { result } = renderHook(() => useProfileForm({ mode: 'edit', pubky, userDetails }));
 
     await waitFor(() => expect(result.current.state.isLoading).toBe(false));
+    expect(result.current.state.submitText).toBe('Save Profile');
 
     await act(async () => {
       await result.current.handlers.handleSubmit();
@@ -126,19 +130,40 @@ describe('useProfileForm post-save navigation', () => {
     expect(routerPush).toHaveBeenCalledWith(PROFILE_ROUTES.PROFILE);
   });
 
-  it('honors the edit-mode redirectTo override (onboarding profile revisit)', async () => {
+  it('continues without saving or showing a toast on a pristine onboarding profile revisit', async () => {
+    const { result } = renderHook(() =>
+      useProfileForm({ mode: 'edit', pubky, userDetails, redirectTo: ONBOARDING_ROUTES.TAGS }),
+    );
+
+    await waitFor(() => expect(result.current.state.isLoading).toBe(false));
+    expect(result.current.state.submitText).toBe('Continue');
+
+    await act(async () => {
+      await result.current.handlers.handleSubmit();
+    });
+
+    expect(ProfileController.commitUpdate).not.toHaveBeenCalled();
+    expect(ProfileController.commitCreate).not.toHaveBeenCalled();
+    expect(toast).not.toHaveBeenCalled();
+    expect(routerPush).toHaveBeenCalledWith(ONBOARDING_ROUTES.TAGS);
+  });
+
+  it('saves a dirty onboarding profile revisit before continuing', async () => {
     const { result } = renderHook(() =>
       useProfileForm({ mode: 'edit', pubky, userDetails, redirectTo: ONBOARDING_ROUTES.TAGS }),
     );
 
     await waitFor(() => expect(result.current.state.isLoading).toBe(false));
 
+    act(() => {
+      result.current.handlers.setBio('Updated bio');
+    });
+
     await act(async () => {
       await result.current.handlers.handleSubmit();
     });
 
     expect(ProfileController.commitUpdate).toHaveBeenCalled();
-    expect(ProfileController.commitCreate).not.toHaveBeenCalled();
     expect(routerPush).toHaveBeenCalledWith(ONBOARDING_ROUTES.TAGS);
   });
 });

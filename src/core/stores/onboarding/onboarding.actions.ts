@@ -56,4 +56,16 @@ export const createOnboardingActions = (set: ZustandSet<OnboardingStore>): Onboa
       OnboardingActionTypes.MARK_EXPERIENCE_COMPLETED,
     );
   },
+
+  clearExperienceCompleted: (pubky: Pubky) => {
+    set(
+      (state) => {
+        const experienceCompletedByPubky = { ...state.experienceCompletedByPubky };
+        delete experienceCompletedByPubky[pubky];
+        return { experienceCompletedByPubky };
+      },
+      false,
+      OnboardingActionTypes.CLEAR_EXPERIENCE_COMPLETED,
+    );
+  },
 });

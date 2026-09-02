@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { STARTER_PACK_MAX_TAGS } from '@/config/nexus';
-import { canonicalizeTagLabel, isValidTagLabel } from '@/libs/utils/utils';
+import { canonicalizeTagLabel, isStarterPackReservedTag, isValidTagLabel } from '@/libs/utils/utils';
 import type { UseInterestTagsResult } from './useInterestTags.types';
 
 /**
@@ -14,7 +14,7 @@ function sanitizeInterestTags(tags: string[]): string[] {
   const sanitized: string[] = [];
   for (const raw of tags) {
     const tag = canonicalizeTagLabel(raw);
-    if (!isValidTagLabel(tag) || sanitized.includes(tag)) continue;
+    if (!isValidTagLabel(tag) || isStarterPackReservedTag(tag) || sanitized.includes(tag)) continue;
     sanitized.push(tag);
     if (sanitized.length >= STARTER_PACK_MAX_TAGS) break;
   }
@@ -39,7 +39,7 @@ export function useInterestTags(initialTags?: string[]): UseInterestTagsResult {
 
   const addTag = (raw: string): void => {
     const tag = canonicalizeTagLabel(raw);
-    if (!isValidTagLabel(tag)) return;
+    if (!isValidTagLabel(tag) || isStarterPackReservedTag(tag)) return;
     setSelectedTags((prev) => (prev.includes(tag) || prev.length >= STARTER_PACK_MAX_TAGS ? prev : [...prev, tag]));
   };
 

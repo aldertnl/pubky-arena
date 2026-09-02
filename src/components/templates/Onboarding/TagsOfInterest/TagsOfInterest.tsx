@@ -13,9 +13,11 @@ export function TagsOfInterest() {
   const router = useRouter();
   const pubky = useAuthStore((state) => state.currentUserPubky);
   const hasHydrated = useOnboardingStore((state) => state.hasHydrated);
-  const hasCompletedExperience = useOnboardingStore((state) =>
-    pubky ? Boolean(state.experienceCompletedByPubky[pubky]) : false,
-  );
+  // Read completion after hydration without subscribing to later writes. The guard owns
+  // redirects for users who completed before entering this route; the form owns navigation
+  // for completion during the current visit, avoiding a blank render and double redirect.
+  const hasCompletedExperience =
+    hasHydrated && pubky ? Boolean(useOnboardingStore.getState().experienceCompletedByPubky[pubky]) : false;
 
   // Re-prompt guard: an account that already finished the Experience flow never sees it again.
   useEffect(() => {
