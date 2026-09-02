@@ -74,6 +74,19 @@ describe('useWhoToFollowFollowPreservation', () => {
     });
   });
 
+  it('preserves users followed outside handleFollowClick without duplicating', () => {
+    const { result } = renderHook(() => useWhoToFollowFollowPreservation());
+
+    act(() => {
+      result.current.preserveFollowedUser('user-1');
+      result.current.preserveFollowedUser('user-1');
+      result.current.preserveFollowedUser('user-2');
+    });
+
+    expect(result.current.preservedFollowedUserIds).toEqual(['user-1', 'user-2']);
+    expect(mockToggleFollow).not.toHaveBeenCalled();
+  });
+
   it('exposes per-user loading from useFollowUser', () => {
     mockIsUserLoading.mockReturnValue(true);
     const { result } = renderHook(() => useWhoToFollowFollowPreservation());

@@ -16,6 +16,9 @@ export const NEXUS_USERS_PER_PAGE = 10; // Number of users to fetch per page in 
  */
 export const STARTER_PACK_MAX_TAGS = 5;
 
+/** Maximum suggestions shown on the onboarding "Follow your best matches" step (per design) */
+export const STARTER_PACK_SUGGESTIONS_LIMIT = 10;
+
 /**
  * Labels rejected by Nexus for `source=starter_pack` (pubky/pubky-nexus#1024).
  * This is intentionally separate from the app's runtime moderation configuration:

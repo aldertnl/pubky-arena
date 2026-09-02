@@ -47,5 +47,7 @@ export function useWhoToFollowFollowPreservation({ resetKey }: UseWhoToFollowFol
     preservedFollowedUserIds,
     handleFollowClick,
     isUserLoading,
+    /** Keep a user visible after a follow committed outside `handleFollowClick` (e.g. Follow All). */
+    preserveFollowedUser: (userId: Pubky) => updatePreservedUserIds(userId, false),
   };
 }
