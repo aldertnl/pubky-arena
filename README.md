@@ -17,6 +17,10 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+### Dependency install scripts
+
+npm 11.16+ gates dependency lifecycle scripts (`preinstall` / `install` / `postinstall`) behind the `allowScripts` field in `package.json`; npm 11 only warns about unapproved scripts, npm 12 skips them. Only `cypress` needs its script (it downloads the Cypress binary), so it is approved there, pinned to the installed version. `sharp`, `@sentry/cli`, `unrs-resolver`, and `browser-tabs-lock` are denied: their prebuilt platform packages make those scripts no-ops. When bumping Cypress, run `npm install-scripts approve cypress` in the same change so the pin follows the new version, and use `npm install-scripts ls` to review anything new.
+
 ## Environment Variables
 
 Copy the example environment file and adjust the values as needed:

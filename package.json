@@ -142,5 +142,12 @@
     "vite-tsconfig-paths": "6.1.1",
     "vitest": "4.1.6",
     "vitest-browser-react": "^2.2.0"
+  },
+  "allowScripts": {
+    "cypress@15.10.0": true,
+    "@sentry/cli": false,
+    "browser-tabs-lock": false,
+    "sharp": false,
+    "unrs-resolver": false
   }
 }
