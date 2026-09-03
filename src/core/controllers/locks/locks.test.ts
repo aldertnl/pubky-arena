@@ -247,7 +247,11 @@ describe('LocksController (content)', () => {
   it('createLockContent delegates to the application workflow', async () => {
     const lock = { lock_id: 'LOCK1', content_lock_path: '/pub/locks.app/LOCK1.json', creator: 'pubkybob' };
     mocks.createLockContent.mockResolvedValue(lock);
-    const params = { attachments: [], buildPost: () => ({ contentType: 'application/json', bytes: new Uint8Array() }) };
+    const params = {
+      attachments: [],
+      buildPost: () => ({ contentType: 'application/json', bytes: new Uint8Array() }),
+      lockConfig: { method: 'password' } as const,
+    };
 
     await expect(LocksController.createLockContent(params)).resolves.toBe(lock);
     expect(mocks.createLockContent).toHaveBeenCalledWith(params);
@@ -267,8 +271,22 @@ describe('LocksController.fetchLockFile', () => {
     await expect(LocksController.fetchLockFile({ lockUrl: VALID_LOCK_URL })).resolves.toEqual({
       lockFile: MOCK_LOCK_FILE,
       verifierType: VerifierType.PASSWORD,
+      priceSats: null,
     });
     expect(LocksApplication.fetchLockFile).toHaveBeenCalledWith({ lockUrl: VALID_LOCK_URL });
+  });
+
+  it('resolves the price of a payment lock', async () => {
+    const paymentLock = mockLockFile({
+      criteria: [{ criterion_id: 'criterion-1', verifier_type: 'paykit-payment', params: { amount: '1000' } }],
+    });
+    vi.mocked(LocksApplication.fetchLockFile).mockResolvedValue(paymentLock);
+
+    await expect(LocksController.fetchLockFile({ lockUrl: VALID_LOCK_URL })).resolves.toEqual({
+      lockFile: paymentLock,
+      verifierType: VerifierType.PAYMENT,
+      priceSats: '1000',
+    });
   });
 
   it('resolves a null verifier type without a lock file', async () => {
@@ -277,6 +295,7 @@ describe('LocksController.fetchLockFile', () => {
     await expect(LocksController.fetchLockFile({ lockUrl: VALID_LOCK_URL })).resolves.toEqual({
       lockFile: null,
       verifierType: null,
+      priceSats: null,
     });
   });
 });

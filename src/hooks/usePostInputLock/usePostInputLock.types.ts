@@ -1,3 +1,5 @@
+import type { TLockConfig } from '@/application/locks/locks.types';
+
 /**
  * The composer state captured when the lock switch goes on: this is the content that gets locked.
  * `isArticle` / `articleTitle` travel with it so an unlocked article renders as an article again.
@@ -46,8 +48,10 @@ export interface UsePostInputLockReturn {
   };
   /** The lock switch is on: this post must never be published as a normal, public post. */
   isLockEnabled: boolean;
-  /** The unlock method was applied (Apply Lock): the announcement form and its "Locked post" card show. */
+  /** The unlock method was applied (Apply Lock): the announcement form and its "Locked content" card show. */
   isLockConfigured: boolean;
+  /** The applied unlock method, for the composer's lock card. Null before Apply Lock. */
+  lockConfig: TLockConfig | null;
   /** Lock Server the auth modal signs into; empty when unconfigured. */
   lockServerPubky: string;
   /** Whether the Locks sign-in modal is open (shown when the switch is on but not authenticated). */
@@ -56,8 +60,8 @@ export interface UsePostInputLockReturn {
   handleAuthSuccess: () => void;
   isLockDialogOpen: boolean;
   closeLockDialog: () => void;
-  handleLockApplied: (password: string) => void;
-  /** Title of the locked content, shown on the composer's "Locked post" card. */
+  handleLockApplied: (config: TLockConfig) => void;
+  /** Title of the locked content, shown on the composer's "Locked content" card. */
   lockTitle: string;
   setLockTitle: (title: string) => void;
   /**

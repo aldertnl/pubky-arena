@@ -78,7 +78,7 @@ describe('LockFileParser', () => {
     it('resolves payment from a payment criterion', () => {
       const paymentLock = {
         ...MOCK_LOCK_FILE,
-        criteria: [{ criterion_id: 'criterion-1', verifier_type: 'payment', params: {} }],
+        criteria: [{ criterion_id: 'criterion-1', verifier_type: 'paykit-payment', params: {} }],
       };
       expect(LockFileParser.resolveVerifierType(paymentLock)).toBe(VerifierType.PAYMENT);
     });
@@ -92,6 +92,31 @@ describe('LockFileParser', () => {
         criteria: [{ criterion_id: 'criterion-1', verifier_type: 'dev-static', params: {} }],
       };
       expect(LockFileParser.resolveVerifierType(devStaticLock)).toBeNull();
+    });
+  });
+
+  describe('resolvePriceSats', () => {
+    const paymentLock = (params: Record<string, unknown>) => ({
+      ...MOCK_LOCK_FILE,
+      criteria: [{ criterion_id: 'criterion-1', verifier_type: 'paykit-payment', params }],
+    });
+
+    it('reads the amount of a payment lock', () => {
+      expect(LockFileParser.resolvePriceSats(paymentLock({ amount: '1000' }))).toBe('1000');
+    });
+
+    it('returns null for a lock that is not a payment lock', () => {
+      expect(LockFileParser.resolvePriceSats(null)).toBeNull();
+      expect(LockFileParser.resolvePriceSats(MOCK_LOCK_FILE)).toBeNull();
+    });
+
+    // Amount shapes are `isPositiveIntegerString`'s own table; here only that the parser defers to it.
+    it.each([
+      ['missing', {}],
+      ['a number rather than the wire string', { amount: 1000 }],
+      ['not a positive integer string', { amount: '007' }],
+    ])('returns null when the amount is %s', (_label, params) => {
+      expect(LockFileParser.resolvePriceSats(paymentLock(params))).toBeNull();
     });
   });
 });

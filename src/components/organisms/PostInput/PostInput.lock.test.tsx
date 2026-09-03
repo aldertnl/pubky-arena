@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TLockConfig } from '@/application/locks/locks.types';
 import { AuthErrorCode } from '@/libs/error/error.codes';
 import { Err } from '@/libs/error/error.factories';
 import { ErrorService } from '@/libs/error/error.types';
@@ -156,11 +157,15 @@ vi.mock('@/molecules/DialogLockContent/DialogLockContent', () => ({
   DialogLockContent: (props: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onApplied: (password: string) => void;
+    onApplied: (config: TLockConfig) => void;
   }) =>
     props.open ? (
       <div data-testid="lock-dialog">
-        <button data-testid="apply-lock" onClick={() => props.onApplied('Secret12!')} />
+        <button data-testid="apply-lock" onClick={() => props.onApplied({ method: 'password' })} />
+        <button
+          data-testid="apply-lock-price"
+          onClick={() => props.onApplied({ method: 'payment', amountSats: '1234' })}
+        />
         <button data-testid="cancel-lock" onClick={() => props.onOpenChange(false)} />
       </div>
     ) : null,
@@ -172,17 +177,22 @@ vi.mock('@/organisms/DialogLocksAuth/DialogLocksAuth', () => ({
 vi.mock('@/molecules/LockedPostCard/LockedPostCard', () => ({
   LockedPostCard: ({
     title,
+    unlockInfo,
     editableTitle,
   }: {
     title?: string;
+    unlockInfo?: TLockConfig | null;
     editableTitle?: { value: string; onChange: (value: string) => void };
   }) =>
     editableTitle ? (
-      <input
-        aria-label="Lock title"
-        value={editableTitle.value}
-        onChange={(event) => editableTitle.onChange(event.target.value)}
-      />
+      <>
+        <input
+          aria-label="Lock title"
+          value={editableTitle.value}
+          onChange={(event) => editableTitle.onChange(event.target.value)}
+        />
+        <span data-testid="lock-card-price">{unlockInfo?.method === 'payment' ? unlockInfo.amountSats : ''}</span>
+      </>
     ) : (
       <div data-testid="locked-post-card">{title}</div>
     ),
@@ -220,6 +230,15 @@ describe('PostInput lock wiring', () => {
       creator: 'pubkybob',
     });
     mocks.commitCreate.mockResolvedValue('alice:POST1');
+  });
+
+  it('shows the price on the composer card after a paid lock is applied', () => {
+    renderComposer();
+    act(() => mocks.composer.setContent('secret body'));
+    fireEvent.click(screen.getByTestId('lock-switch'));
+    fireEvent.click(screen.getByTestId('apply-lock-price'));
+
+    expect(screen.getByTestId('lock-card-price')).toHaveTextContent('1234');
   });
 
   // The single most important rule: while the switch is on, the composer body is the content to be
