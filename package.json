@@ -144,10 +144,10 @@
     "vitest-browser-react": "^2.2.0"
   },
   "allowScripts": {
-    "cypress@15.10.0": true,
-    "@sentry/cli": false,
-    "browser-tabs-lock": false,
-    "sharp": false,
-    "unrs-resolver": false
+    "@sentry/cli": true,
+    "browser-tabs-lock": true,
+    "cypress": true,
+    "sharp": true,
+    "unrs-resolver": true
   }
 }
