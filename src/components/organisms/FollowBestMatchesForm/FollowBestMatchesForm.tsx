@@ -74,8 +74,8 @@ export const FollowBestMatchesForm = () => {
       data-cy="follow-best-matches-form"
     >
       <Card className="rounded-md bg-card p-6 md:p-12 lg:flex lg:flex-row lg:gap-12">
-        {/* Illustration Section */}
-        <Container className="hidden w-full items-center justify-center lg:flex lg:max-w-64">
+        {/* Illustration Section: top-aligned so it stays put as the suggestions grid grows */}
+        <Container className="hidden w-full items-center justify-start lg:flex lg:max-w-64">
           <Image
             src="/images/best-matches.webp"
             alt="Follow your best matches"
