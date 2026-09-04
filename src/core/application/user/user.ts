@@ -3,9 +3,10 @@ import type {
   TEnsureModerationFollowParams,
   TUserApplicationFollowParams,
   TUserCountsOrFetchResult,
+  TUserSocialGraphStatusResult,
 } from '@/application/user/user.types';
 import type { TReadProfileParams } from '@/controllers/profile/profile.types';
-import type { TPubkyListParams } from '@/controllers/user/user.type';
+import type { TFetchUserParams, TPubkyListParams } from '@/controllers/user/user.type';
 import { ValidationErrorCode } from '@/libs/error/error.codes';
 import { Err } from '@/libs/error/error.factories';
 import { ErrorService } from '@/libs/error/error.types';
@@ -85,10 +86,10 @@ export class UserApplication {
    *
    * Preferred over `getOrFetchDetails` / `getOrFetchCounts` when the caller needs the full entity cached.
    *
-   * @param params - Parameters containing user ID
+   * @param params - Parameters containing user ID and optional viewer ID (scopes the relationship row)
    * @returns Promise resolving to user details or null if not found
    */
-  static async getOrFetch({ userId }: TReadProfileParams): Promise<NexusUserDetails | null> {
+  static async getOrFetch({ userId, viewerId }: TFetchUserParams): Promise<NexusUserDetails | null> {
     // 1. Check local cache first
     const localDetails = await LocalUserService.readDetails({ userId });
     if (localDetails) {
@@ -97,7 +98,7 @@ export class UserApplication {
 
     // 2. Fetch full user from Nexus batch endpoint
     try {
-      const users = await NexusUserStreamService.fetchByIds({ user_ids: [userId] });
+      const users = await NexusUserStreamService.fetchByIds({ user_ids: [userId], viewer_id: viewerId });
 
       if (!users || users.length === 0) {
         Logger.warn('User not found on Nexus', { userId });
@@ -120,12 +121,12 @@ export class UserApplication {
    * Use instead of `getOrFetch` when the caller already knows the user is not cached
    * (e.g. `useLocalFirstQuery` hook where `useLiveQuery` handles the local read).
    *
-   * @param params - Parameters containing user ID
+   * @param params - Parameters containing user ID and optional viewer ID (scopes the relationship row)
    * @returns Promise resolving to user details or null if not found on Nexus
    */
-  static async fetch({ userId }: TReadProfileParams): Promise<NexusUserDetails | null> {
+  static async fetch({ userId, viewerId }: TFetchUserParams): Promise<NexusUserDetails | null> {
     try {
-      const users = await NexusUserStreamService.fetchByIds({ user_ids: [userId] });
+      const users = await NexusUserStreamService.fetchByIds({ user_ids: [userId], viewer_id: viewerId });
 
       if (!users || users.length === 0) {
         Logger.warn('User not found on Nexus', { userId });
@@ -139,6 +140,16 @@ export class UserApplication {
     }
 
     return await LocalUserService.readDetails({ userId });
+  }
+
+  /**
+   * Reads a user's social graph badge tier from local database.
+   * Local-only read per ADR 0001 (get* methods don't call Nexus).
+   * @param params - Parameters containing user ID
+   * @returns `{ status }` once a full user view was cached, or null when the tier is still unknown
+   */
+  static async getSocialGraphStatus(params: TReadProfileParams): Promise<TUserSocialGraphStatusResult | null> {
+    return await LocalUserService.readSocialGraphStatus(params);
   }
 
   /**
