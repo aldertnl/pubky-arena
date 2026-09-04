@@ -986,6 +986,35 @@ describe('UserApplication.fetch viewer scoping', () => {
     expect(fetchByIdsSpy).toHaveBeenCalledWith({ user_ids: [userId], viewer_id: viewerId });
   });
 
+  it('shares one request and persist between concurrent fetches for the same user and viewer', async () => {
+    let resolveFetch: (users: NexusUser[]) => void = () => {};
+    const fetchByIdsSpy = vi
+      .spyOn(NexusUserStreamService, 'fetchByIds')
+      .mockReturnValue(new Promise<NexusUser[]>((resolve) => (resolveFetch = resolve)));
+    const persistSpy = vi.spyOn(LocalStreamUsersService, 'persistUsers').mockResolvedValue([userId]);
+    vi.spyOn(LocalUserService, 'readDetails').mockResolvedValue(null);
+
+    const first = UserApplication.fetch({ userId, viewerId });
+    const second = UserApplication.fetch({ userId, viewerId });
+    resolveFetch([]);
+    await Promise.all([first, second]);
+
+    expect(fetchByIdsSpy).toHaveBeenCalledTimes(1);
+    expect(persistSpy).not.toHaveBeenCalled();
+
+    // Once settled, a later call fetches again
+    await UserApplication.fetch({ userId, viewerId });
+    expect(fetchByIdsSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not share a request between different viewers', async () => {
+    const fetchByIdsSpy = vi.spyOn(NexusUserStreamService, 'fetchByIds').mockResolvedValue([]);
+
+    await Promise.all([UserApplication.fetch({ userId, viewerId }), UserApplication.fetch({ userId })]);
+
+    expect(fetchByIdsSpy).toHaveBeenCalledTimes(2);
+  });
+
   it('getOrFetch forwards the viewer id on a cache miss', async () => {
     vi.spyOn(LocalUserService, 'readDetails').mockResolvedValue(null);
     const fetchByIdsSpy = vi.spyOn(NexusUserStreamService, 'fetchByIds').mockResolvedValue([]);

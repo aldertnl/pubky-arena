@@ -35,6 +35,14 @@ import type { TUserTaggersParams, TUserTagsParams } from '@/services/nexus/user/
 
 export class UserApplication {
   /**
+   * Full-user fetches in flight, keyed by user and viewer. Responsive profile surfaces
+   * (desktop sidebar, mobile overview) stay mounted together, so several local-first hooks
+   * can miss the cache for the same user at once; sharing one promise keeps the Nexus
+   * request and the multi-table persist to a single run.
+   */
+  private static readonly inFlightFetches = new Map<string, Promise<NexusUserDetails | null>>();
+
+  /**
    * Get user details from local database
    * This is a read-only operation that queries the local cache
    */
@@ -121,10 +129,22 @@ export class UserApplication {
    * Use instead of `getOrFetch` when the caller already knows the user is not cached
    * (e.g. `useLocalFirstQuery` hook where `useLiveQuery` handles the local read).
    *
+   * Concurrent calls for the same user and viewer share a single request and persist.
+   *
    * @param params - Parameters containing user ID and optional viewer ID (scopes the relationship row)
    * @returns Promise resolving to user details or null if not found on Nexus
    */
   static async fetch({ userId, viewerId }: TFetchUserParams): Promise<NexusUserDetails | null> {
+    const key = `${userId}:${viewerId ?? ''}`;
+    const inFlight = this.inFlightFetches.get(key);
+    if (inFlight) return await inFlight;
+
+    const request = this.fetchAndPersist({ userId, viewerId }).finally(() => this.inFlightFetches.delete(key));
+    this.inFlightFetches.set(key, request);
+    return await request;
+  }
+
+  private static async fetchAndPersist({ userId, viewerId }: TFetchUserParams): Promise<NexusUserDetails | null> {
     try {
       const users = await NexusUserStreamService.fetchByIds({ user_ids: [userId], viewer_id: viewerId });
 
