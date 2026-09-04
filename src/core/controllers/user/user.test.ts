@@ -6,6 +6,8 @@ import type { Pubky } from '@/models/models.types';
 import type { UserCountsModel } from '@/models/user/counts/userCounts';
 import { FollowNormalizer } from '@/pipes/follow/follow.normalizer';
 import type { NexusTag, NexusTaggers, NexusUserCounts, NexusUserDetails } from '@/services/nexus/nexus.types';
+import { useAuthStore } from '@/stores/auth/auth.store';
+import { mockAuthStore } from '@/test-utils/stores';
 import { asOpaque } from '@/test-utils/type-assertions';
 import { UserController } from './user';
 
@@ -219,8 +221,9 @@ describe('UserController', () => {
   });
 
   describe('fetch', () => {
-    it('should delegate to UserApplication.fetch', async () => {
-      const userId = 'test-user-id';
+    it('should delegate to UserApplication.fetch with the authenticated viewer', async () => {
+      const userId = TEST_PUBKY.USER_2;
+      const viewerId = TEST_PUBKY.USER_1;
       const mockUserDetails: NexusUserDetails = {
         id: userId,
         name: 'Test User',
@@ -231,12 +234,23 @@ describe('UserController', () => {
         indexed_at: Date.now(),
       };
 
+      vi.spyOn(useAuthStore, 'getState').mockReturnValue(mockAuthStore({ currentUserPubky: viewerId }));
       const spy = vi.spyOn(UserApplication, 'fetch').mockResolvedValue(mockUserDetails);
 
       const result = await UserController.fetch({ userId });
 
       expect(result).toEqual(mockUserDetails);
-      expect(spy).toHaveBeenCalledWith({ userId });
+      expect(spy).toHaveBeenCalledWith({ userId, viewerId });
+    });
+
+    it('should delegate to UserApplication.fetch without a viewer for guests', async () => {
+      const userId = TEST_PUBKY.USER_2;
+      vi.spyOn(useAuthStore, 'getState').mockReturnValue(mockAuthStore({ currentUserPubky: null }));
+      const spy = vi.spyOn(UserApplication, 'fetch').mockResolvedValue(null);
+
+      await UserController.fetch({ userId });
+
+      expect(spy).toHaveBeenCalledWith({ userId, viewerId: undefined });
     });
 
     it('should return null when user not found', async () => {

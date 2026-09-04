@@ -898,6 +898,7 @@ describe('UserApplication.getOrFetch', () => {
 
 describe('UserApplication.fetch', () => {
   const userId = 'pubky_user' as Pubky;
+  const viewerId = 'pubky_viewer' as Pubky;
   const mockUserDetails: NexusUserDetails = {
     id: userId,
     name: 'Test User',
@@ -922,7 +923,7 @@ describe('UserApplication.fetch', () => {
       bookmarks: 30,
     },
     tags: [{ label: 'developer', taggers: [], taggers_count: 0, relationship: false }],
-    relationship: { following: false, followed_by: false },
+    relationship: { following: true, followed_by: false },
   };
 
   beforeEach(() => {
@@ -934,23 +935,41 @@ describe('UserApplication.fetch', () => {
     const persistSpy = vi.spyOn(LocalStreamUsersService, 'persistUsers').mockResolvedValue([userId]);
     const localSpy = vi.spyOn(LocalUserService, 'readDetails').mockResolvedValue(mockUserDetails);
 
-    const result = await UserApplication.fetch({ userId });
+    const result = await UserApplication.fetch({ userId, viewerId });
 
     expect(result).toEqual(mockUserDetails);
-    expect(fetchByIdsSpy).toHaveBeenCalledWith({ user_ids: [userId] });
+    expect(fetchByIdsSpy).toHaveBeenCalledWith({
+      user_ids: [userId],
+      viewer_id: viewerId,
+    });
     expect(persistSpy).toHaveBeenCalledWith([mockNexusUser]);
     expect(localSpy).toHaveBeenCalledTimes(1);
     expect(localSpy).toHaveBeenCalledWith({ userId });
+  });
+
+  it('should persist the viewer-relative follow relationship', async () => {
+    vi.spyOn(NexusUserStreamService, 'fetchByIds').mockResolvedValue([mockNexusUser]);
+
+    await UserApplication.fetch({ userId, viewerId });
+
+    const relationship = await LocalUserService.readRelationships({ userId });
+    expect(relationship).toMatchObject({
+      following: true,
+      followed_by: false,
+    });
   });
 
   it('should return null when Nexus returns empty array', async () => {
     const fetchByIdsSpy = vi.spyOn(NexusUserStreamService, 'fetchByIds').mockResolvedValue([]);
     const persistSpy = vi.spyOn(LocalStreamUsersService, 'persistUsers');
 
-    const result = await UserApplication.fetch({ userId });
+    const result = await UserApplication.fetch({ userId, viewerId });
 
     expect(result).toBeNull();
-    expect(fetchByIdsSpy).toHaveBeenCalledWith({ user_ids: [userId] });
+    expect(fetchByIdsSpy).toHaveBeenCalledWith({
+      user_ids: [userId],
+      viewer_id: viewerId,
+    });
     expect(persistSpy).not.toHaveBeenCalled();
   });
 
@@ -958,7 +977,7 @@ describe('UserApplication.fetch', () => {
     vi.spyOn(NexusUserStreamService, 'fetchByIds').mockRejectedValue(new Error('Network error'));
     const persistSpy = vi.spyOn(LocalStreamUsersService, 'persistUsers');
 
-    const result = await UserApplication.fetch({ userId });
+    const result = await UserApplication.fetch({ userId, viewerId });
 
     expect(result).toBeNull();
     expect(persistSpy).not.toHaveBeenCalled();
@@ -969,6 +988,6 @@ describe('UserApplication.fetch', () => {
     vi.spyOn(LocalStreamUsersService, 'persistUsers').mockResolvedValue([userId]);
     vi.spyOn(LocalUserService, 'readDetails').mockRejectedValue(new Error('IndexedDB error'));
 
-    await expect(UserApplication.fetch({ userId })).rejects.toThrow('IndexedDB error');
+    await expect(UserApplication.fetch({ userId, viewerId })).rejects.toThrow('IndexedDB error');
   });
 });

@@ -16,6 +16,7 @@ import type {
   NexusUserRelationship,
 } from '@/services/nexus/nexus.types';
 import type { TUserTaggersParams, TUserTagsParams } from '@/services/nexus/user/user.types';
+import { useAuthStore } from '@/stores/auth/auth.store';
 
 export class UserController {
   private constructor() {} // Prevent instantiation
@@ -133,7 +134,11 @@ export class UserController {
    * Use instead of `getOrFetch` when the caller already knows the user is not cached.
    */
   static async fetch(params: TReadProfileParams): Promise<NexusUserDetails | null> {
-    return await UserApplication.fetch(params);
+    const viewerId = useAuthStore.getState().currentUserPubky ?? undefined;
+    return await UserApplication.fetch({
+      ...params,
+      viewerId,
+    });
   }
 
   /**

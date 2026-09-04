@@ -1,6 +1,7 @@
 import { followUriBuilder } from 'pubky-app-specs';
 import type {
   TEnsureModerationFollowParams,
+  TUserApplicationFetchParams,
   TUserApplicationFollowParams,
   TUserCountsOrFetchResult,
 } from '@/application/user/user.types';
@@ -120,12 +121,15 @@ export class UserApplication {
    * Use instead of `getOrFetch` when the caller already knows the user is not cached
    * (e.g. `useLocalFirstQuery` hook where `useLiveQuery` handles the local read).
    *
-   * @param params - Parameters containing user ID
+   * @param params - Target user ID and optional viewer ID for relative relationship data
    * @returns Promise resolving to user details or null if not found on Nexus
    */
-  static async fetch({ userId }: TReadProfileParams): Promise<NexusUserDetails | null> {
+  static async fetch({ userId, viewerId }: TUserApplicationFetchParams): Promise<NexusUserDetails | null> {
     try {
-      const users = await NexusUserStreamService.fetchByIds({ user_ids: [userId] });
+      const users = await NexusUserStreamService.fetchByIds({
+        user_ids: [userId],
+        viewer_id: viewerId,
+      });
 
       if (!users || users.length === 0) {
         Logger.warn('User not found on Nexus', { userId });

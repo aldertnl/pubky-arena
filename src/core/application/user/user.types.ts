@@ -7,6 +7,11 @@ import type { NexusUserCounts } from '@/services/nexus/nexus.types';
 /** Cached Dexie row (includes `id`) or Nexus API payload (counters only). */
 export type TUserCountsOrFetchResult = UserCountsModel | NexusUserCounts;
 
+export type TUserApplicationFetchParams = {
+  userId: Pubky;
+  viewerId?: Pubky;
+};
+
 export type TUserApplicationFollowParams = TFollowParams & {
   eventType: HttpMethod;
   followUrl: string;
