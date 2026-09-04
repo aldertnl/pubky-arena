@@ -121,11 +121,16 @@ describe('useEditAttachments', () => {
       expect(result.current.existingAttachments).toEqual([PLACEHOLDER_1, PLACEHOLDER_2]);
 
       // Metadata resolution runs for the placeholders; with nothing resolvable
-      // (empty metadata everywhere) they stay placeholders
+      // (empty metadata everywhere) they stay placeholders and end up marked as
+      // failed. Wait for that terminal state: asserting right after the metadata
+      // call is observed races the hook's `finally` that sets the flag.
       await waitFor(() => {
-        expect(FileController.getMetadata).toHaveBeenCalledWith({ fileAttachments: [URI_1, URI_2] });
+        expect(result.current.existingAttachments).toEqual([
+          { ...PLACEHOLDER_1, resolutionFailed: true },
+          { ...PLACEHOLDER_2, resolutionFailed: true },
+        ]);
       });
-      expect(result.current.existingAttachments).toEqual([PLACEHOLDER_1, PLACEHOLDER_2]);
+      expect(FileController.getMetadata).toHaveBeenCalledWith({ fileAttachments: [URI_1, URI_2] });
     });
 
     it('does not seed when disabled', () => {
