@@ -21,7 +21,15 @@ import { useHotTags } from '@/hooks/useHotTags/useHotTags';
 import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
 import { useRequireAuth } from '@/hooks/useRequireAuth/useRequireAuth';
 import { useStreamPagination } from '@/hooks/useStreamPagination/useStreamPagination';
-import { ARENA_PAGE_SIZE, ARENA_TOPIC_LIMIT, type ArenaMetric, rankArenaIdeas } from '@/libs/arena/arena';
+import {
+  ARENA_PAGE_SIZE,
+  ARENA_TIMEFRAME_PAGE_SIZE,
+  ARENA_TOPIC_LIMIT,
+  type ArenaMetric,
+  getArenaCandidateSorting,
+  rankArenaIdeasForTimeframe,
+  shouldLoadMoreArenaTimeframe,
+} from '@/libs/arena/arena';
 import { cn, generateRandomColor, hexToRgba } from '@/libs/utils/utils';
 import { type PostStreamId } from '@/models/stream/post/postStream.types';
 import { CONTENT_FILTER_OPTIONS } from '@/molecules/Filters/FilterContent/FilterContent.constants';
@@ -29,7 +37,7 @@ import { REACH_FILTER_META } from '@/molecules/Filters/FilterReach/FilterReach';
 import { PostTag } from '@/molecules/PostTag/PostTag';
 import { type NexusHotTag, UserStreamReach } from '@/services/nexus/nexus.types';
 import { useAuthStore } from '@/stores/auth/auth.store';
-import { CONTENT, type ContentType, REACH, type ReachType, SORT } from '@/stores/home/home.types';
+import { CONTENT, type ContentType, REACH, type ReachType } from '@/stores/home/home.types';
 import { getStreamIdFromFilters } from '@/stores/home/home.utils';
 import { useHotStore } from '@/stores/hot/hot.store';
 import { TIMEFRAME, type TimeframeType } from '@/stores/hot/hot.types';
@@ -225,10 +233,11 @@ export function Arena() {
             necessarily agreement.
           </p>
           <p>
-            Reach and timeframe determine which topics are trending. After you select a topic, post rankings compare its
-            loaded posts from everyone without a post-date limit. Content includes all types. Newest loads recent posts
-            first; other rankings load by engagement. Arena displays up to ten posts and keeps your selection visible;
-            Grid displays up to nine. Equal post scores use a stable order with unique rank numbers. Muted authors and
+            Reach and timeframe determine which topics are trending and which posts compete. After you select a topic,
+            post rankings compare its loaded posts from everyone within the selected timeframe. Content includes all
+            types. Bounded windows load posts chronologically before applying your selected ranking. All time loads by
+            engagement unless Newest is selected. Arena displays up to ten posts and keeps your selection visible; Grid
+            displays up to nine. Equal post scores use a stable order with unique rank numbers. Muted authors and
             deleted posts are excluded. Counts may be cached.
           </p>
           <p>
@@ -371,14 +380,39 @@ function ArenaStage({
 }
 
 function ArenaTopic(props: StageProps & { reach: ReachType }) {
-  const sort = props.metric === 'newest' ? SORT.TIMELINE : SORT.ENGAGEMENT;
+  const sort = getArenaCandidateSorting(props.metric, props.postWindow.timeframe);
   const streamId = `${getStreamIdFromFilters(sort, REACH.ALL, props.content)}:${props.topic}` as PostStreamId;
-  const stream = useStreamPagination({ streamId, limit: ARENA_PAGE_SIZE });
+  const isBoundedTimeframe = props.postWindow.timeframe !== TIMEFRAME.ALL_TIME;
+  const stream = useStreamPagination({
+    streamId,
+    limit: isBoundedTimeframe ? ARENA_TIMEFRAME_PAGE_SIZE : ARENA_PAGE_SIZE,
+  });
+  const { hasMore, loadMore, loading, loadingMore, postIds } = stream;
   const { ideas, error } = useArenaIdeas(stream.postIds);
-  const ranked = rankArenaIdeas(ideas, props.metric);
+  const ranked = rankArenaIdeasForTimeframe(ideas, props.metric, props.postWindow.timeframe, props.postWindow.now);
   const [chosen, setChosen] = useState<string | null>(null);
   const selected = ranked.find((idea) => idea.id === chosen) ?? ranked[0];
   const rootId = selected?.replyTo ?? selected?.id;
+  useEffect(() => {
+    if (
+      !loading &&
+      !loadingMore &&
+      hasMore &&
+      ideas.length === postIds.length &&
+      shouldLoadMoreArenaTimeframe(ideas, props.postWindow.timeframe, props.postWindow.now)
+    ) {
+      void loadMore();
+    }
+  }, [
+    hasMore,
+    ideas,
+    loadMore,
+    loading,
+    loadingMore,
+    postIds.length,
+    props.postWindow.now,
+    props.postWindow.timeframe,
+  ]);
   return (
     <>
       <ArenaStage {...props}>

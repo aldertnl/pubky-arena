@@ -3,8 +3,10 @@ import { UserStreamTimeframe } from '@/services/nexus/nexus.types';
 
 export const ARENA_TOPIC_LIMIT = 10;
 export const ARENA_PAGE_SIZE = 24;
+export const ARENA_TIMEFRAME_PAGE_SIZE = 50;
 export const ARENA_VISIBLE_IDEAS = 10;
 export type ArenaMetric = 'popular' | 'tags' | 'replies' | 'reposts' | 'newest';
+export type ArenaCandidateSorting = 'timeline' | 'total_engagement';
 
 export interface ArenaIdea {
   id: string;
@@ -31,6 +33,18 @@ export function filterArenaIdeasByTimeframe(ideas: ArenaIdea[], timeframe: UserS
   return ideas.filter((idea) => Number.isFinite(idea.indexedAt) && idea.indexedAt >= since);
 }
 
+/** Bounded windows must load by date before their candidates can be ranked by engagement. */
+export function getArenaCandidateSorting(metric: ArenaMetric, timeframe: UserStreamTimeframe): ArenaCandidateSorting {
+  return metric === 'newest' || timeframe !== UserStreamTimeframe.ALL_TIME ? 'timeline' : 'total_engagement';
+}
+
+/** Continue a descending timeline until its oldest loaded post crosses the selected window. */
+export function shouldLoadMoreArenaTimeframe(ideas: ArenaIdea[], timeframe: UserStreamTimeframe, now: number): boolean {
+  if (timeframe === UserStreamTimeframe.ALL_TIME || ideas.length === 0) return false;
+  const inWindow = filterArenaIdeasByTimeframe(ideas, timeframe, now);
+  return inWindow.length === ideas.length;
+}
+
 export interface RankedArenaIdea extends ArenaIdea {
   rank: number;
   score: number;
@@ -52,6 +66,15 @@ export function rankArenaIdeas(ideas: ArenaIdea[], metric: ArenaMetric): RankedA
   const unique = [...new Map(ideas.map((idea) => [idea.id, idea])).values()];
   const sorted = unique.sort((a, b) => getArenaScore(b, metric) - getArenaScore(a, metric) || a.id.localeCompare(b.id));
   return sorted.map((idea, index) => ({ ...idea, rank: index + 1, score: getArenaScore(idea, metric) }));
+}
+
+export function rankArenaIdeasForTimeframe(
+  ideas: ArenaIdea[],
+  metric: ArenaMetric,
+  timeframe: UserStreamTimeframe,
+  now: number,
+): RankedArenaIdea[] {
+  return rankArenaIdeas(filterArenaIdeasByTimeframe(ideas, timeframe, now), metric);
 }
 
 function metricLabel(metric: Exclude<ArenaMetric, 'newest'>, count: number) {

@@ -3,9 +3,12 @@ import { UserStreamTimeframe } from '@/services/nexus/nexus.types';
 import {
   type ArenaIdea,
   filterArenaIdeasByTimeframe,
+  getArenaCandidateSorting,
   getArenaLead,
   getArenaVisibleIdeas,
   rankArenaIdeas,
+  rankArenaIdeasForTimeframe,
+  shouldLoadMoreArenaTimeframe,
 } from './arena';
 
 const idea = (id: string, tags: number, replies: number, replyTo: string | null = null): ArenaIdea => ({
@@ -149,7 +152,7 @@ describe('Arena post timeframe', () => {
       { ...idea('c:now', 5, 2), indexedAt: now },
       { ...idea('e:invalid', 100, 3), indexedAt: Number.NaN },
     ];
-    const ranked = rankArenaIdeas(filterArenaIdeasByTimeframe(entries, timeframe, now), 'tags');
+    const ranked = rankArenaIdeasForTimeframe(entries, 'tags', timeframe, now);
     expect(ranked.map(({ id, rank }) => ({ id, rank }))).toEqual([
       { id: 'b:boundary', rank: 1 },
       { id: 'c:now', rank: 2 },
@@ -165,5 +168,21 @@ describe('Arena post timeframe', () => {
   it('keeps all loaded candidates for All time', () => {
     const entries = [idea('a:old', 20, 1), { ...idea('b:new', 10, 2), indexedAt: now }];
     expect(filterArenaIdeasByTimeframe(entries, UserStreamTimeframe.ALL_TIME, now)).toBe(entries);
+  });
+
+  it('loads bounded windows chronologically before applying the selected ranking', () => {
+    expect(getArenaCandidateSorting('popular', UserStreamTimeframe.THIS_MONTH)).toBe('timeline');
+    expect(getArenaCandidateSorting('tags', UserStreamTimeframe.THIS_WEEK)).toBe('timeline');
+    expect(getArenaCandidateSorting('newest', UserStreamTimeframe.ALL_TIME)).toBe('timeline');
+    expect(getArenaCandidateSorting('popular', UserStreamTimeframe.ALL_TIME)).toBe('total_engagement');
+  });
+
+  it('continues a bounded timeline until an out-of-window post is loaded', () => {
+    const recent = { ...idea('recent', 1, 0), indexedAt: now - 1_000 };
+    const old = { ...idea('old', 1, 0), indexedAt: now - 31 * day };
+
+    expect(shouldLoadMoreArenaTimeframe([recent], UserStreamTimeframe.THIS_MONTH, now)).toBe(true);
+    expect(shouldLoadMoreArenaTimeframe([recent, old], UserStreamTimeframe.THIS_MONTH, now)).toBe(false);
+    expect(shouldLoadMoreArenaTimeframe([recent], UserStreamTimeframe.ALL_TIME, now)).toBe(false);
   });
 });
