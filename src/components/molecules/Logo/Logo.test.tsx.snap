@@ -2,17 +2,17 @@
 
 exports[`Logo - Snapshots > matches snapshot for Logo with custom className 1`] = `
 <a
-  class="cursor-pointer hover:text-brand/80 transition-colors text-brand text-sm flex items-center min-h-[36px] min-w-[109px] custom-logo-style"
+  class="cursor-pointer hover:text-brand/80 transition-colors text-brand text-sm flex items-center min-h-[36px] min-w-[184px] custom-logo-style"
   data-cy="header-logo"
   href="/home"
 >
   <img
-    alt="Pubky"
-    class="-mt-1 h-[36px] w-[109px]"
+    alt="Pubky Arena"
+    class="-mt-1 h-[36px] w-[184px]"
     data-testid="logo-image"
     height="36"
-    src="/pubky-logo.svg"
-    width="109"
+    src="/pubky-arena-logo.svg"
+    width="184"
   />
 </a>
 `;
@@ -25,11 +25,11 @@ exports[`Logo - Snapshots > matches snapshot for Logo with custom dimensions 1`]
   style="min-width: 200px; min-height: 80px;"
 >
   <img
-    alt="Pubky"
+    alt="Pubky Arena"
     class="-mt-1"
     data-testid="logo-image"
     height="80"
-    src="/pubky-logo.svg"
+    src="/pubky-arena-logo.svg"
     width="200"
   />
 </a>
@@ -37,17 +37,17 @@ exports[`Logo - Snapshots > matches snapshot for Logo with custom dimensions 1`]
 
 exports[`Logo - Snapshots > matches snapshot for default Logo 1`] = `
 <a
-  class="cursor-pointer hover:text-brand/80 transition-colors text-brand text-sm flex items-center min-h-[36px] min-w-[109px]"
+  class="cursor-pointer hover:text-brand/80 transition-colors text-brand text-sm flex items-center min-h-[36px] min-w-[184px]"
   data-cy="header-logo"
   href="/home"
 >
   <img
-    alt="Pubky"
-    class="-mt-1 h-[36px] w-[109px]"
+    alt="Pubky Arena"
+    class="-mt-1 h-[36px] w-[184px]"
     data-testid="logo-image"
     height="36"
-    src="/pubky-logo.svg"
-    width="109"
+    src="/pubky-arena-logo.svg"
+    width="184"
   />
 </a>
 `;

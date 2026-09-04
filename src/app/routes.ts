@@ -21,7 +21,7 @@ export enum APP_ROUTES {
   HOME = '/home',
   FEED = '/feed',
   SEARCH = '/search',
-  HOT = '/hot',
+  ARENA = '/arena',
   COLLECTIONS = '/collections',
   SETTINGS = '/settings',
   PROFILE = '/profile',
@@ -81,7 +81,7 @@ export enum DEV_ROUTES {
   SENTRY_TEST = '/sentry-test',
 }
 
-export const EXPLORE_ROUTES: string[] = [APP_ROUTES.HOME, APP_ROUTES.HOT, APP_ROUTES.SEARCH, APP_ROUTES.COLLECTIONS];
+export const EXPLORE_ROUTES: string[] = [APP_ROUTES.HOME, APP_ROUTES.ARENA, APP_ROUTES.SEARCH, APP_ROUTES.COLLECTIONS];
 
 // Public routes are accessible regardless of authentication status.
 // This includes routes that need to be accessible during auth transitions (like logout).
@@ -107,7 +107,7 @@ export const ALLOWED_ROUTES = [
   APP_ROUTES.HOME,
   APP_ROUTES.FEED,
   APP_ROUTES.SEARCH,
-  APP_ROUTES.HOT,
+  APP_ROUTES.ARENA,
   APP_ROUTES.COLLECTIONS,
   APP_ROUTES.SETTINGS,
   APP_ROUTES.PROFILE,

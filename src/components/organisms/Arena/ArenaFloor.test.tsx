@@ -1,0 +1,159 @@
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { rankArenaIdeas } from '@/libs/arena/arena';
+import styles from './Arena.module.css';
+import { ArenaFloor } from './ArenaFloor';
+import { ArenaStat } from './ArenaStats';
+
+vi.mock('@/molecules/PostHeaderTimestamp/PostHeaderTimestamp', () => ({
+  PostHeaderTimestamp: ({ timeAgo }: { timeAgo: string }) => <span>{timeAgo}</span>,
+}));
+
+vi.mock('@/hooks/useBulkUserAvatars/useBulkUserAvatars', () => ({
+  useBulkUserAvatars: () => ({
+    usersMap: new Map([
+      ['a', { name: 'Mira' }],
+      ['b', { name: 'Jules' }],
+    ]),
+  }),
+}));
+const ideas = rankArenaIdeas(
+  [
+    {
+      id: 'a:1',
+      author: 'a',
+      preview: 'What makes a tag useful?',
+      kind: 'short',
+      indexedAt: 1,
+      tags: 42,
+      replies: 18,
+      reposts: 1,
+      replyTo: null,
+    },
+    {
+      id: 'b:2',
+      author: 'b',
+      preview: 'Context matters.',
+      kind: 'long',
+      indexedAt: 2,
+      tags: 60,
+      replies: 12,
+      reposts: 7,
+      replyTo: 'a:1',
+    },
+  ],
+  'tags',
+);
+
+describe('Arena floor', () => {
+  it('varies rotations on filter changes while selection and the center card stay stable', async () => {
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.25);
+    try {
+      const props = { ideas, onSelect: vi.fn(), isList: false, metric: 'tags' as const };
+      const { rerender } = render(<ArenaFloor {...props} rotationKey="pubky" />);
+      const rotation = (name: RegExp) =>
+        (screen.getByRole('button', { name }).closest('[data-slot="card"]') as HTMLElement).style.getPropertyValue(
+          '--arena-post-rotation',
+        );
+      await waitFor(() => expect(rotation(/Rank 2, Mira/)).toBe('-3.75deg'));
+      expect(rotation(/Rank 1, Jules/)).toBe('-0.75deg');
+
+      random.mockReturnValue(0.75);
+      rerender(<ArenaFloor {...props} rotationKey="pubky" selectedId="a:1" />);
+      await act(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
+      expect(rotation(/Rank 2, Mira/)).toBe('-3.75deg');
+
+      rerender(<ArenaFloor {...props} rotationKey="bitcoin" selectedId="a:1" />);
+      await waitFor(() => expect(rotation(/Rank 2, Mira/)).toBe('-2.25deg'));
+      expect(rotation(/Rank 1, Jules/)).toBe('0.75deg');
+      expect(screen.getByRole('button', { name: /Rank 2, Mira/ })).toHaveAttribute('aria-pressed', 'true');
+    } finally {
+      random.mockRestore();
+    }
+  });
+
+  it('shows the popularity total with its contributing counts across engagement modes', () => {
+    const { rerender } = render(
+      <ArenaFloor ideas={rankArenaIdeas(ideas, 'popular')} onSelect={vi.fn()} isList={false} metric="popular" />,
+    );
+    expect(screen.getByLabelText('129 popularity points')).toHaveAttribute(
+      'title',
+      '129 popularity points · Tags + (replies × 4) + (reposts × 3)',
+    );
+    expect(screen.getByLabelText('60 tags')).toBeInTheDocument();
+    expect(screen.getByLabelText('12 replies')).toBeInTheDocument();
+    expect(screen.getByLabelText('7 reposts')).toBeInTheDocument();
+    expect(screen.getByText('#1 Content')).toBeInTheDocument();
+    rerender(
+      <ArenaFloor ideas={rankArenaIdeas(ideas, 'replies')} onSelect={vi.fn()} isList={false} metric="replies" />,
+    );
+    expect(screen.getByLabelText('129 popularity points')).toBeInTheDocument();
+    expect(screen.getByLabelText('7 reposts')).toBeInTheDocument();
+  });
+
+  it('makes the leading reply selectable and keeps selection distinct from rank', () => {
+    const onSelect = vi.fn();
+    render(<ArenaFloor ideas={ideas} selectedId="a:1" onSelect={onSelect} isList={false} metric="tags" />);
+    const reply = screen.getByRole('button', { name: /Rank 1, Jules/ });
+    expect(reply).toHaveAttribute('aria-pressed', 'false');
+    const selected = screen.getByRole('button', { name: /Rank 2, Mira/ });
+    expect(selected).toHaveAttribute('aria-pressed', 'true');
+    expect(selected.closest('[data-slot="card"]')).toHaveClass(styles.selected);
+    expect(reply.closest('[data-slot="card"]')).not.toHaveClass(styles.selected);
+    fireEvent.click(reply);
+    expect(onSelect).toHaveBeenCalledWith('b:2');
+    expect(screen.getByText('Reply')).toBeInTheDocument();
+  });
+  it('shows icon plus number while retaining an accessible metric name', () => {
+    render(<ArenaStat kind="posts" count={158} />);
+    expect(screen.getByLabelText('158 posts')).toHaveAttribute('title', '158 posts');
+    expect(screen.getByText('158')).toBeInTheDocument();
+    expect(screen.queryByText('158 posts')).not.toBeInTheDocument();
+  });
+
+  it('preserves the selected button and keyboard focus when standings reorder', () => {
+    const { rerender } = render(
+      <ArenaFloor ideas={ideas} selectedId="b:2" onSelect={vi.fn()} isList={false} metric="tags" />,
+    );
+    const selected = screen.getByRole('button', { name: /Rank 1, Jules/ });
+    selected.focus();
+    rerender(
+      <ArenaFloor
+        ideas={rankArenaIdeas(ideas, 'replies')}
+        selectedId="b:2"
+        onSelect={vi.fn()}
+        isList={false}
+        metric="replies"
+      />,
+    );
+    expect(screen.getByRole('button', { name: /Rank 2, Jules/ })).toBe(selected);
+    expect(selected).toHaveFocus();
+    expect(selected).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('shows repost counts when ranking by reposts and removes the trophy for Newest', () => {
+    const { rerender } = render(
+      <ArenaFloor
+        ideas={rankArenaIdeas(ideas, 'reposts')}
+        selectedId="a:1"
+        onSelect={vi.fn()}
+        isList={false}
+        metric="reposts"
+      />,
+    );
+    expect(screen.getByLabelText('7 reposts')).toBeInTheDocument();
+    expect(screen.getByText('#1 Content')).toBeInTheDocument();
+    rerender(
+      <ArenaFloor
+        ideas={rankArenaIdeas(ideas, 'newest')}
+        selectedId="a:1"
+        onSelect={vi.fn()}
+        isList={false}
+        metric="newest"
+      />,
+    );
+    expect(screen.queryByText('#1 Content')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Position 1, Jules/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Position 2, Mira/ })).toHaveAttribute('aria-pressed', 'true');
+  });
+});

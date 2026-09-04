@@ -27,7 +27,7 @@ export type HotStore = HotState & HotActions;
 
 // Initial state
 export const hotInitialState: HotState = {
-  reach: REACH.ALL,
+  reach: REACH.NETWORK,
   timeframe: TIMEFRAME.THIS_MONTH,
 };
 

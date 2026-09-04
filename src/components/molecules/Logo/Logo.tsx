@@ -13,17 +13,17 @@ interface LogoProps {
   noLink?: boolean;
 }
 
-const DEFAULT_LOGO_WIDTH = 109;
+const DEFAULT_LOGO_WIDTH = 184;
 /** Rendered logo height in px (matches `h-[36px]` / SVG aspect ratio). */
 const DEFAULT_LOGO_HEIGHT = 36;
 
 const isDefaultSize = (width: number, height: number) => width === DEFAULT_LOGO_WIDTH && height === DEFAULT_LOGO_HEIGHT;
 
 const logoLinkClassName = (width: number, height: number, className?: string) =>
-  cn('flex items-center', isDefaultSize(width, height) && 'min-h-[36px] min-w-[109px]', className);
+  cn('flex items-center', isDefaultSize(width, height) && 'min-h-[36px] min-w-[184px]', className);
 
 const logoImageClassName = (width: number, height: number, className?: string) =>
-  cn('-mt-1', isDefaultSize(width, height) && 'h-[36px] w-[109px]', className);
+  cn('-mt-1', isDefaultSize(width, height) && 'h-[36px] w-[184px]', className);
 
 const logoSizeStyle = (width: number, height: number) =>
   isDefaultSize(width, height) ? undefined : ({ minWidth: width, minHeight: height } as const);
@@ -68,8 +68,9 @@ export function Logo({
 const LogoImage = ({ width, height, className }: { width: number; height: number; className?: string }) => {
   return (
     <Image
-      src="/pubky-logo.svg"
-      alt="Pubky"
+      src="/pubky-arena-logo.svg"
+      alt="Pubky Arena"
+      loading="eager"
       className={logoImageClassName(width, height, className)}
       style={logoImageStyle(width, height)}
       width={width}

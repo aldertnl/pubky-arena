@@ -1,0 +1,8 @@
+.git
+.next
+node_modules
+coverage
+src/**/*.test.ts
+src/**/*.test.tsx
+src/**/*.snap
+src/test

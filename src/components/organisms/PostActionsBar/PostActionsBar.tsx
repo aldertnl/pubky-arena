@@ -11,8 +11,10 @@ import { useRequireAuth } from '@/hooks/useRequireAuth/useRequireAuth';
 import { cn } from '@/libs/utils/utils';
 import { PostMenuActions } from '../PostMenuActions/PostMenuActions';
 import { PostSavePicker } from '../PostSavePicker/PostSavePicker';
+import { POST_ACTION_COUNT_TYPOGRAPHY_CLASS } from './PostActionsBar.constants';
 import { PostActionsBarSkeleton } from './PostActionsBar.skeleton';
 import type { ActionButtonConfig, PostActionsBarProps } from './PostActionsBar.types';
+import { usePostTagCountMode } from './PostTagCountContext';
 
 const postActionsButtonVariants = cva('', {
   variants: {
@@ -25,7 +27,7 @@ const postActionsButtonVariants = cva('', {
     variant: 'default',
   },
 });
-const postActionsCountVariants = cva('text-xs leading-4 font-bold', {
+const postActionsCountVariants = cva(POST_ACTION_COUNT_TYPOGRAPHY_CLASS, {
   variants: {
     variant: {
       default: 'text-muted-foreground',
@@ -45,6 +47,7 @@ export function PostActionsBar({
   variant = 'default',
 }: PostActionsBarProps) {
   const { postCounts, isLoading: isCountsLoading } = usePostCounts(postId);
+  const tagCountMode = usePostTagCountMode();
   const { postDetails } = usePostDetails(postId);
   const { requireAuth } = useRequireAuth();
   const buttonClassName = postActionsButtonVariants({
@@ -61,7 +64,7 @@ export function PostActionsBar({
     size: 'sm' as const,
     className: buttonClassName,
   };
-  const tagCount = postCounts.unique_tags ?? 0;
+  const tagCount = (tagCountMode === 'applications' ? postCounts.tags : postCounts.unique_tags) ?? 0;
   const isCollection = postDetails?.kind === 'collection';
   const actionButtons: ActionButtonConfig[] = [
     {

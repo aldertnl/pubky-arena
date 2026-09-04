@@ -12,7 +12,7 @@ describe('matchFeedsRouteKey', () => {
 
   it('returns null for non-feeds pathnames', () => {
     expect(matchFeedsRouteKey('/post/alice/123')).toBeNull();
-    expect(matchFeedsRouteKey('/hot')).toBeNull();
+    expect(matchFeedsRouteKey('/arena')).toBeNull();
     // Bare /feed (no id) is not a feeds route either.
     expect(matchFeedsRouteKey(APP_ROUTES.FEED)).toBeNull();
     expect(matchFeedsRouteKey('/totally-unknown')).toBeNull();
@@ -60,7 +60,7 @@ describe('tryResolveFeedsShellConfig', () => {
   });
 
   it('returns null for any other non-feeds pathname', () => {
-    expect(tryResolveFeedsShellConfig('/hot')).toBeNull();
+    expect(tryResolveFeedsShellConfig('/arena')).toBeNull();
     expect(tryResolveFeedsShellConfig(APP_ROUTES.COLLECTIONS)).toBeNull();
     expect(tryResolveFeedsShellConfig(COLLECTION_ROUTES.BOOKMARKS)).toBeNull();
     expect(tryResolveFeedsShellConfig('/who-to-follow')).toBeNull();

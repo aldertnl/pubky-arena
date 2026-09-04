@@ -55,7 +55,7 @@ Guests can open routes that do not require a session:
 
 | Kind           | Paths                                                                                             | `@/app/routes` helper  | `usePublicRoute()` flag |
 | -------------- | ------------------------------------------------------------------------------------------------- | ---------------------- | ----------------------- |
-| Core explore   | `/home`, `/hot`, `/search`, `/collections`                                                        | `isCoreExploreRoute`   | `isCoreExploreRoute`    |
+| Core explore   | `/home`, `/arena`, `/search`, `/collections`                                                        | `isCoreExploreRoute`   | `isCoreExploreRoute`    |
 | Dynamic public | `/post/[userId]/[postId]`, `/profile/[pubky]`, `/invite/[code]`, `/collections/[userId]/[postId]` | `isDynamicPublicRoute` | `isDynamicPublicRoute`  |
 | Either         | —                                                                                                 | `isPublicExploreRoute` | `isPublicExploreRoute`  |
 

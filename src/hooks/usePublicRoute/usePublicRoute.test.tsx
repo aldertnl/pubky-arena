@@ -63,8 +63,8 @@ describe('usePublicRoute', () => {
       expect(result.current.isPublicExploreRoute).toBe(true);
     });
 
-    it('returns core explore state for hot page', () => {
-      mockPathname.mockReturnValue('/hot');
+    it('returns core explore state for arena page', () => {
+      mockPathname.mockReturnValue('/arena');
 
       const { result } = renderHook(() => usePublicRoute());
 

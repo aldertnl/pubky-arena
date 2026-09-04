@@ -52,7 +52,7 @@ describe('PostNotFound', () => {
     expect(mockPush).toHaveBeenCalledWith(getProfileRoute(PROFILE_ROUTES.PROFILE, PUBKY_52_STAGING_FIXTURE));
 
     await user.click(screen.getByRole('button', { name: 'Explore Tags' }));
-    expect(mockPush).toHaveBeenCalledWith(APP_ROUTES.HOT);
+    expect(mockPush).toHaveBeenCalledWith(APP_ROUTES.ARENA);
   });
 
   describe('Snapshots', () => {

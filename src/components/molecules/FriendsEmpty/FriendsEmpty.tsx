@@ -18,7 +18,7 @@ export function FriendsEmpty() {
   };
 
   const handlePopularUsersClick = () => {
-    router.push(APP_ROUTES.HOT);
+    router.push(APP_ROUTES.ARENA);
   };
 
   return (

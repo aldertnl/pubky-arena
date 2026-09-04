@@ -20,6 +20,11 @@ const nextConfig: NextConfig = {
   ...(process.env.NEXT_STANDALONE === 'true' && { output: 'standalone' }),
   async redirects() {
     return [
+      {
+        source: '/hot',
+        destination: '/arena',
+        permanent: true,
+      },
       // /profile/[pubky] is the canonical other-user posts view (see app/profile/[pubky]/page.tsx).
       // The legacy /profile/[pubky]/posts route is kept as a 308 permanent redirect so existing
       // bookmarks, shares, and search indexes consolidate onto the canonical URL without invoking

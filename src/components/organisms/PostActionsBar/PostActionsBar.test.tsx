@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostActionsBar } from './PostActionsBar';
+import { PostTagCountProvider } from './PostTagCountContext';
 
 // Mock hooks
 const mockUsePostCounts = vi.fn();
@@ -132,6 +133,21 @@ describe('PostActionsBar', () => {
       postDetails: { kind: 'short' },
       isLoading: false,
     });
+  });
+
+  it('uses total tag applications only when its surface requests that score', () => {
+    mockUsePostCounts.mockReturnValue({
+      postCounts: { tags: 25, unique_tags: 4, replies: 3, reposts: 0 },
+      isLoading: false,
+    });
+    const { rerender } = render(
+      <PostTagCountProvider mode="applications">
+        <PostActionsBar postId="post-arena" />
+      </PostTagCountProvider>,
+    );
+    expect(screen.getByRole('button', { name: 'Tag post (25)' })).toBeInTheDocument();
+    rerender(<PostActionsBar postId="post-arena" />);
+    expect(screen.getByRole('button', { name: 'Tag post (4)' })).toBeInTheDocument();
   });
 
   it('shows skeleton loading state while counts are not available', () => {

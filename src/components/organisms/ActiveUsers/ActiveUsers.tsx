@@ -40,7 +40,7 @@ export function ActiveUsers() {
     await toggleFollow(userId, isFollowing, displayName);
   };
   const handleSeeAll = () => {
-    router.push(`${APP_ROUTES.HOT}`);
+    router.push(`${APP_ROUTES.ARENA}`);
   };
   return (
     <SidebarSection

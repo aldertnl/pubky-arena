@@ -6,6 +6,10 @@ import type { PostHeaderProps } from '../PostHeader/PostHeader.types';
 
 export interface QuickReplyProps {
   parentPostId: string;
+  /** Override the randomized reply prompt. */
+  placeholder?: string;
+  /** Hide the connector and its gutter for standalone composers. */
+  showConnector?: boolean;
   /** Thread connector variant - defaults to LAST for terminal thread positions */
   connectorVariant?: typeof POST_THREAD_CONNECTOR_VARIANTS.LAST | typeof POST_THREAD_CONNECTOR_VARIANTS.REGULAR;
   /** Callback when reply is successfully submitted */

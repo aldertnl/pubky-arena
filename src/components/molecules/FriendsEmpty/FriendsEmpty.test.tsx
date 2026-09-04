@@ -112,7 +112,7 @@ describe('FriendsEmpty', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Popular Users/i }));
 
-    expect(mocks.push).toHaveBeenCalledWith(APP_ROUTES.HOT);
+    expect(mocks.push).toHaveBeenCalledWith(APP_ROUTES.ARENA);
   });
 });
 

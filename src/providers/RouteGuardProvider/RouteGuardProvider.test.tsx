@@ -58,7 +58,7 @@ vi.mock('@/app/routes', () => ({
     );
   },
   matchesAllowedRoute: (pathname: string, route: string, options?: { restrictExploreSubRoutes?: boolean }) => {
-    const EXPLORE_ROUTES = ['/home', '/hot', '/search', '/collections'];
+    const EXPLORE_ROUTES = ['/home', '/arena', '/search', '/collections'];
     if (pathname === route) return true;
     if (options?.restrictExploreSubRoutes && EXPLORE_ROUTES.includes(route)) return false;
     return pathname.startsWith(`${route}/`);
@@ -70,7 +70,7 @@ vi.mock('@/providers/RouteGuardProvider/RouteGuardProvider.constants', () => ({
   ROUTE_ACCESS_MAP: {
     AUTHENTICATED: { allowedRoutes: ['/feed', '/settings', '/collections'], redirectTo: '/feed' },
     UNAUTHENTICATED: {
-      allowedRoutes: ['/login', '/landing', '/home', '/hot', '/search', '/collections'],
+      allowedRoutes: ['/login', '/landing', '/home', '/arena', '/search', '/collections'],
       redirectTo: '/login',
     },
     NEEDS_PROFILE_CREATION: { allowedRoutes: ['/create-profile'], redirectTo: '/create-profile' },

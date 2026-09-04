@@ -50,7 +50,7 @@ export function PostNotFound({ postId }: PostNotFoundProps) {
             {'View profile'}
           </Button>
         ) : null}
-        <Button type="button" variant={ButtonVariant.SECONDARY} onClick={() => router.push(APP_ROUTES.HOT)}>
+        <Button type="button" variant={ButtonVariant.SECONDARY} onClick={() => router.push(APP_ROUTES.ARENA)}>
           <Tag className="size-4 shrink-0" />
           {'Explore Tags'}
         </Button>

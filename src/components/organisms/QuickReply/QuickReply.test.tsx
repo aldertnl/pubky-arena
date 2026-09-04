@@ -267,6 +267,14 @@ describe('QuickReply', () => {
     expect(screen.getByTestId('quick-reply-connector')).toHaveAttribute('variant', 'last');
   });
 
+  it('supports a standalone reply composer with a custom placeholder', () => {
+    render(<QuickReply parentPostId="author:original" placeholder="Reply to original post" showConnector={false} />);
+    expect(screen.getByTestId('quick-reply-textarea')).toHaveAttribute('placeholder', 'Reply to original post');
+    expect(screen.queryByTestId('quick-reply-connector')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('quick-reply-connector-column')).not.toBeInTheDocument();
+    expect(mockUsePostInput).toHaveBeenCalledWith(expect.objectContaining({ postId: 'author:original' }));
+  });
+
   it('forwards clipboard paste to usePostInput handlePaste (image attachments)', () => {
     const handlePaste = vi.fn();
     mockUsePostInput.mockImplementation((options: unknown) => createUsePostInputReturn(options, { handlePaste }));

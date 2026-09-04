@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { HotController } from '@/controllers/hot/hot';
 import { isAppError } from '@/libs/error/error.utils';
 import { Logger } from '@/libs/logger/logger';
@@ -42,8 +42,10 @@ export function useHotTags({
   const [rawTags, setRawTags] = useState<NexusHotTag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const requestVersion = useRef(0);
 
   const fetchTags = useCallback(async () => {
+    const version = ++requestVersion.current;
     setIsLoading(true);
     setError(null);
 
@@ -53,6 +55,7 @@ export function useHotTags({
         timeframe,
         limit,
       });
+      if (version !== requestVersion.current) return;
 
       // Store raw tags
       setRawTags(hotTags);
@@ -66,17 +69,21 @@ export function useHotTags({
       setTags(transformedTags);
       Logger.debug('[useHotTags] Fetched hot tags', { count: transformedTags.length, reach, timeframe });
     } catch (err) {
+      if (version !== requestVersion.current) return;
       const errorMessage = isAppError(err) ? err.message : 'Failed to fetch hot tags';
       setError(errorMessage);
       setRawTags([]);
       Logger.error('[useHotTags] Failed to fetch hot tags:', err);
     } finally {
-      setIsLoading(false);
+      if (version === requestVersion.current) setIsLoading(false);
     }
   }, [limit, reach, timeframe]);
 
   useEffect(() => {
     void fetchTags();
+    return () => {
+      requestVersion.current += 1;
+    };
   }, [fetchTags]);
 
   return {

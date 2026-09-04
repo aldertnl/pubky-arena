@@ -1,12 +1,12 @@
 export interface UsePublicRouteResult {
   /**
    * Legacy alias for {@link isDynamicPublicRoute}.
-   * Does **not** include core explore routes (`/home`, `/hot`, `/search`).
+   * Does **not** include core explore routes (`/home`, `/arena`, `/search`).
    */
   isPublicRoute: boolean;
   /**
    * Whether the current route is a core explore route.
-   * True for /home, /hot, and /search.
+   * True for /home, /arena, and /search.
    */
   isCoreExploreRoute: boolean;
   /**

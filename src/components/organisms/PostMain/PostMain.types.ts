@@ -6,6 +6,7 @@ export interface PostMainProps {
   isReply?: boolean;
   isLastReply?: boolean;
   pinActionsToBottom?: boolean;
+  stackTagsAndActions?: boolean;
   isNavigable?: boolean;
   showFullContentInListLayout?: boolean;
 }

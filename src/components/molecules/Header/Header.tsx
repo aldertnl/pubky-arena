@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Flame, Home, Library, Settings, UserRoundPlus } from 'lucide-react';
+import { Home, Library, Orbit, Settings, UserRoundPlus } from 'lucide-react';
 import { APP_ROUTES, isCoreExploreRoute, isNavItemActive, SETTINGS_ROUTES } from '@/app/routes';
 import { Badge } from '@/atoms/Badge/Badge';
 import { Button } from '@/atoms/Button/Button';
@@ -11,7 +11,6 @@ import { Heading } from '@/atoms/Heading/Heading';
 import { Link } from '@/atoms/Link/Link';
 import { Typography } from '@/atoms/Typography/Typography';
 import { getGithubLink, getTelegramLink, getTwitterGetpubkyLink } from '@/config/externalLinks';
-import { useCollectionsNavDiscovery } from '@/hooks/useCollectionsNavDiscovery/useCollectionsNavDiscovery';
 import { useRequireAuth } from '@/hooks/useRequireAuth/useRequireAuth';
 import { Github2, Telegram, XTwitter } from '@/icons';
 import { handleFeedNavClick } from '@/libs/utils/feedScrollTop';
@@ -106,9 +105,9 @@ const NAVIGATION_ITEMS: NavigationItemConfig[] = [
     isFeedRoute: true,
   },
   {
-    href: APP_ROUTES.HOT,
-    icon: Flame,
-    label: 'Hot',
+    href: APP_ROUTES.ARENA,
+    icon: Orbit,
+    label: 'Arena',
     dataCy: 'header-hot-btn',
   },
   {
@@ -206,24 +205,19 @@ export function HeaderNavigationButtons({
   className,
 }: HeaderNavigationButtonsProps) {
   const pathname = usePathname();
-  const { showCollectionsNew, markCollectionsNavSeen } = useCollectionsNavDiscovery();
   const counterString = counter > 21 ? '21+' : counter.toString();
   return (
     <Container className={cn('hidden w-auto flex-row items-center justify-start gap-3 lg:flex', className)}>
       {NAVIGATION_ITEMS.map((item) => {
-        const isCollectionsItem = item.href === APP_ROUTES.COLLECTIONS;
         return (
           <NavigationButton
             key={item.href}
             href={item.href}
-            onClick={isCollectionsItem ? markCollectionsNavSeen : undefined}
             icon={item.icon}
             label={item.label}
             isActive={isNavItemActive(pathname, item)}
             dataCy={item.dataCy}
             isFeedRoute={item.isFeedRoute}
-            showNew={isCollectionsItem && showCollectionsNew}
-            newLabel={'New'}
           />
         );
       })}

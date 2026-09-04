@@ -29,7 +29,7 @@ export function HotTags({ className }: HotTagsProps) {
     router.push(`${APP_ROUTES.SEARCH}?tags=${encodeURIComponent(tagName)}`);
   };
   const handleSeeAll = () => {
-    router.push(APP_ROUTES.HOT);
+    router.push(APP_ROUTES.ARENA);
   };
   return (
     <SidebarSection

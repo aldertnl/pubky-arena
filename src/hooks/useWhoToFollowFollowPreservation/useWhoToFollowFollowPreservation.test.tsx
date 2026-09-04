@@ -59,7 +59,7 @@ describe('useWhoToFollowFollowPreservation', () => {
 
   it('resets preserved users when the reset key changes', async () => {
     const { result, rerender } = renderHook(({ resetKey }) => useWhoToFollowFollowPreservation({ resetKey }), {
-      initialProps: { resetKey: '/hot' },
+      initialProps: { resetKey: '/arena' },
     });
 
     await act(async () => {

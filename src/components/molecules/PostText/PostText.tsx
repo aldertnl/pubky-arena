@@ -12,7 +12,7 @@ import { ArticleInlineImage } from '@/molecules/ArticleInlineImage/ArticleInline
 import { PostMentions } from '@/organisms/PostMentions/PostMentions';
 import { PostCodeBlock } from '../PostCodeBlock/PostCodeBlock';
 import { PostHashtags } from '../PostHashtags/PostHashtags';
-import { INLINE_LINK_CLASSNAME } from './PostText.constants';
+import { INLINE_LINK_CLASSNAME, POST_BODY_TYPOGRAPHY_CLASS } from './PostText.constants';
 import { PostTextProps, RemarkAnchorProps, RemarkButtonProps } from './PostText.types';
 import {
   remarkDisallowMarkdownLinks,
@@ -126,7 +126,7 @@ export const PostText = memo(function PostText({
       data-cy="post-text"
       overrideDefaults
       className={cn(
-        'text-base leading-6 font-medium wrap-anywhere',
+        POST_BODY_TYPOGRAPHY_CLASS,
         // Full articles use the same `prose` typography as the article editor so the
         // published article matches what the editor shows (issue #1762): real block
         // margins and outside list markers instead of the pre-line whitespace hack.

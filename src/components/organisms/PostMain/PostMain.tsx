@@ -57,6 +57,7 @@ export function PostMain({
   isReply = false,
   isLastReply = false,
   pinActionsToBottom = false,
+  stackTagsAndActions = false,
   isNavigable = true,
   showFullContentInListLayout = false,
 }: PostMainProps) {
@@ -182,7 +183,12 @@ export function PostMain({
                       postId={postId}
                       onReplyClick={openReplyDialog}
                       onRepostClick={openRepostDialog}
-                      actionsClassName="w-full shrink-0 justify-start sm:w-auto md:justify-end @max-xl/grid:w-full! @max-xl/grid:justify-start!"
+                      className={stackTagsAndActions ? 'md:flex-col md:items-start md:justify-start' : undefined}
+                      actionsClassName={
+                        stackTagsAndActions
+                          ? 'w-full shrink-0 justify-start'
+                          : 'w-full shrink-0 justify-start sm:w-auto md:justify-end @max-xl/grid:w-full! @max-xl/grid:justify-start!'
+                      }
                     />
                   </>
                 )}

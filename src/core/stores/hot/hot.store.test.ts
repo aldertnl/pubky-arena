@@ -13,7 +13,7 @@ describe('HotStore', () => {
     it('should initialize with default filter values', () => {
       const state = useHotStore.getState();
 
-      expect(state.reach).toBe(REACH.ALL);
+      expect(state.reach).toBe(REACH.NETWORK);
       expect(state.timeframe).toBe(TIMEFRAME.THIS_MONTH);
     });
 

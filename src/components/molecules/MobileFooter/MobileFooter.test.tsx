@@ -8,9 +8,7 @@ import { useKeyboardOffset } from '@/hooks/useKeyboardOffset/useKeyboardOffset';
 import { MobileFooter } from './MobileFooter';
 
 const collectionsDiscoveryMock = vi.hoisted(() => ({
-  markCollectionsNavSeen: vi.fn(),
   setShowSignInDialog: vi.fn(),
-  showCollectionsNew: false,
 }));
 
 let mockCurrentUserPubky: string | null = 'pk:test-user-pubky';
@@ -77,7 +75,7 @@ vi.mock('@/app/routes', async () => {
     APP_ROUTES: {
       HOME: '/home',
       SEARCH: '/search',
-      HOT: '/hot',
+      ARENA: '/arena',
       COLLECTIONS: '/collections',
       SETTINGS: '/settings',
       PROFILE: '/profile',
@@ -110,13 +108,6 @@ vi.mock('@/hooks/usePublicRoute/usePublicRoute', () => ({
 vi.mock('@/hooks/useKeyboardOffset/useKeyboardOffset', () => ({
   useKeyboardOffset: vi.fn(() => ({ isKeyboardVisible: false, keyboardOffset: 0 })),
 }));
-vi.mock('@/hooks/useCollectionsNavDiscovery/useCollectionsNavDiscovery', () => ({
-  useCollectionsNavDiscovery: () => ({
-    showCollectionsNew: Boolean(mockCurrentUserPubky) && collectionsDiscoveryMock.showCollectionsNew,
-    markCollectionsNavSeen: collectionsDiscoveryMock.markCollectionsNavSeen,
-  }),
-}));
-
 // Track notification store mock for per-test overrides
 const mockSelectUnread = vi.fn(() => 0);
 vi.mock('@/controllers/file/file', () => ({
@@ -150,7 +141,6 @@ describe('MobileFooter', () => {
     vi.mocked(usePathname).mockReturnValue('/home');
     mockSelectUnread.mockReturnValue(0);
     mockCurrentUserPubky = 'pk:test-user-pubky';
-    collectionsDiscoveryMock.showCollectionsNew = false;
     mockIsPublicRoute = false;
     mockIsCoreExploreRoute = false;
     Object.defineProperty(window, 'sessionStorage', {
@@ -167,7 +157,7 @@ describe('MobileFooter', () => {
 
     expect(document.querySelector('.lucide-house')).toBeInTheDocument();
     expect(document.querySelector('.lucide-search')).toBeInTheDocument();
-    expect(document.querySelector('.lucide-flame')).toBeInTheDocument();
+    expect(document.querySelector('.lucide-orbit')).toBeInTheDocument();
     expect(document.querySelector('.lucide-library')).toBeInTheDocument();
     expect(document.querySelector('.lucide-settings')).toBeInTheDocument();
     expect(screen.getByTestId('avatar-with-fallback')).toBeInTheDocument();
@@ -185,7 +175,7 @@ describe('MobileFooter', () => {
     const navItems = [
       { href: '/home', iconClass: '.lucide-house', label: 'Home' },
       { href: '/search', iconClass: '.lucide-search', label: 'Search' },
-      { href: '/hot', iconClass: '.lucide-flame', label: 'Hot' },
+      { href: '/arena', iconClass: '.lucide-orbit', label: 'Arena' },
       { href: '/collections', iconClass: '.lucide-library', label: 'Collections' },
       { href: '/settings/account', iconClass: '.lucide-settings', label: 'Settings' },
     ];
@@ -256,7 +246,7 @@ describe('MobileFooter', () => {
   it('applies correct icon classes', () => {
     render(<MobileFooter />);
 
-    const iconClasses = ['.lucide-house', '.lucide-search', '.lucide-flame', '.lucide-library', '.lucide-settings'];
+    const iconClasses = ['.lucide-house', '.lucide-search', '.lucide-orbit', '.lucide-library', '.lucide-settings'];
     iconClasses.forEach((selector) => {
       const iconElement = document.querySelector(selector) as HTMLElement | null;
       expect(iconElement).toHaveClass('h-6', 'w-6');
@@ -308,43 +298,9 @@ describe('MobileFooter', () => {
     expect(collectionsLink).not.toHaveClass('border');
   });
 
-  it('shows the Collections NEW treatment before dismissal', () => {
-    collectionsDiscoveryMock.showCollectionsNew = true;
-
-    render(<MobileFooter />);
-
-    const collectionsLink = document.querySelector('.lucide-library')?.closest('a');
-    expect(collectionsLink).toHaveClass('border-brand', 'text-brand');
-    expect(screen.getByRole('link', { name: 'Collections, New' })).toBeInTheDocument();
-    expect(screen.getByText('New')).toBeInTheDocument();
-  });
-
-  it('uses the discovery treatment instead of active background when Collections is active and new', () => {
-    vi.mocked(usePathname).mockReturnValue('/collections');
-    collectionsDiscoveryMock.showCollectionsNew = true;
-
-    render(<MobileFooter />);
-
-    const collectionsLink = document.querySelector('.lucide-library')?.closest('a');
-    expect(collectionsLink).toHaveClass('border-brand', 'bg-white/5', 'text-brand');
-    expect(collectionsLink).not.toHaveClass('bg-secondary');
-  });
-
-  it('marks Collections discovery seen when clicking the authenticated Collections nav link', () => {
-    collectionsDiscoveryMock.showCollectionsNew = true;
-    render(<MobileFooter />);
-
-    const collectionsLink = document.querySelector('.lucide-library')?.closest('a');
-    expect(collectionsLink).toBeTruthy();
-    fireEvent.click(collectionsLink!);
-
-    expect(collectionsDiscoveryMock.markCollectionsNavSeen).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not show or dismiss Collections discovery for guests', () => {
+  it('does not show a Collections NEW treatment for guests', () => {
     mockCurrentUserPubky = null;
     mockIsCoreExploreRoute = true;
-    collectionsDiscoveryMock.showCollectionsNew = true;
 
     render(<MobileFooter />);
 
@@ -353,7 +309,6 @@ describe('MobileFooter', () => {
     expect(collectionsLink).toBeTruthy();
     expect(collectionsLink).toHaveAttribute('href', '/collections');
     fireEvent.click(collectionsLink!);
-    expect(collectionsDiscoveryMock.markCollectionsNavSeen).not.toHaveBeenCalled();
     expect(collectionsDiscoveryMock.setShowSignInDialog).not.toHaveBeenCalled();
   });
 
@@ -490,7 +445,7 @@ describe('MobileFooter', () => {
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
       '/home',
       '/search',
-      '/hot',
+      '/arena',
       '/collections',
       '/settings/account',
     ]);
@@ -528,7 +483,6 @@ describe('MobileFooter - Snapshots', () => {
     vi.mocked(usePathname).mockReturnValue('/home');
     mockSelectUnread.mockReturnValue(0);
     mockCurrentUserPubky = 'pk:test-user-pubky';
-    collectionsDiscoveryMock.showCollectionsNew = false;
     mockIsPublicRoute = false;
     mockIsCoreExploreRoute = false;
     vi.mocked(useKeyboardOffset).mockReturnValue({ isKeyboardVisible: false, keyboardOffset: 0 });

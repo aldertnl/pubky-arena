@@ -53,7 +53,7 @@ describe('Logo', () => {
 
     expect(container).toBeInTheDocument();
     expect(image).toBeInTheDocument();
-    expect(image).toHaveAttribute('src', '/pubky-logo.svg');
+    expect(image).toHaveAttribute('src', '/pubky-arena-logo.svg');
   });
 
   it('scrolls to top when clicking logo on /home', () => {
@@ -70,7 +70,7 @@ describe('Logo', () => {
   });
 
   it('does not scroll to top when clicking logo on other pages', () => {
-    vi.mocked(usePathname).mockReturnValue('/hot');
+    vi.mocked(usePathname).mockReturnValue('/arena');
 
     Object.defineProperty(window, 'scrollTo', { value: vi.fn(), writable: true });
     const setItemSpy = vi.spyOn(window.sessionStorage, 'setItem');

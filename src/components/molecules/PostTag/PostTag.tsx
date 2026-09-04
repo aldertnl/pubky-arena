@@ -7,9 +7,12 @@ import type { PostTagProps } from './PostTag.types';
 
 export function PostTag({
   label,
+  maxLabelLength,
   count,
+  countIcon,
   showClose = false,
   selected = false,
+  selectedStyle,
   onClick,
   onClose,
   color,
@@ -50,13 +53,15 @@ export function PostTag({
       )}
       style={{
         backgroundImage: backgroundGradient,
-        boxShadow: selected ? `inset 0 0 0 1px ${tagColor}` : undefined,
+        boxShadow: selected ? (selectedStyle?.boxShadow ?? `inset 0 0 0 1px ${tagColor}`) : undefined,
       }}
       aria-label={count !== undefined ? `${label} tag (${count} posts)` : `${label} tag`}
     >
       <Tag
         name={label}
+        maxLabelLength={maxLabelLength}
         count={count}
+        countIcon={countIcon}
         countDataCy="post-tag-count"
         className="px-0"
         style={{ backgroundColor: 'transparent', border: 'none', boxShadow: 'none' }}
@@ -89,7 +94,7 @@ export function PostTag({
         <span
           className="pointer-events-none absolute inset-0 rounded-md border border-solid"
           style={{
-            borderColor: tagColor,
+            borderColor: selectedStyle?.borderColor ?? tagColor,
           }}
           aria-hidden="true"
         />

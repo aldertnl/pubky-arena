@@ -328,12 +328,12 @@ describe('matchPostRoute', () => {
 describe('isNavItemActive', () => {
   it('matches exact href when activePrefix is omitted', () => {
     expect(isNavItemActive('/home', { href: APP_ROUTES.HOME })).toBe(true);
-    expect(isNavItemActive('/hot', { href: APP_ROUTES.HOT })).toBe(true);
-    expect(isNavItemActive('/search', { href: APP_ROUTES.HOT })).toBe(false);
+    expect(isNavItemActive('/arena', { href: APP_ROUTES.ARENA })).toBe(true);
+    expect(isNavItemActive('/search', { href: APP_ROUTES.ARENA })).toBe(false);
   });
 
   it('matches sub-routes under href when activePrefix is omitted', () => {
-    expect(isNavItemActive('/hot/trending', { href: APP_ROUTES.HOT })).toBe(true);
+    expect(isNavItemActive('/arena/trending', { href: APP_ROUTES.ARENA })).toBe(true);
   });
 
   it('matches exact and nested routes under activePrefix', () => {
@@ -388,7 +388,7 @@ describe('isPostRoute', () => {
 describe('isCoreExploreRoute', () => {
   it('returns true for core logged-out explore routes', () => {
     expect(isCoreExploreRoute('/home')).toBe(true);
-    expect(isCoreExploreRoute('/hot')).toBe(true);
+    expect(isCoreExploreRoute('/arena')).toBe(true);
     expect(isCoreExploreRoute('/search')).toBe(true);
     expect(isCoreExploreRoute('/collections')).toBe(true);
   });
@@ -411,7 +411,7 @@ describe('isPublicExploreRoute', () => {
     const pubky = 'o1gg96ewuojmopcjbz8895478wdtxtzzber7aezq6ror5a91j7dy';
 
     expect(isPublicExploreRoute('/home')).toBe(true);
-    expect(isPublicExploreRoute('/hot')).toBe(true);
+    expect(isPublicExploreRoute('/arena')).toBe(true);
     expect(isPublicExploreRoute('/search')).toBe(true);
     expect(isPublicExploreRoute('/collections')).toBe(true);
     expect(isPublicExploreRoute(`/post/${pubky}/0034BBBDFK83G`)).toBe(true);
@@ -451,7 +451,7 @@ describe('isLogoLandingRoute', () => {
 
   it('returns false for app and explore routes', () => {
     expect(isLogoLandingRoute('/home')).toBe(false);
-    expect(isLogoLandingRoute('/hot')).toBe(false);
+    expect(isLogoLandingRoute('/arena')).toBe(false);
     expect(isLogoLandingRoute('/bookmarks')).toBe(false);
     expect(isLogoLandingRoute(null)).toBe(false);
   });

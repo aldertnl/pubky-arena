@@ -21,11 +21,13 @@ import { QuickReplyContent } from './QuickReplyContent';
 
 export function QuickReply({
   parentPostId,
+  placeholder,
+  showConnector = true,
   connectorVariant = POST_THREAD_CONNECTOR_VARIANTS.LAST,
   onReplySubmitted,
 }: QuickReplyProps) {
   const [promptIndex] = React.useState(() => Math.floor(Math.random() * QUICK_REPLY_PROMPTS.length));
-  const prompt = QUICK_REPLY_PROMPTS[promptIndex] || QUICK_REPLY_PROMPTS[0];
+  const prompt = placeholder ?? (QUICK_REPLY_PROMPTS[promptIndex] || QUICK_REPLY_PROMPTS[0]);
 
   const {
     textareaRef,
@@ -155,16 +157,18 @@ export function QuickReply({
 
   return (
     <Container overrideDefaults className="relative flex" data-testid="quick-reply" aria-busy={isSubmitting}>
-      <Container overrideDefaults className="relative w-3 shrink-0" data-testid="quick-reply-connector-column">
-        <Container overrideDefaults className="absolute -inset-y-px left-0">
-          <PostThreadConnector
-            height={connectorHeight}
-            variant={connectorVariant}
-            style={heightTransitionStyle}
-            data-testid="quick-reply-connector"
-          />
+      {showConnector && (
+        <Container overrideDefaults className="relative w-3 shrink-0" data-testid="quick-reply-connector-column">
+          <Container overrideDefaults className="absolute -inset-y-px left-0">
+            <PostThreadConnector
+              height={connectorHeight}
+              variant={connectorVariant}
+              style={heightTransitionStyle}
+              data-testid="quick-reply-connector"
+            />
+          </Container>
         </Container>
-      </Container>
+      )}
 
       <Container
         ref={containerRef}

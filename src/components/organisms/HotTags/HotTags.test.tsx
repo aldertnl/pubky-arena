@@ -137,13 +137,13 @@ describe('HotTags', () => {
     expect(mockPush).toHaveBeenCalledWith('/search?tags=bitcoin');
   });
 
-  it('navigates to /hot when "Explore all" is clicked', () => {
+  it('navigates to /arena when "Explore all" is clicked', () => {
     render(<HotTags />);
 
     const seeAllButton = screen.getByTestId('see-all-button');
     fireEvent.click(seeAllButton);
 
-    expect(mockPush).toHaveBeenCalledWith('/hot');
+    expect(mockPush).toHaveBeenCalledWith('/arena');
   });
 
   it('renders tags with counts', () => {

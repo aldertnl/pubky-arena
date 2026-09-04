@@ -42,7 +42,7 @@ describe('UserNotFound', () => {
     expect(mockPush).toHaveBeenCalledWith(APP_ROUTES.HOME);
 
     await user.click(screen.getByRole('button', { name: 'Explore Tags' }));
-    expect(mockPush).toHaveBeenCalledWith(APP_ROUTES.HOT);
+    expect(mockPush).toHaveBeenCalledWith(APP_ROUTES.ARENA);
   });
 
   describe('Snapshots', () => {
