@@ -17,7 +17,6 @@ exports[`ProfilePageSocialGraph - Snapshots > matches snapshot for networked tie
       Social Graph
     </h2>
     <button
-      aria-controls="radix-normalized"
       aria-expanded="false"
       aria-haspopup="dialog"
       aria-label="About social graph status"

@@ -2,7 +2,6 @@
 
 exports[`PopoverSocialGraph - Snapshots > matches snapshot when closed 1`] = `
 <button
-  aria-controls="radix-normalized"
   aria-expanded="false"
   aria-haspopup="dialog"
   aria-label="About social graph status"
