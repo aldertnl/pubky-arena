@@ -99,6 +99,16 @@ describe('WhoTaggedExpandedList', () => {
     expect(screen.getByTestId('user-list-item-user3')).toBeInTheDocument();
   });
 
+  it('keeps overflowing tagger rows in a constrained scroll container', () => {
+    const taggerIds = Array.from({ length: 6 }, (_, index) => `user${index + 1}`);
+    render(<WhoTaggedExpandedList taggerIds={taggerIds} />);
+
+    expect(screen.getByRole('list', { name: 'Who tagged expanded list' })).toHaveClass(
+      'max-h-(--who-tagged-expanded-list-max-height)',
+      'overflow-y-auto',
+    );
+  });
+
   it('returns null when taggers array is empty', () => {
     const { container } = render(<WhoTaggedExpandedList taggerIds={[]} />);
     expect(container.firstChild).toBeNull();

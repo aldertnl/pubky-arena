@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { TagKind } from '@/application/tag/tag.types';
 import { Container } from '@/atoms/Container/Container';
 import { Skeleton } from '@/atoms/Skeleton/Skeleton';
+import { useEntityTaggers } from '@/hooks/useEntityTaggers/useEntityTaggers';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll/useInfiniteScroll';
-import { usePostTaggers } from '@/hooks/usePostTaggers/usePostTaggers';
 import { TaggedItem } from '../TaggedItem/TaggedItem';
 import type { TaggedListProps } from './TaggedList.types';
 
@@ -21,8 +20,11 @@ export function TaggedList({
   // Track which tag is currently expanded (only one at a time - accordion behavior)
   const [expandedTagLabel, setExpandedTagLabel] = useState<string | null>(null);
 
-  const shouldFetchTaggers = taggedKind === TagKind.POST && !!taggedId;
-  const { taggersByLabel, taggerStates, fetchAllTaggers } = usePostTaggers(shouldFetchTaggers ? taggedId : null);
+  const shouldFetchTaggers = !!taggedId && !!taggedKind;
+  const { taggersByLabel, taggerStates, fetchAllTaggers } = useEntityTaggers(
+    shouldFetchTaggers ? taggedId : null,
+    shouldFetchTaggers ? taggedKind : null,
+  );
 
   const { sentinelRef } = useInfiniteScroll({
     onLoadMore: onLoadMore || (() => {}),
