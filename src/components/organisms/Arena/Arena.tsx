@@ -157,7 +157,7 @@ export function Arena() {
       <div className={styles.toolbar}>
         <div className={cn(styles.filters, 'font-medium')} role="group" aria-label="Arena filters">
           <div className={styles.filterClause}>
-            <span className={cn(styles.mobileHidden, 'text-xs font-bold')}>Show</span>{' '}
+            <span className="mr-2 text-xs font-bold sm:mr-0">Show</span>{' '}
             <ArenaFilterMenu
               label="Timeframe"
               value={timeframe}
@@ -199,27 +199,29 @@ export function Arena() {
               lowercase
             />
           </div>{' '}
-          <div className={styles.filterClause}>
-            <ArenaFilterMenu
-              label="View"
-              value={isList ? 'list' : 'arena'}
-              options={VIEW_OPTIONS}
-              onChange={(value) => setIsList(value === 'list')}
-              lowercase
-            />
-          </div>
-          <div className={styles.toolbarActions}>
-            <div ref={setMuteControlTarget} />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-xs text-muted-foreground"
-              onClick={resetFilters}
-            >
-              <RotateCcw className="size-3.5" aria-hidden="true" />
-              <span>Reset</span>
-            </Button>
+          <div className={styles.viewActions}>
+            <div className={styles.filterClause}>
+              <ArenaFilterMenu
+                label="View"
+                value={isList ? 'list' : 'arena'}
+                options={VIEW_OPTIONS}
+                onChange={(value) => setIsList(value === 'list')}
+                lowercase
+              />
+            </div>
+            <div className={styles.toolbarActions}>
+              <div ref={setMuteControlTarget} />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground"
+                onClick={resetFilters}
+              >
+                <RotateCcw className="size-3.5" aria-hidden="true" />
+                <span>Reset</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
