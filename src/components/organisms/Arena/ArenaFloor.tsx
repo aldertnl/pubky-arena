@@ -1,7 +1,7 @@
 'use client';
 
 import { type CSSProperties, useEffect, useState } from 'react';
-import { Trophy } from 'lucide-react';
+import { Expand, Trophy } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Badge } from '@/atoms/Badge/Badge';
 import { Button } from '@/atoms/Button/Button';
@@ -101,6 +101,7 @@ export function ArenaFloor({
   ideas,
   selectedId,
   onSelect,
+  onExpand,
   isList,
   metric,
   topic = '',
@@ -110,6 +111,7 @@ export function ArenaFloor({
   ideas: RankedArenaIdea[];
   selectedId?: string;
   onSelect: (id: string) => void;
+  onExpand?: () => void;
   isList: boolean;
   metric: ArenaMetric;
   topic?: ArenaTopicFilter;
@@ -283,6 +285,19 @@ export function ArenaFloor({
                   </Typography>
                 )}
               </Button>
+              {!isList && selectedId === idea.id && onExpand && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  className={cn(styles.awardIcon, styles.expandPost)}
+                  aria-label="See full post"
+                  title="See full post"
+                  onClick={onExpand}
+                >
+                  <Expand className="size-4" aria-hidden="true" />
+                </Button>
+              )}
             </Card>
           </motion.li>
         );

@@ -46,6 +46,28 @@ const ideas = rankArenaIdeas(
 );
 
 describe('Arena floor', () => {
+  it('offers a separate expand button only on the selected arena card', () => {
+    const onSelect = vi.fn();
+    const onExpand = vi.fn();
+    const props = { ideas, onSelect, onExpand, isList: false, metric: 'tags' as const };
+    const { rerender } = render(<ArenaFloor {...props} selectedId="a:1" />);
+    const expand = screen.getByRole('button', { name: 'See full post' });
+    const selected = screen.getByRole('button', { name: /Rank 2, Mira/ });
+    expect(selected.closest('[data-slot="card"]')).toContainElement(expand);
+    expect(selected).not.toContainElement(expand);
+    expect(expand).toHaveAttribute('data-variant', 'secondary');
+    fireEvent.click(expand);
+    expect(onExpand).toHaveBeenCalledOnce();
+    expect(onSelect).not.toHaveBeenCalled();
+
+    rerender(<ArenaFloor {...props} selectedId="b:2" />);
+    expect(screen.getByRole('button', { name: /Rank 1, Jules/ }).closest('[data-slot="card"]')).toContainElement(
+      screen.getByRole('button', { name: 'See full post' }),
+    );
+    rerender(<ArenaFloor {...props} selectedId="b:2" isList />);
+    expect(screen.queryByRole('button', { name: 'See full post' })).not.toBeInTheDocument();
+  });
+
   it('shows the lead below the winning preview even when another post is selected', () => {
     const ranked = rankArenaIdeas(ideas, 'popular');
     render(

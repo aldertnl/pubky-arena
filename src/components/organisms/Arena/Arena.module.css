@@ -415,6 +415,7 @@
   transform-origin: center;
 }
 .ideaCard {
+  --arena-card-shadow: var(--tw-shadow);
   --arena-selection-border: color-mix(in srgb, var(--arena-topic-color, var(--brand)) 64%, transparent);
   --arena-selection-glow: color-mix(in srgb, var(--arena-topic-color, var(--brand)) 32%, transparent);
   --arena-selection-inset: color-mix(in srgb, var(--arena-topic-color, var(--brand)) 32%, transparent);
@@ -422,11 +423,16 @@
   position: relative;
   height: 100%;
   outline: 1px solid transparent;
+  box-shadow: var(--arena-card-shadow);
   transition:
     outline-color 180ms ease,
     box-shadow 180ms ease,
+    scale 180ms var(--arena-ease),
     translate 180ms var(--arena-ease),
     transform 240ms var(--arena-ease);
+}
+.ideaCard.leader {
+  --arena-card-shadow: 0 8px 16px rgb(0 0 0 / 72%), 0 24px 48px 8px rgb(0 0 0 / 85%);
 }
 .idea {
   display: flex;
@@ -440,10 +446,24 @@
   cursor: pointer;
   outline: none;
 }
+.leader .idea {
+  padding-top: calc(var(--arena-post-padding) + 8px);
+}
+.expandPost {
+  position: absolute;
+  right: var(--arena-post-padding);
+  top: -16px;
+  width: 32px;
+  height: 32px;
+  box-shadow: none;
+}
+.conversationTarget {
+  scroll-margin-top: 96px;
+  outline: none;
+}
 @media (hover: hover) and (pointer: fine) {
   .ideaCard:hover {
     outline-color: var(--border);
-    translate: 0 -2px;
   }
   .topicControl:hover {
     scale: 1.1;
@@ -463,17 +483,17 @@
   outline-color: var(--arena-selection-border);
   box-shadow:
     inset 0 0 8px 0 var(--arena-selection-inset),
-    0 0 32px 8px var(--arena-selection-glow),
-    var(--tw-shadow);
+    var(--arena-card-shadow),
+    0 0 32px 8px var(--arena-selection-glow);
 }
 .contender[data-arena-spotlight] .ideaCard {
-  translate: 0 -4px;
+  scale: 1.1;
   outline-color: var(--arena-topic-color);
 }
 .contender[data-arena-spotlight] .ideaCard:not(.selected) {
   box-shadow:
-    0 0 18px 2px color-mix(in srgb, var(--arena-topic-color) 16%, transparent),
-    var(--tw-shadow);
+    var(--arena-card-shadow),
+    0 0 18px 2px color-mix(in srgb, var(--arena-topic-color) 16%, transparent);
 }
 .arrivalGlow,
 .leaderPulse {
@@ -514,9 +534,13 @@
   position: absolute;
   top: -16px;
   right: var(--arena-post-padding);
+  flex-shrink: 0;
   width: 32px;
   height: 32px;
   rotate: 8deg;
+}
+.ideaCard:has(.expandPost) .postAward {
+  right: calc(var(--arena-post-padding) + 40px);
 }
 .rankPill {
   gap: 4px;
@@ -532,11 +556,23 @@
     color 200ms ease,
     border-color 200ms ease;
 }
-.leadingRank {
+.leadingRank,
+.selected .rankPill,
+.contender[data-arena-spotlight] .rankPill {
   border-color: var(--arena-topic-color, var(--brand));
   background: var(--background);
   box-shadow: inset 0 0 8px 0 color-mix(in srgb, var(--arena-topic-color, var(--brand)) 32%, transparent);
   color: var(--arena-topic-color, var(--brand));
+}
+.ideaCard .leadingRank,
+.postAward,
+.expandPost {
+  background: color-mix(in srgb, var(--arena-topic-color, var(--brand)) 10%, var(--background));
+}
+.expandPost:hover {
+  color: #fff;
+  border-color: #fff;
+  background: color-mix(in srgb, var(--arena-topic-color, var(--brand)) 16%, var(--background));
 }
 .preview {
   display: -webkit-box;

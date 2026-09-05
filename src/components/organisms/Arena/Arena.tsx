@@ -455,6 +455,7 @@ function ArenaStage({
 }
 
 function ArenaTopic(props: StageProps & { reach: ReachType }) {
+  const conversationRef = useRef<HTMLDivElement>(null);
   const streamId = getArenaCandidateStreamId(
     props.topic,
     props.metric,
@@ -520,6 +521,15 @@ function ArenaTopic(props: StageProps & { reach: ReachType }) {
             ideas={ranked}
             selectedId={selected?.id}
             onSelect={setChosen}
+            onExpand={() => {
+              const target = conversationRef.current;
+              if (!target) return;
+              target.focus({ preventScroll: true });
+              target.scrollIntoView({
+                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+                block: 'start',
+              });
+            }}
             isList={props.isList}
             metric={props.metric}
             topic={props.topic}
@@ -529,7 +539,14 @@ function ArenaTopic(props: StageProps & { reach: ReachType }) {
         )}
       </ArenaStage>
       {rootId && selected && (
-        <ArenaConversation key={rootId} postWindow={props.postWindow} rootId={rootId} selectedId={selected.id} />
+        <div
+          ref={conversationRef}
+          className={styles.conversationTarget}
+          tabIndex={-1}
+          aria-label="Original post conversation"
+        >
+          <ArenaConversation key={rootId} postWindow={props.postWindow} rootId={rootId} selectedId={selected.id} />
+        </div>
       )}
     </>
   );
