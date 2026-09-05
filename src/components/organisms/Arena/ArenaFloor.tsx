@@ -177,7 +177,9 @@ export function ArenaFloor({
             }
             layout={shouldReduceMotion ? false : 'position'}
             initial={shouldReduceMotion ? false : { opacity: 0 }}
-            animate={{ opacity: isList || spotlight || selectedId === idea.id ? 1 : Math.max(0.55, (21 - idea.rank) / 20) }}
+            animate={{
+              opacity: isList || spotlight || selectedId === idea.id ? 1 : Math.max(0.55, (21 - idea.rank) / 20),
+            }}
             transition={{
               layout: { type: 'spring', stiffness: 360, damping: 36, mass: 0.75 },
               opacity: {
@@ -267,7 +269,6 @@ export function ArenaFloor({
                 >
                   {idea.preview}
                 </Typography>
-                {idea.replyTo && <span className={styles.role}>Reply</span>}
               </Button>
             </Card>
           </motion.li>

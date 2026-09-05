@@ -142,9 +142,6 @@ export function Arena() {
   return (
     <div className={styles.arena}>
       <div className={styles.toolbar}>
-        <svg className={styles.toolbarDivider} aria-hidden="true" focusable="false">
-          <line x1="0" y1="0.5" x2="100%" y2="0.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-        </svg>
         <div className={cn(styles.filters, 'font-medium')} role="group" aria-label="Arena filters">
           <div className={styles.filterClause}>
             <span className={styles.mobileHidden}>Show</span>{' '}
@@ -206,9 +203,7 @@ export function Arena() {
             onClick={resetFilters}
           >
             <RotateCcw className="size-3.5" aria-hidden="true" />
-            <span>
-              Reset<span className={styles.mobileHidden}> defaults</span>
-            </span>
+            <span>Reset</span>
           </Button>
         </div>
       </div>
@@ -230,26 +225,31 @@ export function Arena() {
         <div className="mt-2 max-w-2xl space-y-2 leading-relaxed">
           <p>
             Topics follow Pubky’s trending-tag ranking for your selected reach and timeframe. A topic’s count is the
-            number of posts carrying that tag. Today, This week, and This month use rolling 24-hour, 7-day, and 30-day
-            windows; All time has no time limit.
+            number of posts carrying that tag. Reach filters the trending topics; posts competing under a selected tag
+            currently come from everyone.
+          </p>
+          <p>
+            Today, This week, and This month use rolling 24-hour, 7-day, and 30-day windows based on the timestamp shown
+            on each post. All time has no age limit. Content includes all types; choosing a specific type limits the
+            competing posts. Replies can compete alongside original posts.
           </p>
           <p>
             Most popular adds distinct tag labels + (direct replies × 4) + (reposts × 3). Most tagged, Most replied, and
-            Most reposted use only that count. Newest uses the timestamp shown on the post. Tags measure attention, not
-            necessarily agreement.
+            Most reposted use only that count. These are lifetime counts, even when a timeframe is selected. Newest
+            orders posts by their displayed timestamp. Tags measure attention, not necessarily agreement. Counts may be
+            cached.
           </p>
           <p>
-            Reach and timeframe determine which topics are trending and which posts compete. After you select a topic,
-            post rankings compare its loaded posts from everyone within the selected timeframe. Content includes all
-            types. Bounded windows load posts chronologically before applying your selected ranking. All time loads by
-            engagement unless Newest is selected. Arena displays up to ten posts and keeps your selection visible; Grid
-            displays up to nine. Equal post scores use a stable order with unique rank numbers. Muted authors and
-            deleted posts are excluded. Counts may be cached.
+            Standings compare the loaded posts that match your tag, timeframe, and content type. They may not cover
+            every matching post, especially for All time. Arena shows up to ten posts and keeps your selection visible;
+            Grid shows up to nine. Tied scores receive separate ranks in a consistent order. Muted authors and deleted
+            posts are excluded.
           </p>
           <p>
-            The leading reply is ranked separately by Most popular, regardless of the post ranking above. All pages of
-            direct replies to the original are checked, then filtered by the same timeframe and mute settings. Replies
-            do not need the selected tag, content type, or reach. Show all replies opens the standard thread page.
+            Selecting a reply shows the post it replies to in the conversation below. The leading reply always uses Most
+            popular, regardless of the ranking selected above. Direct replies to the original are checked using the same
+            timeframe and mute settings, without filtering by tag, content type, or reach. Show all replies opens the
+            full thread.
           </p>
         </div>
       </details>
@@ -352,16 +352,18 @@ function ArenaStage({
     >
       {/* Decorative rings and particles stay behind the interactive content. */}
       <div className={styles.bowl} aria-hidden="true" data-testid="arena-orbits">
-        <span className={styles.atmosphere} />
-        <span className={cn(styles.orbit, styles.orbitRear)} data-orbit="rear" />
-        <span className={cn(styles.orbit, styles.orbitMiddle)} data-orbit="middle" />
-        <span className={cn(styles.orbit, styles.orbitOuter)} data-orbit="outer" />
-        <span className={cn(styles.orbit, styles.orbitFront)} data-orbit="front" />
-        <span className={cn(styles.orbit, styles.orbitCrossOne)} data-orbit="cross-one" />
-        <span className={cn(styles.orbit, styles.orbitCrossTwo)} data-orbit="cross-two" />
-        <span className={cn(styles.orbit, styles.orbitCrossThree)} data-orbit="cross-three" />
-        <span className={cn(styles.orbit, styles.orbitInner)} data-orbit="inner" />
-        <span className={cn(styles.orbit, styles.orbitAccent)} data-orbit="accent" />
+        <div className={styles.orbitField}>
+          <span className={styles.atmosphere} />
+          <span className={cn(styles.orbit, styles.orbitRear)} data-orbit="rear" />
+          <span className={cn(styles.orbit, styles.orbitMiddle)} data-orbit="middle" />
+          <span className={cn(styles.orbit, styles.orbitOuter)} data-orbit="outer" />
+          <span className={cn(styles.orbit, styles.orbitFront)} data-orbit="front" />
+          <span className={cn(styles.orbit, styles.orbitCrossOne)} data-orbit="cross-one" />
+          <span className={cn(styles.orbit, styles.orbitCrossTwo)} data-orbit="cross-two" />
+          <span className={cn(styles.orbit, styles.orbitCrossThree)} data-orbit="cross-three" />
+          <span className={cn(styles.orbit, styles.orbitInner)} data-orbit="inner" />
+          <span className={cn(styles.orbit, styles.orbitAccent)} data-orbit="accent" />
+        </div>
         <ArenaParticles />
       </div>
       {!isList && <ArenaTagConnectors key={topic} stageRef={stageRef} topic={topic} />}

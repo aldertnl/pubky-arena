@@ -34,7 +34,11 @@ export function ArenaFilterMenu<T extends string>({
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <SidebarButton icon={ActiveIcon} className="w-auto" aria-label={`${label}: ${active.label}`}>
+        <SidebarButton
+          icon={ActiveIcon}
+          className="w-auto focus-visible:border-border focus-visible:ring-0"
+          aria-label={`${label}: ${active.label}`}
+        >
           <Typography as="span" overrideDefaults>
             {lowercase ? active.label.toLowerCase() : active.label}
           </Typography>

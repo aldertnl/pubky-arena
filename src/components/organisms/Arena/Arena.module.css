@@ -11,16 +11,6 @@
   flex-wrap: wrap;
   gap: 16px;
   padding-bottom: 20px;
-  border-bottom: 1px solid transparent;
-}
-.toolbarDivider {
-  position: absolute;
-  left: 0;
-  bottom: -1px;
-  width: 100%;
-  height: 1px;
-  pointer-events: none;
-  color: var(--border);
 }
 .filters {
   display: flex;
@@ -68,8 +58,12 @@
   height: 630px;
   pointer-events: none;
   color: var(--brand);
-  overflow: clip;
   animation: arena-appear 600ms ease-out both;
+}
+.orbitField {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
 }
 .atmosphere {
   position: absolute;
@@ -418,6 +412,7 @@
 }
 .selected,
 .ideaCard.selected:hover {
+  background-color: color-mix(in srgb, var(--arena-topic-color, var(--brand)) 10%, var(--card));
   outline-color: var(--arena-selection-border);
   box-shadow:
     inset 0 0 8px 0 var(--arena-selection-inset),
@@ -494,13 +489,6 @@
   background: var(--background);
   box-shadow: inset 0 0 8px 0 color-mix(in srgb, var(--arena-topic-color, var(--brand)) 32%, transparent);
   color: var(--arena-topic-color, var(--brand));
-}
-.role {
-  margin-left: auto;
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--muted-foreground);
-  white-space: nowrap;
 }
 .preview {
   display: -webkit-box;
