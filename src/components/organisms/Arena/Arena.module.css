@@ -62,8 +62,9 @@
 }
 .orbitField {
   position: absolute;
-  inset: 0;
+  inset: 0 -3%;
   overflow: clip;
+  overflow-clip-margin: 80px;
 }
 .atmosphere {
   position: absolute;
@@ -78,9 +79,40 @@
 }
 .orbit {
   position: absolute;
-  border: solid currentColor;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  rotate: -8deg;
   border-radius: 50%;
+  background: radial-gradient(
+    ellipse closest-side,
+    transparent 88%,
+    color-mix(in srgb, currentColor 2%, transparent) 90%,
+    color-mix(in srgb, currentColor 8%, transparent) 92%,
+    color-mix(in srgb, currentColor 22%, transparent) 93%,
+    color-mix(in srgb, currentColor 10%, transparent) 94%,
+    color-mix(in srgb, currentColor 2%, transparent) 96%,
+    transparent 98%
+  );
   transform-origin: center;
+}
+.orbitParticle {
+  position: absolute;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle closest-side,
+    color-mix(in srgb, currentColor 60%, transparent),
+    color-mix(in srgb, currentColor 42%, transparent) 10%,
+    color-mix(in srgb, currentColor 18%, transparent) 26%,
+    color-mix(in srgb, currentColor 4%, transparent) 50%,
+    transparent 78%
+  );
+  offset-path: ellipse(46.5% 46.5% at 50% 50%);
+  offset-distance: var(--orbit-particle-start);
+  offset-rotate: 0deg;
+  animation: arena-orbit-particle var(--orbit-particle-duration) linear infinite;
 }
 .particles {
   position: absolute;
@@ -90,77 +122,79 @@
 .particle {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, currentColor 0%, transparent 70%);
+  background:
+    radial-gradient(
+      circle at 42% 38%,
+      color-mix(in srgb, currentColor 20%, transparent),
+      color-mix(in srgb, currentColor 8%, transparent) 22%,
+      transparent 55%
+    ),
+    radial-gradient(
+      circle closest-side,
+      color-mix(in srgb, currentColor 50%, transparent),
+      color-mix(in srgb, currentColor 35%, transparent) 12%,
+      color-mix(in srgb, currentColor 15%, transparent) 30%,
+      color-mix(in srgb, currentColor 4%, transparent) 52%,
+      transparent 78%
+    );
   opacity: var(--particle-opacity);
   animation: arena-particle-float ease-in-out infinite;
 }
 .stage[data-arena-paused] .orbit,
+.stage[data-arena-paused] .orbitParticle,
 .stage[data-arena-paused] .particle {
   animation-play-state: paused;
 }
 .orbitFront {
-  inset: 5% 3.67% 9%;
-  border-width: 2px;
-  opacity: 0.64;
-  filter: blur(4px);
-  animation: arena-orbit-front 12s -3s ease-in-out infinite;
-}
-.orbitMiddle {
-  inset: 7.2% 3.17% 6.8%;
-  border-width: 3px;
-  opacity: 0.48;
-  filter: blur(32px);
-  transform: rotate(7deg) scale(1.01, 0.96);
-}
-.orbitRear {
-  inset: 9.8% 2.58% 4.6%;
-  border-width: 4px;
-  opacity: 0.32;
-  filter: blur(80px);
-  transform: rotate(-9deg) scale(0.97, 1.03);
+  --orbit-particle-start: 12%;
+  --orbit-particle-duration: 30s;
+  width: 100%;
+  height: 86%;
+  opacity: 0.72;
+  transform: rotate(-3deg);
+  animation: arena-orbit-front 16s -4s ease-in-out infinite;
 }
 .orbitCrossOne {
-  inset: 11% 4.5% 13%;
-  border-width: 1px;
-  opacity: 0.64;
-  filter: blur(4px);
-  transform: rotate(-10deg);
-  animation: arena-orbit-cross-one 10s -2s ease-in-out infinite;
+  --orbit-particle-start: 46%;
+  --orbit-particle-duration: 40s;
+  width: 98%;
+  height: 80%;
+  opacity: 0.44;
+  background: radial-gradient(
+    ellipse closest-side,
+    transparent 82%,
+    color-mix(in srgb, currentColor 2%, transparent) 86%,
+    color-mix(in srgb, currentColor 8%, transparent) 90%,
+    color-mix(in srgb, currentColor 22%, transparent) 93%,
+    color-mix(in srgb, currentColor 10%, transparent) 96%,
+    color-mix(in srgb, currentColor 2%, transparent) 98%,
+    transparent 100%
+  );
+  transform: rotate(-9deg);
+  animation: arena-orbit-cross-one 19s -7s ease-in-out infinite;
 }
 .orbitCrossTwo {
-  inset: 7.5% 6% 14.5%;
-  border-width: 1px;
-  opacity: 0.48;
-  filter: blur(8px);
-  transform: rotate(11deg);
-}
-.orbitCrossThree {
-  inset: 14% 2.5% 17%;
-  border-width: 1.5px;
-  opacity: 0.32;
-  filter: blur(16px);
-  transform: rotate(-5deg);
-}
-.orbitOuter {
-  inset: 3% 2% 7%;
-  border-width: 2px;
-  opacity: 0.16;
-  filter: blur(24px);
-  transform: rotate(6deg);
-}
-.orbitInner {
-  inset: 17% 7% 18%;
-  border-width: 2px;
-  opacity: 0.24;
-  filter: blur(12px);
-  transform: rotate(-7deg);
-}
-.orbitAccent {
-  inset: 8% 1.8% 12%;
-  border-width: 1.5px;
-  opacity: 0.36;
-  filter: blur(6px);
+  --orbit-particle-start: 78%;
+  --orbit-particle-duration: 70s;
+  width: 96%;
+  height: 82%;
+  opacity: 0.42;
+  background: radial-gradient(
+    ellipse closest-side,
+    transparent 70%,
+    color-mix(in srgb, currentColor 2%, transparent) 78%,
+    color-mix(in srgb, currentColor 6%, transparent) 86%,
+    color-mix(in srgb, currentColor 20%, transparent) 93%,
+    color-mix(in srgb, currentColor 6%, transparent) 98%,
+    transparent 100%
+  );
   transform: rotate(9deg);
+  animation: arena-orbit-cross-two 22s -11s ease-in-out infinite;
+}
+.orbitCrossTwo .orbitParticle {
+  width: 96px;
+  height: 96px;
+  animation-direction: reverse;
 }
 .topics {
   position: absolute;
@@ -594,6 +628,10 @@
     top: calc(190px + var(--arena-stage-gap));
     height: calc(100% - 190px - var(--arena-stage-gap));
   }
+  .orbitField {
+    inset: 0;
+    overflow-clip-margin: 0;
+  }
   .topics {
     position: static;
     display: flex;
@@ -778,10 +816,18 @@
 @keyframes arena-orbit-front {
   0%,
   100% {
-    transform: translate(-6px, -4px) rotate(-4.5deg) scale(0.975, 1.04);
+    transform: rotate(-6deg) scale(0.96, 1.06);
   }
   50% {
-    transform: translate(6px, 5px) rotate(4.5deg) scale(1.025, 0.97);
+    transform: rotate(2deg) scale(1, 0.92);
+  }
+}
+@keyframes arena-orbit-particle {
+  from {
+    offset-distance: var(--orbit-particle-start);
+  }
+  to {
+    offset-distance: calc(var(--orbit-particle-start) + 100%);
   }
 }
 @keyframes arena-particle-float {
@@ -802,16 +848,26 @@
 @keyframes arena-orbit-cross-one {
   0%,
   100% {
-    transform: translate(-5px, 5px) rotate(-10deg) scale(0.98, 1.04);
+    transform: rotate(-13deg) scale(0.94, 1.08);
   }
   50% {
-    transform: translate(7px, -6px) rotate(8deg) scale(1.025, 0.96);
+    transform: rotate(-5deg) scale(1, 0.94);
+  }
+}
+@keyframes arena-orbit-cross-two {
+  0%,
+  100% {
+    transform: rotate(5deg) scale(1, 0.92);
+  }
+  50% {
+    transform: rotate(13deg) scale(0.94, 1.08);
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .stage,
   .bowl,
   .orbit,
+  .orbitParticle,
   .particle,
   .statValue,
   .readerContent,

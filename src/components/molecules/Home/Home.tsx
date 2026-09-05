@@ -87,8 +87,12 @@ export const HomeBrandFooter = ({ className, ...props }: React.HTMLAttributes<HT
 export const HomeSectionTitle = () => {
   return (
     <Container className="flex-row items-start gap-2">
-      <Typography as="h2" overrideDefaults className="self-center text-xl font-light text-muted-foreground sm:text-3xl">
-        {'Your keys, your content, your rules.'}
+      <Typography
+        as="h2"
+        overrideDefaults
+        className="self-center text-xl font-black text-foreground sm:text-4xl lg:max-xl:text-3xl"
+      >
+        {'THE BEST ONES SURVIVE.'}
       </Typography>
     </Container>
   );
@@ -96,10 +100,14 @@ export const HomeSectionTitle = () => {
 
 export const HomePageHeading = () => {
   return (
-    <Heading level={1} size="2xl" className="lg:max-xl:text-[104px]">
-      <span className="text-brand">{'Unlock'}</span>
+    <Heading
+      level={1}
+      size="2xl"
+      className="text-[clamp(3.5rem,17vw,4.5rem)] font-black text-brand max-sm:leading-none lg:max-xl:text-[104px]"
+    >
+      {'WHEN IDEAS'}
       <br />
-      {' the web.'}
+      {' COLLIDE,'}
     </Heading>
   );
 };

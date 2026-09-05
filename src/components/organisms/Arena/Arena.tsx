@@ -354,15 +354,15 @@ function ArenaStage({
       <div className={styles.bowl} aria-hidden="true" data-testid="arena-orbits">
         <div className={styles.orbitField}>
           <span className={styles.atmosphere} />
-          <span className={cn(styles.orbit, styles.orbitRear)} data-orbit="rear" />
-          <span className={cn(styles.orbit, styles.orbitMiddle)} data-orbit="middle" />
-          <span className={cn(styles.orbit, styles.orbitOuter)} data-orbit="outer" />
-          <span className={cn(styles.orbit, styles.orbitFront)} data-orbit="front" />
-          <span className={cn(styles.orbit, styles.orbitCrossOne)} data-orbit="cross-one" />
-          <span className={cn(styles.orbit, styles.orbitCrossTwo)} data-orbit="cross-two" />
-          <span className={cn(styles.orbit, styles.orbitCrossThree)} data-orbit="cross-three" />
-          <span className={cn(styles.orbit, styles.orbitInner)} data-orbit="inner" />
-          <span className={cn(styles.orbit, styles.orbitAccent)} data-orbit="accent" />
+          <span className={cn(styles.orbit, styles.orbitFront)} data-orbit="front">
+            <span className={styles.orbitParticle} />
+          </span>
+          <span className={cn(styles.orbit, styles.orbitCrossOne)} data-orbit="cross-one">
+            <span className={styles.orbitParticle} />
+          </span>
+          <span className={cn(styles.orbit, styles.orbitCrossTwo)} data-orbit="cross-two">
+            <span className={styles.orbitParticle} />
+          </span>
         </div>
         <ArenaParticles />
       </div>

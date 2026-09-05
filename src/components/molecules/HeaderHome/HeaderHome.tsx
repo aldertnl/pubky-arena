@@ -111,7 +111,7 @@ export const HeaderHome = ({ ...props }: React.HTMLAttributes<HTMLDivElement>) =
                 className="size-10 shrink-0 gap-0 px-0 whitespace-nowrap sm:h-10 sm:w-auto sm:gap-2 sm:px-4"
               >
                 <UserRoundPlus className="size-4" />
-                <span className="sr-only sm:not-sr-only">{'Join'}</span>
+                <span className="sr-only sm:not-sr-only">{'Join the Arena'}</span>
               </Button>
             </div>
           </motion.div>

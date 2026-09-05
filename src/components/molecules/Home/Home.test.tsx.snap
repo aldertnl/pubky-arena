@@ -142,13 +142,9 @@ exports[`Home - Snapshots > matches snapshot for HomePageHeading with default pr
   data-size="2xl"
   data-testid="heading-1"
 >
-  <span
-    class="text-brand"
-  >
-    Unlock
-  </span>
+  WHEN IDEAS
   <br />
-   the web.
+   COLLIDE,
 </div>
 `;
 
@@ -158,10 +154,10 @@ exports[`Home - Snapshots > matches snapshot for HomeSectionTitle with default p
   data-testid="container"
 >
   <h2
-    class="self-center text-xl font-light text-muted-foreground sm:text-3xl"
+    class="self-center text-xl font-black text-foreground sm:text-4xl lg:max-xl:text-3xl"
     data-testid="typography"
   >
-    Your keys, your content, your rules.
+    THE BEST ONES SURVIVE.
   </h2>
 </div>
 `;

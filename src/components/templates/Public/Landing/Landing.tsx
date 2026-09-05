@@ -8,7 +8,6 @@ import { LandingFreedomSection } from './LandingFreedomSection';
 import { LandingHowItWorksSection } from './LandingHowItWorksSection';
 import { LandingScrollCue } from './LandingScrollCue';
 import { LandingSwirlState } from './LandingSwirlState';
-import { LandingVideo } from './LandingVideo';
 
 export function Landing() {
   return (
@@ -20,15 +19,12 @@ export function Landing() {
       <LandingSwirlState />
       <LandingScrollCue />
       <Container id={LANDING_HERO_SECTION_ID} as="section" size="container" className="relative min-h-svh px-6 pb-24">
-        <div className="grid w-full items-start gap-6 lg:grid-cols-2 xl:grid-cols-[minmax(0,588px)_minmax(320px,560px)] xl:justify-between">
-          <PageContainer size="narrow" className="mx-0 flex flex-col items-start gap-6">
-            <HomePageHeading />
-            <HomeSectionTitle />
-            <HomeActions />
-            <HomeFooter />
-          </PageContainer>
-          <LandingVideo />
-        </div>
+        <PageContainer size="narrow" className="mx-0 flex flex-col items-start gap-6">
+          <HomePageHeading />
+          <HomeSectionTitle />
+          <HomeActions />
+          <HomeFooter />
+        </PageContainer>
       </Container>
       <LandingBrokenSection />
       <LandingHowItWorksSection />

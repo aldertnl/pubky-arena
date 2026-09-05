@@ -19,7 +19,7 @@ export function ActionButtons({ className, onLearn, onCreateAccount, onExplore, 
   return (
     <Container
       display="grid"
-      className={cn('grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-center', className)}
+      className={cn('grid-cols-2 gap-3 sm:flex sm:flex-row sm:flex-wrap sm:items-center', className)}
       {...props}
     >
       {onLearn && (
@@ -56,7 +56,7 @@ export function ActionButtons({ className, onLearn, onCreateAccount, onExplore, 
         onClick={onCreateAccount}
       >
         <UserRoundPlus className="h-4 w-4" />
-        {'Join'}
+        {'Join the Arena'}
       </Button>
     </Container>
   );

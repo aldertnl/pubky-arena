@@ -792,6 +792,12 @@ body {
     -webkit-mask-size: 100% 100%;
   }
 
+  @media (max-width: 639px) {
+    .landing-swirl-background__graphic {
+      --landing-swirl-offset-y: 200px;
+    }
+  }
+
   :root[data-landing-swirl='broken'] .landing-swirl-background__graphic {
     --landing-swirl-size: min(164vw, 88rem);
     --landing-swirl-offset-x: 0px;

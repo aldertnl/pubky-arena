@@ -2,7 +2,7 @@
 
 exports[`ActionButtons - Snapshots > matches snapshot with all callbacks 1`] = `
 <div
-  class="mx-auto w-full flex-col grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-center"
+  class="mx-auto w-full flex-col grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:flex-wrap sm:items-center"
   data-testid="container"
 >
   <button
@@ -102,14 +102,14 @@ exports[`ActionButtons - Snapshots > matches snapshot with all callbacks 1`] = `
         d="M22 19h-6"
       />
     </svg>
-    Join
+    Join the Arena
   </button>
 </div>
 `;
 
 exports[`ActionButtons - Snapshots > matches snapshot with create account and explore callbacks 1`] = `
 <div
-  class="mx-auto w-full flex-col grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-center"
+  class="mx-auto w-full flex-col grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:flex-wrap sm:items-center"
   data-testid="container"
 >
   <button
@@ -179,14 +179,14 @@ exports[`ActionButtons - Snapshots > matches snapshot with create account and ex
         d="M22 19h-6"
       />
     </svg>
-    Join
+    Join the Arena
   </button>
 </div>
 `;
 
 exports[`ActionButtons - Snapshots > matches snapshot with create account callback only 1`] = `
 <div
-  class="mx-auto w-full flex-col grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-center"
+  class="mx-auto w-full flex-col grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:flex-wrap sm:items-center"
   data-testid="container"
 >
   <button
@@ -224,14 +224,14 @@ exports[`ActionButtons - Snapshots > matches snapshot with create account callba
         d="M22 19h-6"
       />
     </svg>
-    Join
+    Join the Arena
   </button>
 </div>
 `;
 
 exports[`ActionButtons - Snapshots > matches snapshot with custom className 1`] = `
 <div
-  class="mx-auto w-full flex-col grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-center custom-action-buttons"
+  class="mx-auto w-full flex-col grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:flex-wrap sm:items-center custom-action-buttons"
   data-testid="container"
 >
   <button
@@ -269,14 +269,14 @@ exports[`ActionButtons - Snapshots > matches snapshot with custom className 1`] 
         d="M22 19h-6"
       />
     </svg>
-    Join
+    Join the Arena
   </button>
 </div>
 `;
 
 exports[`ActionButtons - Snapshots > matches snapshot with default props 1`] = `
 <div
-  class="mx-auto w-full flex-col grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-center"
+  class="mx-auto w-full flex-col grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:flex-wrap sm:items-center"
   data-testid="container"
 >
   <button
@@ -314,7 +314,7 @@ exports[`ActionButtons - Snapshots > matches snapshot with default props 1`] = `
         d="M22 19h-6"
       />
     </svg>
-    Join
+    Join the Arena
   </button>
 </div>
 `;
