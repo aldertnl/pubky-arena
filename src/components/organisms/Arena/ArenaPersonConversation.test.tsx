@@ -7,7 +7,7 @@ import { ArenaPersonConversation } from './ArenaPersonConversation';
 
 vi.mock('@/hooks/useArenaPersonPost/useArenaPersonPost', () => ({ useArenaPersonPost: vi.fn() }));
 vi.mock('./ArenaConversation', () => ({ ArenaConversation: vi.fn(() => <div>Post and leading reply</div>) }));
-const props = { author: 'person', postWindow: { timeframe: TIMEFRAME.THIS_MONTH, now: Date.now() } };
+const props = { author: 'person', authorName: 'Pav', postWindow: { timeframe: TIMEFRAME.THIS_MONTH, now: Date.now() } };
 const retry = vi.fn(async () => {});
 beforeEach(() => {
   vi.clearAllMocks();
@@ -36,7 +36,12 @@ describe('person conversation', () => {
     });
     render(<ArenaPersonConversation {...props} />);
     expect(ArenaConversation).toHaveBeenCalledWith(
-      { rootId: 'person:popular', selectedId: 'person:popular', postWindow: props.postWindow, postLabel: 'MOST POPULAR POST' },
+      {
+        rootId: 'person:popular',
+        selectedId: 'person:popular',
+        postWindow: props.postWindow,
+        postLabel: 'POPULAR POST BY PAV',
+      },
       undefined,
     );
   });

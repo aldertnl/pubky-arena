@@ -1015,6 +1015,12 @@
 }
 
 /* People share the Arena's standings positions, with portraits in place of post cards. */
+.personNode {
+  --arena-person-size: 80px;
+  position: relative;
+  transform: scale(var(--arena-person-scale, 1));
+  transition: transform 180ms var(--arena-ease);
+}
 .peopleFloor .person {
   display: flex;
   flex-direction: column;
@@ -1028,11 +1034,10 @@
   color: var(--foreground);
   pointer-events: auto;
   text-align: center;
-  transform: scale(var(--arena-person-scale, 1));
-  transition: transform 180ms var(--arena-ease);
 }
 .personPortrait {
   position: relative;
+  isolation: isolate;
   display: block;
   border-radius: 50%;
   box-shadow: 0 8px 24px rgb(0 0 0 / 50%);
@@ -1045,18 +1050,33 @@
   opacity: 1;
 }
 .personAvatar {
-  width: 80px;
-  height: 80px;
+  width: var(--arena-person-size);
+  height: var(--arena-person-size);
   opacity: var(--arena-person-opacity, 1);
 }
 .personAward {
   position: absolute;
+  z-index: 10;
   top: -8px;
   left: -8px;
   width: 32px;
   height: 32px;
   rotate: -12deg;
-  pointer-events: none;
+  pointer-events: auto;
+}
+.personPost {
+  position: absolute;
+  z-index: 10;
+  top: calc(8px + var(--arena-person-size) * 0.7 - 16px);
+  left: calc(50% - var(--arena-person-size) / 2 - 16px);
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.personPost:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 3px;
 }
 .personRank {
   position: absolute;
@@ -1071,9 +1091,8 @@
   font-weight: 600;
   line-height: 16px;
 }
-.peopleFloor .contender:first-child .personAvatar {
-  width: 104px;
-  height: 104px;
+.peopleFloor .contender:first-child .personNode {
+  --arena-person-size: 104px;
 }
 .peopleFloor .contender:first-child .person[aria-pressed='true'] .personPortrait {
   outline: 2px solid var(--arena-topic-color);
@@ -1110,22 +1129,25 @@
   outline-offset: 3px;
 }
 @media (hover: hover) and (pointer: fine) {
-  .peopleFloor .person:hover {
+  .peopleFloor .personNode:hover {
     transform: scale(1.08);
   }
-  .peopleFloor .person:hover .personAvatar {
+  .peopleFloor .personNode:hover .personAvatar {
     opacity: 1;
   }
+  .personPost:hover {
+    border-color: white;
+    color: white;
+  }
 }
-.peopleFloor.list .person {
+.peopleFloor.list .personNode {
   transform: none;
 }
-.peopleFloor.list .contender:first-child .personAvatar {
-  width: 80px;
-  height: 80px;
+.peopleFloor.list .contender:first-child .personNode {
+  --arena-person-size: 80px;
 }
 @media (max-width: 900px) {
-  .peopleFloor .person {
+  .peopleFloor .personNode {
     transform: none;
   }
 }
@@ -1140,7 +1162,7 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .peopleFloor .person {
+  .peopleFloor .personNode {
     transition: none;
   }
 }

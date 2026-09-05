@@ -651,12 +651,22 @@ describe('Hot — visual regression', () => {
       expect(person.querySelectorAll('[aria-label$="followers"]')).toHaveLength(1);
     }
     await matchVrtFrameScreenshot(`hot-people-${name}`);
+    if (name !== 'mobile') {
+      await expect
+        .element(page.getByRole('img', { name: 'Award: Coming soon' }))
+        .toHaveAttribute('title', 'Coming soon');
+    }
     const portraits = people.map((person) => person.querySelector<HTMLElement>('[data-arena-person-portrait]')!);
     const avatars = portraits.map((portrait) => portrait.firstElementChild!);
     avatars.forEach((avatar, index) => {
       expect(Number(getComputedStyle(avatar).opacity)).toBeCloseTo(1 - index * 0.05);
     });
     if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      const postButton = page.getByRole('button', { name: 'Scroll to most popular post', exact: true });
+      await postButton.hover();
+      const postButtonStyle = getComputedStyle(document.querySelector('[aria-label="Scroll to most popular post"]')!);
+      expect(postButtonStyle.color).toBe('rgb(255, 255, 255)');
+      expect(postButtonStyle.borderTopColor).toBe('rgb(255, 255, 255)');
       await page.elementLocator(people[1]).hover();
       expect(getComputedStyle(avatars[1]).opacity).toBe('1');
       await page.getByRole('button', { name: 'Ranking: Most active' }).hover();
@@ -706,9 +716,16 @@ describe('Hot — visual regression', () => {
     const conversation = document.querySelector<HTMLElement>('[aria-label="Original post conversation"]')!;
     const floor = document.querySelector<HTMLElement>('[aria-label="People standings"]')!;
     expect(conversation.getBoundingClientRect().top).toBeGreaterThanOrEqual(floor.getBoundingClientRect().bottom);
-    conversation.scrollIntoView();
+    await page.getByRole('button', { name: 'Scroll to most popular post', exact: true }).click();
+    expect(document.activeElement).toBe(conversation);
+    await expect.poll(() => conversation.getBoundingClientRect().top).toBeLessThan(viewport.height);
     await expect
-      .element(page.getByRole('region', { name: 'MOST POPULAR POST', exact: true }))
+      .element(
+        page.getByRole('region', {
+          name: `POPULAR POST BY ${f.profiles[root.details.author].name}`.toUpperCase(),
+          exact: true,
+        }),
+      )
       .toHaveTextContent(root.details.content);
     await expect
       .element(page.getByRole('region', { name: 'Replies', exact: true }))
@@ -721,7 +738,7 @@ describe('Hot — visual regression', () => {
     conversation.scrollIntoView();
     // This fixture person only authored a reply, so selecting them clears the previous conversation.
     await expect.element(page.getByText('This person has no posts in this timeframe.', { exact: true })).toBeVisible();
-    expect(document.querySelector('[aria-label="MOST POPULAR POST"]')).toBeNull();
+    expect(document.querySelector('[aria-label^="POPULAR POST BY "]')).toBeNull();
     expect(document.querySelector('[aria-label="Replies"]')).toBeNull();
   });
 
@@ -777,7 +794,8 @@ describe('Hot — visual regression', () => {
   it('renders the leading reply and native thread link', async () => {
     await renderForVRT(<HotWithHeader />, { viewport: VRT_VIEWPORT_DESKTOP });
     await page.getByRole('button', { name: /Rank \d+, .*Hot take: a feed reads better/ }).click();
-    await expect.element(page.getByRole('heading', { name: 'LEADING REPLY', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'See full post', exact: true }).click();
+    await expect.element(page.getByRole('heading', { name: /^LEADING REPLY\b/ })).toBeVisible();
     await expect
       .element(page.getByRole('region', { name: 'Replies', exact: true }))
       .toHaveTextContent('@bran disagree — putting them under the author keeps reading flow uninterrupted on mobile.');

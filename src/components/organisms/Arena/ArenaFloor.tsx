@@ -246,8 +246,13 @@ export function ArenaFloor({
                       >
                         #{idea.rank} {topic === null ? 'All' : topic} {contentLabel}
                       </Badge>
-                      <span className={cn(styles.awardIcon, styles.postAward)} aria-hidden="true">
-                        <Trophy className="size-4" />
+                      <span
+                        className={cn(styles.awardIcon, styles.postAward)}
+                        role="img"
+                        aria-label="Award: Coming soon"
+                        title="Coming soon"
+                      >
+                        <Trophy className="size-4" aria-hidden="true" />
                       </span>
                     </>
                   ) : (

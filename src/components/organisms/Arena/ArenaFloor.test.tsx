@@ -56,6 +56,8 @@ describe('Arena floor', () => {
     expect(selected.closest('[data-slot="card"]')).toContainElement(expand);
     expect(selected).not.toContainElement(expand);
     expect(expand).toHaveAttribute('data-variant', 'secondary');
+    expect(expand.querySelector('.lucide-eye')).not.toBeNull();
+    expect(screen.getByRole('img', { name: 'Award: Coming soon' })).toHaveAttribute('title', 'Coming soon');
     fireEvent.click(expand);
     expect(onExpand).toHaveBeenCalledOnce();
     expect(onSelect).not.toHaveBeenCalled();

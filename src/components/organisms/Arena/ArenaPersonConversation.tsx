@@ -3,15 +3,18 @@
 import { Button } from '@/atoms/Button/Button';
 import { Skeleton } from '@/atoms/Skeleton/Skeleton';
 import { useArenaPersonPost } from '@/hooks/useArenaPersonPost/useArenaPersonPost';
+import { formatPublicKey } from '@/libs/utils/utils';
 import { TIMEFRAME, type TimeframeType } from '@/stores/hot/hot.types';
 import styles from './Arena.module.css';
 import { ArenaConversation } from './ArenaConversation';
 
 export function ArenaPersonConversation({
   author,
+  authorName,
   postWindow,
 }: {
   author: string;
+  authorName?: string;
   postWindow: { timeframe: TimeframeType; now: number };
 }) {
   const { post, loading, error, retry } = useArenaPersonPost(author, postWindow);
@@ -47,7 +50,7 @@ export function ArenaPersonConversation({
       rootId={post.id}
       selectedId={post.id}
       postWindow={postWindow}
-      postLabel="MOST POPULAR POST"
+      postLabel={`POPULAR POST BY ${authorName || formatPublicKey({ key: author })}`.toUpperCase()}
     />
   );
 }

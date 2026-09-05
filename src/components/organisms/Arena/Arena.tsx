@@ -197,7 +197,7 @@ export function Arena() {
       <div className={styles.toolbar}>
         <div className={cn(styles.filters, 'font-medium')} role="group" aria-label="Arena filters">
           <div className={styles.filterClause}>
-            <span className="mr-2 text-xs font-bold sm:mr-0">Show</span>{' '}
+            <span className="hidden text-xs font-bold sm:inline">Show</span>{' '}
             <ArenaFilterMenu
               label="Timeframe"
               value={timeframe}
@@ -575,6 +575,7 @@ function ArenaPeopleResults({
   stage: StageProps;
   people: ReturnType<typeof useArenaPeople>;
 }) {
+  const conversationRef = useRef<HTMLDivElement>(null);
   const [chosen, setChosen] = useState<string | null>(null);
   const metric = props.metric as ArenaPeopleMetric;
   const { users, loading, error, retry } = people;
@@ -607,12 +608,31 @@ function ArenaPeopleResults({
             loading={loading}
             selectedId={selected?.id}
             onSelect={setChosen}
+            onExpand={() => {
+              const target = conversationRef.current;
+              if (!target) return;
+              target.focus({ preventScroll: true });
+              target.scrollIntoView({
+                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+                block: 'start',
+              });
+            }}
           />
         )}
       </ArenaStage>
       {selected && (
-        <div className={styles.conversationTarget} tabIndex={-1} aria-label="Original post conversation">
-          <ArenaPersonConversation key={selected.id} author={selected.id} postWindow={props.postWindow} />
+        <div
+          ref={conversationRef}
+          className={styles.conversationTarget}
+          tabIndex={-1}
+          aria-label="Original post conversation"
+        >
+          <ArenaPersonConversation
+            key={selected.id}
+            author={selected.id}
+            authorName={selected.name}
+            postWindow={props.postWindow}
+          />
         </div>
       )}
     </>

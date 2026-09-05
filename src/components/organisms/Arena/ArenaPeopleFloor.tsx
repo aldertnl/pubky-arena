@@ -1,7 +1,7 @@
 'use client';
 
 import { type CSSProperties } from 'react';
-import { Trophy } from 'lucide-react';
+import { StickyNote, Trophy } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Button } from '@/atoms/Button/Button';
 import { Skeleton } from '@/atoms/Skeleton/Skeleton';
@@ -20,6 +20,7 @@ export function ArenaPeopleFloor({
   loading = false,
   selectedId,
   onSelect,
+  onExpand,
 }: {
   users: UserStreamUser[];
   isList: boolean;
@@ -27,6 +28,7 @@ export function ArenaPeopleFloor({
   loading?: boolean;
   selectedId?: string;
   onSelect: (id: string) => void;
+  onExpand: () => void;
 }) {
   const reduceMotion = useReducedMotion();
   const visible = loading ? Array.from<undefined>({ length: ARENA_PEOPLE_LIMIT }) : users;
@@ -58,48 +60,69 @@ export function ArenaPeopleFloor({
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            {user ? (
-              <Button
-                overrideDefaults
-                type="button"
-                onClick={() => onSelect(user.id)}
-                className={styles.person}
-                data-arena-person={user.id}
-                aria-pressed={user.id === selectedId}
-                aria-label={`Rank ${index + 1}, ${name}. Show most popular post`}
-              >
-                <span className={styles.personPortrait} data-arena-person-portrait>
-                  <AvatarWithFallback
-                    name={name}
-                    fallbackSeed={user.id}
-                    avatarUrl={user.avatarUrl ?? undefined}
-                    size="xl"
-                    className={styles.personAvatar}
-                  />
-                  {index === 0 && !isList && (
-                    <span className={cn(styles.awardIcon, styles.personAward)} aria-hidden="true">
-                      <Trophy className="size-4" />
+            <div className={styles.personNode}>
+              {user ? (
+                <>
+                  <Button
+                    overrideDefaults
+                    type="button"
+                    onClick={() => onSelect(user.id)}
+                    className={styles.person}
+                    data-arena-person={user.id}
+                    aria-pressed={user.id === selectedId}
+                    aria-label={`Rank ${index + 1}, ${name}. Show most popular post`}
+                  >
+                    <span className={styles.personPortrait} data-arena-person-portrait>
+                      <AvatarWithFallback
+                        name={name}
+                        fallbackSeed={user.id}
+                        avatarUrl={user.avatarUrl ?? undefined}
+                        size="xl"
+                        className={styles.personAvatar}
+                      />
+                      {index === 0 && !isList && (
+                        <span
+                          className={cn(styles.awardIcon, styles.personAward)}
+                          role="img"
+                          aria-label="Award: Coming soon"
+                          title="Coming soon"
+                        >
+                          <Trophy className="size-4" aria-hidden="true" />
+                        </span>
+                      )}
+                      <span className={styles.personRank}>#{index + 1}</span>
                     </span>
+                    <span className={styles.personName}>{name}</span>
+                    <span className={styles.personStats}>
+                      <ArenaStat kind="tags" count={user.counts?.tags} active={metric === 'tags'} />
+                      <ArenaStat kind="posts" count={user.counts?.posts} active={metric === 'posts'} />
+                      {metric === 'replies' && <ArenaStat kind="replies" count={user.counts?.replies} active />}
+                      {metric !== 'replies' && (
+                        <ArenaStat kind="followers" count={user.counts?.followers} active={metric === 'popular'} />
+                      )}
+                    </span>
+                  </Button>
+                  {user.id === selectedId && (
+                    <Button
+                      overrideDefaults
+                      type="button"
+                      className={cn(styles.awardIcon, styles.personPost)}
+                      aria-label="Scroll to most popular post"
+                      title="See most popular post"
+                      onClick={onExpand}
+                    >
+                      <StickyNote className="size-4" aria-hidden="true" />
+                    </Button>
                   )}
-                  <span className={styles.personRank}>#{index + 1}</span>
-                </span>
-                <span className={styles.personName}>{name}</span>
-                <span className={styles.personStats}>
-                  <ArenaStat kind="tags" count={user.counts?.tags} active={metric === 'tags'} />
-                  <ArenaStat kind="posts" count={user.counts?.posts} active={metric === 'posts'} />
-                  {metric === 'replies' && <ArenaStat kind="replies" count={user.counts?.replies} active />}
-                  {metric !== 'replies' && (
-                    <ArenaStat kind="followers" count={user.counts?.followers} active={metric === 'popular'} />
-                  )}
-                </span>
-              </Button>
-            ) : (
-              <div className={styles.person} aria-hidden="true">
-                <Skeleton className={cn(styles.personAvatar, 'rounded-full')} />
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-28" />
-              </div>
-            )}
+                </>
+              ) : (
+                <div className={styles.person} aria-hidden="true">
+                  <Skeleton className={cn(styles.personAvatar, 'rounded-full')} />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-28" />
+                </div>
+              )}
+            </div>
           </motion.li>
         );
       })}
