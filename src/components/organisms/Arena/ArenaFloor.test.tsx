@@ -46,10 +46,10 @@ const ideas = rankArenaIdeas(
 );
 
 describe('Arena floor', () => {
-  it('offers a separate expand button only on the selected arena card', () => {
+  it.each([false, true])('offers a separate expand button only on the selected card (isList: %s)', (isList) => {
     const onSelect = vi.fn();
     const onExpand = vi.fn();
-    const props = { ideas, onSelect, onExpand, isList: false, metric: 'tags' as const };
+    const props = { ideas, onSelect, onExpand, isList, metric: 'tags' as const };
     const { rerender } = render(<ArenaFloor {...props} selectedId="a:1" />);
     const expand = screen.getByRole('button', { name: 'See full post' });
     const selected = screen.getByRole('button', { name: /Rank 2, Mira/ });
@@ -64,7 +64,7 @@ describe('Arena floor', () => {
     expect(screen.getByRole('button', { name: /Rank 1, Jules/ }).closest('[data-slot="card"]')).toContainElement(
       screen.getByRole('button', { name: 'See full post' }),
     );
-    rerender(<ArenaFloor {...props} selectedId="b:2" isList />);
+    rerender(<ArenaFloor {...props} selectedId={undefined} />);
     expect(screen.queryByRole('button', { name: 'See full post' })).not.toBeInTheDocument();
   });
 

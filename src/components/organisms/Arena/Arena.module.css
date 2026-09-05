@@ -619,7 +619,7 @@
   display: grid;
   /* Match the feed's center column: container minus two sidebars and two 24px gaps. */
   grid-template-columns: minmax(0, calc(100% - 2 * var(--filter-bar-width) - 48px)) minmax(0, 1fr);
-  gap: 24px 48px;
+  gap: 24px;
 }
 .reader > section {
   min-width: 0;

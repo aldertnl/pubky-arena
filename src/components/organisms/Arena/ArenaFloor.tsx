@@ -285,7 +285,7 @@ export function ArenaFloor({
                   </Typography>
                 )}
               </Button>
-              {!isList && selectedId === idea.id && onExpand && (
+              {selectedId === idea.id && onExpand && (
                 <Button
                   type="button"
                   variant="secondary"
