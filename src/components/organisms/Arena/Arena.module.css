@@ -57,7 +57,7 @@
   width: 100%;
   height: 630px;
   pointer-events: none;
-  color: var(--brand);
+  color: var(--arena-topic-color, var(--brand));
   animation: arena-appear 600ms ease-out both;
 }
 .orbitField {
