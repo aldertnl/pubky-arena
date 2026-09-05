@@ -6,6 +6,8 @@ export type FilterFn = (posts: string[]) => string[] | Promise<string[]>;
 export type CursorForPostFn = (postId: string) => Promise<number | undefined>;
 
 export interface CollectParams {
+  /** Keep overflow separate from readers that exclude muted authors. */
+  includeMuted?: boolean;
   limit: number;
   cursor: number;
   filter: FilterFn;

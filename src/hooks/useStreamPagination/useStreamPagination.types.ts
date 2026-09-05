@@ -9,6 +9,8 @@ export interface UseStreamPaginationOptions {
    * Optional limit for posts per page (defaults to NEXUS_POSTS_PER_PAGE)
    */
   limit?: number;
+  /** Include muted authors for surfaces that apply their own temporary visibility control. */
+  includeMuted?: boolean;
   /**
    * Whether to reset state when streamId changes
    */

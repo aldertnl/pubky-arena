@@ -12,7 +12,7 @@ import { CompositeIdDomain } from '@/models/models.types';
 import { buildCompositeIdFromPubkyUri, parseCompositeId } from '@/models/models.utils';
 
 /** Read the stream's persisted entities reactively, including optimistic count changes. */
-export function useArenaIdeas(postIds: string[]) {
+export function useArenaIdeas(postIds: string[], { includeMuted = false } = {}) {
   const { mutedUserIdSet } = useMutedUsers();
   const cache = useRef(new Map<string, { content: string; blurred: boolean; idea: ArenaIdea }>());
   const idsKey = JSON.stringify([...new Set(postIds)]);
@@ -27,7 +27,8 @@ export function useArenaIdeas(postIds: string[]) {
           const snapshot = snapshots.get(compositeId);
           if (!snapshot) return null;
           const { details: post, counts, relationships } = snapshot;
-          if (!post || !counts || isPostDeleted(post.content) || mutedUserIdSet.has(author)) return null;
+          if (!post || !counts || isPostDeleted(post.content) || (!includeMuted && mutedUserIdSet.has(author)))
+            return null;
           const previous = cache.current.get(compositeId);
           const sameContent =
             previous?.content === post.content &&
@@ -64,7 +65,7 @@ export function useArenaIdeas(postIds: string[]) {
         return { ideas: [] as ArenaIdea[], error: 'Could not load contenders. Try again.' };
       }
     },
-    [idsKey, mutedUserIdSet],
+    [idsKey, mutedUserIdSet, includeMuted],
     { ideas: [] as ArenaIdea[], error: null as string | null },
   );
 }

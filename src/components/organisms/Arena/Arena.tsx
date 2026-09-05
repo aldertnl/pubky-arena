@@ -31,6 +31,7 @@ import {
   type ArenaTopicFilter,
   filterArenaIdeasByContent,
   getArenaCandidateStreamId,
+  rankArenaIdeas,
   rankArenaIdeasForTimeframe,
   shouldLoadMoreArenaCandidates,
 } from '@/libs/arena/arena';
@@ -117,6 +118,7 @@ export function Arena() {
   const isPhone = useIsMobile({ breakpoint: 'sm' });
   const [isList, setIsList] = useState(false);
   const displayAsGrid = isPhone || isList;
+  const [resetCount, setResetCount] = useState(0);
   const [metric, setMetric] = useState<ArenaMetric>('popular');
   const [content, setContent] = useState<ContentType>(CONTENT.ALL);
   const scope = `${effectiveReach}:${timeframe}:${currentUserPubky ?? 'guest'}`;
@@ -137,6 +139,7 @@ export function Arena() {
     else requireAuth(applyReach);
   }
   function resetFilters() {
+    setResetCount((count) => count + 1);
     setChosenTopic(null);
     setTimeframe(TIMEFRAME.THIS_MONTH);
     setMetric('popular');
@@ -213,7 +216,7 @@ export function Arena() {
         </div>
       </div>
       <ArenaTopics
-        key={scope}
+        key={`${scope}:${resetCount}`}
         reach={effectiveReach}
         timeframe={timeframe}
         data={topics}
@@ -298,7 +301,7 @@ function ArenaTopics({
     );
   return (
     <ArenaTopic
-      key={JSON.stringify([topic, display.content])}
+      key={JSON.stringify([topic, display.content, display.metric])}
       {...display}
       postWindow={{ timeframe, now }}
       topics={rawTags}
@@ -456,6 +459,8 @@ function ArenaStage({
 
 function ArenaTopic(props: StageProps & { reach: ReachType }) {
   const conversationRef = useRef<HTMLDivElement>(null);
+  const [showMuted, setShowMuted] = useState(false);
+  const { isMuted } = useMutedUsers();
   const streamId = getArenaCandidateStreamId(
     props.topic,
     props.metric,
@@ -467,22 +472,28 @@ function ArenaTopic(props: StageProps & { reach: ReachType }) {
   const stream = useStreamPagination({
     streamId,
     limit: isBoundedTimeframe ? ARENA_TIMEFRAME_PAGE_SIZE : ARENA_PAGE_SIZE,
+    includeMuted: true,
   });
   const { hasMore, loadMore, loading, loadingMore, postIds } = stream;
-  const { ideas, error } = useArenaIdeas(stream.postIds);
+  // Retain muted candidates locally so the empty state can explain why posts are hidden.
+  const { ideas, error } = useArenaIdeas(stream.postIds, { includeMuted: true });
   const matchingIdeas = filterArenaIdeasByContent(ideas, props.content);
-  const ranked = rankArenaIdeasForTimeframe(
+  const allRanked = rankArenaIdeasForTimeframe(
     matchingIdeas,
     props.metric,
     props.postWindow.timeframe,
     props.postWindow.now,
   );
-  const needsMoreCandidates = shouldLoadMoreArenaCandidates(
-    ideas,
-    props.postWindow.timeframe,
-    props.postWindow.now,
-    props.content,
-  );
+  const hiddenByMute = allRanked.some((idea) => isMuted(idea.author));
+  const ranked = showMuted
+    ? allRanked
+    : rankArenaIdeas(
+        allRanked.filter((idea) => !isMuted(idea.author)),
+        props.metric,
+      );
+  const needsMoreCandidates = isBoundedTimeframe
+    ? shouldLoadMoreArenaCandidates(ideas, props.postWindow.timeframe, props.postWindow.now, props.content)
+    : ideas.length > 0 && ranked.length < ARENA_PAGE_SIZE;
   const findingFirstMatch = !ranked.length && hasMore && needsMoreCandidates && !stream.error && !error;
   const [chosen, setChosen] = useState<string | null>(null);
   const selected = ranked.find((idea) => idea.id === chosen) ?? ranked[0];
@@ -502,6 +513,19 @@ function ArenaTopic(props: StageProps & { reach: ReachType }) {
   }, [error, hasMore, ideas.length, loadMore, loading, loadingMore, needsMoreCandidates, postIds.length, stream.error]);
   return (
     <>
+      {(showMuted || (hiddenByMute && ranked.length > 0)) && (
+        <div className="flex justify-end">
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-pressed={showMuted}
+            onClick={() => setShowMuted(!showMuted)}
+            title="Temporarily show muted authors for these Arena filters"
+          >
+            {showMuted ? 'Hide muted' : 'Show muted'}
+          </Button>
+        </div>
+      )}
       <ArenaStage {...props}>
         {stream.loading || findingFirstMatch ? (
           <ArenaLoading compact isList={props.isList} />
@@ -514,7 +538,18 @@ function ArenaTopic(props: StageProps & { reach: ReachType }) {
           </div>
         ) : !ranked.length ? (
           <div className={styles.status} role="status">
-            {props.topic === null ? 'No posts found for these filters.' : 'No posts found for this tag.'}
+            {hiddenByMute && !showMuted ? (
+              <>
+                <p>Posts are hidden by your mute settings.</p>
+                <Button className="mt-4" variant="secondary" onClick={() => setShowMuted(true)}>
+                  Show muted
+                </Button>
+              </>
+            ) : props.topic === null ? (
+              'No posts found for these filters.'
+            ) : (
+              'No posts found for this tag.'
+            )}
           </div>
         ) : (
           <ArenaFloor
@@ -545,7 +580,13 @@ function ArenaTopic(props: StageProps & { reach: ReachType }) {
           tabIndex={-1}
           aria-label="Original post conversation"
         >
-          <ArenaConversation key={rootId} postWindow={props.postWindow} rootId={rootId} selectedId={selected.id} />
+          <ArenaConversation
+            key={rootId}
+            postWindow={props.postWindow}
+            rootId={rootId}
+            selectedId={selected.id}
+            showMuted={showMuted}
+          />
         </div>
       )}
     </>

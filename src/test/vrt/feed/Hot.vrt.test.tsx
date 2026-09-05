@@ -11,9 +11,12 @@ import { Header } from '@/organisms/Header/Header';
 import { Hot } from '@/templates/Feed/Hot/Hot';
 import { page } from 'vitest/browser';
 
+const muteState = vi.hoisted(() => ({ allMuted: false }));
+
 // Keep the deliberately randomized card rotations reproducible in screenshots.
 let restoreRotationRandom: (() => void) | undefined;
 beforeEach(() => {
+  muteState.allMuted = false;
   const random = vi.spyOn(Math, 'random').mockReturnValue(0.5);
   restoreRotationRandom = () => random.mockRestore();
 });
@@ -210,7 +213,7 @@ vi.mock('@/hooks/useMutedUsers/useMutedUsers', () => {
   const result = {
     mutedUserIds: [] as string[],
     mutedUserIdSet: new Set<string>(),
-    isMuted: () => false,
+    isMuted: () => muteState.allMuted,
     isLoading: false,
   };
   return { useMutedUsers: () => result };
@@ -579,6 +582,27 @@ describe('Hot — visual regression', () => {
     } finally {
       useHotStore.setState({ timeframe: previousTimeframe });
     }
+  });
+
+  it.each([
+    ['desktop', VRT_VIEWPORT_DESKTOP],
+    ['mobile', VRT_VIEWPORT_MOBILE],
+  ] as const)('temporarily reveals muted posts at %s viewport', async (name, viewport) => {
+    muteState.allMuted = true;
+    await renderForVRT(<HotWithHeader />, { viewport });
+    await expect.element(page.getByText('Posts are hidden by your mute settings.')).toBeVisible();
+    expect(document.querySelector('[aria-label="Idea standings"]')).toBeNull();
+    const showButton = page.getByRole('button', { name: 'Show muted', exact: true });
+    await expect.element(showButton).toBeVisible();
+    await matchVrtFrameScreenshot(`hot-muted-${name}`);
+    await showButton.click();
+    await expect.element(page.getByRole('button', { name: 'Hide muted', exact: true })).toBeVisible();
+    await matchVrtFrameScreenshot(`hot-muted-revealed-${name}`);
+    expectContendersToFit();
+    await page.getByRole('button', { name: 'Hide muted', exact: true }).click();
+    await expect.element(page.getByText('Posts are hidden by your mute settings.')).toBeVisible();
+    expect(document.querySelector('[aria-label="Idea standings"]')).toBeNull();
+    expect(muteState.allMuted).toBe(true);
   });
 
   it('renders Arena at desktop viewport', async () => {

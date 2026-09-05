@@ -20,6 +20,7 @@ const MAX_FETCH_ITERATIONS = 20;
  * Handles fetching until we have enough posts after filtering.
  */
 export class PostStreamQueue {
+  private includingMuted?: PostStreamQueue;
   private entries = new Map<PostStreamId, TQueueEntry>();
 
   get(streamId: PostStreamId): TQueueEntry | undefined {
@@ -32,6 +33,7 @@ export class PostStreamQueue {
 
   clear(): void {
     this.entries.clear();
+    this.includingMuted?.clear();
   }
 
   /**
@@ -40,6 +42,7 @@ export class PostStreamQueue {
    */
   remove(streamId: PostStreamId): void {
     this.entries.delete(streamId);
+    this.includingMuted?.remove(streamId);
   }
 
   /**
@@ -47,6 +50,10 @@ export class PostStreamQueue {
    * Handles deduplication, filtering, and saves overflow back to queue.
    */
   async collect(streamId: PostStreamId, params: CollectParams): Promise<CollectResult> {
+    if (params.includeMuted) {
+      this.includingMuted ??= new PostStreamQueue();
+      return this.includingMuted.collect(streamId, { ...params, includeMuted: false });
+    }
     const { limit, filter, fetch, cursorForPost } = params;
     const maxIterations = params.maxIterations ?? MAX_FETCH_ITERATIONS;
 

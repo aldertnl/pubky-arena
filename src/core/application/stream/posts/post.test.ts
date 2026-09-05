@@ -2312,6 +2312,20 @@ describe('PostStreamApplication', () => {
       expect(result.nextPageIds).toEqual(['author-1:post-1', 'author-3:post-3']);
     });
 
+    it('includes muted authors on request without changing their saved mute or other readers', async () => {
+      await setupMutedUsers(['author-2'] as Pubky[]);
+      vi.spyOn(NexusPostStreamService, 'fetch').mockResolvedValue({
+        post_keys: ['author-1:post-1', 'author-2:post-2'],
+        last_post_score: BASE_TIMESTAMP + 1,
+      });
+      const params = { streamId, limit: 10, streamHead: 0, streamTail: 0, viewerId };
+      const included = await PostStreamApplication.getOrFetchStreamSlice({ ...params, includeMuted: true });
+      expect(included.nextPageIds).toEqual(['author-1:post-1', 'author-2:post-2']);
+      expect((await LocalStreamUsersService.findById(UserStreamTypes.MUTED))?.stream).toEqual(['author-2']);
+      const filtered = await PostStreamApplication.getOrFetchStreamSlice(params);
+      expect(filtered.nextPageIds).toEqual(['author-1:post-1']);
+    });
+
     it('does not filter bookmark stream posts from muted authors', async () => {
       await setupMutedUsers(['author-2'] as Pubky[]);
 

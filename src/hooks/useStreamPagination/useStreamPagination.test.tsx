@@ -51,6 +51,18 @@ describe('useStreamPagination', () => {
     vi.mocked(sortPostIdsByTimestamp).mockImplementation(async (ids: string[]) => ids);
   });
 
+  it('keeps the muted override on initial and subsequent pages', async () => {
+    const { result } = renderHook(() => useStreamPagination({ streamId: mockStreamId, includeMuted: true }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(StreamPostsController.getOrFetchStreamSlice).toHaveBeenLastCalledWith(
+      expect.objectContaining({ includeMuted: true }),
+    );
+    await act(async () => result.current.loadMore());
+    expect(StreamPostsController.getOrFetchStreamSlice).toHaveBeenLastCalledWith(
+      expect.objectContaining({ includeMuted: true, lastPostId: 'post3' }),
+    );
+  });
+
   describe('Cursor advances on empty-after-filter pages', () => {
     it('advances streamTail from nextCursor on an empty page so the next loadMore resumes past it', async () => {
       const streamId = 'timeline:all:all' as PostStreamId;

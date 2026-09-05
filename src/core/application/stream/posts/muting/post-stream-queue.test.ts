@@ -23,6 +23,26 @@ describe('PostStreamQueue', () => {
   // Basic Queue Operations
   // ============================================================================
 
+  it('keeps muted-inclusive overflow separate and clears both modes on navigation', async () => {
+    const fetch = vi.fn(async () => ({
+      nextPageIds: ['a:one', 'b:two', 'c:three'],
+      cacheMissPostIds: [],
+      nextCursor: 3,
+      reachedEnd: true,
+    }));
+    const params = { limit: 1, cursor: 0, fetch, filter: (ids: string[]) => ids, cursorForPost: async () => 3 };
+    expect((await queue.collect(streamId, { ...params, includeMuted: true })).posts).toEqual(['a:one']);
+    expect(queue.get(streamId)).toBeUndefined();
+    expect((await queue.collect(streamId, params)).posts).toEqual(['a:one']);
+    expect((await queue.collect(streamId, { ...params, includeMuted: true })).posts).toEqual(['b:two']);
+    expect((await queue.collect(streamId, params)).posts).toEqual(['b:two']);
+    queue.remove(streamId);
+    expect((await queue.collect(streamId, { ...params, includeMuted: true })).posts).toEqual(['a:one']);
+    expect((await queue.collect(streamId, params)).posts).toEqual(['a:one']);
+    queue.clear();
+    expect((await queue.collect(streamId, { ...params, includeMuted: true })).posts).toEqual(['a:one']);
+  });
+
   describe('Basic operations', () => {
     it('should save and retrieve queue entries', () => {
       queue['save'](streamId, ['post1', 'post2'], BASE_TIMESTAMP);

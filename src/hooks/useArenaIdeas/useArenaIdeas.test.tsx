@@ -68,6 +68,17 @@ describe('Arena local data projection', () => {
     expect((await state.read()).ideas).toEqual([]);
   });
 
+  it('includes muted candidates only when requested, preserving deletion and content warnings', async () => {
+    state.muted.add(author);
+    renderHook(() => useArenaIdeas([fixture.compositeId], { includeMuted: true }));
+    expect((await state.read()).ideas).toHaveLength(1);
+    snapshot.details = { ...model, is_blurred: true, content: 'Hidden content' };
+    expect((await state.read()).ideas[0].preview).toBe('Content warning');
+    snapshot.details = { ...model, content: '[DELETED]' };
+    expect((await state.read()).ideas).toEqual([]);
+    expect(state.muted.has(author)).toBe(true);
+  });
+
   it('preserves content warnings and resolves an actual parent relationship', async () => {
     snapshot.details = { ...model, is_blurred: true, content: 'Hidden content' };
     snapshot.relationships = {

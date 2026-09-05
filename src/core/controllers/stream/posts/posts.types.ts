@@ -8,6 +8,8 @@ export type TReadPostStreamChunkParams = {
   lastPostId?: string;
   tags?: string[];
   limit?: number;
+  /** Read muted authors without changing the saved mute list. */
+  includeMuted?: boolean;
   /** Order of results: 'ascending' (oldest first) or 'descending' (newest first, default) */
   order?: StreamOrder;
 };

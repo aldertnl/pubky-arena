@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useArenaIdeas } from '@/hooks/useArenaIdeas/useArenaIdeas';
+import { useMutedUsers } from '@/hooks/useMutedUsers/useMutedUsers';
 import { useStreamPagination } from '@/hooks/useStreamPagination/useStreamPagination';
 import type { ArenaIdea } from '@/libs/arena/arena';
 import { TIMEFRAME } from '@/stores/hot/hot.types';
@@ -14,7 +15,7 @@ vi.mock('@/hooks/usePostDetails/usePostDetails', () => ({
 vi.mock('@/hooks/usePostCounts/usePostCounts', () => ({
   usePostCounts: () => ({ postCounts: { replies: 27 }, isLoading: false }),
 }));
-vi.mock('@/hooks/useMutedUsers/useMutedUsers', () => ({ useMutedUsers: () => ({ isMuted: () => false }) }));
+vi.mock('@/hooks/useMutedUsers/useMutedUsers', () => ({ useMutedUsers: vi.fn(() => ({ isMuted: () => false })) }));
 vi.mock('@/hooks/usePostNavigation/usePostNavigation', () => ({
   usePostNavigation: () => ({ getPostHref: (id: string) => `/post/${id}` }),
 }));
@@ -74,6 +75,12 @@ function stream(overrides: Partial<ReturnType<typeof useStreamPagination>> = {})
 beforeEach(() => {
   vi.clearAllMocks();
   nearViewport = true;
+  vi.mocked(useMutedUsers).mockReturnValue({
+    isMuted: () => false,
+    mutedUserIds: [],
+    mutedUserIdSet: new Set(),
+    isLoading: false,
+  });
   vi.stubGlobal(
     'IntersectionObserver',
     class {
@@ -97,6 +104,23 @@ beforeEach(() => {
 });
 
 describe('Arena leading reply', () => {
+  it('reveals muted originals and replies only while the temporary override is active', () => {
+    vi.mocked(useMutedUsers).mockReturnValue({
+      isMuted: () => true,
+      mutedUserIds: [],
+      mutedUserIdSet: new Set(),
+      isLoading: false,
+    });
+    const { rerender } = render(<ArenaConversation {...props} />);
+    expect(screen.getByText('Original hidden by your mute settings.')).toBeInTheDocument();
+    expect(screen.queryByRole('article')).not.toBeInTheDocument();
+    rerender(<ArenaConversation {...props} showMuted />);
+    expect(screen.getByRole('article', { name: rootId })).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'c:popular' })).toBeInTheDocument();
+    expect(useStreamPagination).toHaveBeenLastCalledWith(expect.objectContaining({ includeMuted: true }));
+    rerender(<ArenaConversation {...props} />);
+    expect(screen.queryByRole('article')).not.toBeInTheDocument();
+  });
   it('defers reply loading until the conversation approaches the viewport', () => {
     nearViewport = false;
     render(<ArenaConversation {...props} />);

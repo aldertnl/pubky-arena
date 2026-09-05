@@ -32,9 +32,10 @@ interface ArenaConversationProps {
   postWindow: { timeframe: TimeframeType; now: number };
   rootId: string;
   selectedId: string;
+  showMuted?: boolean;
 }
 
-export function ArenaConversation({ rootId, selectedId, postWindow }: ArenaConversationProps) {
+export function ArenaConversation({ rootId, selectedId, postWindow, showMuted = false }: ArenaConversationProps) {
   const placeholderRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -52,7 +53,10 @@ export function ArenaConversation({ rootId, selectedId, postWindow }: ArenaConve
     observer.observe(placeholder);
     return () => observer.disconnect();
   }, [ready]);
-  if (ready) return <ArenaConversationContent rootId={rootId} selectedId={selectedId} postWindow={postWindow} />;
+  if (ready)
+    return (
+      <ArenaConversationContent rootId={rootId} selectedId={selectedId} postWindow={postWindow} showMuted={showMuted} />
+    );
   return (
     <div ref={placeholderRef} className={styles.dock}>
       <div className={styles.reader} role="status" aria-label="Loading conversation">
@@ -63,18 +67,22 @@ export function ArenaConversation({ rootId, selectedId, postWindow }: ArenaConve
   );
 }
 
-function ArenaConversationContent({ rootId, selectedId, postWindow }: ArenaConversationProps) {
+function ArenaConversationContent({ rootId, selectedId, postWindow, showMuted = false }: ArenaConversationProps) {
   const readerRef = useRef<HTMLDivElement>(null);
   const originalRef = useRef<HTMLDivElement>(null);
   const replyRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const { postDetails, isLoading } = usePostDetails(rootId);
   const { postCounts } = usePostCounts(rootId);
-  const replyStream = useStreamPagination({ streamId: buildPostReplyStreamId(rootId), limit: ARENA_PAGE_SIZE });
+  const replyStream = useStreamPagination({
+    streamId: buildPostReplyStreamId(rootId),
+    limit: ARENA_PAGE_SIZE,
+    includeMuted: true,
+  });
   const { postIds: replyIds, loading, loadingMore, hasMore, error, loadMore } = replyStream;
   const { isMuted } = useMutedUsers();
-  const rootIsMuted = isMuted(parseCompositeId(rootId).pubky);
-  const { ideas, error: ideasError } = useArenaIdeas([selectedId, ...replyIds]);
+  const rootIsMuted = !showMuted && isMuted(parseCompositeId(rootId).pubky);
+  const { ideas, error: ideasError } = useArenaIdeas([selectedId, ...replyIds], { includeMuted: true });
 
   // Reply streams arrive by timestamp, not popularity. Check every page before
   // declaring a winner so a highly scored older reply is not missed.
@@ -83,7 +91,9 @@ function ArenaConversationContent({ rootId, selectedId, postWindow }: ArenaConve
   }, [loading, loadingMore, error, hasMore, loadMore]);
 
   const replies = rankArenaIdeas(
-    filterArenaIdeasByTimeframe(ideas, postWindow.timeframe, postWindow.now).filter((idea) => idea.replyTo === rootId),
+    filterArenaIdeasByTimeframe(ideas, postWindow.timeframe, postWindow.now).filter(
+      (idea) => idea.replyTo === rootId && (showMuted || !isMuted(idea.author)),
+    ),
     'popular',
   );
   const leadingReply = replies[0];

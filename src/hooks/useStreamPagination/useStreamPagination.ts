@@ -68,6 +68,7 @@ export function useStreamPagination({
   streamId,
   limit = NEXUS_POSTS_PER_PAGE,
   resetOnStreamChange = true,
+  includeMuted,
   onError,
 }: UseStreamPaginationOptions): UseStreamPaginationResult {
   const [postIds, setPostIds] = useState<string[]>([]);
@@ -130,6 +131,7 @@ export function useStreamPagination({
             // Skip streams always start at offset 0; score streams seed from the cached tail.
             streamTail: isSkipPaginatedStream(streamId) ? 0 : cachedLastPostTimestamp,
             limit,
+            ...(includeMuted ? { includeMuted } : {}),
           });
         } else {
           result = await StreamPostsController.getOrFetchStreamSlice({
@@ -137,6 +139,7 @@ export function useStreamPagination({
             lastPostId,
             streamTail,
             limit,
+            ...(includeMuted ? { includeMuted } : {}),
           });
         }
 
@@ -207,7 +210,7 @@ export function useStreamPagination({
         setLoadingState(isInitialLoad, false);
       }
     },
-    [streamId, lastPostId, streamTail, limit, setLoadingState, onError],
+    [streamId, lastPostId, streamTail, limit, includeMuted, setLoadingState, onError],
   );
 
   /**
@@ -432,7 +435,7 @@ export function useStreamPagination({
     }
     fetchStreamSlice(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [streamId]);
+  }, [streamId, includeMuted]);
 
   return {
     postIds,

@@ -317,6 +317,7 @@ export class PostStreamApplication {
     limit,
     viewerId,
     order,
+    includeMuted = false,
   }: TFetchStreamParams): Promise<TPostStreamChunkResponse> {
     // Skip cache for ascending order (chronological) - always fetch from Nexus
     // This is because cache is stored in descending order
@@ -335,7 +336,8 @@ export class PostStreamApplication {
 
     // Author streams and bookmarks intentionally include posts from muted users:
     // bookmarks are explicit saves (#1804); profile is someone's full timeline.
-    const shouldFilterMuted = !isAuthorStreamSkippingMuteFilter(streamId) && !isBookmarkStream(streamId);
+    const shouldFilterMuted =
+      !includeMuted && !isAuthorStreamSkippingMuteFilter(streamId) && !isBookmarkStream(streamId);
     const mutedUserIds = shouldFilterMuted
       ? new Set((await LocalStreamUsersService.findById(UserStreamTypes.MUTED))?.stream ?? [])
       : new Set<Pubky>();
@@ -348,6 +350,7 @@ export class PostStreamApplication {
     let lastReturnedPostId: string | undefined = lastPostId;
 
     const { posts, cacheMissIds, nextCursor, reachedEnd } = await postStreamQueue.collect(streamId, {
+      includeMuted,
       limit,
       cursor: streamTail,
       // Discover bounds its per-load scan tighter than the shared default: it is a

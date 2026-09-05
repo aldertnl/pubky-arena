@@ -13,6 +13,8 @@ export interface TFetchStreamParams {
   lastPostId?: string;
   tags?: string[];
   order?: StreamOrder;
+  /** Read muted authors without changing the saved mute list. */
+  includeMuted?: boolean;
 }
 
 export interface TInitialStreamParams {
