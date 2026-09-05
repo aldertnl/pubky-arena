@@ -147,9 +147,9 @@ describe('Arena filters and topic standings', () => {
     await user.click(screen.getByRole('button', { name: 'Ranking: Most popular' }));
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
       'Most popular',
+      'Most active',
       'Most replied',
       'Most tagged',
-      'Most active',
       'Most posted',
       'Most reposted',
       'Most recent',

@@ -110,9 +110,9 @@ const PEOPLE_INDICATOR = { label: 'People', icon: UsersRound };
 
 const RANK_OPTIONS = [
   { value: 'popular', label: 'Most popular', icon: Flame, indicators: [CONTENT_INDICATOR, PEOPLE_INDICATOR] },
+  { value: 'active', label: 'Most active', icon: Activity, indicators: [PEOPLE_INDICATOR] },
   { value: 'replies', label: 'Most replied', icon: MessageCircle, indicators: [CONTENT_INDICATOR, PEOPLE_INDICATOR] },
   { value: 'tags', label: 'Most tagged', icon: TagIcon, indicators: [CONTENT_INDICATOR, PEOPLE_INDICATOR] },
-  { value: 'active', label: 'Most active', icon: Activity, indicators: [PEOPLE_INDICATOR] },
   { value: 'posts', label: 'Most posted', icon: StickyNote, indicators: [PEOPLE_INDICATOR] },
   { value: 'reposts', label: 'Most reposted', icon: Repeat, indicators: [CONTENT_INDICATOR] },
   { value: 'newest', label: 'Most recent', icon: Clock, indicators: [CONTENT_INDICATOR, PEOPLE_INDICATOR] },

@@ -587,9 +587,9 @@ describe('Hot — visual regression', () => {
         .toHaveAttribute('aria-current', 'true');
       expect([...document.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent)).toEqual([
         'Most popular',
+        'Most active',
         'Most replied',
         'Most tagged',
-        'Most active',
         'Most posted',
         'Most reposted',
         'Most recent',
@@ -651,6 +651,24 @@ describe('Hot — visual regression', () => {
       expect(person.querySelectorAll('[aria-label$="followers"]')).toHaveLength(1);
     }
     await matchVrtFrameScreenshot(`hot-people-${name}`);
+    const portraits = people.map((person) => person.querySelector<HTMLElement>('[data-arena-person-portrait]')!);
+    const avatars = portraits.map((portrait) => portrait.firstElementChild!);
+    avatars.forEach((avatar, index) => {
+      expect(Number(getComputedStyle(avatar).opacity)).toBeCloseTo(1 - index * 0.05);
+    });
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      await page.elementLocator(people[1]).hover();
+      expect(getComputedStyle(avatars[1]).opacity).toBe('1');
+      await page.getByRole('button', { name: 'Ranking: Most active' }).hover();
+      expect(getComputedStyle(avatars[1]).opacity).toBe('0.95');
+    }
+    await page.elementLocator(people[1]).click();
+    await page.getByRole('button', { name: 'Ranking: Most active' }).hover();
+    await expect.element(page.elementLocator(people[1])).toHaveAttribute('aria-pressed', 'true');
+    expect(getComputedStyle(avatars[1]).opacity).toBe('1');
+    expect(getComputedStyle(portraits[0]).outlineStyle).toBe('none');
+    expect(getComputedStyle(portraits[1]).outlineStyle).toBe('solid');
+    await page.elementLocator(people[0]).click();
     await page.getByRole('button', { name: 'Ranking: Most active' }).click();
     await page.getByRole('menuitem', { name: 'Most popular', exact: true }).click();
     const f = await fixtures;

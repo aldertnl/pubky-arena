@@ -1,6 +1,7 @@
 'use client';
 
 import { type CSSProperties } from 'react';
+import { Trophy } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Button } from '@/atoms/Button/Button';
 import { Skeleton } from '@/atoms/Skeleton/Skeleton';
@@ -50,6 +51,7 @@ export function ArenaPeopleFloor({
               {
                 ...(!isList && { left: `${placement.x}%`, top: `${placement.y}%`, zIndex: visible.length - index }),
                 '--arena-person-scale': Math.max(0.72, 1 - index * 0.03),
+                '--arena-person-opacity': (100 - index * 5) / 100,
               } as CSSProperties
             }
             layout={reduceMotion ? false : 'position'}
@@ -74,6 +76,11 @@ export function ArenaPeopleFloor({
                     size="xl"
                     className={styles.personAvatar}
                   />
+                  {index === 0 && !isList && (
+                    <span className={cn(styles.awardIcon, styles.personAward)} aria-hidden="true">
+                      <Trophy className="size-4" />
+                    </span>
+                  )}
                   <span className={styles.personRank}>#{index + 1}</span>
                 </span>
                 <span className={styles.personName}>{name}</span>

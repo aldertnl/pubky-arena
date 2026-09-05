@@ -1041,9 +1041,22 @@
   outline: 2px solid var(--brand);
   outline-offset: 5px;
 }
+.person[aria-pressed='true'] .personAvatar {
+  opacity: 1;
+}
 .personAvatar {
   width: 80px;
   height: 80px;
+  opacity: var(--arena-person-opacity, 1);
+}
+.personAward {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 32px;
+  height: 32px;
+  rotate: -12deg;
+  pointer-events: none;
 }
 .personRank {
   position: absolute;
@@ -1062,14 +1075,14 @@
   width: 104px;
   height: 104px;
 }
-.peopleFloor .contender:first-child .personPortrait {
+.peopleFloor .contender:first-child .person[aria-pressed='true'] .personPortrait {
   outline: 2px solid var(--arena-topic-color);
   outline-offset: 3px;
   box-shadow: 0 0 32px color-mix(in srgb, var(--arena-topic-color) 30%, transparent);
 }
 .peopleFloor .contender:first-child .personRank {
-  border-color: var(--brand);
-  color: var(--brand);
+  border-color: var(--arena-topic-color, var(--brand));
+  color: var(--arena-topic-color, var(--brand));
 }
 .personName {
   max-width: 100%;
@@ -1099,6 +1112,9 @@
 @media (hover: hover) and (pointer: fine) {
   .peopleFloor .person:hover {
     transform: scale(1.08);
+  }
+  .peopleFloor .person:hover .personAvatar {
+    opacity: 1;
   }
 }
 .peopleFloor.list .person {
