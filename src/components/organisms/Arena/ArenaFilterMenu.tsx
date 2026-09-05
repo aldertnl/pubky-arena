@@ -2,7 +2,6 @@
 
 import { type ComponentType, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
-import { Button } from '@/atoms/Button/Button';
 import { Container } from '@/atoms/Container/Container';
 import {
   DropdownMenu,
@@ -10,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/atoms/DropdownMenu/DropdownMenu';
+import { SidebarButton } from '@/atoms/SidebarButton/SidebarButton';
 import { Typography } from '@/atoms/Typography/Typography';
 
 interface ArenaFilterMenuProps<T extends string> {
@@ -34,13 +34,12 @@ export function ArenaFilterMenu<T extends string>({
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="secondary" size="sm" className="text-xs" aria-label={`${label}: ${active.label}`}>
-          <ActiveIcon className="size-4" aria-hidden="true" />
+        <SidebarButton icon={ActiveIcon} className="w-auto" aria-label={`${label}: ${active.label}`}>
           <Typography as="span" overrideDefaults>
             {lowercase ? active.label.toLowerCase() : active.label}
           </Typography>
           <ChevronDown className="size-3.5" aria-hidden="true" />
-        </Button>
+        </SidebarButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-70" aria-label={label}>
         <Container overrideDefaults className="flex w-full flex-col gap-3">

@@ -6,6 +6,7 @@ import type {
   TEditPostInput,
   TGetDetailsByIdsParams,
   TGetOrFetchPostParams,
+  TPostSnapshot,
 } from '@/application/post/post.types';
 import { PostStreamApplication } from '@/application/stream/posts/post';
 import { TagApplication } from '@/application/tag/tag';
@@ -53,6 +54,25 @@ export class PostApplication {
     if (!post) return null;
     const [enriched] = await ModerationController.enrichPosts([post]);
     return enriched;
+  }
+
+  /** Bulk local records with the same moderation enrichment as getDetails. */
+  static async getManySnapshots({ compositeIds }: TGetDetailsByIdsParams): Promise<Map<string, TPostSnapshot>> {
+    const ids = [...new Set(compositeIds)];
+    if (!ids.length) return new Map();
+    const [details, counts, relationships] = await Promise.all([
+      LocalPostService.readDetailsByIds(ids),
+      LocalPostService.readCountsByIds(ids),
+      LocalPostService.readRelationshipsByIds(ids),
+    ]);
+    const enriched = await ModerationController.enrichPosts(details.filter((post) => post !== undefined));
+    const positions = new Map(ids.map((id, index) => [id, index]));
+    return new Map(
+      enriched.map((post) => {
+        const index = positions.get(post.id)!;
+        return [post.id, { details: post, counts: counts[index] ?? null, relationships: relationships[index] ?? null }];
+      }),
+    );
   }
 
   /**

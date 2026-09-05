@@ -1,6 +1,6 @@
 'use client';
 
-import { type CSSProperties, useEffect, useState } from 'react';
+import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import {
   Calendar,
   CalendarRange,
@@ -46,6 +46,7 @@ import { ArenaConversation } from './ArenaConversation';
 import { ArenaFilterMenu } from './ArenaFilterMenu';
 import { ArenaFloor, ArenaFloorSkeleton } from './ArenaFloor';
 import { ArenaParticles } from './ArenaParticles';
+import { ArenaTagConnectors } from './ArenaTagConnectors';
 import { ArenaTagPicker } from './ArenaTagPicker';
 
 const WINDOWS = [
@@ -141,6 +142,9 @@ export function Arena() {
   return (
     <div className={styles.arena}>
       <div className={styles.toolbar}>
+        <svg className={styles.toolbarDivider} aria-hidden="true" focusable="false">
+          <line x1="0" y1="0.5" x2="100%" y2="0.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+        </svg>
         <div className={cn(styles.filters, 'font-medium')} role="group" aria-label="Arena filters">
           <div className={styles.filterClause}>
             <span className={styles.mobileHidden}>Show</span>{' '}
@@ -202,7 +206,9 @@ export function Arena() {
             onClick={resetFilters}
           >
             <RotateCcw className="size-3.5" aria-hidden="true" />
-            Reset<span className={styles.mobileHidden}> defaults</span>
+            <span>
+              Reset<span className={styles.mobileHidden}> defaults</span>
+            </span>
           </Button>
         </div>
       </div>
@@ -309,7 +315,28 @@ function ArenaStage({
 }: Pick<StageProps, 'topics' | 'topic' | 'onTopic' | 'isList' | 'metric' | 'content' | 'postWindow'> & {
   children: React.ReactNode;
 }) {
+  const stageRef = useRef<HTMLDivElement>(null);
   const [tagRotations, setTagRotations] = useState<number[]>([]);
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    let inView = true;
+    const update = () => stage.toggleAttribute('data-arena-paused', !inView || document.hidden);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        inView = entry.isIntersecting;
+        update();
+      },
+      { rootMargin: '100px' },
+    );
+    observer.observe(stage);
+    document.addEventListener('visibilitychange', update);
+    update();
+    return () => {
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', update);
+    };
+  }, []);
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       setTagRotations(Array.from({ length: ARENA_TOPIC_LIMIT }, () => (Math.random() - 0.5) * 4));
@@ -318,9 +345,14 @@ function ArenaStage({
   }, [topic, metric, content, isList, postWindow.timeframe]);
 
   return (
-    <div className={cn(styles.stage, isList && styles.listStage)}>
+    <div
+      ref={stageRef}
+      className={cn(styles.stage, isList && styles.listStage)}
+      style={{ '--arena-topic-color': generateRandomColor(topic) } as CSSProperties}
+    >
       {/* Decorative rings and particles stay behind the interactive content. */}
       <div className={styles.bowl} aria-hidden="true" data-testid="arena-orbits">
+        <span className={styles.atmosphere} />
         <span className={cn(styles.orbit, styles.orbitRear)} data-orbit="rear" />
         <span className={cn(styles.orbit, styles.orbitMiddle)} data-orbit="middle" />
         <span className={cn(styles.orbit, styles.orbitOuter)} data-orbit="outer" />
@@ -332,13 +364,20 @@ function ArenaStage({
         <span className={cn(styles.orbit, styles.orbitAccent)} data-orbit="accent" />
         <ArenaParticles />
       </div>
+      {!isList && <ArenaTagConnectors key={topic} stageRef={stageRef} topic={topic} />}
       <div className={styles.topics} role="group" aria-label="Topic standings">
         {topics.map((tag, index) => {
           const rank = index + 1;
           const tagColor = generateRandomColor(tag.label);
           const selected = tag.label === topic;
           return (
-            <div key={tag.label} className={styles.topic} role="group" aria-label={`Rank ${rank}`}>
+            <div
+              key={tag.label}
+              className={styles.topic}
+              style={{ opacity: selected ? 1 : Math.max(0.55, (21 - rank) / 20) }}
+              role="group"
+              aria-label={`Rank ${rank}`}
+            >
               <div
                 className={styles.topicControl}
                 style={
@@ -350,16 +389,17 @@ function ArenaStage({
                   } as CSSProperties
                 }
               >
-                <div className={cn(styles.topicTagGroup, selected && styles.selectedTopicControl)}>
-                  {!isList && (
-                    <span className={styles.topicRank} aria-hidden="true">
-                      #{rank}
-                    </span>
-                  )}
+                <div
+                  className={cn(styles.topicTagGroup, selected && styles.selectedTopicControl)}
+                  data-arena-selected-topic={selected || undefined}
+                >
+                  <span className={styles.topicRank} aria-hidden="true">
+                    #{rank}
+                  </span>
                   <PostTag
                     label={tag.label}
                     maxLabelLength={14}
-                    className={cn('max-w-none shrink-0', !isList && styles.topicTag)}
+                    className={cn('max-w-none shrink-0', styles.topicTag)}
                     selectedStyle={{
                       borderColor: tagColor,
                       boxShadow: `inset 0 0 8px 0 ${tagColor}`,

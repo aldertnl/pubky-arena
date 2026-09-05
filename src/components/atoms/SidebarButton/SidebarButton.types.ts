@@ -1,6 +1,6 @@
-import type { LucideIcon } from 'lucide-react';
+import type { ComponentType } from 'react';
 
 export interface SidebarButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  icon: LucideIcon;
+  icon: ComponentType<{ className?: string }>;
   children: React.ReactNode;
 }

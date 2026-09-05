@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/atoms/Button/Button';
 import { Skeleton } from '@/atoms/Skeleton/Skeleton';
@@ -35,6 +35,35 @@ interface ArenaConversationProps {
 }
 
 export function ArenaConversation({ rootId, selectedId, postWindow }: ArenaConversationProps) {
+  const placeholderRef = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const placeholder = placeholderRef.current;
+    if (!placeholder || ready) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setReady(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(placeholder);
+    return () => observer.disconnect();
+  }, [ready]);
+  if (ready) return <ArenaConversationContent rootId={rootId} selectedId={selectedId} postWindow={postWindow} />;
+  return (
+    <div ref={placeholderRef} className={styles.dock}>
+      <div className={styles.reader} role="status" aria-label="Loading conversation">
+        <Skeleton className="h-64 w-full rounded-md" />
+        <Skeleton className="h-48 w-full rounded-md" />
+      </div>
+    </div>
+  );
+}
+
+function ArenaConversationContent({ rootId, selectedId, postWindow }: ArenaConversationProps) {
   const readerRef = useRef<HTMLDivElement>(null);
   const originalRef = useRef<HTMLDivElement>(null);
   const replyRef = useRef<HTMLDivElement>(null);

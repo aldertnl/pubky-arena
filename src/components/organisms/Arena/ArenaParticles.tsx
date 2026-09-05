@@ -13,14 +13,14 @@ function createParticles() {
     const angle = random() * Math.PI * 2;
     const radius = 0.35 + Math.sqrt(random()) * 0.55;
     const size = 5 + random() * 14;
+    const softness = 4 + random() * 6;
     return {
       id: `particle-${index}`,
       style: {
         left: `${50 + Math.cos(angle) * radius * 47}%`,
         top: `${50 + Math.sin(angle) * radius * 45}%`,
-        width: `${size}px`,
-        height: `${size}px`,
-        filter: `blur(${4 + random() * 6}px)`,
+        width: `${size + softness * 2}px`,
+        height: `${size + softness * 2}px`,
         animationDuration: `${12 + random() * 14}s`,
         animationDelay: `${-random() * 30}s`,
         '--particle-opacity': 0.1 + random() * 0.55,

@@ -23,7 +23,7 @@ export function ArenaStat({
       overrideDefaults
       className={cn(
         POST_ACTION_COUNT_TYPOGRAPHY_CLASS,
-        'inline-flex items-center gap-1 text-[0.625rem] leading-3.5 tracking-normal normal-case tabular-nums',
+        'inline-flex items-center gap-0.5 text-[0.625rem] leading-3.5 tracking-normal normal-case tabular-nums',
         active ? 'text-brand' : 'text-muted-foreground',
       )}
       aria-label={label}

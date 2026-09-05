@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useArenaIdeas } from '@/hooks/useArenaIdeas/useArenaIdeas';
 import { useStreamPagination } from '@/hooks/useStreamPagination/useStreamPagination';
 import type { ArenaIdea } from '@/libs/arena/arena';
@@ -32,6 +32,9 @@ const day = 24 * 60 * 60 * 1000;
 const rootId = 'a:root';
 const selectedId = 'b:selected';
 const props = { rootId, selectedId, postWindow: { timeframe: TIMEFRAME.THIS_MONTH, now } };
+let nearViewport = true;
+let enterViewport: () => void;
+afterEach(() => vi.unstubAllGlobals());
 
 function idea(id: string, overrides: Partial<ArenaIdea> = {}): ArenaIdea {
   return {
@@ -70,6 +73,19 @@ function stream(overrides: Partial<ReturnType<typeof useStreamPagination>> = {})
 
 beforeEach(() => {
   vi.clearAllMocks();
+  nearViewport = true;
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      constructor(private callback: (entries: { isIntersecting: boolean }[]) => void) {}
+      observe() {
+        enterViewport = () => this.callback([{ isIntersecting: true }]);
+        this.callback([{ isIntersecting: nearViewport }]);
+      }
+      disconnect() {}
+      unobserve() {}
+    },
+  );
   ideas = [
     idea(rootId, { tags: 999, replyTo: null }),
     idea(selectedId, { tags: 11 }),
@@ -81,6 +97,16 @@ beforeEach(() => {
 });
 
 describe('Arena leading reply', () => {
+  it('defers reply loading until the conversation approaches the viewport', () => {
+    nearViewport = false;
+    render(<ArenaConversation {...props} />);
+    expect(useStreamPagination).not.toHaveBeenCalled();
+    expect(useArenaIdeas).not.toHaveBeenCalled();
+    expect(screen.getByRole('status', { name: 'Loading conversation' })).toBeInTheDocument();
+    act(() => enterViewport());
+    expect(useStreamPagination).toHaveBeenCalled();
+    expect(screen.getByRole('article', { name: 'c:popular' })).toBeInTheDocument();
+  });
   it('shows the most popular direct reply instead of the clicked reply, without a rank number', () => {
     render(<ArenaConversation {...props} />);
     const replies = within(screen.getByRole('region', { name: 'Replies' }));

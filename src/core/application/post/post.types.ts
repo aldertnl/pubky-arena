@@ -1,6 +1,9 @@
 import { PubkyAppPost } from 'pubky-app-specs';
+import type { EnrichedPostDetails } from '@/application/moderation/moderation.types';
 import type { TCreateTagInput } from '@/application/tag/tag.types';
 import type { Pubky } from '@/models/models.types';
+import type { PostCountsModelSchema } from '@/models/post/counts/postCounts.schema';
+import type { PostRelationshipsModelSchema } from '@/models/post/relationships/postRelationships.schema';
 import type { TFileAttachmentResult } from '@/pipes/file/file.types';
 import type { TLocalSavePostParams } from '@/services/local/post/post.types';
 
@@ -30,3 +33,9 @@ export type TGetDetailsByIdsParams = {
   /** Composite post IDs in format "authorId:postId". */
   compositeIds: string[];
 };
+
+export interface TPostSnapshot {
+  details: EnrichedPostDetails;
+  counts: PostCountsModelSchema | null;
+  relationships: PostRelationshipsModelSchema | null;
+}

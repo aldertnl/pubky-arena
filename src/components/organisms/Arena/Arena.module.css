@@ -2,15 +2,25 @@
   width: 100%;
   min-width: 0;
   --arena-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --arena-stage-gap: 24px;
 }
 .toolbar {
+  position: relative;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
   padding-bottom: 20px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 24px;
+  border-bottom: 1px solid transparent;
+}
+.toolbarDivider {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 1px;
+  pointer-events: none;
+  color: var(--border);
 }
 .filters {
   display: flex;
@@ -46,20 +56,31 @@
 }
 .stage {
   position: relative;
-  padding-top: 71px;
-  min-height: 650px;
+  padding-top: calc(71px + var(--arena-stage-gap));
+  min-height: calc(650px + var(--arena-stage-gap));
   animation: arena-appear 280ms var(--arena-ease) both;
 }
 .bowl {
   position: absolute;
   left: 0;
-  top: 10px;
+  top: calc(10px + var(--arena-stage-gap));
   width: 100%;
   height: 630px;
   pointer-events: none;
   color: var(--brand);
   overflow: clip;
   animation: arena-appear 600ms ease-out both;
+}
+.atmosphere {
+  position: absolute;
+  inset: 4% 8% 8%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--arena-topic-color) 12%, transparent),
+    color-mix(in srgb, var(--arena-topic-color) 5%, transparent) 42%,
+    transparent 72%
+  );
 }
 .orbit {
   position: absolute;
@@ -75,9 +96,13 @@
 .particle {
   position: absolute;
   border-radius: 50%;
-  background: currentColor;
+  background: radial-gradient(circle, currentColor 0%, transparent 70%);
   opacity: var(--particle-opacity);
   animation: arena-particle-float ease-in-out infinite;
+}
+.stage[data-arena-paused] .orbit,
+.stage[data-arena-paused] .particle {
+  animation-play-state: paused;
 }
 .orbitFront {
   inset: 5% 3.67% 9%;
@@ -91,14 +116,14 @@
   border-width: 3px;
   opacity: 0.48;
   filter: blur(32px);
-  animation: arena-orbit-middle 16s -7s ease-in-out infinite;
+  transform: rotate(7deg) scale(1.01, 0.96);
 }
 .orbitRear {
   inset: 9.8% 2.58% 4.6%;
   border-width: 4px;
   opacity: 0.32;
   filter: blur(80px);
-  animation: arena-orbit-rear 20s -12s ease-in-out infinite;
+  transform: rotate(-9deg) scale(0.97, 1.03);
 }
 .orbitCrossOne {
   inset: 11% 4.5% 13%;
@@ -114,7 +139,6 @@
   opacity: 0.48;
   filter: blur(8px);
   transform: rotate(11deg);
-  animation: arena-orbit-cross-two 13s -6s ease-in-out infinite;
 }
 .orbitCrossThree {
   inset: 14% 2.5% 17%;
@@ -122,7 +146,6 @@
   opacity: 0.32;
   filter: blur(16px);
   transform: rotate(-5deg);
-  animation: arena-orbit-cross-three 17s -10s ease-in-out infinite;
 }
 .orbitOuter {
   inset: 3% 2% 7%;
@@ -130,7 +153,6 @@
   opacity: 0.16;
   filter: blur(24px);
   transform: rotate(6deg);
-  animation: arena-orbit-rear 27s -18s ease-in-out infinite reverse;
 }
 .orbitInner {
   inset: 17% 7% 18%;
@@ -138,7 +160,6 @@
   opacity: 0.24;
   filter: blur(12px);
   transform: rotate(-7deg);
-  animation: arena-orbit-cross-one 23s -6s ease-in-out infinite reverse;
 }
 .orbitAccent {
   inset: 8% 1.8% 12%;
@@ -146,12 +167,30 @@
   opacity: 0.36;
   filter: blur(6px);
   transform: rotate(9deg);
-  animation: arena-orbit-cross-two 19s -11s ease-in-out infinite reverse;
 }
 .topics {
   position: absolute;
-  inset: 0;
+  inset: var(--arena-stage-gap) 0 0;
   pointer-events: none;
+}
+.tagConnectors {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.connectionLine {
+  opacity: 0.32;
+  transition: opacity 180ms ease;
+}
+[data-spotlight] > .connectionLine {
+  opacity: 0.8;
+}
+.connectionPulse {
+  opacity: 0;
+  animation: arena-connection-pulse 520ms linear both;
 }
 .topic {
   position: absolute;
@@ -179,6 +218,10 @@
   align-items: stretch;
   border-radius: 6px;
 }
+.topicTagGroup > button {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
 .selectedTopicControl {
   outline: 1px solid var(--arena-topic-pill-color);
   outline-offset: -1px;
@@ -187,7 +230,17 @@
     0 0 32px 8px var(--arena-topic-pill-glow);
 }
 .selectedTopicControl .topicRank {
-  border-color: var(--arena-topic-pill-color);
+  position: relative;
+  border-color: transparent;
+}
+.selectedTopicControl .topicRank::after {
+  content: '';
+  position: absolute;
+  inset: 0 -1px 0 0;
+  border: 1px solid var(--arena-topic-pill-color);
+  border-right: 0;
+  border-radius: inherit;
+  pointer-events: none;
 }
 .awardIcon {
   display: inline-flex;
@@ -283,7 +336,7 @@
   min-height: 460px;
 }
 .initialArenaLoading {
-  padding-top: 48px;
+  padding-top: calc(48px + var(--arena-stage-gap));
 }
 .skeletonCard {
   position: relative;
@@ -370,6 +423,37 @@
     inset 0 0 8px 0 var(--arena-selection-inset),
     0 0 32px 8px var(--arena-selection-glow),
     var(--tw-shadow);
+}
+.contender[data-arena-spotlight] .ideaCard {
+  translate: 0 -4px;
+  outline-color: var(--arena-topic-color);
+}
+.contender[data-arena-spotlight] .ideaCard:not(.selected) {
+  box-shadow:
+    0 0 18px 2px color-mix(in srgb, var(--arena-topic-color) 16%, transparent),
+    var(--tw-shadow);
+}
+.arrivalGlow,
+.leaderPulse {
+  position: absolute;
+  inset: -1px;
+  border: 1px solid var(--arena-topic-color);
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+}
+.arrivalGlow {
+  box-shadow: 0 0 14px 2px var(--arena-selection-glow);
+  animation: arena-card-arrival 320ms var(--arena-arrival-delay) ease-out both;
+}
+.leaderPulse {
+  box-shadow:
+    inset 0 0 10px var(--arena-selection-glow),
+    0 0 24px 4px var(--arena-selection-glow);
+  animation: arena-leader-pulse 900ms 450ms ease-out both;
+}
+.leaderCelebration .postAward {
+  animation: arena-trophy-glint 750ms 500ms ease-out both;
 }
 .ideaHeader {
   display: flex;
@@ -477,6 +561,9 @@
   text-align: center;
   color: var(--muted-foreground);
 }
+.arena > .status {
+  padding-top: calc(80px + var(--arena-stage-gap));
+}
 .list {
   height: auto;
   display: grid;
@@ -491,7 +578,7 @@
 }
 .listStage {
   min-height: auto;
-  padding-top: 0;
+  padding-top: var(--arena-stage-gap);
 }
 .listStage .bowl {
   display: none;
@@ -513,11 +600,11 @@
 @media (max-width: 1100px) {
   .stage {
     min-height: auto;
-    padding-top: 0;
+    padding-top: var(--arena-stage-gap);
   }
   .bowl {
-    top: 190px;
-    height: calc(100% - 190px);
+    top: calc(190px + var(--arena-stage-gap));
+    height: calc(100% - 190px - var(--arena-stage-gap));
   }
   .topics {
     position: static;
@@ -557,8 +644,11 @@
   }
 }
 @media (max-width: 900px) {
+  .tagConnectors {
+    display: none;
+  }
   .bowl {
-    top: 190px;
+    top: calc(190px + var(--arena-stage-gap));
     height: 540px;
   }
   .floor:not(.list) {
@@ -613,7 +703,7 @@
     min-height: auto;
   }
   .bowl {
-    top: 268px;
+    top: calc(268px + var(--arena-stage-gap));
     height: 540px;
   }
   .floor:not(.list) {
@@ -637,6 +727,54 @@
   }
   to {
     opacity: 1;
+  }
+}
+@keyframes arena-connection-pulse {
+  0% {
+    stroke-dashoffset: 0.12;
+    opacity: 0;
+  }
+  15%,
+  65% {
+    opacity: 0.9;
+  }
+  100% {
+    stroke-dashoffset: -1;
+    opacity: 0;
+  }
+}
+@keyframes arena-card-arrival {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.45;
+  }
+}
+@keyframes arena-leader-pulse {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.8;
+  }
+}
+@keyframes arena-trophy-glint {
+  0%,
+  100% {
+    scale: 1;
+    color: var(--arena-topic-color, var(--brand));
+    border-color: var(--arena-topic-color, var(--brand));
+    box-shadow: 0 0 0 0 transparent;
+  }
+  20%,
+  32% {
+    scale: 1.12;
+    color: #fff;
+    border-color: #fff;
+    box-shadow: 0 0 14px 3px rgb(255 255 255 / 45%);
   }
 }
 @keyframes arena-change {
@@ -673,24 +811,6 @@
     opacity: calc(var(--particle-opacity) * 0.65);
   }
 }
-@keyframes arena-orbit-middle {
-  0%,
-  100% {
-    transform: translate(7px, -5px) rotate(7deg) scale(1.01, 0.96);
-  }
-  50% {
-    transform: translate(-7px, 6px) rotate(-7deg) scale(0.97, 1.035);
-  }
-}
-@keyframes arena-orbit-rear {
-  0%,
-  100% {
-    transform: translate(-8px, 8px) rotate(-9deg) scale(0.97, 1.03);
-  }
-  50% {
-    transform: translate(8px, -6px) rotate(9deg) scale(1.03, 0.97);
-  }
-}
 @keyframes arena-orbit-cross-one {
   0%,
   100% {
@@ -700,36 +820,24 @@
     transform: translate(7px, -6px) rotate(8deg) scale(1.025, 0.96);
   }
 }
-@keyframes arena-orbit-cross-two {
-  0%,
-  100% {
-    transform: translate(6px, -6px) rotate(11deg) scale(1.02, 0.96);
-  }
-  50% {
-    transform: translate(-6px, 7px) rotate(-11deg) scale(0.96, 1.06);
-  }
-}
-@keyframes arena-orbit-cross-three {
-  0%,
-  100% {
-    transform: translate(-8px, -4px) rotate(-5deg) scale(0.96, 1.06);
-  }
-  50% {
-    transform: translate(6px, 8px) rotate(14deg) scale(1.02, 0.95);
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .stage,
   .bowl,
   .orbit,
   .particle,
   .statValue,
-  .readerContent {
+  .readerContent,
+  .connectionPulse,
+  .arrivalGlow,
+  .leaderPulse,
+  .leaderCelebration .postAward {
     animation: none;
   }
   .ideaCard,
   .ideaCard:hover,
   .ideaCard:active,
+  .contender[data-arena-spotlight] .ideaCard,
+  .connectionLine,
   .rankPill,
   .topicControl,
   .topicControl:hover,

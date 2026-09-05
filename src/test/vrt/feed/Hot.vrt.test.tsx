@@ -591,7 +591,7 @@ describe('Hot — visual regression', () => {
     await renderForVRT(<HotWithHeader />, { viewport: VRT_VIEWPORT_MOBILE });
     expectContendersToFit();
     await matchVrtFrameScreenshot('hot-mobile');
-    await page.getByRole('button', { name: 'Timeframe: This month', exact: true }).click();
+    await page.getByRole('button', { name: 'Timeframe: This month’s', exact: true }).click();
     await matchVrtFrameScreenshot('hot-mobile-menu');
   });
 

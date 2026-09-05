@@ -1,5 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TPostSnapshot } from '@/application/post/post.types';
 import { PostController } from '@/controllers/post/post';
 import type { ArenaIdea } from '@/libs/arena/arena';
 import { VRT_FEED_POSTS } from '@/test/fixtures/feed/posts';
@@ -18,28 +19,34 @@ vi.mock('dexie-react-hooks', () => ({
 vi.mock('@/hooks/useMutedUsers/useMutedUsers', () => ({ useMutedUsers: () => ({ mutedUserIdSet: state.muted }) }));
 vi.mock('@/controllers/post/post', () => ({
   PostController: {
-    getDetails: vi.fn(),
-    getCounts: vi.fn(),
-    getRelationships: vi.fn(),
+    getManySnapshots: vi.fn(),
   },
 }));
 
 const fixture = VRT_FEED_POSTS[0];
 const { author, ...details } = fixture.details;
 const model = { ...details, id: fixture.compositeId, is_blurred: false, is_moderated: false };
+let snapshot: TPostSnapshot;
 
 describe('Arena local data projection', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     state.muted.clear();
-    vi.mocked(PostController.getDetails).mockResolvedValue(model);
-    vi.mocked(PostController.getCounts).mockResolvedValue({ ...fixture.counts, id: fixture.compositeId });
-    vi.mocked(PostController.getRelationships).mockResolvedValue({ ...fixture.relationships, id: fixture.compositeId });
+    snapshot = {
+      details: model,
+      counts: { ...fixture.counts, id: fixture.compositeId },
+      relationships: { ...fixture.relationships, id: fixture.compositeId },
+    };
+    vi.mocked(PostController.getManySnapshots).mockImplementation(
+      async () => new Map([[fixture.compositeId, snapshot]]),
+    );
   });
 
   it('gets the author from the composite ID and counts distinct tag labels', async () => {
     renderHook(() => useArenaIdeas([fixture.compositeId, fixture.compositeId]));
     const result = await state.read();
     expect(result.ideas).toHaveLength(1);
+    expect(PostController.getManySnapshots).toHaveBeenCalledExactlyOnceWith({ compositeIds: [fixture.compositeId] });
     expect(result.ideas[0]).toMatchObject({
       author,
       kind: model.kind,
@@ -55,20 +62,34 @@ describe('Arena local data projection', () => {
     state.muted.add(author);
     expect((await state.read()).ideas).toEqual([]);
     state.muted.clear();
-    vi.mocked(PostController.getDetails).mockResolvedValue({ ...model, content: '[DELETED]' });
+    snapshot = { ...snapshot, details: { ...model, content: '[DELETED]' } };
     expect((await state.read()).ideas).toEqual([]);
-    vi.mocked(PostController.getDetails).mockResolvedValue(null);
+    vi.mocked(PostController.getManySnapshots).mockResolvedValue(new Map());
     expect((await state.read()).ideas).toEqual([]);
   });
 
   it('preserves content warnings and resolves an actual parent relationship', async () => {
-    vi.mocked(PostController.getDetails).mockResolvedValue({ ...model, is_blurred: true, content: 'Hidden content' });
-    vi.mocked(PostController.getRelationships).mockResolvedValue({
+    snapshot.details = { ...model, is_blurred: true, content: 'Hidden content' };
+    snapshot.relationships = {
       ...fixture.relationships,
       id: fixture.compositeId,
       replied: `pubky://${author}/pub/pubky.app/posts/parent`,
-    });
+    };
     renderHook(() => useArenaIdeas([fixture.compositeId]));
     expect((await state.read()).ideas[0]).toMatchObject({ preview: 'Content warning', replyTo: `${author}:parent` });
+  });
+
+  it('reuses unchanged projections but refreshes counts, content and moderation', async () => {
+    renderHook(() => useArenaIdeas([fixture.compositeId]));
+    const first = (await state.read()).ideas[0];
+    expect((await state.read()).ideas[0]).toBe(first);
+    snapshot = { ...snapshot, counts: { ...snapshot.counts!, replies: 99 } };
+    const updated = (await state.read()).ideas[0];
+    expect(updated.replies).toBe(99);
+    expect(updated.preview).toBe(first.preview);
+    snapshot = { ...snapshot, details: { ...model, content: 'Edited post' } };
+    expect((await state.read()).ideas[0].preview).toBe('Edited post');
+    snapshot = { ...snapshot, details: { ...snapshot.details, is_blurred: true } };
+    expect((await state.read()).ideas[0].preview).toBe('Content warning');
   });
 });

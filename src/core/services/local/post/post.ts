@@ -88,6 +88,12 @@ export class LocalPostService {
     return (await PostCountsModel.findById(postId)) ?? null;
   }
 
+  /** Bulk local counts, aligned with the requested IDs, including missing records. */
+  static async readCountsByIds(postIds: string[]): Promise<(PostCountsModelSchema | undefined)[]> {
+    if (postIds.length === 0) return [];
+    return PostCountsModel.findByIdsPreserveOrder(postIds);
+  }
+
   /**
    * Reads post relationships for a specific post
    *

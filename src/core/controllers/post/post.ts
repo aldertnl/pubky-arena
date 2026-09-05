@@ -2,7 +2,7 @@ import { postUriBuilder, PubkyAppPostKind } from 'pubky-app-specs';
 import { FileApplication } from '@/application/file/file';
 import type { EnrichedPostDetails } from '@/application/moderation/moderation.types';
 import { PostApplication } from '@/application/post/post';
-import type { TGetDetailsByIdsParams, TGetOrFetchPostParams } from '@/application/post/post.types';
+import type { TGetDetailsByIdsParams, TGetOrFetchPostParams, TPostSnapshot } from '@/application/post/post.types';
 import { TagKind, type TCreateTagInput } from '@/application/tag/tag.types';
 import type {
   TCreateCollectionParams,
@@ -57,6 +57,11 @@ export class PostController {
    */
   static async getDetails({ compositeId }: TCompositeId): Promise<EnrichedPostDetails | null> {
     return await PostApplication.getDetails({ compositeId });
+  }
+
+  /** Bulk local details, moderation, counts and relationships for reactive consumers. */
+  static async getManySnapshots(params: TGetDetailsByIdsParams): Promise<Map<string, TPostSnapshot>> {
+    return PostApplication.getManySnapshots(params);
   }
 
   /**

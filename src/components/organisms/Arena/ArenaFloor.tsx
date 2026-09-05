@@ -115,6 +115,12 @@ export function ArenaFloor({
   rotationKey?: string;
 }) {
   const [rotationOffsets, setRotationOffsets] = useState<number[]>([]);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  // The floor mounts once posts arrive. Later ranking updates do not celebrate a new leader.
+  const [celebratingId, setCelebratingId] = useState<string | null>(
+    () => (metric !== 'newest' && ideas.find((idea) => idea.rank === 1 && idea.score > 0)?.id) || null,
+  );
   useEffect(() => {
     // Randomize only after hydration and a filter change, never on card selection
     // or live count updates.
@@ -134,6 +140,7 @@ export function ArenaFloor({
       className={cn(styles.floor, isList && styles.list)}
       style={{ '--arena-topic-color': topicColor } as CSSProperties}
       aria-label="Idea standings"
+      data-arena-floor
     >
       {visible.map((idea, index) => {
         const user = usersMap.get(idea.author);
@@ -143,31 +150,48 @@ export function ArenaFloor({
         const showAllStats = metric !== 'newest';
         const indexedAt = Number.isFinite(idea.indexedAt) ? new Date(idea.indexedAt) : null;
         const placement = POST_PLACEMENTS[index] ?? POST_PLACEMENTS[0];
+        const spotlight = (hoveredId ?? focusedId) === idea.id;
         return (
           <motion.li
             key={idea.id}
             className={styles.contender}
             data-position={index}
+            data-arena-spotlight={spotlight || undefined}
+            onHoverStart={() => setHoveredId(idea.id)}
+            onHoverEnd={() => setHoveredId(null)}
+            onFocusCapture={(event) => {
+              if (event.target.matches(':focus-visible')) setFocusedId(idea.id);
+            }}
+            onBlurCapture={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setFocusedId(null);
+            }}
             // Rank layers remain inside the floor's isolated stacking context.
             style={
-              isList ? undefined : { left: `${placement.x}%`, top: `${placement.y}%`, zIndex: visible.length - index }
+              isList
+                ? undefined
+                : {
+                    left: `${placement.x}%`,
+                    top: `${placement.y}%`,
+                    zIndex: spotlight ? visible.length + 1 : visible.length - index,
+                  }
             }
             layout={shouldReduceMotion ? false : 'position'}
             initial={shouldReduceMotion ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ opacity: isList || spotlight || selectedId === idea.id ? 1 : Math.max(0.55, (21 - idea.rank) / 20) }}
             transition={{
               layout: { type: 'spring', stiffness: 360, damping: 36, mass: 0.75 },
               opacity: {
                 duration: shouldReduceMotion ? 0 : 0.24,
-                delay: shouldReduceMotion ? 0 : Math.min(index, 5) * 0.035,
               },
             }}
           >
             <Card
+              data-arena-post={idea.id}
               style={
                 {
                   '--arena-post-scale': Math.max(0.55, (21 - idea.rank) / 20),
                   '--arena-post-rotation': `${placement.rotation + (rotationOffsets[index] ?? 0)}deg`,
+                  '--arena-arrival-delay': `${420 + Math.min(index, 5) * 18}ms`,
                 } as CSSProperties
               }
               className={cn(
@@ -175,8 +199,13 @@ export function ArenaFloor({
                 styles.ideaCard,
                 leading && styles.leader,
                 selectedId === idea.id && styles.selected,
+                celebratingId === idea.id && styles.leaderCelebration,
               )}
             >
+              {!isList && <span className={styles.arrivalGlow} aria-hidden="true" />}
+              {celebratingId === idea.id && (
+                <span className={styles.leaderPulse} aria-hidden="true" onAnimationEnd={() => setCelebratingId(null)} />
+              )}
               <Button
                 overrideDefaults
                 type="button"
