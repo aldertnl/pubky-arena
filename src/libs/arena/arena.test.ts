@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { UserStreamTimeframe } from '@/services/nexus/nexus.types';
+import { createPostStreamParams } from '@/services/nexus/stream/posts/postStream.utils';
+import { CONTENT } from '@/stores/home/home.types';
 import {
+  ARENA_PAGE_SIZE,
   type ArenaIdea,
+  filterArenaIdeasByContent,
   filterArenaIdeasByTimeframe,
   getArenaCandidateSorting,
+  getArenaCandidateStreamId,
   getArenaLead,
   getArenaVisibleIdeas,
   rankArenaIdeas,
   rankArenaIdeasForTimeframe,
+  shouldLoadMoreArenaCandidates,
   shouldLoadMoreArenaTimeframe,
 } from './arena';
 
@@ -134,6 +140,97 @@ describe('Arena standings', () => {
   it('only describes a reply beating its own parent when that parent is loaded', () => {
     const entries = [idea('b:reply', 20, 1, 'missing:parent'), idea('a:other', 15, 2)];
     expect(getArenaLead(rankArenaIdeas(entries, 'tags'), 'tags')).toBe('leading by 5 tags');
+  });
+});
+
+describe('Arena content filters include replies', () => {
+  const now = Date.UTC(2026, 8, 5, 12);
+  const day = 24 * 60 * 60 * 1000;
+  const kinds = [
+    [CONTENT.SHORT, 'short'],
+    [CONTENT.LONG, 'long'],
+    [CONTENT.IMAGES, 'image'],
+    [CONTENT.VIDEOS, 'video'],
+    [CONTENT.LINKS, 'link'],
+    [CONTENT.FILES, 'file'],
+    [CONTENT.COLLECTIONS, 'collection'],
+  ] as const;
+  const entries = kinds.flatMap(([, kind]) => [
+    { ...idea(`a:${kind}-original`, 1, 0), kind, indexedAt: now },
+    { ...idea(`b:${kind}-reply`, 2, 1, `a:${kind}-original`), kind, indexedAt: now },
+  ]);
+
+  it.each(kinds)('keeps %s originals and replies without including other kinds', (content, kind) => {
+    expect(filterArenaIdeasByContent(entries, content).map(({ id }) => id)).toEqual([
+      `a:${kind}-original`,
+      `b:${kind}-reply`,
+    ]);
+  });
+
+  it('keeps every loaded kind under Content', () => {
+    expect(filterArenaIdeasByContent(entries, CONTENT.ALL)).toBe(entries);
+  });
+
+  it.each(kinds.filter(([content]) => content !== CONTENT.COLLECTIONS))(
+    'does not send the reply-excluding Nexus kind parameter for %s',
+    (content) => {
+      const streamId = getArenaCandidateStreamId('answer', 'replies', UserStreamTimeframe.THIS_WEEK, content);
+      const { params, invokeEndpoint } = createPostStreamParams({
+        streamId,
+        limit: 50,
+        streamHead: 0,
+        streamTail: 0,
+        viewerId: null,
+      });
+      expect(invokeEndpoint).toBe('all');
+      expect(params).toMatchObject({ sorting: 'timeline', tags: 'answer', limit: 50 });
+      expect(params.kind).toBeUndefined();
+    },
+  );
+
+  it('retains the dedicated Collections stream instead of losing collections to the all-kind feed exclusion', () => {
+    const streamId = getArenaCandidateStreamId('answer', 'popular', UserStreamTimeframe.ALL_TIME, CONTENT.COLLECTIONS);
+    const { params } = createPostStreamParams({ streamId, limit: 24, streamHead: 0, streamTail: 0, viewerId: null });
+    expect(params).toMatchObject({ sorting: 'total_engagement', tags: 'answer', kind: 'collection' });
+  });
+
+  it('lets a matching reply lead Posts while excluding old replies and other content types', () => {
+    const candidates = [...entries, { ...idea('c:old-reply', 999, 999, 'a:short-original'), indexedAt: now - 8 * day }];
+    const ranked = rankArenaIdeasForTimeframe(
+      filterArenaIdeasByContent(candidates, CONTENT.SHORT),
+      'replies',
+      UserStreamTimeframe.THIS_WEEK,
+      now,
+    );
+    expect(ranked.map(({ id, rank }) => ({ id, rank }))).toEqual([
+      { id: 'b:short-reply', rank: 1 },
+      { id: 'a:short-original', rank: 2 },
+    ]);
+  });
+
+  it('scans nonmatching All-time pages until a full page of matching originals and replies is available', () => {
+    const nonmatching = Array.from({ length: ARENA_PAGE_SIZE }, (_, i) => ({
+      ...idea(`a:image-${i}`, 99, 0),
+      kind: 'image',
+    }));
+    const matching = Array.from({ length: ARENA_PAGE_SIZE }, (_, i) => idea(`b:reply-${i}`, 1, 1, 'a:parent'));
+    const shouldLoad = (candidates: ArenaIdea[]) =>
+      shouldLoadMoreArenaCandidates(candidates, UserStreamTimeframe.ALL_TIME, now, CONTENT.SHORT);
+    expect(shouldLoad(nonmatching)).toBe(true);
+    expect(shouldLoad([...nonmatching, ...matching.slice(0, -1)])).toBe(true);
+    expect(shouldLoad([...nonmatching, ...matching])).toBe(false);
+    expect(shouldLoad([])).toBe(false);
+    expect(shouldLoadMoreArenaCandidates(nonmatching, UserStreamTimeframe.ALL_TIME, now, CONTENT.ALL)).toBe(false);
+  });
+
+  it('uses the unfiltered timeline to decide when a bounded content search ends', () => {
+    const recentImage = { ...idea('a:image', 1, 0), kind: 'image', indexedAt: now };
+    const oldImage = { ...recentImage, id: 'a:old-image', indexedAt: now - 8 * day };
+    const shouldLoad = (candidates: ArenaIdea[]) =>
+      shouldLoadMoreArenaCandidates(candidates, UserStreamTimeframe.THIS_WEEK, now, CONTENT.SHORT);
+    expect(shouldLoad([recentImage])).toBe(true);
+    expect(shouldLoad([...entries, recentImage])).toBe(true);
+    expect(shouldLoad([...entries, oldImage])).toBe(false);
   });
 });
 

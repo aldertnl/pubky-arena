@@ -26,19 +26,18 @@ import {
   ARENA_TIMEFRAME_PAGE_SIZE,
   ARENA_TOPIC_LIMIT,
   type ArenaMetric,
-  getArenaCandidateSorting,
+  filterArenaIdeasByContent,
+  getArenaCandidateStreamId,
   rankArenaIdeasForTimeframe,
-  shouldLoadMoreArenaTimeframe,
+  shouldLoadMoreArenaCandidates,
 } from '@/libs/arena/arena';
 import { cn, generateRandomColor, hexToRgba } from '@/libs/utils/utils';
-import { type PostStreamId } from '@/models/stream/post/postStream.types';
 import { CONTENT_FILTER_OPTIONS } from '@/molecules/Filters/FilterContent/FilterContent.constants';
 import { REACH_FILTER_META } from '@/molecules/Filters/FilterReach/FilterReach';
 import { PostTag } from '@/molecules/PostTag/PostTag';
 import { type NexusHotTag, UserStreamReach } from '@/services/nexus/nexus.types';
 import { useAuthStore } from '@/stores/auth/auth.store';
 import { CONTENT, type ContentType, REACH, type ReachType } from '@/stores/home/home.types';
-import { getStreamIdFromFilters } from '@/stores/home/home.utils';
 import { useHotStore } from '@/stores/hot/hot.store';
 import { TIMEFRAME, type TimeframeType } from '@/stores/hot/hot.types';
 import styles from './Arena.module.css';
@@ -144,7 +143,7 @@ export function Arena() {
       <div className={styles.toolbar}>
         <div className={cn(styles.filters, 'font-medium')} role="group" aria-label="Arena filters">
           <div className={styles.filterClause}>
-            <span className={styles.mobileHidden}>Show</span>{' '}
+            <span className={cn(styles.mobileHidden, 'text-xs font-bold')}>Show</span>{' '}
             <ArenaFilterMenu
               label="Timeframe"
               value={timeframe}
@@ -231,7 +230,7 @@ export function Arena() {
           <p>
             Today, This week, and This month use rolling 24-hour, 7-day, and 30-day windows based on the timestamp shown
             on each post. All time has no age limit. Content includes all types; choosing a specific type limits the
-            competing posts. Replies can compete alongside original posts.
+            competing posts. The Posts filter includes short-form original posts and replies.
           </p>
           <p>
             Most popular adds distinct tag labels + (direct replies × 4) + (reposts × 3). Most tagged, Most replied, and
@@ -422,8 +421,7 @@ function ArenaStage({
 }
 
 function ArenaTopic(props: StageProps & { reach: ReachType }) {
-  const sort = getArenaCandidateSorting(props.metric, props.postWindow.timeframe);
-  const streamId = `${getStreamIdFromFilters(sort, REACH.ALL, props.content)}:${props.topic}` as PostStreamId;
+  const streamId = getArenaCandidateStreamId(props.topic, props.metric, props.postWindow.timeframe, props.content);
   const isBoundedTimeframe = props.postWindow.timeframe !== TIMEFRAME.ALL_TIME;
   const stream = useStreamPagination({
     streamId,
@@ -431,7 +429,20 @@ function ArenaTopic(props: StageProps & { reach: ReachType }) {
   });
   const { hasMore, loadMore, loading, loadingMore, postIds } = stream;
   const { ideas, error } = useArenaIdeas(stream.postIds);
-  const ranked = rankArenaIdeasForTimeframe(ideas, props.metric, props.postWindow.timeframe, props.postWindow.now);
+  const matchingIdeas = filterArenaIdeasByContent(ideas, props.content);
+  const ranked = rankArenaIdeasForTimeframe(
+    matchingIdeas,
+    props.metric,
+    props.postWindow.timeframe,
+    props.postWindow.now,
+  );
+  const needsMoreCandidates = shouldLoadMoreArenaCandidates(
+    ideas,
+    props.postWindow.timeframe,
+    props.postWindow.now,
+    props.content,
+  );
+  const findingFirstMatch = !ranked.length && hasMore && needsMoreCandidates && !stream.error && !error;
   const [chosen, setChosen] = useState<string | null>(null);
   const selected = ranked.find((idea) => idea.id === chosen) ?? ranked[0];
   const rootId = selected?.replyTo ?? selected?.id;
@@ -439,26 +450,19 @@ function ArenaTopic(props: StageProps & { reach: ReachType }) {
     if (
       !loading &&
       !loadingMore &&
+      !stream.error &&
+      !error &&
       hasMore &&
       ideas.length === postIds.length &&
-      shouldLoadMoreArenaTimeframe(ideas, props.postWindow.timeframe, props.postWindow.now)
+      needsMoreCandidates
     ) {
       void loadMore();
     }
-  }, [
-    hasMore,
-    ideas,
-    loadMore,
-    loading,
-    loadingMore,
-    postIds.length,
-    props.postWindow.now,
-    props.postWindow.timeframe,
-  ]);
+  }, [error, hasMore, ideas.length, loadMore, loading, loadingMore, needsMoreCandidates, postIds.length, stream.error]);
   return (
     <>
       <ArenaStage {...props}>
-        {stream.loading ? (
+        {stream.loading || findingFirstMatch ? (
           <ArenaLoading compact isList={props.isList} />
         ) : stream.error || error ? (
           <div className={styles.status} role="alert">

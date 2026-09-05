@@ -1,5 +1,8 @@
 import type { Pubky } from '@/models/models.types';
+import type { PostStreamId } from '@/models/stream/post/postStream.types';
 import { UserStreamTimeframe } from '@/services/nexus/nexus.types';
+import { CONTENT, type ContentType, REACH } from '@/stores/home/home.types';
+import { getKindFromContent, getStreamIdFromFilters } from '@/stores/home/home.utils';
 
 export const ARENA_TOPIC_LIMIT = 10;
 export const ARENA_PAGE_SIZE = 24;
@@ -38,11 +41,43 @@ export function getArenaCandidateSorting(metric: ArenaMetric, timeframe: UserStr
   return metric === 'newest' || timeframe !== UserStreamTimeframe.ALL_TIME ? 'timeline' : 'total_engagement';
 }
 
+export function getArenaCandidateStreamId(
+  topic: string,
+  metric: ArenaMetric,
+  timeframe: UserStreamTimeframe,
+  content: ContentType,
+): PostStreamId {
+  // Nexus kind-filtered tag streams omit replies. Filter post kinds locally instead.
+  // Collections need their own stream because ordinary all-kind feeds exclude them.
+  const candidateContent = content === CONTENT.COLLECTIONS ? CONTENT.COLLECTIONS : CONTENT.ALL;
+  return `${getStreamIdFromFilters(getArenaCandidateSorting(metric, timeframe), REACH.ALL, candidateContent)}:${topic}` as PostStreamId;
+}
+
+/** A reply has the same content kind as an original post and remains eligible. */
+export function filterArenaIdeasByContent(ideas: ArenaIdea[], content: ContentType): ArenaIdea[] {
+  if (content === CONTENT.ALL) return ideas;
+  const kind = getKindFromContent(content);
+  return ideas.filter((idea) => idea.kind === kind);
+}
+
 /** Continue a descending timeline until its oldest loaded post crosses the selected window. */
 export function shouldLoadMoreArenaTimeframe(ideas: ArenaIdea[], timeframe: UserStreamTimeframe, now: number): boolean {
   if (timeframe === UserStreamTimeframe.ALL_TIME || ideas.length === 0) return false;
   const inWindow = filterArenaIdeasByTimeframe(ideas, timeframe, now);
   return inWindow.length === ideas.length;
+}
+
+export function shouldLoadMoreArenaCandidates(
+  ideas: ArenaIdea[],
+  timeframe: UserStreamTimeframe,
+  now: number,
+  content: ContentType,
+): boolean {
+  if (timeframe !== UserStreamTimeframe.ALL_TIME) return shouldLoadMoreArenaTimeframe(ideas, timeframe, now);
+  // Scan past nonmatching kinds to retain a full All-time candidate page for the selected filter.
+  return (
+    content !== CONTENT.ALL && ideas.length > 0 && filterArenaIdeasByContent(ideas, content).length < ARENA_PAGE_SIZE
+  );
 }
 
 export interface RankedArenaIdea extends ArenaIdea {
