@@ -1,7 +1,7 @@
 'use client';
 
 import { type CSSProperties, useEffect, useState } from 'react';
-import { Expand, Trophy } from 'lucide-react';
+import { Eye, Trophy } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Badge } from '@/atoms/Badge/Badge';
 import { Button } from '@/atoms/Button/Button';
@@ -295,7 +295,7 @@ export function ArenaFloor({
                   title="See full post"
                   onClick={onExpand}
                 >
-                  <Expand className="size-4" aria-hidden="true" />
+                  <Eye className="size-4" aria-hidden="true" />
                 </Button>
               )}
             </Card>
