@@ -46,6 +46,48 @@ const ideas = rankArenaIdeas(
 );
 
 describe('Arena floor', () => {
+  it('shows the lead below the winning preview even when another post is selected', () => {
+    const ranked = rankArenaIdeas(ideas, 'popular');
+    render(
+      <ArenaFloor ideas={ranked} selectedId="a:1" onSelect={vi.fn()} isList={false} metric="popular" topic="pubky" />,
+    );
+    const label = screen.getByText('leading by 12 points');
+    const leader = screen.getByRole('button', { name: /Rank 1, Jules/ });
+    expect(leader).toContainElement(label);
+    expect(label.previousElementSibling).toHaveTextContent('Context matters.');
+    expect(screen.getByRole('button', { name: /Rank 2, Mira/ })).not.toHaveTextContent('leading by');
+  });
+
+  it('shows ties accurately and hides the margin for a lone post or Most recent', () => {
+    const tied = rankArenaIdeas(
+      ideas.map((idea) => ({ ...idea, tags: 10 })),
+      'tags',
+    );
+    const props = { onSelect: vi.fn(), isList: false, metric: 'tags' as const };
+    const { rerender } = render(<ArenaFloor {...props} ideas={tied} />);
+    expect(screen.getByText('tied for lead')).toBeInTheDocument();
+    rerender(<ArenaFloor {...props} ideas={tied.slice(0, 1)} />);
+    expect(screen.queryByText(/leading by|tied for lead/)).not.toBeInTheDocument();
+    rerender(<ArenaFloor {...props} ideas={rankArenaIdeas(ideas, 'newest')} metric="newest" />);
+    expect(screen.queryByText(/leading by|tied for lead/)).not.toBeInTheDocument();
+  });
+
+  it('labels the overall leader All and uses the brand accent without assigning a tag color', () => {
+    render(
+      <ArenaFloor
+        ideas={ideas}
+        selectedId="b:2"
+        onSelect={vi.fn()}
+        isList={false}
+        metric="tags"
+        topic={null}
+        contentLabel="Posts"
+      />,
+    );
+    expect(screen.getByText('#1 All Posts')).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Idea standings' })).toHaveStyle({ '--arena-topic-color': 'var(--brand)' });
+  });
+
   it('varies rotations on filter changes while selection and the center card stay stable', async () => {
     const random = vi.spyOn(Math, 'random').mockReturnValue(0.25);
     try {
@@ -102,7 +144,7 @@ describe('Arena floor', () => {
     expect(reply.closest('[data-slot="card"]')).not.toHaveClass(styles.selected);
     fireEvent.click(reply);
     expect(onSelect).toHaveBeenCalledWith('b:2');
-    expect(screen.getByText('Reply')).toBeInTheDocument();
+    expect(screen.queryByText('Reply')).not.toBeInTheDocument();
   });
   it('shows icon plus number while retaining an accessible metric name', () => {
     render(<ArenaStat kind="posts" count={158} />);
@@ -131,7 +173,7 @@ describe('Arena floor', () => {
     expect(selected).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('shows repost counts when ranking by reposts and removes the trophy for Newest', () => {
+  it('shows repost counts when ranking by reposts and removes the trophy for Most recent', () => {
     const { rerender } = render(
       <ArenaFloor
         ideas={rankArenaIdeas(ideas, 'reposts')}

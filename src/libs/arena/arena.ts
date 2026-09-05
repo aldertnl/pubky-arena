@@ -1,7 +1,7 @@
 import type { Pubky } from '@/models/models.types';
 import type { PostStreamId } from '@/models/stream/post/postStream.types';
 import { UserStreamTimeframe } from '@/services/nexus/nexus.types';
-import { CONTENT, type ContentType, REACH } from '@/stores/home/home.types';
+import { CONTENT, type ContentType, REACH, type ReachType } from '@/stores/home/home.types';
 import { getKindFromContent, getStreamIdFromFilters } from '@/stores/home/home.utils';
 
 export const ARENA_TOPIC_LIMIT = 10;
@@ -10,6 +10,8 @@ export const ARENA_TIMEFRAME_PAGE_SIZE = 50;
 export const ARENA_VISIBLE_IDEAS = 10;
 export type ArenaMetric = 'popular' | 'tags' | 'replies' | 'reposts' | 'newest';
 export type ArenaCandidateSorting = 'timeline' | 'total_engagement';
+/** null selects all topics; strings always refer to literal tag labels. */
+export type ArenaTopicFilter = string | null;
 
 export interface ArenaIdea {
   id: string;
@@ -42,15 +44,21 @@ export function getArenaCandidateSorting(metric: ArenaMetric, timeframe: UserStr
 }
 
 export function getArenaCandidateStreamId(
-  topic: string,
+  topic: ArenaTopicFilter,
   metric: ArenaMetric,
   timeframe: UserStreamTimeframe,
   content: ContentType,
+  reach: ReachType = REACH.ALL,
 ): PostStreamId {
   // Nexus kind-filtered tag streams omit replies. Filter post kinds locally instead.
   // Collections need their own stream because ordinary all-kind feeds exclude them.
   const candidateContent = content === CONTENT.COLLECTIONS ? CONTENT.COLLECTIONS : CONTENT.ALL;
-  return `${getStreamIdFromFilters(getArenaCandidateSorting(metric, timeframe), REACH.ALL, candidateContent)}:${topic}` as PostStreamId;
+  const streamId = getStreamIdFromFilters(
+    getArenaCandidateSorting(metric, timeframe),
+    topic === null ? reach : REACH.ALL,
+    candidateContent,
+  );
+  return (topic === null ? streamId : `${streamId}:${topic}`) as PostStreamId;
 }
 
 /** A reply has the same content kind as an original post and remains eligible. */

@@ -12,6 +12,8 @@ import { useBulkUserAvatars } from '@/hooks/useBulkUserAvatars/useBulkUserAvatar
 import { useRelativeTime } from '@/hooks/useRelativeTime/useRelativeTime';
 import {
   type ArenaMetric,
+  type ArenaTopicFilter,
+  getArenaLead,
   getArenaPopularityScore,
   getArenaVisibleIdeas,
   type RankedArenaIdea,
@@ -110,7 +112,7 @@ export function ArenaFloor({
   onSelect: (id: string) => void;
   isList: boolean;
   metric: ArenaMetric;
-  topic?: string;
+  topic?: ArenaTopicFilter;
   contentLabel?: string;
   rotationKey?: string;
 }) {
@@ -134,7 +136,8 @@ export function ArenaFloor({
   const shouldReduceMotion = useReducedMotion();
   const { formatRelativeTime } = useRelativeTime();
   const { usersMap } = useBulkUserAvatars(visible.map((idea) => idea.author));
-  const topicColor = generateRandomColor(topic);
+  const topicColor = topic === null ? 'var(--brand)' : generateRandomColor(topic);
+  const lead = getArenaLead(ideas, metric);
   return (
     <ol
       className={cn(styles.floor, isList && styles.list)}
@@ -214,7 +217,7 @@ export function ArenaFloor({
                 className={styles.idea}
                 onClick={() => onSelect(idea.id)}
                 aria-pressed={selectedId === idea.id}
-                aria-label={`${metric === 'newest' ? 'Position' : 'Rank'} ${idea.rank}, ${name}: ${idea.preview}. ${idea.tags} tags, ${idea.replies} replies${showAllStats ? `, ${idea.reposts} reposts, ${popularityScore} popularity points` : ''}`}
+                aria-label={`${metric === 'newest' ? 'Position' : 'Rank'} ${idea.rank}, ${name}: ${idea.preview}. ${idea.tags} tags, ${idea.replies} replies${showAllStats ? `, ${idea.reposts} reposts, ${popularityScore} popularity points` : ''}${leading && lead ? `. ${lead}` : ''}`}
               >
                 <span className={cn(styles.ideaHeader, GAP_CLASS_BY_HEADER_SIZE.normal)}>
                   <AvatarWithFallback
@@ -250,7 +253,7 @@ export function ArenaFloor({
                         className={cn(styles.rankPill, styles.rank, styles.leadingRank, 'uppercase')}
                         aria-live="polite"
                       >
-                        #{idea.rank} {topic} {contentLabel}
+                        #{idea.rank} {topic === null ? 'All' : topic} {contentLabel}
                       </Badge>
                       <span className={cn(styles.awardIcon, styles.postAward)} aria-hidden="true">
                         <Trophy className="size-4" />
@@ -265,10 +268,20 @@ export function ArenaFloor({
                 <Typography
                   as="span"
                   overrideDefaults
-                  className={cn(POST_BODY_TYPOGRAPHY_CLASS, 'text-secondary-foreground', styles.preview)}
+                  className={cn(
+                    POST_BODY_TYPOGRAPHY_CLASS,
+                    'text-secondary-foreground',
+                    styles.preview,
+                    leading && lead && styles.previewWithLead,
+                  )}
                 >
                   {idea.preview}
                 </Typography>
+                {leading && lead && (
+                  <Typography as="span" overrideDefaults className={styles.leadMargin}>
+                    {lead}
+                  </Typography>
+                )}
               </Button>
             </Card>
           </motion.li>

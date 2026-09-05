@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { TAG_MAX_LENGTH } from '@/config/posts';
+import type { ArenaTopicFilter } from '@/libs/arena/arena';
 import { isValidTagLabel } from '@/libs/utils/utils';
 import type { NexusHotTag } from '@/services/nexus/nexus.types';
 
@@ -16,8 +17,8 @@ export const arenaTagSchema = z.object({
 export type ArenaTagForm = z.infer<typeof arenaTagSchema>;
 
 export interface ArenaTagPickerProps {
-  topic?: string;
+  topic?: ArenaTopicFilter;
   topics: NexusHotTag[];
   timeframeLabel: string;
-  onTopic: (topic: string) => void;
+  onTopic: (topic: ArenaTopicFilter) => void;
 }

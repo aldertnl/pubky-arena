@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { UserStreamTimeframe } from '@/services/nexus/nexus.types';
 import { createPostStreamParams } from '@/services/nexus/stream/posts/postStream.utils';
-import { CONTENT } from '@/stores/home/home.types';
+import { CONTENT, REACH } from '@/stores/home/home.types';
 import {
   ARENA_PAGE_SIZE,
   type ArenaIdea,
@@ -81,7 +81,7 @@ describe('Arena standings', () => {
     expect(getArenaLead(ranked, 'reposts')).toBe('leading by 1 repost');
   });
 
-  it('orders Newest by indexed time regardless of engagement, without a competitive lead', () => {
+  it('orders Most recent by indexed time regardless of engagement, without a competitive lead', () => {
     const entries = [
       { ...idea('a:old', 100, 50), indexedAt: 1 },
       { ...idea('c:new', 0, 0), indexedAt: 3 },
@@ -140,6 +140,62 @@ describe('Arena standings', () => {
   it('only describes a reply beating its own parent when that parent is loaded', () => {
     const entries = [idea('b:reply', 20, 1, 'missing:parent'), idea('a:other', 15, 2)];
     expect(getArenaLead(rankArenaIdeas(entries, 'tags'), 'tags')).toBe('leading by 5 tags');
+  });
+});
+
+describe('Arena All topics', () => {
+  it.each([
+    [REACH.ALL, 'all'],
+    [REACH.NETWORK, 'wot'],
+    [REACH.FOLLOWING, 'following'],
+    [REACH.FRIENDS, 'friends'],
+  ] as const)('removes the tag parameter and honors %s reach', (reach, source) => {
+    const streamId = getArenaCandidateStreamId(null, 'popular', UserStreamTimeframe.ALL_TIME, CONTENT.ALL, reach);
+    const { params, invokeEndpoint } = createPostStreamParams({
+      streamId,
+      limit: 24,
+      streamHead: 0,
+      streamTail: 0,
+      viewerId: 'viewer',
+    });
+    expect(invokeEndpoint).toBe(source);
+    expect(params).toMatchObject({ sorting: 'total_engagement', viewer_id: 'viewer' });
+    expect(params.tags).toBeUndefined();
+    expect(params.kind).toBeUndefined();
+  });
+
+  it('retains timeframe-correct loading and local reply-inclusive content filtering for All', () => {
+    const streamId = getArenaCandidateStreamId(null, 'popular', UserStreamTimeframe.THIS_WEEK, CONTENT.SHORT);
+    const { params } = createPostStreamParams({ streamId, limit: 50, streamHead: 0, streamTail: 0, viewerId: null });
+    expect(params.sorting).toBe('timeline');
+    expect(params.tags).toBeUndefined();
+    expect(params.kind).toBeUndefined();
+  });
+
+  it('still uses the collection stream without requiring a tag', () => {
+    const streamId = getArenaCandidateStreamId(null, 'popular', UserStreamTimeframe.ALL_TIME, CONTENT.COLLECTIONS);
+    const { params } = createPostStreamParams({ streamId, limit: 24, streamHead: 0, streamTail: 0, viewerId: null });
+    expect(params.kind).toBe('collection');
+    expect(params.tags).toBeUndefined();
+  });
+
+  it('keeps an actual tag called all filtered and preserves the existing tagged reach behavior', () => {
+    const streamId = getArenaCandidateStreamId(
+      'all',
+      'popular',
+      UserStreamTimeframe.ALL_TIME,
+      CONTENT.ALL,
+      REACH.NETWORK,
+    );
+    const { params, invokeEndpoint } = createPostStreamParams({
+      streamId,
+      limit: 24,
+      streamHead: 0,
+      streamTail: 0,
+      viewerId: null,
+    });
+    expect(params.tags).toBe('all');
+    expect(invokeEndpoint).toBe('all');
   });
 });
 

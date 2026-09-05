@@ -17,8 +17,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/atoms/Button/Button';
 import { useArenaIdeas } from '@/hooks/useArenaIdeas/useArenaIdeas';
+import { useBulkUserAvatars } from '@/hooks/useBulkUserAvatars/useBulkUserAvatars';
 import { useHotTags } from '@/hooks/useHotTags/useHotTags';
 import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
+import { useMutedUsers } from '@/hooks/useMutedUsers/useMutedUsers';
 import { useRequireAuth } from '@/hooks/useRequireAuth/useRequireAuth';
 import { useStreamPagination } from '@/hooks/useStreamPagination/useStreamPagination';
 import {
@@ -26,12 +28,14 @@ import {
   ARENA_TIMEFRAME_PAGE_SIZE,
   ARENA_TOPIC_LIMIT,
   type ArenaMetric,
+  type ArenaTopicFilter,
   filterArenaIdeasByContent,
   getArenaCandidateStreamId,
   rankArenaIdeasForTimeframe,
   shouldLoadMoreArenaCandidates,
 } from '@/libs/arena/arena';
 import { cn, generateRandomColor, hexToRgba } from '@/libs/utils/utils';
+import { AvatarGroup } from '@/molecules/AvatarGroup/AvatarGroup';
 import { CONTENT_FILTER_OPTIONS } from '@/molecules/Filters/FilterContent/FilterContent.constants';
 import { REACH_FILTER_META } from '@/molecules/Filters/FilterReach/FilterReach';
 import { PostTag } from '@/molecules/PostTag/PostTag';
@@ -83,13 +87,14 @@ const VIEW_OPTIONS = [
   { value: 'arena' as const, label: 'In arena', icon: Orbit },
   { value: 'list' as const, label: 'In grid', icon: Rows4 },
 ];
+const TOPIC_AVATAR_LIMIT = 3;
 
 const RANK_OPTIONS = [
   { value: 'popular', label: 'Most popular', icon: Flame },
   { value: 'replies', label: 'Most replied', icon: MessageCircle },
   { value: 'tags', label: 'Most tagged', icon: TagIcon },
   { value: 'reposts', label: 'Most reposted', icon: Repeat },
-  { value: 'newest', label: 'Newest', icon: Clock },
+  { value: 'newest', label: 'Most recent', icon: Clock },
 ] satisfies { value: ArenaMetric; label: string; icon: LucideIcon }[];
 
 type PostWindow = { timeframe: TimeframeType; now: number };
@@ -97,8 +102,8 @@ type PostWindow = { timeframe: TimeframeType; now: number };
 type StageProps = {
   topics: NexusHotTag[];
   postWindow: PostWindow;
-  topic: string;
-  onTopic: (topic: string) => void;
+  topic: ArenaTopicFilter;
+  onTopic: (topic: ArenaTopicFilter) => void;
   isList: boolean;
   metric: ArenaMetric;
   content: ContentType;
@@ -120,11 +125,12 @@ export function Arena() {
     timeframe,
     limit: ARENA_TOPIC_LIMIT,
   });
-  const [chosenTopic, setChosenTopic] = useState<{ scope: string; label: string } | null>(null);
-  const topic = chosenTopic?.scope === scope ? chosenTopic.label : topics.rawTags[0]?.label;
+  const [chosenTopic, setChosenTopic] = useState<{ scope: string; label: ArenaTopicFilter } | null>(null);
+  const topic =
+    chosenTopic?.label === null || chosenTopic?.scope === scope ? chosenTopic.label : topics.rawTags[0]?.label;
   function changeReach(value: ReachType) {
     const applyReach = () => {
-      setChosenTopic(null);
+      setChosenTopic((previous) => (previous?.label === null ? previous : null));
       setReach(value);
     };
     if (value === REACH.ALL) applyReach();
@@ -149,7 +155,7 @@ export function Arena() {
               value={timeframe}
               options={WINDOWS}
               onChange={(value) => {
-                setChosenTopic(null);
+                setChosenTopic((previous) => (previous?.label === null ? previous : null));
                 setTimeframe(value);
               }}
               lowercase
@@ -225,7 +231,8 @@ export function Arena() {
           <p>
             Topics follow Pubky’s trending-tag ranking for your selected reach and timeframe. A topic’s count is the
             number of posts carrying that tag. Reach filters the trending topics; posts competing under a selected tag
-            currently come from everyone.
+            currently come from everyone. Choose All to remove the tag filter and rank content from your selected reach,
+            including posts without tags.
           </p>
           <p>
             Today, This week, and This month use rolling 24-hour, 7-day, and 30-day windows based on the timestamp shown
@@ -234,7 +241,7 @@ export function Arena() {
           </p>
           <p>
             Most popular adds distinct tag labels + (direct replies × 4) + (reposts × 3). Most tagged, Most replied, and
-            Most reposted use only that count. These are lifetime counts, even when a timeframe is selected. Newest
+            Most reposted use only that count. These are lifetime counts, even when a timeframe is selected. Most recent
             orders posts by their displayed timestamp. Tags measure attention, not necessarily agreement. Counts may be
             cached.
           </p>
@@ -267,14 +274,14 @@ function ArenaTopics({
   reach: ReachType;
   timeframe: TimeframeType;
   data: ReturnType<typeof useHotTags>;
-  topic?: string;
+  topic?: ArenaTopicFilter;
   onTopic: StageProps['onTopic'];
 } & Pick<StageProps, 'isList' | 'metric' | 'content'>) {
   // The parent remounts this scope when its shared timeframe changes.
   const [now] = useState(Date.now);
   const { rawTags, isLoading, error, refetch } = data;
-  if (isLoading && !topic) return <ArenaLoading isList={display.isList} />;
-  if (error && !topic)
+  if (isLoading && topic === undefined) return <ArenaLoading isList={display.isList} />;
+  if (error && topic === undefined)
     return (
       <div className={styles.status} role="alert">
         Could not load topics.{' '}
@@ -283,7 +290,7 @@ function ArenaTopics({
         </Button>
       </div>
     );
-  if (!topic)
+  if (topic === undefined)
     return (
       <div className={styles.status} role="status">
         No topics in this window. Try a wider timeframe.
@@ -291,7 +298,7 @@ function ArenaTopics({
     );
   return (
     <ArenaTopic
-      key={`${topic}:${display.content}`}
+      key={JSON.stringify([topic, display.content])}
       {...display}
       postWindow={{ timeframe, now }}
       topics={rawTags}
@@ -316,6 +323,13 @@ function ArenaStage({
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [tagRotations, setTagRotations] = useState<number[]>([]);
+  const { isMuted } = useMutedUsers();
+  const topicTaggers = isList
+    ? []
+    : topics.map((tag) => [...new Set(tag.taggers_id)].filter((id) => !isMuted(id)).slice(0, TOPIC_AVATAR_LIMIT));
+  // Resolve only the visible faces; avoid fetching profiles for the rest of the taggers.
+  const visibleTaggerIds = [...new Set(topicTaggers.flat())];
+  const { getUsersWithAvatars } = useBulkUserAvatars(visibleTaggerIds);
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
@@ -347,7 +361,7 @@ function ArenaStage({
     <div
       ref={stageRef}
       className={cn(styles.stage, isList && styles.listStage)}
-      style={{ '--arena-topic-color': generateRandomColor(topic) } as CSSProperties}
+      style={{ '--arena-topic-color': topic === null ? 'var(--brand)' : generateRandomColor(topic) } as CSSProperties}
     >
       {/* Decorative rings and particles stay behind the interactive content. */}
       <div className={styles.bowl} aria-hidden="true" data-testid="arena-orbits">
@@ -365,16 +379,18 @@ function ArenaStage({
         </div>
         <ArenaParticles />
       </div>
-      {!isList && <ArenaTagConnectors key={topic} stageRef={stageRef} topic={topic} />}
+      {!isList && topic !== null && <ArenaTagConnectors key={topic} stageRef={stageRef} topic={topic} />}
       <div className={styles.topics} role="group" aria-label="Topic standings">
         {topics.map((tag, index) => {
           const rank = index + 1;
           const tagColor = generateRandomColor(tag.label);
           const selected = tag.label === topic;
+          const taggers = topicTaggers[index];
+          const hasTaggers = Boolean(taggers?.length);
           return (
             <div
               key={tag.label}
-              className={styles.topic}
+              className={cn(styles.topic, hasTaggers && styles.topicWithTaggers)}
               style={{ opacity: selected ? 1 : Math.max(0.55, (21 - rank) / 20) }}
               role="group"
               aria-label={`Rank ${rank}`}
@@ -397,18 +413,36 @@ function ArenaStage({
                   <span className={styles.topicRank} aria-hidden="true">
                     #{rank}
                   </span>
-                  <PostTag
-                    label={tag.label}
-                    maxLabelLength={14}
-                    className={cn('max-w-none shrink-0', styles.topicTag)}
-                    selectedStyle={{
-                      borderColor: tagColor,
-                      boxShadow: `inset 0 0 8px 0 ${tagColor}`,
-                    }}
-                    count={tag.tagged_count}
-                    selected={selected}
-                    onClick={() => onTopic(tag.label)}
-                  />
+                  <div className={styles.topicLabel}>
+                    <PostTag
+                      label={tag.label}
+                      maxLabelLength={14}
+                      className={cn('max-w-none shrink-0', styles.topicTag)}
+                      selectedStyle={{
+                        borderColor: tagColor,
+                        boxShadow: `inset 0 0 8px 0 ${tagColor}`,
+                      }}
+                      count={tag.tagged_count}
+                      selected={selected}
+                      onClick={() => onTopic(tag.label)}
+                    />
+                    {hasTaggers && taggers && (
+                      <div
+                        className={styles.topicTaggers}
+                        role="group"
+                        aria-label={`${tag.label} topic taggers`}
+                        title="People who added this topic tag"
+                      >
+                        <AvatarGroup
+                          items={getUsersWithAvatars(taggers)}
+                          totalCount={taggers.length}
+                          maxAvatars={TOPIC_AVATAR_LIMIT}
+                          className={styles.topicAvatars}
+                          data-testid={`arena-topic-taggers-${tag.label}`}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -421,7 +455,13 @@ function ArenaStage({
 }
 
 function ArenaTopic(props: StageProps & { reach: ReachType }) {
-  const streamId = getArenaCandidateStreamId(props.topic, props.metric, props.postWindow.timeframe, props.content);
+  const streamId = getArenaCandidateStreamId(
+    props.topic,
+    props.metric,
+    props.postWindow.timeframe,
+    props.content,
+    props.reach,
+  );
   const isBoundedTimeframe = props.postWindow.timeframe !== TIMEFRAME.ALL_TIME;
   const stream = useStreamPagination({
     streamId,
@@ -473,7 +513,7 @@ function ArenaTopic(props: StageProps & { reach: ReachType }) {
           </div>
         ) : !ranked.length ? (
           <div className={styles.status} role="status">
-            No posts found for this tag.
+            {props.topic === null ? 'No posts found for these filters.' : 'No posts found for this tag.'}
           </div>
         ) : (
           <ArenaFloor

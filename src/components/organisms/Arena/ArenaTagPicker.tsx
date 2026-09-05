@@ -16,6 +16,8 @@ import { PostTag } from '@/molecules/PostTag/PostTag';
 import { type ArenaTagForm, type ArenaTagPickerProps, arenaTagSchema } from './ArenaTagPicker.types';
 
 export function ArenaTagPicker({ topic, topics, timeframeLabel, onTopic }: ArenaTagPickerProps) {
+  const isAll = topic === null;
+  const hasSelection = isAll || !!topic;
   const [open, setOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const form = useForm<ArenaTagForm>({ resolver: zodResolver(arenaTagSchema), defaultValues: { tag: '' } });
@@ -31,17 +33,19 @@ export function ArenaTagPicker({ topic, topics, timeframeLabel, onTopic }: Arena
       >
         <PopoverTrigger asChild>
           <Button
-            overrideDefaults={!!topic}
+            overrideDefaults={hasSelection}
             variant="secondary"
             size="sm"
             className={
-              topic
+              hasSelection
                 ? 'relative h-8 rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
                 : 'text-xs'
             }
             aria-label="Choose topic tag"
           >
-            {topic ? (
+            {isAll ? (
+              <Tag name="all" className="pr-9" style={{ backgroundColor: '#000', border: '1px solid var(--border)' }} />
+            ) : topic ? (
               <Tag name={topic} maxLabelLength={14} className="pr-9" />
             ) : (
               <>
@@ -50,7 +54,7 @@ export function ArenaTagPicker({ topic, topics, timeframeLabel, onTopic }: Arena
               </>
             )}
             <ChevronDown
-              className={topic ? 'pointer-events-none absolute top-2.5 right-2.5 size-3.5' : 'size-3.5'}
+              className={hasSelection ? 'pointer-events-none absolute top-2.5 right-2.5 size-3.5' : 'size-3.5'}
               aria-hidden="true"
             />
           </Button>
@@ -71,7 +75,29 @@ export function ArenaTagPicker({ topic, topics, timeframeLabel, onTopic }: Arena
               overrideDefaults
               className="text-xs leading-4 font-medium tracking-[0.075rem] text-muted-foreground uppercase"
             >
-              TOP #{ARENA_TOPIC_LIMIT} TAGS {timeframeLabel}
+              SELECT ALL TOPICS
+            </Typography>
+            <Button
+              type="button"
+              variant="dark-outline"
+              size="sm"
+              className="rounded-md border-border bg-black text-sm font-bold"
+              aria-pressed={isAll}
+              onClick={() => {
+                onTopic(null);
+                setOpen(false);
+              }}
+            >
+              all
+            </Button>
+          </div>
+          <div className="mb-3 space-y-3">
+            <Typography
+              as="h3"
+              overrideDefaults
+              className="text-xs leading-4 font-medium tracking-[0.075rem] text-muted-foreground uppercase"
+            >
+              TOP #{ARENA_TOPIC_LIMIT} TOPICS {timeframeLabel}
             </Typography>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Top tags">
               {topics.slice(0, ARENA_TOPIC_LIMIT).map((tag) => (
@@ -107,7 +133,7 @@ export function ArenaTagPicker({ topic, topics, timeframeLabel, onTopic }: Arena
             <ControlledInputField
               control={form.control}
               name="tag"
-              placeholder="custom tag"
+              placeholder="enter topic"
               variant="default"
               size="md"
             />
