@@ -99,7 +99,7 @@ beforeEach(() => {
     idea('c:popular', { tags: 2, replies: 5, reposts: 5 }),
     idea('d:nested', { tags: 1000, replyTo: selectedId }),
   ];
-  vi.mocked(useArenaIdeas).mockImplementation(() => ({ ideas, error: null }));
+  vi.mocked(useArenaIdeas).mockImplementation(() => ({ ideas, error: null, loading: false }));
   vi.mocked(useStreamPagination).mockReturnValue(stream());
 });
 

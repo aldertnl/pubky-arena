@@ -118,7 +118,7 @@ describe('useUserStream', () => {
   });
 
   describe('user counts mapping', () => {
-    it('maps the tags stat from counts.tagged (tags applied by the user)', async () => {
+    it('maps tags applied and replies authored from the existing user counts', async () => {
       mockGetOrFetchStreamSlice.mockResolvedValue({
         nextPageIds: ['user-1'],
         skip: 1,
@@ -131,7 +131,7 @@ describe('useUserStream', () => {
             tags: 10,
             unique_tags: 8,
             posts: 5,
-            replies: 0,
+            replies: 3,
             collections: 0,
             following: 1,
             followers: 2,
@@ -161,6 +161,7 @@ describe('useUserStream', () => {
 
       expect(result.current.users[0].counts).toEqual({
         posts: 5,
+        replies: 3,
         tags: 4,
         followers: 2,
         following: 1,
@@ -333,6 +334,20 @@ describe('useUserStream', () => {
   });
 
   describe('error handling', () => {
+    it('exposes a failed later page so automatic consumers can stop and retry', async () => {
+      mockGetOrFetchStreamSlice
+        .mockResolvedValueOnce({ nextPageIds: ['user-1'], skip: 1, isExhausted: false })
+        .mockRejectedValueOnce(new Error('Network error'));
+      const { result } = renderHook(() =>
+        useUserStream({ streamId: UserStreamTypes.TODAY_INFLUENCERS_ALL, paginated: true, limit: 1 }),
+      );
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      await act(async () => result.current.loadMore());
+      expect(result.current.error).toBe('Failed to fetch users');
+      expect(result.current.isLoadingMore).toBe(false);
+      expect(result.current.userIds).toEqual(['user-1']);
+    });
+
     it('sets error state on fetch failure', async () => {
       mockGetOrFetchStreamSlice.mockRejectedValue(new Error('Network error'));
       mockUseLiveQuery.mockReturnValue(new Map());

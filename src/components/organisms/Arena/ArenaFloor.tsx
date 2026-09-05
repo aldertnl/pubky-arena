@@ -27,29 +27,16 @@ import {
 } from '@/molecules/PostHeaderUserInfo/PostHeaderUserInfo.utils';
 import { POST_BODY_TYPOGRAPHY_CLASS } from '@/molecules/PostText/PostText.constants';
 import { AvatarWithFallback } from '@/organisms/AvatarWithFallback/AvatarWithFallback';
+import { ARENA_PLACEMENTS } from './Arena.constants';
 import styles from './Arena.module.css';
 import { ArenaStat } from './ArenaStats';
 
 const ARENA_GRID_IDEAS = 9;
 
-// The leader stays centered; the outer posts run clockwise from the top.
-const POST_PLACEMENTS = [
-  { x: 50, y: 50, rotation: 0 },
-  { x: 48, y: 12, rotation: -3 },
-  { x: 73, y: 22, rotation: 2.4 },
-  { x: 84, y: 44, rotation: -2 },
-  { x: 79, y: 68, rotation: 3 },
-  { x: 62, y: 86, rotation: -1.6 },
-  { x: 39, y: 84, rotation: 2 },
-  { x: 21, y: 69, rotation: -2.5 },
-  { x: 21, y: 47, rotation: 1.8 },
-  { x: 29, y: 23, rotation: -2.2 },
-] as const;
-
 export function ArenaFloorSkeleton({ isList = false }: { isList?: boolean }) {
   return (
     <ol className={cn(styles.floor, styles.skeletonFloor, isList && styles.list)} aria-hidden="true">
-      {POST_PLACEMENTS.map((placement, index) => (
+      {ARENA_PLACEMENTS.map((placement, index) => (
         <li
           key={`${placement.x}:${placement.y}`}
           className={styles.contender}
@@ -57,7 +44,7 @@ export function ArenaFloorSkeleton({ isList = false }: { isList?: boolean }) {
           style={
             isList
               ? undefined
-              : { left: `${placement.x}%`, top: `${placement.y}%`, zIndex: POST_PLACEMENTS.length - index }
+              : { left: `${placement.x}%`, top: `${placement.y}%`, zIndex: ARENA_PLACEMENTS.length - index }
           }
         >
           <Card
@@ -129,7 +116,7 @@ export function ArenaFloor({
     // Randomize only after hydration and a filter change, never on card selection
     // or live count updates.
     const frame = requestAnimationFrame(() => {
-      setRotationOffsets(POST_PLACEMENTS.map(() => (Math.random() - 0.5) * 3));
+      setRotationOffsets(ARENA_PLACEMENTS.map(() => (Math.random() - 0.5) * 3));
     });
     return () => cancelAnimationFrame(frame);
   }, [rotationKey, metric, isList]);
@@ -154,7 +141,7 @@ export function ArenaFloor({
         const popularityScore = getArenaPopularityScore(idea);
         const showAllStats = metric !== 'newest';
         const indexedAt = Number.isFinite(idea.indexedAt) ? new Date(idea.indexedAt) : null;
-        const placement = POST_PLACEMENTS[index] ?? POST_PLACEMENTS[0];
+        const placement = ARENA_PLACEMENTS[index] ?? ARENA_PLACEMENTS[0];
         const spotlight = (hoveredId ?? focusedId) === idea.id;
         return (
           <motion.li
@@ -238,7 +225,9 @@ export function ArenaFloor({
                     </Typography>
                     <span className={styles.stats}>
                       {metric === 'newest' && indexedAt && (
-                        <PostHeaderTimestamp timeAgo={formatRelativeTime(indexedAt)} indexedAt={indexedAt} />
+                        <span className={styles.recentTimestamp}>
+                          <PostHeaderTimestamp timeAgo={formatRelativeTime(indexedAt)} indexedAt={indexedAt} />
+                        </span>
                       )}
                       {showAllStats && (
                         <ArenaStat kind="popular" count={popularityScore} active={metric === 'popular'} />

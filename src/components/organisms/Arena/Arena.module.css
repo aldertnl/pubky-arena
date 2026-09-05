@@ -629,6 +629,25 @@
   display: inline-block;
   animation: arena-appear 180ms ease-out both;
 }
+.recentTimestamp {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.recentTimestamp div,
+.recentTimestamp span {
+  gap: 2px;
+  color: var(--arena-topic-color, var(--brand));
+  font-size: 0.625rem;
+  line-height: 0.875rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  font-variant-numeric: tabular-nums;
+}
+.recentTimestamp svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--arena-topic-color, var(--brand));
+}
 .readerContent {
   animation: arena-change 240ms var(--arena-ease) both;
 }
@@ -815,6 +834,8 @@
   .viewActions {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    row-gap: 12px;
   }
   .topics,
   .listStage .topics {
@@ -990,5 +1011,120 @@
   .topicControl:active {
     transition: none;
     translate: none;
+  }
+}
+
+/* People share the Arena's standings positions, with portraits in place of post cards. */
+.peopleFloor .person {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 16px;
+  color: var(--foreground);
+  pointer-events: auto;
+  text-align: center;
+  transform: scale(var(--arena-person-scale, 1));
+  transition: transform 180ms var(--arena-ease);
+}
+.personPortrait {
+  position: relative;
+  display: block;
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 50%);
+}
+.person[aria-pressed='true'] .personPortrait {
+  outline: 2px solid var(--brand);
+  outline-offset: 5px;
+}
+.personAvatar {
+  width: 80px;
+  height: 80px;
+}
+.personRank {
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--background);
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+}
+.peopleFloor .contender:first-child .personAvatar {
+  width: 104px;
+  height: 104px;
+}
+.peopleFloor .contender:first-child .personPortrait {
+  outline: 2px solid var(--arena-topic-color);
+  outline-offset: 3px;
+  box-shadow: 0 0 32px color-mix(in srgb, var(--arena-topic-color) 30%, transparent);
+}
+.peopleFloor .contender:first-child .personRank {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.personName {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  text-shadow: 0 2px 8px var(--background);
+}
+.personStats {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+  justify-content: center;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--background) 88%, transparent);
+  white-space: nowrap;
+}
+.peopleFloor .person:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .peopleFloor .person:hover {
+    transform: scale(1.08);
+  }
+}
+.peopleFloor.list .person {
+  transform: none;
+}
+.peopleFloor.list .contender:first-child .personAvatar {
+  width: 80px;
+  height: 80px;
+}
+@media (max-width: 900px) {
+  .peopleFloor .person {
+    transform: none;
+  }
+}
+@media (max-width: 639px) {
+  .peopleFloor.list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 8px;
+    padding-top: 24px;
+  }
+  .personStats {
+    gap: 5px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .peopleFloor .person {
+    transition: none;
   }
 }

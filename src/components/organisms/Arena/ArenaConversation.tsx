@@ -33,9 +33,10 @@ interface ArenaConversationProps {
   rootId: string;
   selectedId: string;
   showMuted?: boolean;
+  postLabel?: string;
 }
 
-export function ArenaConversation({ rootId, selectedId, postWindow, showMuted = false }: ArenaConversationProps) {
+export function ArenaConversation(props: ArenaConversationProps) {
   const placeholderRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -53,10 +54,7 @@ export function ArenaConversation({ rootId, selectedId, postWindow, showMuted = 
     observer.observe(placeholder);
     return () => observer.disconnect();
   }, [ready]);
-  if (ready)
-    return (
-      <ArenaConversationContent rootId={rootId} selectedId={selectedId} postWindow={postWindow} showMuted={showMuted} />
-    );
+  if (ready) return <ArenaConversationContent {...props} />;
   return (
     <div ref={placeholderRef} className={styles.dock}>
       <div className={styles.reader} role="status" aria-label="Loading conversation">
@@ -67,7 +65,13 @@ export function ArenaConversation({ rootId, selectedId, postWindow, showMuted = 
   );
 }
 
-function ArenaConversationContent({ rootId, selectedId, postWindow, showMuted = false }: ArenaConversationProps) {
+function ArenaConversationContent({
+  rootId,
+  selectedId,
+  postWindow,
+  showMuted = false,
+  postLabel = 'Original post',
+}: ArenaConversationProps) {
   const readerRef = useRef<HTMLDivElement>(null);
   const originalRef = useRef<HTMLDivElement>(null);
   const replyRef = useRef<HTMLDivElement>(null);
@@ -122,7 +126,7 @@ function ArenaConversationContent({ rootId, selectedId, postWindow, showMuted = 
               composerRef={composerRef}
             />
           )}
-          <section aria-label="Original post">
+          <section aria-label={postLabel}>
             <Typography
               as="h3"
               overrideDefaults
@@ -132,7 +136,7 @@ function ArenaConversationContent({ rootId, selectedId, postWindow, showMuted = 
               )}
             >
               <span className="inline-flex items-center gap-2">
-                <span>Original post</span>
+                <span>{postLabel}</span>
                 {originalPopularityScore !== null && (
                   <ArenaStat kind="popular" count={originalPopularityScore} active />
                 )}

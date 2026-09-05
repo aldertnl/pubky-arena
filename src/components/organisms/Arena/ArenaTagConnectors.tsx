@@ -31,6 +31,8 @@ export function ArenaTagConnectors({ stageRef, topic }: { stageRef: RefObject<HT
     let tag: HTMLElement | null = null;
     let floor: HTMLElement | null = null;
     let cards: HTMLElement[] = [];
+    const cardSelector = '[data-arena-post], [data-arena-person]';
+    const cardId = (card: HTMLElement) => card.dataset.arenaPost ?? card.dataset.arenaPerson!;
     const geometryStyle = ({ style }: HTMLElement) =>
       [
         style.transform,
@@ -50,7 +52,7 @@ export function ArenaTagConnectors({ stageRef, topic }: { stageRef: RefObject<HT
     const syncElements = () => {
       tag = stage.querySelector<HTMLElement>('[data-arena-selected-topic]');
       floor = stage.querySelector<HTMLElement>('[data-arena-floor]');
-      cards = [...stage.querySelectorAll<HTMLElement>('[data-arena-post]')];
+      cards = [...stage.querySelectorAll<HTMLElement>(cardSelector)];
       const elements = new Set<HTMLElement>([
         stage,
         ...cards,
@@ -79,9 +81,10 @@ export function ArenaTagConnectors({ stageRef, topic }: { stageRef: RefObject<HT
       updateSpotlight();
     };
     const updateSpotlight = () => {
-      setSpotlightId(
-        stage.querySelector<HTMLElement>('[data-arena-spotlight] [data-arena-post]')?.dataset.arenaPost ?? null,
+      const card = stage.querySelector<HTMLElement>(
+        '[data-arena-spotlight] [data-arena-post], [data-arena-spotlight] [data-arena-person]',
       );
+      setSpotlightId(card ? cardId(card) : null);
     };
 
     const measure = () => {
@@ -104,16 +107,21 @@ export function ArenaTagConnectors({ stageRef, topic }: { stageRef: RefObject<HT
           const startX = x + dx / distance - origin.left;
           const startY = y + dy / distance - origin.top;
           if (!initialPulseIds && cards.length) {
-            initialPulseIds = new Set(cards.map((card) => card.dataset.arenaPost!));
+            initialPulseIds = new Set(cards.map(cardId));
           }
           for (const card of cards) {
-            const target = card.getBoundingClientRect();
+            const portrait = card.querySelector<HTMLElement>('[data-arena-person-portrait]');
+            const target = (portrait ?? card).getBoundingClientRect();
             if (!target.width || !target.height) continue;
-            const id = card.dataset.arenaPost!;
+            const id = cardId(card);
             const centerX = target.left + target.width / 2 - origin.left;
             const centerY = target.top + target.height / 2 - origin.top;
             const computed = getComputedStyle(card);
-            let size = dimensions.get(card);
+            // People have transparent space around their portraits and stats. Only mask
+            // the visible circle, using its rendered size (including the parent's scale).
+            let size = portrait
+              ? { width: target.width, height: target.height, radius: target.width / 2 }
+              : dimensions.get(card);
             if (!size) {
               size = {
                 width: parseFloat(computed.width),
@@ -122,7 +130,9 @@ export function ArenaTagConnectors({ stageRef, topic }: { stageRef: RefObject<HT
               };
               dimensions.set(card, size);
             }
-            const matrix = new DOMMatrixReadOnly(computed.transform === 'none' ? undefined : computed.transform);
+            const matrix = new DOMMatrixReadOnly(
+              portrait || computed.transform === 'none' ? undefined : computed.transform,
+            );
             next.push({
               id,
               d: `M ${startX} ${startY} L ${centerX} ${centerY}`,
@@ -177,7 +187,7 @@ export function ArenaTagConnectors({ stageRef, topic }: { stageRef: RefObject<HT
       }
     });
     const content = new MutationObserver((records) => {
-      const selector = '[data-arena-post], [data-arena-floor], [data-arena-selected-topic]';
+      const selector = `${cardSelector}, [data-arena-floor], [data-arena-selected-topic]`;
       const changed = records.some((record) =>
         [...record.addedNodes, ...record.removedNodes].some(
           (node) => node instanceof HTMLElement && (node.matches(selector) || node.querySelector(selector)),

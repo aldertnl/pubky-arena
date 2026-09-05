@@ -7,7 +7,7 @@ const frames = new Map<number, FrameRequestCallback>();
 let now = 0;
 let frameId = 0;
 
-function Harness() {
+function Harness({ people = false }: { people?: boolean }) {
   const stageRef = useRef<HTMLDivElement>(null);
   return (
     <div ref={stageRef}>
@@ -17,10 +17,18 @@ function Harness() {
       <ol data-arena-floor>
         <li>
           <div
-            data-arena-post="a:1"
+            data-arena-post={people ? undefined : 'a:1'}
+            data-arena-person={people ? 'person' : undefined}
             style={{ width: '200px', height: '100px', borderRadius: '6px', transform: 'none' }}
           >
-            Post
+            {people ? (
+              <>
+                <span data-arena-person-portrait>Avatar</span>
+                <span>Name and stats</span>
+              </>
+            ) : (
+              'Post'
+            )}
           </div>
         </li>
       </ol>
@@ -68,6 +76,7 @@ beforeEach(() => {
   );
   vi.stubGlobal('matchMedia', () => ({ matches: true }));
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+    if (this.hasAttribute('data-arena-person-portrait')) return new DOMRect(160, 160, 80, 80);
     const isTag = this.hasAttribute('data-arena-selected-topic');
     const isCard = this.hasAttribute('data-arena-post');
     return new DOMRect(
@@ -85,6 +94,17 @@ afterEach(() => {
 });
 
 describe('Arena connector scheduling', () => {
+  it('connects to the portrait and masks only its circle, leaving transparent people areas open', async () => {
+    const { container } = render(<Harness people />);
+    await advance();
+    const mask = container.querySelector('mask rect[fill="black"]');
+    expect(mask).toHaveAttribute('width', '80');
+    expect(mask).toHaveAttribute('height', '80');
+    expect(mask).toHaveAttribute('rx', '40');
+    expect(mask).toHaveAttribute('transform', 'matrix(1 0 0 1 200 200)');
+    expect(container.querySelector('[data-arena-connection="person"] path')?.getAttribute('d')).toMatch(/L 200 200$/);
+  });
+
   it('does no layout reads for opacity, highlight, decoration or its own SVG updates', async () => {
     const { container } = render(<Harness />);
     await advance();

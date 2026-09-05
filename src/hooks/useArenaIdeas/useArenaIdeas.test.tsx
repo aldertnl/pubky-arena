@@ -8,12 +8,17 @@ import { useArenaIdeas } from './useArenaIdeas';
 
 const state = vi.hoisted(() => ({
   muted: new Set<string>(),
-  read: async (): Promise<{ ideas: ArenaIdea[]; error: string | null }> => ({ ideas: [], error: null }),
+  projection: { ideas: [] as ArenaIdea[], error: null as string | null, idsKey: null as string | null },
+  read: async (): Promise<{ ideas: ArenaIdea[]; error: string | null; idsKey: string | null }> => ({
+    ideas: [],
+    error: null,
+    idsKey: null,
+  }),
 }));
 vi.mock('dexie-react-hooks', () => ({
   useLiveQuery: (query: typeof state.read) => {
     state.read = query;
-    return { ideas: [], error: null };
+    return state.projection;
   },
 }));
 vi.mock('@/hooks/useMutedUsers/useMutedUsers', () => ({ useMutedUsers: () => ({ mutedUserIdSet: state.muted }) }));
@@ -32,6 +37,7 @@ describe('Arena local data projection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     state.muted.clear();
+    state.projection = { ideas: [], error: null, idsKey: null };
     snapshot = {
       details: model,
       counts: { ...fixture.counts, id: fixture.compositeId },
@@ -55,6 +61,22 @@ describe('Arena local data projection', () => {
       replies: fixture.counts.replies,
       reposts: fixture.counts.reposts,
     });
+  });
+
+  it('distinguishes a pending new page from an already-read page with no eligible posts', async () => {
+    const { result, rerender } = renderHook(({ ids }) => useArenaIdeas(ids), {
+      initialProps: { ids: [fixture.compositeId] },
+    });
+    expect(result.current.loading).toBe(true);
+    state.projection = await state.read();
+    rerender({ ids: [fixture.compositeId] });
+    expect(result.current.loading).toBe(false);
+    rerender({ ids: [fixture.compositeId, 'person:missing'] });
+    expect(result.current.loading).toBe(true);
+    vi.mocked(PostController.getManySnapshots).mockResolvedValue(new Map());
+    state.projection = await state.read();
+    rerender({ ids: [fixture.compositeId, 'person:missing'] });
+    expect(result.current).toMatchObject({ loading: false, ideas: [] });
   });
 
   it('does not expose muted, deleted, or missing posts as contenders', async () => {

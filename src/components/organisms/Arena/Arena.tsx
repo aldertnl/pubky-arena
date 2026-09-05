@@ -3,23 +3,29 @@
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
+  Activity,
   Calendar,
   CalendarRange,
   Clock,
   Eye,
   EyeOff,
   Flame,
+  Grip,
+  Layers,
   type LucideIcon,
   MessageCircle,
   Orbit,
   Repeat,
   RotateCcw,
-  Rows4,
   Star,
+  StickyNote,
   Tag as TagIcon,
+  UsersRound,
 } from 'lucide-react';
 import { Button } from '@/atoms/Button/Button';
 import { useArenaIdeas } from '@/hooks/useArenaIdeas/useArenaIdeas';
+import { useArenaPeople } from '@/hooks/useArenaPeople/useArenaPeople';
+import { useArenaRecentPeople } from '@/hooks/useArenaRecentPeople/useArenaRecentPeople';
 import { useBulkUserAvatars } from '@/hooks/useBulkUserAvatars/useBulkUserAvatars';
 import { useHotTags } from '@/hooks/useHotTags/useHotTags';
 import { useIsMobile } from '@/hooks/useIsMobile/useIsMobile';
@@ -38,6 +44,7 @@ import {
   rankArenaIdeasForTimeframe,
   shouldLoadMoreArenaCandidates,
 } from '@/libs/arena/arena';
+import { ARENA_PEOPLE, type ArenaPeopleMetric } from '@/libs/arena/people';
 import { cn, generateRandomColor, hexToRgba } from '@/libs/utils/utils';
 import { AvatarGroup } from '@/molecules/AvatarGroup/AvatarGroup';
 import { CONTENT_FILTER_OPTIONS } from '@/molecules/Filters/FilterContent/FilterContent.constants';
@@ -53,6 +60,8 @@ import { ArenaConversation } from './ArenaConversation';
 import { ArenaFilterMenu } from './ArenaFilterMenu';
 import { ArenaFloor, ArenaFloorSkeleton } from './ArenaFloor';
 import { ArenaParticles } from './ArenaParticles';
+import { ArenaPeopleFloor } from './ArenaPeopleFloor';
+import { ArenaPersonConversation } from './ArenaPersonConversation';
 import { ArenaTagConnectors } from './ArenaTagConnectors';
 import { ArenaTagPicker } from './ArenaTagPicker';
 
@@ -82,24 +91,37 @@ const REACH_MENU_OPTIONS = REACH_OPTIONS.map(({ value }) => ({
   ...REACH_FILTER_META[value],
   label: REACH_MENU_LABELS[value],
 }));
-const CONTENT_OPTIONS = CONTENT_FILTER_OPTIONS.map(({ key, label, icon }) => ({
+const POST_CONTENT_OPTIONS = CONTENT_FILTER_OPTIONS.map(({ key, label, icon }) => ({
   value: key,
   label: key === CONTENT.ALL ? 'Content' : label,
   icon,
 }));
+const CONTENT_OPTIONS = [{ value: ARENA_PEOPLE, label: 'People', icon: UsersRound }, ...POST_CONTENT_OPTIONS];
+type ArenaContent = ContentType | typeof ARENA_PEOPLE;
+type ArenaRanking = ArenaMetric | ArenaPeopleMetric;
+
 const VIEW_OPTIONS = [
   { value: 'arena' as const, label: 'In arena', icon: Orbit },
-  { value: 'list' as const, label: 'In grid', icon: Rows4 },
+  { value: 'list' as const, label: 'In grid', icon: Grip },
 ];
 const TOPIC_AVATAR_LIMIT = 3;
+const CONTENT_INDICATOR = { label: 'Content', icon: Layers };
+const PEOPLE_INDICATOR = { label: 'People', icon: UsersRound };
 
 const RANK_OPTIONS = [
-  { value: 'popular', label: 'Most popular', icon: Flame },
-  { value: 'replies', label: 'Most replied', icon: MessageCircle },
-  { value: 'tags', label: 'Most tagged', icon: TagIcon },
-  { value: 'reposts', label: 'Most reposted', icon: Repeat },
-  { value: 'newest', label: 'Most recent', icon: Clock },
-] satisfies { value: ArenaMetric; label: string; icon: LucideIcon }[];
+  { value: 'popular', label: 'Most popular', icon: Flame, indicators: [CONTENT_INDICATOR, PEOPLE_INDICATOR] },
+  { value: 'replies', label: 'Most replied', icon: MessageCircle, indicators: [CONTENT_INDICATOR, PEOPLE_INDICATOR] },
+  { value: 'tags', label: 'Most tagged', icon: TagIcon, indicators: [CONTENT_INDICATOR, PEOPLE_INDICATOR] },
+  { value: 'active', label: 'Most active', icon: Activity, indicators: [PEOPLE_INDICATOR] },
+  { value: 'posts', label: 'Most posted', icon: StickyNote, indicators: [PEOPLE_INDICATOR] },
+  { value: 'reposts', label: 'Most reposted', icon: Repeat, indicators: [CONTENT_INDICATOR] },
+  { value: 'newest', label: 'Most recent', icon: Clock, indicators: [CONTENT_INDICATOR, PEOPLE_INDICATOR] },
+] satisfies {
+  value: ArenaRanking;
+  label: string;
+  icon: LucideIcon;
+  indicators: { label: string; icon: LucideIcon }[];
+}[];
 
 type PostWindow = { timeframe: TimeframeType; now: number };
 
@@ -109,8 +131,8 @@ type StageProps = {
   topic: ArenaTopicFilter;
   onTopic: (topic: ArenaTopicFilter) => void;
   isList: boolean;
-  metric: ArenaMetric;
-  content: ContentType;
+  metric: ArenaRanking;
+  content: ArenaContent;
   muteControlTarget: HTMLDivElement | null;
 };
 
@@ -124,8 +146,13 @@ export function Arena() {
   const displayAsGrid = isPhone || isList;
   const [resetCount, setResetCount] = useState(0);
   const [muteControlTarget, setMuteControlTarget] = useState<HTMLDivElement | null>(null);
-  const [metric, setMetric] = useState<ArenaMetric>('popular');
-  const [content, setContent] = useState<ContentType>(CONTENT.ALL);
+  const [metric, setMetric] = useState<ArenaRanking>('popular');
+  const [content, setContent] = useState<ArenaContent>(CONTENT.ALL);
+  const contentIndicator = POST_CONTENT_OPTIONS.find((option) => option.value === content) ?? CONTENT_INDICATOR;
+  const rankOptions = RANK_OPTIONS.map((option) => ({
+    ...option,
+    indicators: option.indicators.map((indicator) => (indicator === CONTENT_INDICATOR ? contentIndicator : indicator)),
+  }));
   const scope = `${effectiveReach}:${timeframe}:${currentUserPubky ?? 'guest'}`;
   const topics = useHotTags({
     reach: REACH_OPTIONS.find((option) => option.value === effectiveReach)?.hotReach,
@@ -134,7 +161,9 @@ export function Arena() {
   });
   const [chosenTopic, setChosenTopic] = useState<{ scope: string; label: ArenaTopicFilter } | null>(null);
   const topic =
-    chosenTopic?.label === null || chosenTopic?.scope === scope ? chosenTopic.label : topics.rawTags[0]?.label;
+    chosenTopic?.label === null || chosenTopic?.scope === scope
+      ? chosenTopic.label
+      : (topics.rawTags[0]?.label ?? (content === ARENA_PEOPLE ? null : undefined));
   function changeReach(value: ReachType) {
     const applyReach = () => {
       setChosenTopic((previous) => (previous?.label === null ? previous : null));
@@ -142,6 +171,17 @@ export function Arena() {
     };
     if (value === REACH.ALL) applyReach();
     else requireAuth(applyReach);
+  }
+  function changeMetric(value: ArenaRanking) {
+    setMetric(value);
+    if (value === 'active' || value === 'posts') setContent(ARENA_PEOPLE);
+    else if (content === ARENA_PEOPLE && value === 'reposts') setContent(CONTENT.ALL);
+  }
+  function changeContent(value: ArenaContent) {
+    setContent(value);
+    if (value === ARENA_PEOPLE) {
+      if (metric === 'reposts') setMetric('active');
+    } else if (metric === 'active' || metric === 'posts') setMetric('popular');
   }
   function resetFilters() {
     setResetCount((count) => count + 1);
@@ -163,14 +203,19 @@ export function Arena() {
               value={timeframe}
               options={WINDOWS}
               onChange={(value) => {
-                setChosenTopic((previous) => (previous?.label === null ? previous : null));
+                // Preserve the displayed selection, including an initially defaulted top tag.
+                setChosenTopic(
+                  topic === undefined
+                    ? null
+                    : { scope: `${effectiveReach}:${value}:${currentUserPubky ?? 'guest'}`, label: topic },
+                );
                 setTimeframe(value);
               }}
               lowercase
             />
           </div>{' '}
           <div className={styles.filterClause}>
-            <ArenaFilterMenu label="Ranking" value={metric} options={RANK_OPTIONS} onChange={setMetric} lowercase />
+            <ArenaFilterMenu label="Ranking" value={metric} options={rankOptions} onChange={changeMetric} lowercase />
           </div>{' '}
           <div className={styles.filterClause}>
             <ArenaTagPicker
@@ -181,26 +226,27 @@ export function Arena() {
               onTopic={(label) => setChosenTopic({ scope, label })}
             />
           </div>{' '}
-          <div className={cn(styles.filterClause, styles.mobileHidden)}>
+          <div className={styles.filterClause}>
             <ArenaFilterMenu
               label="Content"
               value={content}
               options={CONTENT_OPTIONS}
-              onChange={setContent}
-              lowercase
-            />
-          </div>{' '}
-          <div className={styles.filterClause}>
-            <ArenaFilterMenu
-              label="Reach"
-              value={effectiveReach}
-              options={REACH_MENU_OPTIONS}
-              onChange={changeReach}
+              separatorAfter={CONTENT.ALL}
+              onChange={changeContent}
               lowercase
             />
           </div>{' '}
           <div className={styles.viewActions}>
             <div className={styles.filterClause}>
+              <ArenaFilterMenu
+                label="Reach"
+                value={effectiveReach}
+                options={REACH_MENU_OPTIONS}
+                onChange={changeReach}
+                lowercase
+              />
+            </div>{' '}
+            <div className={cn(styles.filterClause, styles.mobileHidden)}>
               <ArenaFilterMenu
                 label="View"
                 value={isList ? 'list' : 'arena'}
@@ -242,35 +288,55 @@ export function Arena() {
           How ranking works
         </summary>
         <div className="mt-2 max-w-2xl space-y-2 leading-relaxed">
-          <p>
-            Topics follow Pubky’s trending-tag ranking for your selected reach and timeframe. A topic’s count is the
-            number of posts carrying that tag. Reach filters the trending topics; posts competing under a selected tag
-            currently come from everyone. Choose All to remove the tag filter and rank content from your selected reach,
-            including posts without tags.
-          </p>
-          <p>
-            Today, This week, and This month use rolling 24-hour, 7-day, and 30-day windows based on the timestamp shown
-            on each post. All time has no age limit. Content includes all types; choosing a specific type limits the
-            competing posts. The Posts filter includes short-form original posts and replies.
-          </p>
-          <p>
-            Most popular adds distinct tag labels + (direct replies × 4) + (reposts × 3). Most tagged, Most replied, and
-            Most reposted use only that count. These are lifetime counts, even when a timeframe is selected. Most recent
-            orders posts by their displayed timestamp. Tags measure attention, not necessarily agreement. Counts may be
-            cached.
-          </p>
-          <p>
-            Standings compare the loaded posts that match your tag, timeframe, and content type. They may not cover
-            every matching post, especially for All time. Arena shows up to ten posts and keeps your selection visible;
-            Grid shows up to nine. Tied scores receive separate ranks in a consistent order. Muted authors and deleted
-            posts are excluded.
-          </p>
-          <p>
-            Selecting a reply shows the post it replies to in the conversation below. The leading reply always uses Most
-            popular, regardless of the ranking selected above. Direct replies to the original are checked using the same
-            timeframe and mute settings, without filtering by tag, content type, or reach. Show all replies opens the
-            full thread.
-          </p>
+          {content === ARENA_PEOPLE ? (
+            <>
+              <p>
+                Most recent shows people who posted most recently within your selected reach and timeframe, with each
+                person appearing once. The other People rankings use the homepage’s active-user feed. Most active
+                preserves its order. Most popular ranks those people by followers; Most tagged by tags they have
+                applied; Most posted by post count; Most replied by replies written. These stats are lifetime totals and
+                may be cached.
+              </p>
+              <p>
+                A selected tag matches tags on people’s profiles. All removes that filter. The topic suggestions still
+                come from trending post tags. Muted people are excluded. Up to ten people are shown. Selecting a person
+                shows their most popular original post and its leading reply below, using the selected timeframe and the
+                same post popularity score as Content. The profile tag does not filter these posts or replies.
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                Topics follow Pubky’s trending-tag ranking for your selected reach and timeframe. A topic’s count is the
+                number of posts carrying that tag. Reach filters the trending topics; posts competing under a selected
+                tag currently come from everyone. Choose All to remove the tag filter and rank content from your
+                selected reach, including posts without tags.
+              </p>
+              <p>
+                Today, This week, and This month use rolling 24-hour, 7-day, and 30-day windows based on the timestamp
+                shown on each post. All time has no age limit. Content includes all types; choosing a specific type
+                limits the competing posts. The Posts filter includes short-form original posts and replies.
+              </p>
+              <p>
+                Most popular adds distinct tag labels + (direct replies × 4) + (reposts × 3). Most tagged, Most replied,
+                and Most reposted use only that count. These are lifetime counts, even when a timeframe is selected.
+                Most recent orders posts by their displayed timestamp. Tags measure attention, not necessarily
+                agreement. Counts may be cached.
+              </p>
+              <p>
+                Standings compare the loaded posts that match your tag, timeframe, and content type. They may not cover
+                every matching post, especially for All time. Arena shows up to ten posts and keeps your selection
+                visible; Grid shows up to nine. Tied scores receive separate ranks in a consistent order. Muted authors
+                and deleted posts are excluded.
+              </p>
+              <p>
+                Selecting a reply shows the post it replies to in the conversation below. The leading reply always uses
+                Most popular, regardless of the ranking selected above. Direct replies to the original are checked using
+                the same timeframe and mute settings, without filtering by tag, content type, or reach. Show all replies
+                opens the full thread.
+              </p>
+            </>
+          )}
         </div>
       </details>
     </div>
@@ -310,10 +376,25 @@ function ArenaTopics({
         No topics in this window. Try a wider timeframe.
       </div>
     );
+  if (display.content === ARENA_PEOPLE) {
+    return (
+      <ArenaPeople
+        key={JSON.stringify([topic, display.metric])}
+        {...display}
+        postWindow={{ timeframe, now }}
+        topics={rawTags}
+        topic={topic}
+        onTopic={onTopic}
+        reach={reach}
+      />
+    );
+  }
   return (
     <ArenaTopic
       key={JSON.stringify([topic, display.content, display.metric])}
       {...display}
+      metric={display.metric as ArenaMetric}
+      content={display.content}
       postWindow={{ timeframe, now }}
       topics={rawTags}
       topic={topic}
@@ -468,7 +549,79 @@ function ArenaStage({
   );
 }
 
-function ArenaTopic(props: StageProps & { reach: ReachType }) {
+function ArenaPeople(props: StageProps & { reach: ReachType }) {
+  return props.metric === 'newest' ? <ArenaRecentPeople {...props} /> : <ArenaActivePeople {...props} />;
+}
+
+function ArenaRecentPeople(props: StageProps & { reach: ReachType }) {
+  const people = useArenaRecentPeople({ ...props.postWindow, reach: props.reach, topic: props.topic });
+  return <ArenaPeopleResults stage={props} people={people} />;
+}
+
+function ArenaActivePeople(props: StageProps & { reach: ReachType }) {
+  const people = useArenaPeople({
+    timeframe: props.postWindow.timeframe,
+    reach: props.reach,
+    topic: props.topic,
+    metric: props.metric as Exclude<ArenaPeopleMetric, 'newest'>,
+  });
+  return <ArenaPeopleResults stage={props} people={people} />;
+}
+
+function ArenaPeopleResults({
+  stage: props,
+  people,
+}: {
+  stage: StageProps;
+  people: ReturnType<typeof useArenaPeople>;
+}) {
+  const [chosen, setChosen] = useState<string | null>(null);
+  const metric = props.metric as ArenaPeopleMetric;
+  const { users, loading, error, retry } = people;
+  const selected = !loading && !error ? (users.find((user) => user.id === chosen) ?? users[0]) : undefined;
+  return (
+    <>
+      <ArenaStage {...props}>
+        {error ? (
+          <div className={styles.status} role="alert">
+            Could not load people.{' '}
+            <Button variant="ghost" onClick={retry}>
+              Retry
+            </Button>
+          </div>
+        ) : !loading && !users.length ? (
+          <div className={styles.status} role="status">
+            {props.topic === null
+              ? metric === 'newest'
+                ? 'No recent people found for these filters.'
+                : 'No active people found for these filters.'
+              : metric === 'newest'
+                ? 'No recent people found with this profile tag.'
+                : 'No active people found with this profile tag.'}
+          </div>
+        ) : (
+          <ArenaPeopleFloor
+            users={users}
+            isList={props.isList}
+            metric={metric}
+            loading={loading}
+            selectedId={selected?.id}
+            onSelect={setChosen}
+          />
+        )}
+      </ArenaStage>
+      {selected && (
+        <div className={styles.conversationTarget} tabIndex={-1} aria-label="Original post conversation">
+          <ArenaPersonConversation key={selected.id} author={selected.id} postWindow={props.postWindow} />
+        </div>
+      )}
+    </>
+  );
+}
+
+function ArenaTopic(
+  props: Omit<StageProps, 'metric' | 'content'> & { reach: ReachType; metric: ArenaMetric; content: ContentType },
+) {
   const conversationRef = useRef<HTMLDivElement>(null);
   const [showMuted, setShowMuted] = useState(false);
   const { isMuted } = useMutedUsers();

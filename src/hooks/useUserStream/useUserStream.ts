@@ -174,6 +174,7 @@ export function useUserStream({
       counts: counts
         ? {
             posts: counts.posts,
+            replies: counts.replies,
             tags: counts.tagged,
             followers: counts.followers,
             following: counts.following,
@@ -250,9 +251,7 @@ export function useUserStream({
         // Update hasMore based on whether we got a full page
         setHasMore(paginated && !streamExhausted && nextPageIds.length >= fetchLimit);
       } catch (err) {
-        if (isInitial) {
-          setError(isAppError(err) ? err.message : 'Failed to fetch users');
-        }
+        setError(isAppError(err) ? err.message : 'Failed to fetch users');
         Logger.error('[useUserStream] Failed to fetch users:', err);
       } finally {
         if (isInitial) {

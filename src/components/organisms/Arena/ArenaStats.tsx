@@ -1,10 +1,17 @@
-import { Flame, MessageCircle, Repeat, StickyNote, Tag } from 'lucide-react';
+import { Flame, MessageCircle, Repeat, StickyNote, Tag, UsersRound } from 'lucide-react';
 import { Typography } from '@/atoms/Typography/Typography';
 import { cn } from '@/libs/utils/utils';
 import { POST_ACTION_COUNT_TYPOGRAPHY_CLASS } from '@/organisms/PostActionsBar/PostActionsBar.constants';
 import styles from './Arena.module.css';
 
-const icons = { posts: StickyNote, tags: Tag, replies: MessageCircle, reposts: Repeat, popular: Flame };
+const icons = {
+  followers: UsersRound,
+  posts: StickyNote,
+  tags: Tag,
+  replies: MessageCircle,
+  reposts: Repeat,
+  popular: Flame,
+};
 
 export function ArenaStat({
   kind,
@@ -12,11 +19,12 @@ export function ArenaStat({
   active = false,
 }: {
   kind: keyof typeof icons;
-  count: number;
+  count?: number;
   active?: boolean;
 }) {
   const Icon = icons[kind];
-  const label = `${count.toLocaleString('en-US')} ${kind === 'popular' ? 'popularity points' : kind}`;
+  const value = count?.toLocaleString('en-US');
+  const label = `${value ?? 'Loading'} ${kind === 'popular' ? 'popularity points' : kind}`;
   return (
     <Typography
       as="span"
@@ -31,7 +39,7 @@ export function ArenaStat({
     >
       <Icon className="size-3 shrink-0" aria-hidden="true" />
       <span key={count} className={styles.statValue} aria-hidden="true">
-        {count.toLocaleString('en-US')}
+        {value ?? '…'}
       </span>
     </Typography>
   );

@@ -11,12 +11,13 @@ import { Header } from '@/organisms/Header/Header';
 import { Hot } from '@/templates/Feed/Hot/Hot';
 import { page } from 'vitest/browser';
 
-const muteState = vi.hoisted(() => ({ allMuted: false }));
+const muteState = vi.hoisted(() => ({ allMuted: false, personConversation: false }));
 
 // Keep the deliberately randomized card rotations reproducible in screenshots.
 let restoreRotationRandom: (() => void) | undefined;
 beforeEach(() => {
   muteState.allMuted = false;
+  muteState.personConversation = false;
   const random = vi.spyOn(Math, 'random').mockReturnValue(0.5);
   restoreRotationRandom = () => random.mockRestore();
 });
@@ -194,8 +195,19 @@ vi.mock('@/hooks/useUserStream/useUserStream', async () => {
   // Compute these once so the mock returns stable references; new array
   // identities on every call cascade into useEffect deps and trigger render
   // loops. Powers HotActiveUsers + WhoToFollowSidebar.
-  const usersSnapshot = [...f.whoToFollow];
+  const usersSnapshot = f.whoToFollow.map((user, index) => ({
+    ...user,
+    counts: { ...user.counts, replies: (index + 1) * 30 },
+  }));
   const userIdsSnapshot = f.whoToFollow.map((user) => user.id);
+  const reply = [...f.postsByCompositeId.values()].find((post) => post.relationships.replied)!;
+  const root = f.postsByCompositeId.get(f.compositeIdByUri.get(reply.relationships.replied!)!)!;
+  const profile = f.profiles[root.details.author];
+  const conversationUsers = [
+    usersSnapshot[0],
+    { ...usersSnapshot[1], id: profile.id, name: profile.name, avatarUrl: profile.image },
+  ];
+
   const result = {
     users: usersSnapshot,
     userIds: userIdsSnapshot,
@@ -206,7 +218,14 @@ vi.mock('@/hooks/useUserStream/useUserStream', async () => {
     loadMore: async () => {},
     refetch: async () => {},
   };
-  return { useUserStream: () => result };
+  return { useUserStream: () => (muteState.personConversation ? { ...result, users: conversationUsers } : result) };
+});
+
+vi.mock('@/controllers/search/search', async () => {
+  const f = await fixtures;
+  return {
+    SearchController: { fetchUsersByTags: async () => f.whoToFollow.map((user) => ({ user_id: user.id, score: 1 })) },
+  };
 });
 
 vi.mock('@/hooks/useMutedUsers/useMutedUsers', () => {
@@ -496,7 +515,7 @@ function expectContendersToFit() {
 }
 
 describe('Hot — visual regression', () => {
-  it('maps My network to WoT for both topics and idea candidates', async () => {
+  it('maps My network to WoT for topics and untagged idea candidates', async () => {
     const { useHotStore } = await import('@/stores/hot/hot.store');
     const { useHotTags } = await import('@/hooks/useHotTags/useHotTags');
     const { useStreamPagination } = await import('@/hooks/useStreamPagination/useStreamPagination');
@@ -507,9 +526,12 @@ describe('Hot — visual regression', () => {
     vi.mocked(useStreamPagination).mockClear();
     try {
       await renderForVRT(<HotWithHeader />, { viewport: VRT_VIEWPORT_DESKTOP });
-      await expect.element(page.getByRole('button', { name: 'Reach: My network', exact: true })).toBeVisible();
+      await expect.element(page.getByRole('button', { name: 'Reach: From my network', exact: true })).toBeVisible();
       expect(useHotTags).toHaveBeenCalledWith(expect.objectContaining({ reach: 'wot' }));
-      expect(useStreamPagination).toHaveBeenCalledWith(expect.objectContaining({ streamId: 'timeline:wot:all:pubky' }));
+      expect(useStreamPagination).toHaveBeenCalledWith(expect.objectContaining({ streamId: 'timeline:all:all:pubky' }));
+      await page.getByRole('button', { name: 'Choose topic tag' }).click();
+      await page.getByRole('button', { name: 'all', exact: true }).click();
+      expect(useStreamPagination).toHaveBeenCalledWith(expect.objectContaining({ streamId: 'timeline:wot:all' }));
     } finally {
       useHotStore.setState({ reach: previousReach });
     }
@@ -525,36 +547,36 @@ describe('Hot — visual regression', () => {
       await expect.element(page.getByRole('button', { name: 'Ranking: Most popular', exact: true })).toBeVisible();
       expect(document.querySelector('[aria-label="Arena filters"] a')).toBeNull();
       expect(
-        [...document.querySelectorAll('[aria-label="Arena filters"] button')].map((button) =>
+        [...document.querySelectorAll('[aria-label="Arena filters"] button[aria-label]')].map((button) =>
           button.getAttribute('aria-label'),
         ),
       ).toEqual([
+        'Timeframe: This month’s',
         'Ranking: Most popular',
         'Choose topic tag',
         'Content: Content',
-        'Timeframe: This month',
-        'Reach: All',
-        'View: Arena',
+        'Reach: From everyone',
+        'View: In arena',
       ]);
-      await page.getByRole('button', { name: 'Timeframe: This month', exact: true }).click();
+      await page.getByRole('button', { name: 'Timeframe: This month’s', exact: true }).click();
       await expect
-        .element(page.getByRole('menuitem', { name: 'This month', exact: true }))
+        .element(page.getByRole('menuitem', { name: 'This month’s', exact: true }))
         .toHaveAttribute('aria-current', 'true');
       await matchVrtFrameScreenshot('hot-post-window-menu');
       vi.mocked(useHotTags).mockClear();
       vi.mocked(useStreamPagination).mockClear();
-      await page.getByRole('menuitem', { name: 'Today', exact: true }).click();
-      await expect.element(page.getByRole('button', { name: 'Timeframe: Today', exact: true })).toBeVisible();
+      await page.getByRole('menuitem', { name: 'Today’s', exact: true }).click();
+      await expect.element(page.getByRole('button', { name: 'Timeframe: Today’s', exact: true })).toBeVisible();
       expect(useHotTags).toHaveBeenCalledWith(expect.objectContaining({ timeframe: 'today' }));
       expect(useStreamPagination).toHaveBeenCalledWith(expect.objectContaining({ streamId: 'timeline:all:all:pubky' }));
-      await page.getByRole('button', { name: 'View: Arena', exact: true }).click();
-      await page.getByRole('menuitem', { name: 'List', exact: true }).click();
-      await expect.element(page.getByRole('button', { name: 'View: List', exact: true })).toBeVisible();
-      await expect.element(page.getByRole('button', { name: 'Timeframe: Today', exact: true })).toBeVisible();
-      await page.getByRole('button', { name: 'Timeframe: Today', exact: true }).click();
+      await page.getByRole('button', { name: 'View: In arena', exact: true }).click();
+      await page.getByRole('menuitem', { name: 'In grid', exact: true }).click();
+      await expect.element(page.getByRole('button', { name: 'View: In grid', exact: true })).toBeVisible();
+      await expect.element(page.getByRole('button', { name: 'Timeframe: Today’s', exact: true })).toBeVisible();
+      await page.getByRole('button', { name: 'Timeframe: Today’s', exact: true }).click();
       vi.mocked(useHotTags).mockClear();
       vi.mocked(useStreamPagination).mockClear();
-      await page.getByRole('menuitem', { name: 'All time', exact: true }).click();
+      await page.getByRole('menuitem', { name: 'All-time', exact: true }).click();
       expect(useHotTags).toHaveBeenCalledWith(expect.objectContaining({ timeframe: 'all_time' }));
       expect(useStreamPagination).toHaveBeenCalledWith(
         expect.objectContaining({ streamId: 'total_engagement:all:all:pubky' }),
@@ -567,17 +589,19 @@ describe('Hot — visual regression', () => {
         'Most popular',
         'Most replied',
         'Most tagged',
+        'Most active',
+        'Most posted',
         'Most reposted',
-        'Newest',
+        'Most recent',
       ]);
       expect(document.querySelector('[role="menu"] [role="separator"]')).toBeNull();
       await page.getByRole('menuitem', { name: 'Most reposted', exact: true }).click();
       await expect.element(page.getByRole('button', { name: 'Ranking: Most reposted', exact: true })).toBeVisible();
       await page.getByRole('button', { name: 'Ranking: Most reposted', exact: true }).click();
       vi.mocked(useStreamPagination).mockClear();
-      await page.getByRole('menuitem', { name: 'Newest', exact: true }).click();
+      await page.getByRole('menuitem', { name: 'Most recent', exact: true }).click();
       expect(useStreamPagination).toHaveBeenCalledWith(expect.objectContaining({ streamId: 'timeline:all:all:pubky' }));
-      await expect.element(page.getByRole('button', { name: 'Ranking: Newest', exact: true })).toBeVisible();
+      await expect.element(page.getByRole('button', { name: 'Ranking: Most recent', exact: true })).toBeVisible();
       expect(document.querySelector('[aria-label="Idea standings"] [aria-label="Leading"]')).toBeNull();
     } finally {
       useHotStore.setState({ timeframe: previousTimeframe });
@@ -603,6 +627,100 @@ describe('Hot — visual regression', () => {
     await expect.element(page.getByText('Posts are hidden by your mute settings.')).toBeVisible();
     expect(document.querySelector('[aria-label="Idea standings"]')).toBeNull();
     expect(muteState.allMuted).toBe(true);
+  });
+
+  it.each([
+    ['desktop', VRT_VIEWPORT_DESKTOP],
+    ['tablet', { width: 1024, height: 1000 }],
+    ['mobile', VRT_VIEWPORT_MOBILE],
+  ] as const)('renders active people at %s viewport', async (name, viewport) => {
+    await renderForVRT(<HotWithHeader />, { viewport });
+    await page.getByRole('button', { name: 'Choose topic tag' }).click();
+    await page.getByRole('button', { name: 'all', exact: true }).click();
+    await page.getByRole('button', { name: 'Ranking: Most popular' }).click();
+    await page.getByRole('menuitem', { name: 'Most active', exact: true }).click();
+    await expect.element(page.getByRole('button', { name: 'Content: People' })).toBeVisible();
+    await expect.element(page.getByRole('list', { name: 'People standings' })).toBeVisible();
+    expect(document.querySelector('[aria-label="Original post conversation"]')).not.toBeNull();
+    const people = [...document.querySelectorAll<HTMLElement>('[data-arena-person]')];
+    expect(people).toHaveLength(5);
+    for (const person of people) {
+      const bounds = person.getBoundingClientRect();
+      expect(bounds.left).toBeGreaterThanOrEqual(0);
+      expect(bounds.right).toBeLessThanOrEqual(viewport.width);
+      expect(person.querySelectorAll('[aria-label$="followers"]')).toHaveLength(1);
+    }
+    await matchVrtFrameScreenshot(`hot-people-${name}`);
+    await page.getByRole('button', { name: 'Ranking: Most active' }).click();
+    await page.getByRole('menuitem', { name: 'Most popular', exact: true }).click();
+    const f = await fixtures;
+    const mostFollowed = [...f.whoToFollow].sort((a, b) => (b.counts?.followers ?? 0) - (a.counts?.followers ?? 0))[0];
+    await expect
+      .element(page.getByRole('button', { name: `Rank 1, ${mostFollowed.name}. Show most popular post` }))
+      .toBeVisible();
+    await page.getByRole('button', { name: 'Ranking: Most popular' }).click();
+    await page.getByRole('menuitem', { name: 'Most replied', exact: true }).click();
+    await expect.element(page.getByRole('button', { name: 'Content: People' })).toBeVisible();
+    await expect
+      .element(page.getByRole('button', { name: `Rank 1, ${f.whoToFollow[4].name}. Show most popular post` }))
+      .toBeVisible();
+    if (name === 'mobile') await matchVrtFrameScreenshot('hot-people-replies-mobile');
+  });
+
+  it.each([
+    ['desktop', VRT_VIEWPORT_DESKTOP],
+    ['mobile', VRT_VIEWPORT_MOBILE],
+  ] as const)('shows a selected person’s popular post and leading reply at %s viewport', async (name, viewport) => {
+    muteState.personConversation = true;
+    await renderForVRT(<HotWithHeader />, { viewport });
+    await page.getByRole('button', { name: 'Choose topic tag' }).click();
+    await page.getByRole('button', { name: 'all', exact: true }).click();
+    await page.getByRole('button', { name: 'Ranking: Most popular' }).click();
+    await page.getByRole('menuitem', { name: 'Most active', exact: true }).click();
+    const f = await fixtures;
+    const reply = [...f.postsByCompositeId.values()].find((post) => post.relationships.replied)!;
+    const root = f.postsByCompositeId.get(f.compositeIdByUri.get(reply.relationships.replied!)!)!;
+    const selected = page.getByRole('button', {
+      name: `Rank 2, ${f.profiles[root.details.author].name}. Show most popular post`,
+    });
+    await selected.click();
+    await expect.element(selected).toHaveAttribute('aria-pressed', 'true');
+    const conversation = document.querySelector<HTMLElement>('[aria-label="Original post conversation"]')!;
+    const floor = document.querySelector<HTMLElement>('[aria-label="People standings"]')!;
+    expect(conversation.getBoundingClientRect().top).toBeGreaterThanOrEqual(floor.getBoundingClientRect().bottom);
+    conversation.scrollIntoView();
+    await expect
+      .element(page.getByRole('region', { name: 'MOST POPULAR POST', exact: true }))
+      .toHaveTextContent(root.details.content);
+    await expect
+      .element(page.getByRole('region', { name: 'Replies', exact: true }))
+      .toHaveTextContent(reply.details.content);
+    await expect
+      .element(page.getByRole('link', { name: /^Show all \d+ replies$/ }))
+      .toHaveAttribute('href', `/post/${root.compositeId.replace(':', '/')}`);
+    await matchVrtFrameScreenshot(`hot-person-conversation-${name}`);
+    await page.getByRole('button', { name: `Rank 1, ${f.whoToFollow[0].name}. Show most popular post` }).click();
+    conversation.scrollIntoView();
+    // This fixture person only authored a reply, so selecting them clears the previous conversation.
+    await expect.element(page.getByText('This person has no posts in this timeframe.', { exact: true })).toBeVisible();
+    expect(document.querySelector('[aria-label="MOST POPULAR POST"]')).toBeNull();
+    expect(document.querySelector('[aria-label="Replies"]')).toBeNull();
+  });
+
+  it('connects the selected tag to people portraits without rectangular gaps', async () => {
+    await renderForVRT(<HotWithHeader />, { viewport: VRT_VIEWPORT_DESKTOP });
+    await page.getByRole('button', { name: 'Ranking: Most popular' }).click();
+    await page.getByRole('menuitem', { name: 'Most active', exact: true }).click();
+    await expect.element(page.getByRole('list', { name: 'People standings' })).toBeVisible();
+    await expect.poll(() => document.querySelectorAll('[data-arena-connection]').length).toBe(5);
+    const masks = [...document.querySelectorAll('mask rect[fill="black"]')];
+    expect(masks).toHaveLength(5);
+    for (const mask of masks) {
+      const width = Number(mask.getAttribute('width'));
+      expect(width).toBeLessThanOrEqual(105);
+      expect(Number(mask.getAttribute('rx'))).toBe(width / 2);
+    }
+    await matchVrtFrameScreenshot('hot-people-connections');
   });
 
   it('renders Arena at desktop viewport', async () => {
@@ -658,7 +776,9 @@ describe('Hot — visual regression', () => {
     expectContendersToFit();
     const floor = document.querySelector('[aria-label="Idea standings"]') as HTMLElement;
     const contenders = [...floor.querySelectorAll('li')];
-    const reader = document.querySelector('[aria-label="Original post"]') as HTMLElement;
+    // The conversation contents load only near the viewport; compare its stable outer boundary.
+    const reader = document.querySelector('[aria-label="Original post conversation"]') as HTMLElement;
+    expect(reader).not.toBeNull();
     expect(contenders).toHaveLength(10);
     expect(Math.max(...contenders.map((node) => node.getBoundingClientRect().bottom))).toBeLessThan(
       reader.getBoundingClientRect().top,
@@ -682,6 +802,7 @@ vi.mock('@/hooks/useArenaIdeas/useArenaIdeas', async () => {
   const f = await fixtures;
   return {
     useArenaIdeas: (ids: string[]) => ({
+      loading: false,
       ideas: ids.flatMap((id) => {
         const post = f.postsByCompositeId.get(id);
         return post

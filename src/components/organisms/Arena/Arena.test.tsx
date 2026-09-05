@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { useArenaPeople } from '@/hooks/useArenaPeople/useArenaPeople';
+import type { useArenaPersonPost } from '@/hooks/useArenaPersonPost/useArenaPersonPost';
 import type { UseBulkUserAvatarsResult } from '@/hooks/useBulkUserAvatars/useBulkUserAvatars.types';
 import type { UseHotTagsResult } from '@/hooks/useHotTags/useHotTags.types';
 import type { UseStreamPaginationResult } from '@/hooks/useStreamPagination/useStreamPagination.types';
@@ -12,6 +14,9 @@ import { TIMEFRAME } from '@/stores/hot/hot.types';
 import { Arena } from './Arena';
 
 const mocks = vi.hoisted(() => ({
+  personPost: vi.fn<typeof useArenaPersonPost>(),
+  people: vi.fn<() => ReturnType<typeof useArenaPeople>>(),
+  recentPeople: vi.fn<() => ReturnType<typeof useArenaPeople>>(),
   hotTags: vi.fn<() => UseHotTagsResult>(),
   stream: vi.fn<() => UseStreamPaginationResult>(),
   avatars: vi.fn<(ids: string[]) => UseBulkUserAvatarsResult>(),
@@ -22,6 +27,9 @@ vi.mock('@/hooks/useBulkUserAvatars/useBulkUserAvatars', () => ({ useBulkUserAva
 vi.mock('@/hooks/useMutedUsers/useMutedUsers', () => ({ useMutedUsers: () => ({ isMuted: mocks.isMuted }) }));
 vi.mock('@/hooks/useHotTags/useHotTags', () => ({ useHotTags: mocks.hotTags }));
 vi.mock('@/hooks/useStreamPagination/useStreamPagination', () => ({ useStreamPagination: mocks.stream }));
+vi.mock('@/hooks/useArenaPersonPost/useArenaPersonPost', () => ({ useArenaPersonPost: mocks.personPost }));
+vi.mock('@/hooks/useArenaPeople/useArenaPeople', () => ({ useArenaPeople: mocks.people }));
+vi.mock('@/hooks/useArenaRecentPeople/useArenaRecentPeople', () => ({ useArenaRecentPeople: mocks.recentPeople }));
 vi.mock('@/hooks/useArenaIdeas/useArenaIdeas', () => ({ useArenaIdeas: mocks.ideas }));
 vi.mock('@/hooks/useIsMobile/useIsMobile', () => ({ useIsMobile: () => false }));
 vi.mock('@/hooks/useRequireAuth/useRequireAuth', () => ({
@@ -34,7 +42,24 @@ function chooseAll() {
 }
 
 describe('Arena filters and topic standings', () => {
+  afterEach(() => vi.unstubAllGlobals());
   beforeEach(() => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((media: string) => ({
+        matches: false,
+        media,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    );
+    mocks.personPost.mockReturnValue({ post: undefined, loading: false, error: null, retry: vi.fn() });
+    mocks.people.mockReturnValue({ users: [], loading: false, error: null, retry: vi.fn() });
+    mocks.recentPeople.mockReturnValue({ users: [], loading: false, error: null, retry: vi.fn() });
     mocks.isMuted.mockReturnValue(false);
     mocks.ideas.mockReturnValue({ ideas: [], error: null });
     mocks.avatars.mockReturnValue({
@@ -86,6 +111,135 @@ describe('Arena filters and topic standings', () => {
       error: null,
     });
   }
+
+  it.each(['Most active', 'Most posted'])(
+    'automatically switches to people for %s and restores a valid post ranking',
+    async (ranking) => {
+      const user = userEvent.setup();
+      render(<Arena />);
+      await user.click(screen.getByRole('button', { name: 'Ranking: Most popular' }));
+      await user.click(screen.getByRole('menuitem', { name: ranking }));
+      expect(screen.getByRole('button', { name: 'Content: People' })).toBeInTheDocument();
+      expect(mocks.people).toHaveBeenLastCalledWith(
+        expect.objectContaining({ metric: ranking === 'Most active' ? 'active' : 'posts', topic: 'pubky' }),
+      );
+      await user.click(screen.getByRole('button', { name: 'Content: People' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Posts' }));
+      expect(screen.getByRole('button', { name: 'Ranking: Most popular' })).toBeInTheDocument();
+      expect(screen.queryByRole('list', { name: 'People standings' })).not.toBeInTheDocument();
+    },
+  );
+
+  it('places People above the default Content selection and preserves the people followers ranking', async () => {
+    const user = userEvent.setup();
+    render(<Arena />);
+    await user.click(screen.getByRole('button', { name: 'Content: Content' }));
+    expect(
+      screen
+        .getAllByRole('menuitem')
+        .slice(0, 2)
+        .map((item) => item.textContent),
+    ).toEqual(['People', 'Content']);
+    expect(screen.getByRole('menuitem', { name: 'Content' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('separator')).toBeInTheDocument();
+    await user.click(screen.getByRole('menuitem', { name: 'People' }));
+    expect(mocks.people).toHaveBeenLastCalledWith(expect.objectContaining({ metric: 'popular' }));
+    await user.click(screen.getByRole('button', { name: 'Ranking: Most popular' }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Most popular',
+      'Most replied',
+      'Most tagged',
+      'Most active',
+      'Most posted',
+      'Most reposted',
+      'Most recent',
+    ]);
+  });
+
+  it.each([
+    ['Most reposted', 'Content'],
+    ['Most recent', 'People'],
+  ])('keeps every option visible and uses %s with %s', async (ranking, content) => {
+    const user = userEvent.setup();
+    render(<Arena />);
+    await user.click(screen.getByRole('button', { name: 'Content: Content' }));
+    await user.click(screen.getByRole('menuitem', { name: 'People' }));
+    await user.click(screen.getByRole('button', { name: 'Ranking: Most popular' }));
+    expect(screen.getAllByRole('menuitem')).toHaveLength(7);
+    await user.click(screen.getByRole('menuitem', { name: ranking }));
+    expect(screen.getByRole('button', { name: `Content: ${content}` })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: `Ranking: ${ranking}` })).toBeInTheDocument();
+  });
+
+  it('keeps Most replied in People mode and displays the authored reply count', async () => {
+    mocks.people.mockReturnValue({
+      users: [
+        {
+          id: 'person',
+          name: 'Person',
+          avatarUrl: null,
+          image: null,
+          bio: '',
+          status: null,
+          counts: { tags: 4, posts: 12, replies: 8, followers: 23, following: 0 },
+        },
+      ],
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+    const user = userEvent.setup();
+    render(<Arena />);
+    await user.click(screen.getByRole('button', { name: 'Ranking: Most popular' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Most replied' }));
+    await user.click(screen.getByRole('button', { name: 'Content: Content' }));
+    await user.click(screen.getByRole('menuitem', { name: 'People' }));
+    expect(screen.getByRole('button', { name: 'Ranking: Most replied' })).toBeInTheDocument();
+    expect(mocks.people).toHaveBeenLastCalledWith(expect.objectContaining({ metric: 'replies' }));
+    expect(
+      within(screen.getByRole('list', { name: 'People standings' })).getByLabelText('8 replies'),
+    ).toBeInTheDocument();
+  });
+
+  it('selects a person and updates their post conversation while preserving avatar stats', async () => {
+    mocks.people.mockReturnValue({
+      users: [
+        {
+          id: 'person',
+          name: 'Person',
+          avatarUrl: null,
+          image: null,
+          bio: '',
+          status: null,
+          counts: { tags: 4, posts: 12, followers: 23, following: 0 },
+        },
+        { id: 'second', name: 'Second person', avatarUrl: null, image: null, bio: '', status: null },
+      ],
+      loading: false,
+      error: null,
+      retry: vi.fn(),
+    });
+    const user = userEvent.setup();
+    render(<Arena />);
+    await user.click(screen.getByRole('button', { name: 'Ranking: Most popular' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Most active' }));
+    const floor = screen.getByRole('list', { name: 'People standings' });
+    const first = within(floor).getByRole('button', { name: 'Rank 1, Person. Show most popular post' });
+    expect(first).toHaveAttribute('aria-pressed', 'true');
+    expect(mocks.personPost).toHaveBeenLastCalledWith(
+      'person',
+      expect.objectContaining({ timeframe: TIMEFRAME.THIS_MONTH }),
+    );
+    for (const label of ['4 tags', '12 posts', '23 followers'])
+      expect(within(floor).getByLabelText(label)).toBeInTheDocument();
+    expect(screen.getByLabelText('Original post conversation')).toBeInTheDocument();
+    await user.click(within(floor).getByRole('button', { name: 'Rank 2, Second person. Show most popular post' }));
+    expect(first).toHaveAttribute('aria-pressed', 'false');
+    expect(mocks.personPost).toHaveBeenLastCalledWith(
+      'second',
+      expect.objectContaining({ timeframe: TIMEFRAME.THIS_MONTH }),
+    );
+  });
 
   it('explains a muted-only result and allows a reversible temporary reveal', () => {
     setMutedPost();

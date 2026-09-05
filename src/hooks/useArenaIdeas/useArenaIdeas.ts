@@ -16,7 +16,7 @@ export function useArenaIdeas(postIds: string[], { includeMuted = false } = {}) 
   const { mutedUserIdSet } = useMutedUsers();
   const cache = useRef(new Map<string, { content: string; blurred: boolean; idea: ArenaIdea }>());
   const idsKey = JSON.stringify([...new Set(postIds)]);
-  return useLiveQuery(
+  const result = useLiveQuery(
     async () => {
       try {
         const ids: string[] = JSON.parse(idsKey);
@@ -59,13 +59,16 @@ export function useArenaIdeas(postIds: string[], { includeMuted = false } = {}) 
           return result;
         });
         cache.current = nextCache;
-        return { ideas: records.filter((idea): idea is ArenaIdea => idea !== null), error: null };
+        return { ideas: records.filter((idea): idea is ArenaIdea => idea !== null), error: null, idsKey };
       } catch (error) {
         Logger.error('[useArenaIdeas] Could not read contenders', { error });
-        return { ideas: [] as ArenaIdea[], error: 'Could not load contenders. Try again.' };
+        return { ideas: [] as ArenaIdea[], error: 'Could not load contenders. Try again.', idsKey };
       }
     },
     [idsKey, mutedUserIdSet, includeMuted],
-    { ideas: [] as ArenaIdea[], error: null as string | null },
+    { ideas: [] as ArenaIdea[], error: null as string | null, idsKey: null as string | null },
   );
+  // A new page can arrive before its local projection. Do not rank stale data
+  // or confuse a fully filtered page with a projection still being read.
+  return { ideas: result.ideas, error: result.error, loading: result.idsKey !== idsKey };
 }
