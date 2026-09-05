@@ -1,10 +1,13 @@
 'use client';
 
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Calendar,
   CalendarRange,
   Clock,
+  Eye,
+  EyeOff,
   Flame,
   type LucideIcon,
   MessageCircle,
@@ -108,6 +111,7 @@ type StageProps = {
   isList: boolean;
   metric: ArenaMetric;
   content: ContentType;
+  muteControlTarget: HTMLDivElement | null;
 };
 
 export function Arena() {
@@ -119,6 +123,7 @@ export function Arena() {
   const [isList, setIsList] = useState(false);
   const displayAsGrid = isPhone || isList;
   const [resetCount, setResetCount] = useState(0);
+  const [muteControlTarget, setMuteControlTarget] = useState<HTMLDivElement | null>(null);
   const [metric, setMetric] = useState<ArenaMetric>('popular');
   const [content, setContent] = useState<ContentType>(CONTENT.ALL);
   const scope = `${effectiveReach}:${timeframe}:${currentUserPubky ?? 'guest'}`;
@@ -203,16 +208,19 @@ export function Arena() {
               lowercase
             />
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className={cn(styles.resetButton, 'text-xs text-muted-foreground')}
-            onClick={resetFilters}
-          >
-            <RotateCcw className="size-3.5" aria-hidden="true" />
-            <span>Reset</span>
-          </Button>
+          <div className={styles.toolbarActions}>
+            <div ref={setMuteControlTarget} />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-xs text-muted-foreground"
+              onClick={resetFilters}
+            >
+              <RotateCcw className="size-3.5" aria-hidden="true" />
+              <span>Reset</span>
+            </Button>
+          </div>
         </div>
       </div>
       <ArenaTopics
@@ -225,6 +233,7 @@ export function Arena() {
         isList={displayAsGrid}
         metric={metric}
         content={content}
+        muteControlTarget={muteControlTarget}
       />
       <details className="mt-6 text-xs text-muted-foreground">
         <summary className="w-fit cursor-pointer text-xs leading-4 font-medium tracking-[0.075rem] uppercase">
@@ -279,7 +288,7 @@ function ArenaTopics({
   data: ReturnType<typeof useHotTags>;
   topic?: ArenaTopicFilter;
   onTopic: StageProps['onTopic'];
-} & Pick<StageProps, 'isList' | 'metric' | 'content'>) {
+} & Pick<StageProps, 'isList' | 'metric' | 'content' | 'muteControlTarget'>) {
   // The parent remounts this scope when its shared timeframe changes.
   const [now] = useState(Date.now);
   const { rawTags, isLoading, error, refetch } = data;
@@ -513,19 +522,27 @@ function ArenaTopic(props: StageProps & { reach: ReachType }) {
   }, [error, hasMore, ideas.length, loadMore, loading, loadingMore, needsMoreCandidates, postIds.length, stream.error]);
   return (
     <>
-      {(showMuted || (hiddenByMute && ranked.length > 0)) && (
-        <div className="flex justify-end">
+      {props.muteControlTarget &&
+        (showMuted || (hiddenByMute && ranked.length > 0)) &&
+        createPortal(
           <Button
+            type="button"
             size="sm"
             variant="ghost"
+            className="text-xs text-muted-foreground"
             aria-pressed={showMuted}
             onClick={() => setShowMuted(!showMuted)}
             title="Temporarily show muted authors for these Arena filters"
           >
-            {showMuted ? 'Hide muted' : 'Show muted'}
-          </Button>
-        </div>
-      )}
+            {showMuted ? (
+              <EyeOff className="size-3.5" aria-hidden="true" />
+            ) : (
+              <Eye className="size-3.5" aria-hidden="true" />
+            )}
+            <span>{showMuted ? 'Hide muted' : 'Show muted'}</span>
+          </Button>,
+          props.muteControlTarget,
+        )}
       <ArenaStage {...props}>
         {stream.loading || findingFirstMatch ? (
           <ArenaLoading compact isList={props.isList} />
@@ -542,7 +559,8 @@ function ArenaTopic(props: StageProps & { reach: ReachType }) {
               <>
                 <p>Posts are hidden by your mute settings.</p>
                 <Button className="mt-4" variant="secondary" onClick={() => setShowMuted(true)}>
-                  Show muted
+                  <Eye className="size-4" aria-hidden="true" />
+                  <span>Show muted</span>
                 </Button>
               </>
             ) : props.topic === null ? (
