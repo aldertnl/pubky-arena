@@ -868,6 +868,50 @@
     /* Leave 32px above the post controls, which sit 16px above the card. */
     padding-top: 48px;
   }
+  .floor:not(.peopleFloor) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 12px;
+  }
+  .floor:not(.peopleFloor) > .contender:nth-child(n + 7) {
+    display: none;
+  }
+  .ideaHeader {
+    display: block;
+  }
+  .idea {
+    padding-top: calc(var(--arena-post-padding) + 8px);
+    gap: 8px;
+  }
+  .ideaAuthor {
+    display: contents;
+  }
+  .ideaHeader .stats {
+    flex-wrap: nowrap;
+    gap: 4px;
+    margin-top: 0;
+  }
+  .postAvatar {
+    position: absolute;
+    top: -12px;
+    left: calc(var(--arena-post-padding) + 36px);
+  }
+  .floor:not(.list) .contender[data-position] .ideaCard:not(.leader) .rank {
+    right: auto;
+    left: var(--arena-post-padding);
+  }
+  .postAward,
+  .expandPost {
+    top: -12px;
+    width: 24px;
+    height: 24px;
+  }
+  .ideaCard:has(.expandPost) .postAward {
+    right: calc(var(--arena-post-padding) + 28px);
+  }
+  .preview {
+    -webkit-line-clamp: 2;
+    min-height: 40px;
+  }
 }
 
 @keyframes arena-appear {

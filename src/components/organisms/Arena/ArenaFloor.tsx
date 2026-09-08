@@ -60,11 +60,11 @@ export function ArenaFloorSkeleton({ isList = false }: { isList?: boolean }) {
               <span className={cn(styles.rank, styles.skeletonRank)}>
                 <Skeleton className="h-5 w-10 rounded-full" />
               </span>
-              <div className="flex min-w-0 items-center gap-3">
-                <Skeleton className="size-10 shrink-0 rounded-full" />
-                <div className="min-w-0 flex-1 space-y-2">
-                  <Skeleton className="h-4 w-2/3" />
-                  <div className="flex gap-2">
+              <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                <Skeleton className="size-6 shrink-0 rounded-full sm:size-8" />
+                <div className="min-w-0 flex-1 sm:space-y-2">
+                  <Skeleton className="hidden h-4 w-2/3 sm:block" />
+                  <div className="flex flex-wrap gap-2">
                     <Skeleton className="h-3 w-8" />
                     <Skeleton className="h-3 w-7" />
                     <Skeleton className="h-3 w-6" />
@@ -214,12 +214,16 @@ export function ArenaFloor({
                     fallbackSeed={idea.author}
                     avatarUrl={user?.avatarUrl}
                     size={AVATAR_SIZE_BY_HEADER_SIZE.normal}
+                    className={cn('size-6 sm:size-8', styles.postAvatar)}
                   />
-                  <div className="min-w-0 flex-1">
+                  <div className={cn('min-w-0 flex-1', styles.ideaAuthor)}>
                     <Typography
                       as="span"
                       overrideDefaults
-                      className={cn('block truncate font-bold text-foreground', USERNAME_CLASS_BY_HEADER_SIZE.normal)}
+                      className={cn(
+                        'hidden truncate font-bold text-foreground sm:block',
+                        USERNAME_CLASS_BY_HEADER_SIZE.normal,
+                      )}
                     >
                       {name}
                     </Typography>
@@ -244,7 +248,8 @@ export function ArenaFloor({
                         className={cn(styles.rankPill, styles.rank, styles.leadingRank, 'uppercase')}
                         aria-live="polite"
                       >
-                        #{idea.rank} {topic === null ? 'All' : topic} {contentLabel}
+                        #{idea.rank}
+                        <span className="hidden sm:inline">{` ${topic === null ? 'All' : topic} ${contentLabel}`}</span>
                       </Badge>
                       <span
                         className={cn(styles.awardIcon, styles.postAward)}
